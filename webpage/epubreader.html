@@ -1,0 +1,25 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>epub阅读器</title>
+<style type="text/css">
+
+</style>
+</head>
+
+<body>
+	<div id="epub"></div>
+	
+	<script src="./js/epub.min.js"></script>
+<script>
+		var book = ePub("../EPUB版本/本传/旧约/某魔法的禁书目录 01X.epub");
+		var rendition = book.renderTo("area", {width: 600, height: 400});
+		var displayed = rendition.display();
+		book.renderTo("epub", { method: "continuous", width: "100%", height: "100%" });
+
+	</script>
+	
+	
+</body>
+</html>
