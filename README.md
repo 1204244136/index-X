@@ -60,9 +60,11 @@ X系列以台版为本体，在其基础上与网译版进行校对，部分卷�
 ## 下载
 
 ### 我不会使用git
-由于下载链接经常变动，请加入[X系列专属反馈群（953679671）](https://qm.qq.com/cgi-bin/qm/qr?k=TtTcct3Iz8Y7CewT5QA2RlLrR0p5-WN2&jump_from=webapi)下载群文件。
-
-注意：群里的是稳定版
+#### 我想下一某本
+[点此进入下载索引](./EPUB版本)
+#### 我想全部下载
+[点此下载全系列整合包（最新版）](https://github.com/1204244136/index-X/archive/refs/heads/master.zip)
+[点此下载全系列整合包（镜像版）](https://gitee.com/con_sul/index-X/repository/archive/master.zip)
 
 ### 我会使用git
 直接使用 Git 将文件克隆到本地即可。
@@ -71,14 +73,14 @@ X系列以台版为本体，在其基础上与网译版进行校对，部分卷�
 以本人一己之力肯定会有疏漏，所以，我希望大家能将在阅读中遇到的问题或意见向我反馈，我会不断地进行更正。
 - 反馈之前，请遵循[反馈注意事项](#反馈注意事项)
 ### 如何反馈
-- **加入X系列专属反馈群（953679671）**
+- **加入[X系列专属反馈群](https://qm.qq.com/cgi-bin/qm/qr?k=TtTcct3Iz8Y7CewT5QA2RlLrR0p5-WN2&jump_from=webapi)**（953679671）
   
   你可以
     - 第一时间获取更新的内容
     - 与其他同好一起交流
     - 获取某系列的各种资源
 - 向我发起临时对话或者加我好友（备注：X 系列反馈） qq：1204244136
-- 在github上发布issue（不推荐）
+- 在github上发布issue **（不推荐）**
 
 ## 各种问题及回复
 ```
