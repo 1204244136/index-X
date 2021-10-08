@@ -63,8 +63,9 @@ X系列以台版为本体，在其基础上与网译版进行校对，部分卷�
 #### 我想下一某本
 [点此进入下载索引](./EPUB版本)
 #### 我想全部下载
-[点此下载全系列整合包（最新版）](https://github.com/1204244136/index-X/archive/refs/heads/master.zip)
-[点此下载全系列整合包（镜像版）](https://gitee.com/con_sul/index-X/repository/archive/master.zip)
+[点此下载](https://github.com/1204244136/index-X/archive/refs/heads/master.zip)
+
+[镜像下载](https://gitee.com/con_sul/index-X/repository/archive/master.zip)
 
 ### 我会使用git
 直接使用 Git 将文件克隆到本地即可。
