@@ -17,7 +17,7 @@
 
 [⚡已知问题](#已知问题)
 
-[🧭阅读器推荐](./文档/阅读器推荐.md)
+[🧭阅读器推荐](https://shimo.im/sheets/6vv3QDPjypGGY6Wd/MODOC)
 
 [📚各版本对比](#各版本对比)
 
@@ -61,9 +61,8 @@ X系列以台版为本体，在其基础上与网译版进行校对，部分卷�
 ### 使用Resilio-Sync以实现实时同步（最新）
 在群文件或到官网查找并下载安装该软件
 
-[点此使用链接](https://link.resilio.com/#f=%E9%AD%94%E6%B3%95%E7%A6%81%E4%B9%A6%E7%9B%AE%E5%BD%95X&sz=82E7&t=1&s=GWC5RRV4JVLB6PBHB2Z7PDOMJZOQE4XS&i=C5EGSZARGLRHO4ORLLRPNQ6OGQK43SIQO&v=2.7&a=2)
+[点此使用链接](https://link.resilio.com/#f=EPUB%E7%89%88%E6%9C%AC&sz=26E7&t=2&s=PYRXLGDMEIUEWEA56MLOATBIMTAJ4EKPXGGHNGGNGIZ7XJBRSTKA&i=CANO3EIPDRMJBKTXSNWVZZQGHGZABVJUP&v=2.7&a=2)
 
-密钥：B7DJKJE3XJJ4V5LDZA2PQNL5DJT6FKAZJ
 ### 我不会使用git
 #### 我想下一某本
 [点此进入下载索引](./EPUB版本)（**推荐一本一本下载**）
