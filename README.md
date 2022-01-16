@@ -58,17 +58,21 @@ X系列以台版为本体，在其基础上与网译版进行校对，部分卷�
    - 对于大部分移动端阅读器，左右翻页的模式才会生效
 
 ## 下载
-- 使用Resilio-Sync下载并实现实时同步（最新）
-  1. 在群文件或到官网查找并下载安装该软件
-  2. [点此使用链接](https://link.resilio.com/#f=EPUB%E7%89%88%E6%9C%AC&sz=26E7&t=2&s=PYRXLGDMEIUEWEA56MLOATBIMTAJ4EKPXGGHNGGNGIZ7XJBRSTKA&i=CANO3EIPDRMJBKTXSNWVZZQGHGZABVJUP&v=2.7&a=2)
-- 在github上直接下载
+- 使用Resilio-Sync下载并实现实时同步（优先更新）
+  1. 到[Resilio-Sync官网](https://www.resilio.com/individuals/)或者反馈群下载并安装Resilio-Sync
+  2. 在Resilio-Sync开启状态下[点此链接](https://link.resilio.com/#f=EPUB%E7%89%88%E6%9C%AC&sz=26E7&t=2&s=PYRXLGDMEIUEWEA56MLOATBIMTAJ4EKPXGGHNGGNGIZ7XJBRSTKA&i=CANO3EIPDRMJBKTXSNWVZZQGHGZABVJUP&v=2.7&a=2)
+- 在github上直接下载（需要较高网络质量）
   - 我想下一某本
 [点此进入下载索引](./EPUB版本)（**推荐一本一本下载**）
   - 我想全部下载
 [点此下载](https://github.com/1204244136/index-X/archive/refs/heads/master.zip)
-- 上面方法不会可以尝试[镜像下载](https://gitee.com/con_sul/index-X/repository/archive/master.zip)
-- 使用[阿里云](https://www.aliyundrive.com/s/wzHghAFQyDM)下载
-- 使用git下载
+- 到镜像网站下载（需要注册）
+  - 我想下一某本
+[点此进入下载索引](https://gitee.com/con_sul/index-X/tree/master/EPUB%E7%89%88%E6%9C%AC)（**推荐一本一本下载**）
+  - 我想全部下载
+[点此下载](https://gitee.com/con_sul/index-X/repository/archive/master.zip)
+- 使用[阿里云](https://www.aliyundrive.com/s/wzHghAFQyDM)下载（需要注册）
+- 使用git下载（需要较高网络质量与技术）
 
 ## 反馈
 以本人一己之力肯定会有疏漏，所以，我希望大家能将在阅读中遇到的问题或意见向我反馈，我会不断地进行更正。
