@@ -67,6 +67,7 @@ X系列以台版为本体，在其基础上与网译版进行校对，部分卷�
   - 我想全部下载
 [点此下载](https://github.com/1204244136/index-X/archive/refs/heads/master.zip)
 - 上面方法不会可以尝试[镜像下载](https://gitee.com/con_sul/index-X/repository/archive/master.zip)
+- 使用[阿里云](https://www.aliyundrive.com/s/wzHghAFQyDM)下载
 - 使用git下载
 
 ## 反馈
