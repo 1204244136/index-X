@@ -61,7 +61,7 @@ X系列以台版为本体，在其基础上与网译版进行校对，部分卷�
 - 使用Resilio-Sync下载并实现实时同步（优先更新）
   1. 到[Resilio-Sync官网](https://www.resilio.com/individuals/)或者反馈群下载并安装Resilio-Sync
   2. 在Resilio-Sync开启状态下[点此链接](https://link.resilio.com/#f=EPUB%E7%89%88%E6%9C%AC&sz=26E7&t=2&s=PYRXLGDMEIUEWEA56MLOATBIMTAJ4EKPXGGHNGGNGIZ7XJBRSTKA&i=CANO3EIPDRMJBKTXSNWVZZQGHGZABVJUP&v=2.7&a=2)
-- 在github上直接下载（需要较高网络质量）
+- 在github上下载（需要较高网络质量）
   - 我想下一某本
 [点此进入下载索引](./EPUB版本)（**推荐一本一本下载**）
   - 我想全部下载
