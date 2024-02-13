@@ -1,3 +1,6 @@
+# 特别通知
+**本项目的更新已转移至onedrive，下载与反馈务必加入[X系列专属反馈群](https://qm.qq.com/cgi-bin/qm/qr?k=TtTcct3Iz8Y7CewT5QA2RlLrR0p5-WN2&jump_from=webapi)**（953679671）
+
 # index-X
 > 禁书目录X系列，不一样的阅读体验！
 
