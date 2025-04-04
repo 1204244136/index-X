@@ -1,0 +1,424 @@
+body {
+  padding: 0%;
+  margin-top: 0%;
+  margin-bottom: 0%;
+  margin-left: 1%;
+  margin-right: 1%;
+  line-height: 120%;
+  text-align: justify;
+}
+p {
+  text-indent: 2em;
+  display: block;
+  line-height: 1.6em;
+  margin: 0em;
+  word-wrap: break-word;
+}
+div {
+  margin: 0;
+  padding: 0;
+  line-height: 120%;
+  text-align: justify;
+}
+.cover {
+  margin: 0;
+  padding: 0;
+  text-indent: 0;
+  text-align: center;
+}
+h1 {
+  font-size: 1.6em;
+  line-height: 1.2em;
+  margin-top: 1em;
+  margin-bottom: 1.8em;
+  font-weight: bold;
+  text-align: center;
+}
+h2 {
+  font-size: 1.4em;
+  line-height: 1.1em;
+  margin-top: 1.8em;
+  margin-bottom: 1em;
+  font-weight: bold;
+  text-align: center;
+}
+.po {
+  font-size: 0.9em;
+  text-indent: -0.8em;
+  padding: 0 0.1em 0.1em 1em;
+  color: #960014;
+}
+rt {
+  font-size: 0.5em;
+}
+.nodeco {
+  text-decoration: none;
+  color: #879AC5;
+}
+.nodeco:hover {
+  font-weight: bold;
+}
+.noteimg {
+  width: 1em;
+  height: auto;
+}
+td {
+  padding: 3px 0;
+}
+.bold {
+  font-weight: bold;
+}
+.color1 {
+  color: #8083bb;
+}
+.color2 {
+  color: #a77495;
+}
+.colorc1 {
+  color: #68718e;
+}
+.colorc2 {
+  color: #f8b662;
+}
+.colorco {
+  color: #d0ebf1;
+}
+.colorw {
+  color: #eee;
+}
+.bodycolor {
+  background-color: #f5d5e7;
+}
+.blackshadow {
+  text-shadow: 1px 1px 1px #000;
+}
+.font03 {
+  font-size: 0.3em;
+}
+.font04 {
+  font-size: 0.4em;
+}
+.font05 {
+  font-size: 0.5em;
+}
+.font06 {
+  font-size: 0.6em;
+}
+.font07 {
+  font-size: 0.7em;
+}
+.font075 {
+  font-size: 0.75em;
+}
+.font08 {
+  font-size: 0.8em;
+}
+.font085 {
+  font-size: 0.85em;
+}
+.font09 {
+  font-size: 0.9em;
+}
+.font10 {
+  font-size: 1em;
+}
+.font11 {
+  font-size: 1.1em;
+}
+.font115 {
+  font-size: 1.15em;
+}
+.font12 {
+  font-size: 1.2em;
+}
+.font13 {
+  font-size: 1.3em;
+}
+.font14 {
+  font-size: 1.4em;
+}
+.font15 {
+  font-size: 1.5em;
+}
+.font16 {
+  font-size: 1.6em;
+}
+.font17 {
+  font-size: 1.7em;
+}
+.font18 {
+  font-size: 1.8em;
+}
+.font19 {
+  font-size: 1.9em;
+}
+.font20 {
+  font-size: 2em;
+}
+.font25 {
+  font-size: 2.5em;
+}
+.font30 {
+  font-size: 3em;
+}
+.font40 {
+  font-size: 4em;
+}
+.in0 {
+  text-indent: 0;
+}
+.center {
+  text-indent: 0;
+  text-align: center;
+}
+.right {
+  text-indent: 0;
+  text-align: right;
+}
+.italic {
+  font-style: italic;
+}
+.in1 {
+  text-indent: 1em;
+}
+.in2 {
+  text-indent: 2em;
+}
+.in4 {
+  text-indent: 4em;
+}
+.del {
+  text-decoration: line-through;
+}
+.w05 {
+  width: 0.5em;
+}
+.w09 {
+  width: 0.9em;
+}
+.w10 {
+  width: 1em;
+}
+.w11 {
+  width: 1.1em;
+}
+.w20 {
+  width: 2em;
+}
+.w25 {
+  width: 2.5em;
+}
+.w26 {
+  width: 2.6em;
+}
+.w31 {
+  width: 3.1em;
+}
+.w33 {
+  width: 3.3em;
+}
+.w40 {
+  width: 4em;
+}
+.w44 {
+  width: 4.4em;
+}
+.w50 {
+  width: 5em;
+}
+.w55 {
+  width: 5.5em;
+}
+.w60 {
+  width: 6em;
+}
+.w75 {
+  width: 7.5em;
+}
+.w80 {
+  width: 8em;
+}
+.w90 {
+  width: 9em;
+}
+.w150 {
+  width: 15em;
+}
+.wp30 {
+  width: 30%;
+}
+.wp100 {
+  width: 100%;
+}
+.mtb13 {
+  margin: -1.3em 0 0 0;
+}
+.mtb09 {
+  margin: -0.9em 0 0 0;
+}
+.mtb05 {
+  margin: -0.5em 0 0 0;
+}
+.mtb03 {
+  margin: -0.3em 0 0 0;
+}
+.mtb01 {
+  margin: -0.1em 0 0 0;
+}
+.mt01 {
+  margin: 0.1em 0 0 0;
+}
+.mt03 {
+  margin: 0.3em 0 0 0;
+}
+.mt05 {
+  margin: 0.5em 0 0 0;
+}
+.mt09 {
+  margin: 0.9em 0 0 0;
+}
+.mt12 {
+  margin: 1.2em 0 0 0;
+}
+.mt15 {
+  margin: 1.5em 0 0 0;
+}
+.mt18 {
+  margin: 1.8em 0 0 0;
+}
+.mbt0 {
+  margin: 0 0 0 0;
+}
+.mbt05 {
+  margin: 0.5em 0 0.5em 0;
+}
+.mbt09 {
+  margin: 0.9em 0 0.9em 0;
+}
+.mbt15 {
+  margin: 1.5em 0 1.5em 0;
+}
+.mbt18 {
+  margin: 1.8em 0 1.8em 0;
+}
+.mbt20 {
+  margin: 2em 0 2em 0;
+}
+.mbt30 {
+  margin: 3em 0 3em 0;
+}
+.mbt40 {
+  margin: 4em 0 4em 0;
+}
+.mb09 {
+  margin: 0 0 0.9em 0;
+}
+.mb14t22 {
+  margin: 2.2em 0 1.4em 0;
+}
+.ml01 {
+  margin: 0 0 0 0.1em;
+}
+.ml024 {
+  margin: 0 0 0 0.24em;
+}
+.pt05 {
+  padding: 0.5em 0 0 0;
+}
+.pt09 {
+  padding: 0.9em 0 0 0;
+}
+.pt12 {
+  padding: 1.2em 0 0 0;
+}
+.pbt04 {
+  padding: 0.4em 0 0.4em 0;
+}
+.pbt05 {
+  padding: 0.5em 0 0.5em 0;
+}
+.pbt09 {
+  padding: 0.9em 0 0.9em 0;
+}
+.he1 {
+  line-height: 1em;
+}
+.hp40 {
+  line-height: 40%;
+}
+.hp100 {
+  line-height: 100%;
+}
+.hp200 {
+  line-height: 200%;
+}
+.titlebox1 {
+  border-bottom-style: solid;
+  border-width: 3px;
+  width: 9em;
+  padding: 3px 0;
+  margin: 30% 0 3px 0;
+}
+.box1 {
+  border-style: double;
+  border-color: #9d9b9c;
+  padding: 12px 6px;
+  margin: 26px 1px;
+  border-width: 3px;
+}
+.box2 {
+  border-style: solid;
+  border-color: #9d9b9c;
+  border-radius: 8px;
+  padding: 12px 6px;
+  margin: 26px 1px;
+  border-width: 2px;
+}
+@font-face {
+  font-family: "zifu";
+  src: local("DK-SYMBOL");
+}
+.zifu {
+  font-family: zifu, serif;
+}
+@font-face {
+  font-family: "fangsong";
+  src: local("amasis30"), local("仿宋"), local("仿宋_GB2312"), local("Yuanti"), local("Yuanti SC"), local("Yuanti TC"), local("DK-FANGSONG");
+}
+.fangsong {
+  font-family: fangsong, serif;
+}
+@font-face {
+  font-family: "yahei";
+  src: local("黑体"), local("微软雅黑"), local("Heiti"), local("Heiti SC"), local("Heiti TC"), local("MYing Hei S"), local("MYing Hei T"), local("TBGothic"), local("DK-HEITI");
+}
+.yahei {
+  font-family: yahei, serif;
+}
+@font-face {
+  font-family: "ymp";
+}
+.ymp {
+  font-family: ymp, serif;
+}
+.caiye {
+  text-indent: 0;
+  font-size: 1.2em;
+}
+
+.fit {
+  display: inline-block;
+  page-break-inside: avoid;
+  max-height: 100%;
+  max-width: 100%;
+}
+.left {
+  text-indent: 0;
+  text-align: left;
+}
+span.frame1 {
+  font-size: 0.9em;
+  border-style: solid;
+  border-width: 1px;
+  background-color: transparent;
+}

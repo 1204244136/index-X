@@ -1,0 +1,153 @@
+<?xml version='1.0' encoding='utf-8'?>
+<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1" xml:lang="zh">
+  <head>
+    <meta name="dtb:uid" content="uuid:41894a94-68dd-4faa-9fe6-507e32ecad0d"/>
+    <meta name="dtb:depth" content="2"/>
+    <meta name="dtb:generator" content="calibre (8.1.1)"/>
+    <meta name="dtb:totalPageCount" content="0"/>
+    <meta name="dtb:maxPageNumber" content="0"/>
+  </head>
+  <docTitle>
+    <text>某科学的超电磁炮 ColdGameX</text>
+  </docTitle>
+  <navMap>
+    <navPoint id="num_1" playOrder="1">
+      <navLabel>
+        <text>制作信息</text>
+      </navLabel>
+      <content src="OEBPS/Text/S5_02_03-Information.xhtml"/>
+    </navPoint>
+    <navPoint id="num_2" playOrder="2">
+      <navLabel>
+        <text>0（the_fool）</text>
+      </navLabel>
+      <content src="OEBPS/Text/S5_02_03-Main.xhtml"/>
+    </navPoint>
+    <navPoint id="num_3" playOrder="3">
+      <navLabel>
+        <text>1（the_magician）</text>
+      </navLabel>
+      <content src="OEBPS/Text/S5_02_03-Main.xhtml#toc_1"/>
+    </navPoint>
+    <navPoint id="num_4" playOrder="4">
+      <navLabel>
+        <text>2（the_priestess）</text>
+      </navLabel>
+      <content src="OEBPS/Text/S5_02_03-Main.xhtml#toc_2"/>
+    </navPoint>
+    <navPoint id="num_5" playOrder="5">
+      <navLabel>
+        <text>3 （the_empress）</text>
+      </navLabel>
+      <content src="OEBPS/Text/S5_02_03-Main.xhtml#toc_3"/>
+    </navPoint>
+    <navPoint id="num_6" playOrder="6">
+      <navLabel>
+        <text>4 （the_emperor）</text>
+      </navLabel>
+      <content src="OEBPS/Text/S5_02_03-Main.xhtml#toc_4"/>
+    </navPoint>
+    <navPoint id="num_7" playOrder="7">
+      <navLabel>
+        <text>5 （the_hierophant）</text>
+      </navLabel>
+      <content src="OEBPS/Text/S5_02_03-Main.xhtml#toc_5"/>
+    </navPoint>
+    <navPoint id="num_8" playOrder="8">
+      <navLabel>
+        <text>6（the_lovers）</text>
+      </navLabel>
+      <content src="OEBPS/Text/S5_02_03-Main.xhtml#toc_6"/>
+    </navPoint>
+    <navPoint id="num_9" playOrder="9">
+      <navLabel>
+        <text>7（the_chariot）</text>
+      </navLabel>
+      <content src="OEBPS/Text/S5_02_03-Main.xhtml#toc_7"/>
+    </navPoint>
+    <navPoint id="num_10" playOrder="10">
+      <navLabel>
+        <text>8（strength）</text>
+      </navLabel>
+      <content src="OEBPS/Text/S5_02_03-Main.xhtml#toc_8"/>
+    </navPoint>
+    <navPoint id="num_11" playOrder="11">
+      <navLabel>
+        <text>9（the_hermit）</text>
+      </navLabel>
+      <content src="OEBPS/Text/S5_02_03-Main.xhtml#toc_9"/>
+    </navPoint>
+    <navPoint id="num_12" playOrder="12">
+      <navLabel>
+        <text>10（wheel_of_fortune）</text>
+      </navLabel>
+      <content src="OEBPS/Text/S5_02_03-Main.xhtml#toc_10"/>
+    </navPoint>
+    <navPoint id="num_13" playOrder="13">
+      <navLabel>
+        <text>11（justice）</text>
+      </navLabel>
+      <content src="OEBPS/Text/S5_02_03-Main.xhtml#toc_11"/>
+    </navPoint>
+    <navPoint id="num_14" playOrder="14">
+      <navLabel>
+        <text>12（the_hanged_man）</text>
+      </navLabel>
+      <content src="OEBPS/Text/S5_02_03-Main.xhtml#toc_12"/>
+    </navPoint>
+    <navPoint id="num_15" playOrder="15">
+      <navLabel>
+        <text>13（death）</text>
+      </navLabel>
+      <content src="OEBPS/Text/S5_02_03-Main.xhtml#toc_13"/>
+    </navPoint>
+    <navPoint id="num_16" playOrder="16">
+      <navLabel>
+        <text>14（temperance）</text>
+      </navLabel>
+      <content src="OEBPS/Text/S5_02_03-Main.xhtml#toc_14"/>
+    </navPoint>
+    <navPoint id="num_17" playOrder="17">
+      <navLabel>
+        <text>15（the_devil）</text>
+      </navLabel>
+      <content src="OEBPS/Text/S5_02_03-Main.xhtml#toc_15"/>
+    </navPoint>
+    <navPoint id="num_18" playOrder="18">
+      <navLabel>
+        <text>16（the_tower）</text>
+      </navLabel>
+      <content src="OEBPS/Text/S5_02_03-Main.xhtml#toc_16"/>
+    </navPoint>
+    <navPoint id="num_19" playOrder="19">
+      <navLabel>
+        <text>17（the_star）</text>
+      </navLabel>
+      <content src="OEBPS/Text/S5_02_03-Main.xhtml#toc_17"/>
+    </navPoint>
+    <navPoint id="num_20" playOrder="20">
+      <navLabel>
+        <text>18（the_moon）</text>
+      </navLabel>
+      <content src="OEBPS/Text/S5_02_03-Main.xhtml#toc_18"/>
+    </navPoint>
+    <navPoint id="num_21" playOrder="21">
+      <navLabel>
+        <text>19（the_sun）</text>
+      </navLabel>
+      <content src="OEBPS/Text/S5_02_03-Main.xhtml#toc_19"/>
+    </navPoint>
+    <navPoint id="num_22" playOrder="22">
+      <navLabel>
+        <text>20（judgement）</text>
+      </navLabel>
+      <content src="OEBPS/Text/S5_02_03-Main.xhtml#toc_20"/>
+    </navPoint>
+    <navPoint id="num_23" playOrder="23">
+      <navLabel>
+        <text>21（the_world）</text>
+      </navLabel>
+      <content src="OEBPS/Text/S5_02_03-Main.xhtml#toc_21"/>
+    </navPoint>
+  </navMap>
+</ncx>

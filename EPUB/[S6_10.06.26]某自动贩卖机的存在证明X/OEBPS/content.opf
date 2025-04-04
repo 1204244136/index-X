@@ -1,0 +1,50 @@
+<?xml version='1.0' encoding='utf-8'?>
+<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
+  <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <dc:title id="id">某自动贩卖机的存在证明X</dc:title>
+    <dc:creator id="id-1">成田良悟</dc:creator>
+    <dc:identifier>calibre:5119</dc:identifier>
+    <dc:identifier id="BookId">uuid:7d6fb36d-ddad-458b-984b-ba0fbdd530f1</dc:identifier>
+    <dc:language>zh-CN</dc:language>
+    <dc:contributor id="id-3">calibre (6.9.0) [https://calibre-ebook.com]</dc:contributor>
+    <dc:subject>重小说</dc:subject>
+    <meta refines="#id" property="title-type">main</meta>
+    <meta refines="#id" property="file-as">某自动贩卖机的存在证明X</meta>
+    <meta name="Sigil version" content="0.9.17"/>
+    <meta name="cover" content="GT_vol_1.jpg"/>
+    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-01-29T13:34:11Z</meta>
+    <meta refines="#id-3" property="role" scheme="marc:relators">bkp</meta>
+    <meta refines="#id-1" property="role" scheme="marc:relators">aut</meta>
+    <meta refines="#id-1" property="file-as">成田良悟</meta>
+    <meta property="calibre:rating">10</meta>
+    <meta property="belongs-to-collection" id="id-2">番外</meta>
+    <meta refines="#id-2" property="collection-type">series</meta>
+    <meta refines="#id-2" property="group-position">12</meta>
+    <meta property="calibre:author_link_map">{"成田良悟": ""}</meta>
+  </metadata>
+  <manifest>
+    <item id="S6_10.06.26-Cover.xhtml" href="Text/S6_10.06.26-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
+    <item id="Message.xhtml" href="Text/S6_10.06.26-Information.xhtml" media-type="application/xhtml+xml"/>
+    <item href="Text/S6_10.06.26-Prologue.xhtml" id="id3" media-type="application/xhtml+xml"/>
+    <item href="Text/S6_10.06.26-Chapter.xhtml" id="id16" media-type="application/xhtml+xml"/>
+    <item href="Text/S6_10.06.26-Epilogue.xhtml" id="id4" media-type="application/xhtml+xml"/>
+    <item href="Text/S6_10.06.26-Manga.xhtml" id="id8" media-type="application/xhtml+xml"/>
+    <item id="id7" href="Text/S6_10.06.26-Note.xhtml" media-type="application/xhtml+xml"/>
+    <item id="nav" href="../nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
+    <item id="toc" href="../toc.ncx" media-type="application/x-dtbncx+xml"/>
+    <item href="Styles/style.css" id="id5" media-type="text/css"/>
+    <item id="GT_vol_1.jpg" href="Images/Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
+    <item href="Images/Manga.jpg" id="id2" media-type="image/jpeg"/>
+    <item href="Images/p1.jpg" id="id1" media-type="image/jpeg"/>
+    <item href="Images/p2.jpg" id="id6" media-type="image/jpeg"/>
+  </manifest>
+  <spine toc="toc">
+    <itemref idref="S6_10.06.26-Cover.xhtml"/>
+    <itemref idref="Message.xhtml"/>
+    <itemref idref="id3"/>
+    <itemref idref="id16"/>
+    <itemref idref="id4"/>
+    <itemref idref="id8"/>
+    <itemref idref="id7"/>
+  </spine>
+</package>

@@ -1,0 +1,171 @@
+<?xml version='1.0' encoding='utf-8'?>
+<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1" xml:lang="zh">
+  <head>
+    <meta name="dtb:uid" content="uuid:e4b8a245-845d-439f-a66d-aeab6cdce40f"/>
+    <meta name="dtb:depth" content="3"/>
+    <meta name="dtb:generator" content="calibre (8.1.1)"/>
+    <meta name="dtb:totalPageCount" content="0"/>
+    <meta name="dtb:maxPageNumber" content="0"/>
+  </head>
+  <docTitle>
+    <text>某魔法的禁书目录 01X</text>
+  </docTitle>
+  <navMap>
+    <navPoint id="num_1" playOrder="1">
+      <navLabel>
+        <text>制作信息</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_01-Information.xhtml"/>
+    </navPoint>
+    <navPoint id="num_2" playOrder="2">
+      <navLabel>
+        <text>简介</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_01-Introduction.xhtml"/>
+    </navPoint>
+    <navPoint id="num_3" playOrder="3">
+      <navLabel>
+        <text>彩页</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_01-Illustrations.xhtml"/>
+    </navPoint>
+    <navPoint id="num_4" playOrder="4">
+      <navLabel>
+        <text>序 章 幻想杀手少年的故事 The_Imagine Breaker.</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_01-01_Prologue.xhtml"/>
+    </navPoint>
+    <navPoint id="num_5" playOrder="5">
+      <navLabel>
+        <text>第一章 魔法师她降临在高塔 FAIR,_Occasionally_GIRL.</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_01-02_Chapter1.xhtml"/>
+      <navPoint id="num_6" playOrder="6">
+        <navLabel>
+          <text>1</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_01-02_Chapter1.xhtml#toc_1"/>
+      </navPoint>
+      <navPoint id="num_7" playOrder="7">
+        <navLabel>
+          <text>2</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_01-02_Chapter1.xhtml#toc_2"/>
+      </navPoint>
+      <navPoint id="num_8" playOrder="8">
+        <navLabel>
+          <text>3</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_01-02_Chapter1.xhtml#toc_3"/>
+      </navPoint>
+      <navPoint id="num_9" playOrder="9">
+        <navLabel>
+          <text>4</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_01-02_Chapter1.xhtml#toc_4"/>
+      </navPoint>
+      <navPoint id="num_10" playOrder="10">
+        <navLabel>
+          <text>5</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_01-02_Chapter1.xhtml#toc_5"/>
+      </navPoint>
+      <navPoint id="num_11" playOrder="11">
+        <navLabel>
+          <text>6</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_01-02_Chapter1.xhtml#toc_6"/>
+      </navPoint>
+      <navPoint id="num_12" playOrder="12">
+        <navLabel>
+          <text>7</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_01-02_Chapter1.xhtml#toc_7"/>
+      </navPoint>
+    </navPoint>
+    <navPoint id="num_13" playOrder="13">
+      <navLabel>
+        <text>第二章 奇术师他带来了终焉 The_7th-Egde.</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_01-03_Chapter2.xhtml"/>
+      <navPoint id="num_14" playOrder="14">
+        <navLabel>
+          <text>1</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_01-03_Chapter2.xhtml#toc_1"/>
+      </navPoint>
+      <navPoint id="num_15" playOrder="15">
+        <navLabel>
+          <text>2</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_01-03_Chapter2.xhtml#toc_2"/>
+      </navPoint>
+      <navPoint id="num_16" playOrder="16">
+        <navLabel>
+          <text>3</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_01-03_Chapter2.xhtml#toc_3"/>
+      </navPoint>
+      <navPoint id="num_17" playOrder="17">
+        <navLabel>
+          <text>4</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_01-03_Chapter2.xhtml#toc_4"/>
+      </navPoint>
+    </navPoint>
+    <navPoint id="num_18" playOrder="18">
+      <navLabel>
+        <text>第三章 魔道书她静静微笑着 “Forget_me_not.”</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_01-04_Chapter3.xhtml"/>
+      <navPoint id="num_19" playOrder="19">
+        <navLabel>
+          <text>1</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_01-04_Chapter3.xhtml#toc_1"/>
+      </navPoint>
+      <navPoint id="num_20" playOrder="20">
+        <navLabel>
+          <text>2</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_01-04_Chapter3.xhtml#toc_2"/>
+      </navPoint>
+      <navPoint id="num_21" playOrder="21">
+        <navLabel>
+          <text>3</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_01-04_Chapter3.xhtml#toc_3"/>
+      </navPoint>
+      <navPoint id="num_22" playOrder="22">
+        <navLabel>
+          <text>4</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_01-04_Chapter3.xhtml#toc_4"/>
+      </navPoint>
+    </navPoint>
+    <navPoint id="num_23" playOrder="23">
+      <navLabel>
+        <text>第四章 退魔师他已选择终局 (N)Ever_Say_Good_bye.</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_01-05_Chapter4.xhtml"/>
+      <navPoint id="num_24" playOrder="24">
+        <navLabel>
+          <text>1</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_01-05_Chapter4.xhtml#toc_1"/>
+      </navPoint>
+    </navPoint>
+    <navPoint id="num_25" playOrder="25">
+      <navLabel>
+        <text>终 章 禁书目录少女的结局 Index-Librorum-Prohibitorum.</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_01-06_Epilogue.xhtml"/>
+    </navPoint>
+    <navPoint id="num_26" playOrder="26">
+      <navLabel>
+        <text>后记</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_01-07_Afterwords.xhtml"/>
+    </navPoint>
+  </navMap>
+</ncx>

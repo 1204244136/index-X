@@ -1,0 +1,184 @@
+<?xml version='1.0' encoding='utf-8'?>
+<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
+  <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <dc:title id="id">某魔法的禁书目录SS 生物黑客篇X</dc:title>
+    <dc:creator id="id-1">镰池和马</dc:creator>
+    <dc:identifier>calibre:905</dc:identifier>
+    <dc:identifier id="BookId">uuid:5190b86c-5de8-46b3-8a0e-57aebac1a833</dc:identifier>
+    <dc:language>zh-CN</dc:language>
+    <dc:description>&lt;div&gt;
+&lt;p&gt;上条当麻君，欢迎来到绚丽多彩的Underground！&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;在学园都市的小巷中，上条当麻与两位少女相遇了。&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;其中一位是蜜蚁爱愉，是位拥有着能够操纵人心的心理穿孔Mental Stinger的能力者，就读于常盘台中学的大小姐。另一位则是云川芹亚，是位不靠能力就能支配人心，拥有高超谈话技巧的谜之天才女高中生。&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;上条的步调被我行我素的两人打乱，然而平稳的时光并没有维持多久。&lt;/p&gt;
+&lt;p&gt;而撕破了这段悠闲时光的正是一种巨大到足以让人仰望的生物——龙。创造出它、控制它、并按照自己所愿积蓄着战力的「生物黑客」究竟是？&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;不知为何，那只巨大的生物紧追着蜜蚁爱愉不放。为了守护少女们，上条当麻踏入了学园都市那深邃的「黑暗」。&lt;/p&gt;
+&lt;p&gt;&lt;br&gt;&lt;/p&gt;
+&lt;p&gt;这一切都发生在一年前。&lt;/p&gt;
+&lt;p&gt;那是在上条当麻还在上初中三年级时的夏天。这是与食蜂操祈共度的那段时光有所不同的、背后的故事。上条当麻的原点，始步于此。&lt;/p&gt;&lt;/div&gt;</dc:description>
+    <dc:subject>重小说</dc:subject>
+    <meta refines="#id" property="title-type">main</meta>
+    <meta refines="#id" property="file-as">某魔法的禁书目录SS 生物黑客篇X</meta>
+    <meta name="Sigil version" content="0.9.17"/>
+    <meta name="cover" content="GT_vol_1.jpg"/>
+    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-01-22T05:47:53Z</meta>
+    <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
+    <meta refines="#id-1" property="role" scheme="marc:relators">aut</meta>
+    <meta refines="#id-1" property="file-as">镰池和马</meta>
+    <meta property="calibre:rating">10</meta>
+    <meta property="belongs-to-collection" id="id-2">番外</meta>
+    <meta refines="#id-2" property="collection-type">series</meta>
+    <meta refines="#id-2" property="group-position">11</meta>
+    <meta property="calibre:user_metadata">{
+  "#ace_report": {
+    "#extra#": null,
+    "#value#": null,
+    "category_sort": "value",
+    "colnum": 1,
+    "column": "value",
+    "datatype": "comments",
+    "display": {
+      "description": "ACE report",
+      "heading_position": "side",
+      "interpret_as": "html"
+    },
+    "is_category": false,
+    "is_csp": false,
+    "is_custom": true,
+    "is_editable": true,
+    "is_multiple": null,
+    "is_multiple2": {},
+    "kind": "field",
+    "label": "ace_report",
+    "link_column": "value",
+    "name": "ACE report",
+    "rec_index": 22,
+    "search_terms": [
+      "#ace_report"
+    ],
+    "table": "custom_column_1"
+  },
+  "#ace_result": {
+    "#extra#": null,
+    "#value#": null,
+    "category_sort": "value",
+    "colnum": 2,
+    "column": "value",
+    "datatype": "bool",
+    "display": {
+      "bools_show_icons": true,
+      "bools_show_text": false,
+      "description": "ACE result"
+    },
+    "is_category": false,
+    "is_csp": false,
+    "is_custom": true,
+    "is_editable": true,
+    "is_multiple": null,
+    "is_multiple2": {},
+    "kind": "field",
+    "label": "ace_result",
+    "link_column": "value",
+    "name": "ACE result",
+    "rec_index": 23,
+    "search_terms": [
+      "#ace_result"
+    ],
+    "table": "custom_column_2"
+  },
+  "#epubcheck_report": {
+    "#extra#": null,
+    "#value#": null,
+    "category_sort": "value",
+    "colnum": 3,
+    "column": "value",
+    "datatype": "comments",
+    "display": {
+      "description": "EPUBCheck report",
+      "heading_position": "side",
+      "interpret_as": "html"
+    },
+    "is_category": false,
+    "is_csp": false,
+    "is_custom": true,
+    "is_editable": true,
+    "is_multiple": null,
+    "is_multiple2": {},
+    "kind": "field",
+    "label": "epubcheck_report",
+    "link_column": "value",
+    "name": "EPUBCheck report",
+    "rec_index": 24,
+    "search_terms": [
+      "#epubcheck_report"
+    ],
+    "table": "custom_column_3"
+  },
+  "#epubcheck_result": {
+    "#extra#": null,
+    "#value#": null,
+    "category_sort": "value",
+    "colnum": 4,
+    "column": "value",
+    "datatype": "bool",
+    "display": {
+      "bools_show_icons": true,
+      "bools_show_text": false,
+      "description": "EPUBCheck result"
+    },
+    "is_category": false,
+    "is_csp": false,
+    "is_custom": true,
+    "is_editable": true,
+    "is_multiple": null,
+    "is_multiple2": {},
+    "kind": "field",
+    "label": "epubcheck_result",
+    "link_column": "value",
+    "name": "EPUBCheck result",
+    "rec_index": 25,
+    "search_terms": [
+      "#epubcheck_result"
+    ],
+    "table": "custom_column_4"
+  }
+}</meta>
+  </metadata>
+  <manifest>
+    <item id="S5_03_02-Cover.xhtml" href="Text/S5_03_02-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
+    <item id="Message.xhtml" href="Text/S5_03_02-Information.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id1" href="Text/S5_03_02-Introduction.xhtml" media-type="application/xhtml+xml"/>
+    <item href="Text/S5_03_02-01_Chapter1.xhtml" id="id3" media-type="application/xhtml+xml"/>
+    <item href="Text/S5_03_02-02_Chapter2.xhtml" id="id16" media-type="application/xhtml+xml"/>
+    <item href="Text/S5_03_02-03_Chapter3.xhtml" id="id4" media-type="application/xhtml+xml"/>
+    <item href="Text/S5_03_02-04_Chapter4.xhtml" id="id8" media-type="application/xhtml+xml"/>
+    <item href="Text/S5_03_02-05_Chapter5.xhtml" id="id9" media-type="application/xhtml+xml"/>
+    <item href="Text/S5_03_02-06_Chapter6.xhtml" id="id10" media-type="application/xhtml+xml"/>
+    <item id="id11" href="Text/S5_03_02-Note.xhtml" media-type="application/xhtml+xml"/>
+    <item id="nav" href="../nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
+    <item id="toc" href="../toc.ncx" media-type="application/x-dtbncx+xml"/>
+    <item href="Styles/style.css" id="id5" media-type="text/css"/>
+    <item id="GT_vol_1.jpg" href="Images/Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
+    <item href="Images/p1.jpg" id="id6" media-type="image/jpeg"/>
+    <item href="Images/p2.jpg" id="id7" media-type="image/jpeg"/>
+    <item href="Images/p3.jpg" id="id2" media-type="image/jpeg"/>
+    <item id="id12" href="Text/S5_03_02-07_Afterwords.xhtml" media-type="application/xhtml+xml"/>
+  </manifest>
+  <spine toc="toc">
+    <itemref idref="S5_03_02-Cover.xhtml"/>
+    <itemref idref="Message.xhtml"/>
+    <itemref idref="id1"/>
+    <itemref idref="id3"/>
+    <itemref idref="id16"/>
+    <itemref idref="id4"/>
+    <itemref idref="id8"/>
+    <itemref idref="id9"/>
+    <itemref idref="id10"/>
+    <itemref idref="id12"/>
+    <itemref idref="id11"/>
+  </spine>
+</package>

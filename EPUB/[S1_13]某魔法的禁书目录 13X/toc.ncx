@@ -1,0 +1,405 @@
+<?xml version='1.0' encoding='utf-8'?>
+<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1" xml:lang="zh">
+  <head>
+    <meta name="dtb:uid" content="uuid:afa76961-fe51-4f63-a4c8-42cdfdd47768"/>
+    <meta name="dtb:depth" content="3"/>
+    <meta name="dtb:generator" content="calibre (7.24.0)"/>
+    <meta name="dtb:totalPageCount" content="0"/>
+    <meta name="dtb:maxPageNumber" content="0"/>
+  </head>
+  <docTitle>
+    <text>某魔法的禁书目录 13X</text>
+  </docTitle>
+  <navMap>
+    <navPoint id="num_1" playOrder="1">
+      <navLabel>
+        <text>制作信息</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_13-Information.xhtml"/>
+    </navPoint>
+    <navPoint id="num_2" playOrder="2">
+      <navLabel>
+        <text>简介</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_13-Introduction.xhtml"/>
+    </navPoint>
+    <navPoint id="num_3" playOrder="3">
+      <navLabel>
+        <text>彩页</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_13-Illustrations.xhtml"/>
+    </navPoint>
+    <navPoint id="num_4" playOrder="4">
+      <navLabel>
+        <text>第六章 被冷雨淋湿的街道上 Battle_Preparation.</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_13-01_Chapter6.xhtml"/>
+      <navPoint id="num_5" playOrder="5">
+        <navLabel>
+          <text>1</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-01_Chapter6.xhtml#toc_1"/>
+      </navPoint>
+      <navPoint id="num_6" playOrder="6">
+        <navLabel>
+          <text>2</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-01_Chapter6.xhtml#toc_2"/>
+      </navPoint>
+      <navPoint id="num_7" playOrder="7">
+        <navLabel>
+          <text>3</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-01_Chapter6.xhtml#toc_3"/>
+      </navPoint>
+      <navPoint id="num_8" playOrder="8">
+        <navLabel>
+          <text>4</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-01_Chapter6.xhtml#toc_4"/>
+      </navPoint>
+      <navPoint id="num_9" playOrder="9">
+        <navLabel>
+          <text>5</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-01_Chapter6.xhtml#toc_5"/>
+      </navPoint>
+      <navPoint id="num_10" playOrder="10">
+        <navLabel>
+          <text>6</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-01_Chapter6.xhtml#toc_6"/>
+      </navPoint>
+      <navPoint id="num_11" playOrder="11">
+        <navLabel>
+          <text>7</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-01_Chapter6.xhtml#toc_7"/>
+      </navPoint>
+    </navPoint>
+    <navPoint id="num_12" playOrder="12">
+      <navLabel>
+        <text>行间六</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_13-02_Between_the_Lines6.xhtml"/>
+    </navPoint>
+    <navPoint id="num_13" playOrder="13">
+      <navLabel>
+        <text>第七章 雨滴染上了血的颜色 Revival_of_Destruction.</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_13-03_Chapter7.xhtml"/>
+      <navPoint id="num_14" playOrder="14">
+        <navLabel>
+          <text>1</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-03_Chapter7.xhtml#toc_1"/>
+      </navPoint>
+      <navPoint id="num_15" playOrder="15">
+        <navLabel>
+          <text>2</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-03_Chapter7.xhtml#toc_2"/>
+      </navPoint>
+      <navPoint id="num_16" playOrder="16">
+        <navLabel>
+          <text>3</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-03_Chapter7.xhtml#toc_3"/>
+      </navPoint>
+      <navPoint id="num_17" playOrder="17">
+        <navLabel>
+          <text>4</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-03_Chapter7.xhtml#toc_4"/>
+      </navPoint>
+      <navPoint id="num_18" playOrder="18">
+        <navLabel>
+          <text>5</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-03_Chapter7.xhtml#toc_5"/>
+      </navPoint>
+      <navPoint id="num_19" playOrder="19">
+        <navLabel>
+          <text>6</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-03_Chapter7.xhtml#toc_6"/>
+      </navPoint>
+      <navPoint id="num_20" playOrder="20">
+        <navLabel>
+          <text>7</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-03_Chapter7.xhtml#toc_7"/>
+      </navPoint>
+      <navPoint id="num_21" playOrder="21">
+        <navLabel>
+          <text>8</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-03_Chapter7.xhtml#toc_8"/>
+      </navPoint>
+      <navPoint id="num_22" playOrder="22">
+        <navLabel>
+          <text>9</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-03_Chapter7.xhtml#toc_9"/>
+      </navPoint>
+      <navPoint id="num_23" playOrder="23">
+        <navLabel>
+          <text>10</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-03_Chapter7.xhtml#toc_10"/>
+      </navPoint>
+      <navPoint id="num_24" playOrder="24">
+        <navLabel>
+          <text>11</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-03_Chapter7.xhtml#toc_11"/>
+      </navPoint>
+      <navPoint id="num_25" playOrder="25">
+        <navLabel>
+          <text>12</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-03_Chapter7.xhtml#toc_12"/>
+      </navPoint>
+      <navPoint id="num_26" playOrder="26">
+        <navLabel>
+          <text>13</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-03_Chapter7.xhtml#toc_13"/>
+      </navPoint>
+      <navPoint id="num_27" playOrder="27">
+        <navLabel>
+          <text>14</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-03_Chapter7.xhtml#toc_14"/>
+      </navPoint>
+    </navPoint>
+    <navPoint id="num_28" playOrder="28">
+      <navLabel>
+        <text>行间七</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_13-04_Between_the_Lines7.xhtml"/>
+    </navPoint>
+    <navPoint id="num_29" playOrder="29">
+      <navLabel>
+        <text>第八章 神之右席与虚数学区 Fuse=KAZAKIRI.</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_13-05_Chapter8.xhtml"/>
+      <navPoint id="num_30" playOrder="30">
+        <navLabel>
+          <text>1</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-05_Chapter8.xhtml#toc_1"/>
+      </navPoint>
+      <navPoint id="num_31" playOrder="31">
+        <navLabel>
+          <text>2</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-05_Chapter8.xhtml#toc_2"/>
+      </navPoint>
+      <navPoint id="num_32" playOrder="32">
+        <navLabel>
+          <text>3</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-05_Chapter8.xhtml#toc_3"/>
+      </navPoint>
+      <navPoint id="num_33" playOrder="33">
+        <navLabel>
+          <text>4</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-05_Chapter8.xhtml#toc_4"/>
+      </navPoint>
+      <navPoint id="num_34" playOrder="34">
+        <navLabel>
+          <text>5</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-05_Chapter8.xhtml#toc_5"/>
+      </navPoint>
+      <navPoint id="num_35" playOrder="35">
+        <navLabel>
+          <text>6</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-05_Chapter8.xhtml#toc_6"/>
+      </navPoint>
+      <navPoint id="num_36" playOrder="36">
+        <navLabel>
+          <text>7</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-05_Chapter8.xhtml#toc_7"/>
+      </navPoint>
+      <navPoint id="num_37" playOrder="37">
+        <navLabel>
+          <text>8</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-05_Chapter8.xhtml#toc_8"/>
+      </navPoint>
+      <navPoint id="num_38" playOrder="38">
+        <navLabel>
+          <text>9</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-05_Chapter8.xhtml#toc_9"/>
+      </navPoint>
+      <navPoint id="num_39" playOrder="39">
+        <navLabel>
+          <text>10</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-05_Chapter8.xhtml#toc_10"/>
+      </navPoint>
+      <navPoint id="num_40" playOrder="40">
+        <navLabel>
+          <text>11</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-05_Chapter8.xhtml#toc_11"/>
+      </navPoint>
+      <navPoint id="num_41" playOrder="41">
+        <navLabel>
+          <text>12</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-05_Chapter8.xhtml#toc_12"/>
+      </navPoint>
+      <navPoint id="num_42" playOrder="42">
+        <navLabel>
+          <text>13</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-05_Chapter8.xhtml#toc_13"/>
+      </navPoint>
+    </navPoint>
+    <navPoint id="num_43" playOrder="43">
+      <navLabel>
+        <text>行间八</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_13-06_Between_the_Lines8.xhtml"/>
+    </navPoint>
+    <navPoint id="num_44" playOrder="44">
+      <navLabel>
+        <text>第九章 眼前的障碍各不相同 Two_Kinds_of_Enemies.</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_13-07_Chapter9.xhtml"/>
+      <navPoint id="num_45" playOrder="45">
+        <navLabel>
+          <text>1</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-07_Chapter9.xhtml#toc_1"/>
+      </navPoint>
+      <navPoint id="num_46" playOrder="46">
+        <navLabel>
+          <text>2</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-07_Chapter9.xhtml#toc_2"/>
+      </navPoint>
+      <navPoint id="num_47" playOrder="47">
+        <navLabel>
+          <text>3</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-07_Chapter9.xhtml#toc_3"/>
+      </navPoint>
+      <navPoint id="num_48" playOrder="48">
+        <navLabel>
+          <text>4</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-07_Chapter9.xhtml#toc_4"/>
+      </navPoint>
+      <navPoint id="num_49" playOrder="49">
+        <navLabel>
+          <text>5</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-07_Chapter9.xhtml#toc_5"/>
+      </navPoint>
+      <navPoint id="num_50" playOrder="50">
+        <navLabel>
+          <text>6</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-07_Chapter9.xhtml#toc_6"/>
+      </navPoint>
+      <navPoint id="num_51" playOrder="51">
+        <navLabel>
+          <text>7</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-07_Chapter9.xhtml#toc_7"/>
+      </navPoint>
+      <navPoint id="num_52" playOrder="52">
+        <navLabel>
+          <text>8</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-07_Chapter9.xhtml#toc_8"/>
+      </navPoint>
+    </navPoint>
+    <navPoint id="num_53" playOrder="53">
+      <navLabel>
+        <text>第十章 走向他们各自的战场 The_Way_of_Light_and_Darkness.</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_13-08_Chapter10.xhtml"/>
+      <navPoint id="num_54" playOrder="54">
+        <navLabel>
+          <text>1</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-08_Chapter10.xhtml#toc_1"/>
+      </navPoint>
+      <navPoint id="num_55" playOrder="55">
+        <navLabel>
+          <text>2</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-08_Chapter10.xhtml#toc_2"/>
+      </navPoint>
+      <navPoint id="num_56" playOrder="56">
+        <navLabel>
+          <text>3</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-08_Chapter10.xhtml#toc_3"/>
+      </navPoint>
+      <navPoint id="num_57" playOrder="57">
+        <navLabel>
+          <text>4</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-08_Chapter10.xhtml#toc_4"/>
+      </navPoint>
+      <navPoint id="num_58" playOrder="58">
+        <navLabel>
+          <text>5</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-08_Chapter10.xhtml#toc_5"/>
+      </navPoint>
+      <navPoint id="num_59" playOrder="59">
+        <navLabel>
+          <text>6</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-08_Chapter10.xhtml#toc_6"/>
+      </navPoint>
+      <navPoint id="num_60" playOrder="60">
+        <navLabel>
+          <text>7</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-08_Chapter10.xhtml#toc_7"/>
+      </navPoint>
+      <navPoint id="num_61" playOrder="61">
+        <navLabel>
+          <text>8</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-08_Chapter10.xhtml#toc_8"/>
+      </navPoint>
+      <navPoint id="num_62" playOrder="62">
+        <navLabel>
+          <text>9</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-08_Chapter10.xhtml#toc_9"/>
+      </navPoint>
+      <navPoint id="num_63" playOrder="63">
+        <navLabel>
+          <text>10</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_13-08_Chapter10.xhtml#toc_10"/>
+      </navPoint>
+    </navPoint>
+    <navPoint id="num_64" playOrder="64">
+      <navLabel>
+        <text>终 章 前往正负的应走之路 The_Branch_Road.</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_13-09_Epilogue.xhtml"/>
+    </navPoint>
+    <navPoint id="num_65" playOrder="65">
+      <navLabel>
+        <text>后记</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_13-10_Afterwords.xhtml"/>
+    </navPoint>
+  </navMap>
+</ncx>

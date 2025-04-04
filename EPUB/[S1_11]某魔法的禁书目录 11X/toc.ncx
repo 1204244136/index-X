@@ -1,0 +1,273 @@
+<?xml version='1.0' encoding='utf-8'?>
+<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1" xml:lang="zh">
+  <head>
+    <meta name="dtb:uid" content="uuid:afa76961-fe51-4f63-a4c8-42cdfdd47768"/>
+    <meta name="dtb:depth" content="3"/>
+    <meta name="dtb:generator" content="calibre (7.24.0)"/>
+    <meta name="dtb:totalPageCount" content="0"/>
+    <meta name="dtb:maxPageNumber" content="0"/>
+  </head>
+  <docTitle>
+    <text>某魔法的禁书目录 11X</text>
+  </docTitle>
+  <navMap>
+    <navPoint id="num_1" playOrder="1">
+      <navLabel>
+        <text>制作信息</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_11-Information.xhtml"/>
+    </navPoint>
+    <navPoint id="num_2" playOrder="2">
+      <navLabel>
+        <text>简介</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_11-Introduction.xhtml"/>
+    </navPoint>
+    <navPoint id="num_3" playOrder="3">
+      <navLabel>
+        <text>彩页</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_11-Illustrations.xhtml"/>
+    </navPoint>
+    <navPoint id="num_4" playOrder="4">
+      <navLabel>
+        <text>序 章 北意大利的旅行 Un_Viaggio_in_Italia.</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_11-01_Prologue.xhtml"/>
+    </navPoint>
+    <navPoint id="num_5" playOrder="5">
+      <navLabel>
+        <text>第一章 在基奥贾的街道 Il_Vento_di_Chioggia.</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_11-02_Chapter1.xhtml"/>
+      <navPoint id="num_6" playOrder="6">
+        <navLabel>
+          <text>1</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_11-02_Chapter1.xhtml#toc_1"/>
+      </navPoint>
+      <navPoint id="num_7" playOrder="7">
+        <navLabel>
+          <text>2</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_11-02_Chapter1.xhtml#toc_2"/>
+      </navPoint>
+      <navPoint id="num_8" playOrder="8">
+        <navLabel>
+          <text>3</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_11-02_Chapter1.xhtml#toc_3"/>
+      </navPoint>
+      <navPoint id="num_9" playOrder="9">
+        <navLabel>
+          <text>4</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_11-02_Chapter1.xhtml#toc_4"/>
+      </navPoint>
+    </navPoint>
+    <navPoint id="num_10" playOrder="10">
+      <navLabel>
+        <text>行间一</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_11-03_Between_the_Lines1.xhtml"/>
+    </navPoint>
+    <navPoint id="num_11" playOrder="11">
+      <navLabel>
+        <text>第二章 前往伦敦的准备 Un_Frammento_di_un_Piano.</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_11-04_Chapter2.xhtml"/>
+      <navPoint id="num_12" playOrder="12">
+        <navLabel>
+          <text>1</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_11-04_Chapter2.xhtml#toc_1"/>
+      </navPoint>
+      <navPoint id="num_13" playOrder="13">
+        <navLabel>
+          <text>2</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_11-04_Chapter2.xhtml#toc_2"/>
+      </navPoint>
+      <navPoint id="num_14" playOrder="14">
+        <navLabel>
+          <text>3</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_11-04_Chapter2.xhtml#toc_3"/>
+      </navPoint>
+      <navPoint id="num_15" playOrder="15">
+        <navLabel>
+          <text>4</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_11-04_Chapter2.xhtml#toc_4"/>
+      </navPoint>
+    </navPoint>
+    <navPoint id="num_16" playOrder="16">
+      <navLabel>
+        <text>行间二</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_11-05_Between_the_Lines2.xhtml"/>
+    </navPoint>
+    <navPoint id="num_17" playOrder="17">
+      <navLabel>
+        <text>第三章 于水之都的船上 Il_Mare_e_la_Sconfitta.</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_11-06_Chapter3.xhtml"/>
+      <navPoint id="num_18" playOrder="18">
+        <navLabel>
+          <text>1</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_11-06_Chapter3.xhtml#toc_1"/>
+      </navPoint>
+      <navPoint id="num_19" playOrder="19">
+        <navLabel>
+          <text>2</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_11-06_Chapter3.xhtml#toc_2"/>
+      </navPoint>
+      <navPoint id="num_20" playOrder="20">
+        <navLabel>
+          <text>3</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_11-06_Chapter3.xhtml#toc_3"/>
+      </navPoint>
+      <navPoint id="num_21" playOrder="21">
+        <navLabel>
+          <text>4</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_11-06_Chapter3.xhtml#toc_4"/>
+      </navPoint>
+      <navPoint id="num_22" playOrder="22">
+        <navLabel>
+          <text>5</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_11-06_Chapter3.xhtml#toc_5"/>
+      </navPoint>
+    </navPoint>
+    <navPoint id="num_23" playOrder="23">
+      <navLabel>
+        <text>行间三</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_11-07_Between_the_Lines3.xhtml"/>
+    </navPoint>
+    <navPoint id="num_24" playOrder="24">
+      <navLabel>
+        <text>第四章 船与炮火的战争 Lotte_di_Liberazione.</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_11-08_Chapter4.xhtml"/>
+      <navPoint id="num_25" playOrder="25">
+        <navLabel>
+          <text>1</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_11-08_Chapter4.xhtml#toc_1"/>
+      </navPoint>
+      <navPoint id="num_26" playOrder="26">
+        <navLabel>
+          <text>2</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_11-08_Chapter4.xhtml#toc_2"/>
+      </navPoint>
+      <navPoint id="num_27" playOrder="27">
+        <navLabel>
+          <text>3</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_11-08_Chapter4.xhtml#toc_3"/>
+      </navPoint>
+      <navPoint id="num_28" playOrder="28">
+        <navLabel>
+          <text>4</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_11-08_Chapter4.xhtml#toc_4"/>
+      </navPoint>
+      <navPoint id="num_29" playOrder="29">
+        <navLabel>
+          <text>5</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_11-08_Chapter4.xhtml#toc_5"/>
+      </navPoint>
+      <navPoint id="num_30" playOrder="30">
+        <navLabel>
+          <text>6</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_11-08_Chapter4.xhtml#toc_6"/>
+      </navPoint>
+    </navPoint>
+    <navPoint id="num_31" playOrder="31">
+      <navLabel>
+        <text>行间四</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_11-09_Between_the_Lines4.xhtml"/>
+    </navPoint>
+    <navPoint id="num_32" playOrder="32">
+      <navLabel>
+        <text>第五章 亚德里亚的女王 La_Regina_del_Mar_Adriatico.</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_11-10_Chapter5.xhtml"/>
+      <navPoint id="num_33" playOrder="33">
+        <navLabel>
+          <text>1</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_11-10_Chapter5.xhtml#toc_1"/>
+      </navPoint>
+      <navPoint id="num_34" playOrder="34">
+        <navLabel>
+          <text>2</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_11-10_Chapter5.xhtml#toc_2"/>
+      </navPoint>
+      <navPoint id="num_35" playOrder="35">
+        <navLabel>
+          <text>3</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_11-10_Chapter5.xhtml#toc_3"/>
+      </navPoint>
+      <navPoint id="num_36" playOrder="36">
+        <navLabel>
+          <text>4</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_11-10_Chapter5.xhtml#toc_4"/>
+      </navPoint>
+      <navPoint id="num_37" playOrder="37">
+        <navLabel>
+          <text>5</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_11-10_Chapter5.xhtml#toc_5"/>
+      </navPoint>
+      <navPoint id="num_38" playOrder="38">
+        <navLabel>
+          <text>6</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_11-10_Chapter5.xhtml#toc_6"/>
+      </navPoint>
+      <navPoint id="num_39" playOrder="39">
+        <navLabel>
+          <text>7</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_11-10_Chapter5.xhtml#toc_7"/>
+      </navPoint>
+      <navPoint id="num_40" playOrder="40">
+        <navLabel>
+          <text>8</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_11-10_Chapter5.xhtml#toc_8"/>
+      </navPoint>
+      <navPoint id="num_41" playOrder="41">
+        <navLabel>
+          <text>9</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_11-10_Chapter5.xhtml#toc_9"/>
+      </navPoint>
+    </navPoint>
+    <navPoint id="num_42" playOrder="42">
+      <navLabel>
+        <text>终 章 学园都市的返程 L’inizio_Nuovo……</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_11-11_Epilogue.xhtml"/>
+    </navPoint>
+    <navPoint id="num_43" playOrder="43">
+      <navLabel>
+        <text>后记</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_11-12_Afterwords.xhtml"/>
+    </navPoint>
+  </navMap>
+</ncx>

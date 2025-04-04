@@ -1,0 +1,165 @@
+<?xml version='1.0' encoding='utf-8'?>
+<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1" xml:lang="zh">
+  <head>
+    <meta name="dtb:uid" content="uuid:f0fea63f-44a3-4818-9bbe-dbfb9e411ff8"/>
+    <meta name="dtb:depth" content="4"/>
+    <meta name="dtb:generator" content="calibre (7.23.0)"/>
+    <meta name="dtb:totalPageCount" content="0"/>
+    <meta name="dtb:maxPageNumber" content="0"/>
+  </head>
+  <docTitle>
+    <text>读前必看</text>
+  </docTitle>
+  <navMap>
+    <navPoint id="num_1" playOrder="1">
+      <navLabel>
+        <text>阅读器测试</text>
+      </navLabel>
+      <content src="OEBPS/Text/S0_00-Information.xhtml"/>
+    </navPoint>
+    <navPoint id="num_2" playOrder="2">
+      <navLabel>
+        <text>index-X</text>
+      </navLabel>
+      <content src="OEBPS/Text/S0_00-Information.xhtml#toc_2"/>
+      <navPoint id="num_3" playOrder="3">
+        <navLabel>
+          <text>前言</text>
+        </navLabel>
+        <content src="OEBPS/Text/S0_00-Information.xhtml#toc_3"/>
+      </navPoint>
+      <navPoint id="num_4" playOrder="4">
+        <navLabel>
+          <text>简介</text>
+        </navLabel>
+        <content src="OEBPS/Text/S0_00-Information.xhtml#toc_4"/>
+      </navPoint>
+      <navPoint id="num_5" playOrder="5">
+        <navLabel>
+          <text>下载</text>
+        </navLabel>
+        <content src="OEBPS/Text/S0_00-Information.xhtml#toc_5"/>
+      </navPoint>
+      <navPoint id="num_6" playOrder="6">
+        <navLabel>
+          <text>反馈</text>
+        </navLabel>
+        <content src="OEBPS/Text/S0_00-Information.xhtml#toc_6"/>
+        <navPoint id="num_7" playOrder="7">
+          <navLabel>
+            <text>如何反馈</text>
+          </navLabel>
+          <content src="OEBPS/Text/S0_00-Information.xhtml#toc_7"/>
+        </navPoint>
+      </navPoint>
+      <navPoint id="num_8" playOrder="8">
+        <navLabel>
+          <text>各种问题及回复</text>
+        </navLabel>
+        <content src="OEBPS/Text/S0_00-Information.xhtml#toc_8"/>
+      </navPoint>
+      <navPoint id="num_9" playOrder="9">
+        <navLabel>
+          <text>发展期望</text>
+        </navLabel>
+        <content src="OEBPS/Text/S0_00-Information.xhtml#toc_9"/>
+      </navPoint>
+      <navPoint id="num_10" playOrder="10">
+        <navLabel>
+          <text>已知问题</text>
+        </navLabel>
+        <content src="OEBPS/Text/S0_00-Information.xhtml#toc_10"/>
+      </navPoint>
+      <navPoint id="num_11" playOrder="11">
+        <navLabel>
+          <text>各版本对比</text>
+        </navLabel>
+        <content src="OEBPS/Text/S0_00-Information.xhtml#toc_11"/>
+      </navPoint>
+      <navPoint id="num_12" playOrder="12">
+        <navLabel>
+          <text>已收入内容</text>
+        </navLabel>
+        <content src="OEBPS/Text/S0_00-Information.xhtml#toc_12"/>
+      </navPoint>
+      <navPoint id="num_13" playOrder="13">
+        <navLabel>
+          <text>备注</text>
+        </navLabel>
+        <content src="OEBPS/Text/S0_00-Information.xhtml#toc_13"/>
+        <navPoint id="num_14" playOrder="14">
+          <navLabel>
+            <text>为什么要压缩图片体积</text>
+          </navLabel>
+          <content src="OEBPS/Text/S0_00-Information.xhtml#toc_14"/>
+        </navPoint>
+        <navPoint id="num_15" playOrder="15">
+          <navLabel>
+            <text>为什么要修改系列命名方式</text>
+          </navLabel>
+          <content src="OEBPS/Text/S0_00-Information.xhtml#toc_15"/>
+        </navPoint>
+        <navPoint id="num_16" playOrder="16">
+          <navLabel>
+            <text>为什么要修改引号</text>
+          </navLabel>
+          <content src="OEBPS/Text/S0_00-Information.xhtml#toc_16"/>
+        </navPoint>
+        <navPoint id="num_17" playOrder="17">
+          <navLabel>
+            <text>关于阅读器</text>
+          </navLabel>
+          <content src="OEBPS/Text/S0_00-Information.xhtml#toc_17"/>
+        </navPoint>
+        <navPoint id="num_18" playOrder="18">
+          <navLabel>
+            <text>关于阅读顺序</text>
+          </navLabel>
+          <content src="OEBPS/Text/S0_00-Information.xhtml#toc_18"/>
+        </navPoint>
+        <navPoint id="num_19" playOrder="19">
+          <navLabel>
+            <text>关于译名</text>
+          </navLabel>
+          <content src="OEBPS/Text/S0_00-Information.xhtml#toc_19"/>
+        </navPoint>
+        <navPoint id="num_20" playOrder="20">
+          <navLabel>
+            <text>反馈注意事项</text>
+          </navLabel>
+          <content src="OEBPS/Text/S0_00-Information.xhtml#toc_20"/>
+        </navPoint>
+      </navPoint>
+      <navPoint id="num_21" playOrder="21">
+        <navLabel>
+          <text>建议阅读顺序</text>
+        </navLabel>
+        <content src="OEBPS/Text/S0_00-Information.xhtml#toc_1"/>
+        <navPoint id="num_22" playOrder="22">
+          <navLabel>
+            <text>本传</text>
+          </navLabel>
+          <content src="OEBPS/Text/S0_00-Information.xhtml#toc_23"/>
+        </navPoint>
+        <navPoint id="num_23" playOrder="23">
+          <navLabel>
+            <text>番外</text>
+          </navLabel>
+          <content src="OEBPS/Text/S0_00-Information.xhtml#toc_24"/>
+        </navPoint>
+        <navPoint id="num_24" playOrder="24">
+          <navLabel>
+            <text>其他</text>
+          </navLabel>
+          <content src="OEBPS/Text/S0_00-Information.xhtml#toc_21"/>
+        </navPoint>
+      </navPoint>
+      <navPoint id="num_25" playOrder="25">
+        <navLabel>
+          <text>支持</text>
+        </navLabel>
+        <content src="OEBPS/Text/S0_00-Information.xhtml#toc_22"/>
+      </navPoint>
+    </navPoint>
+  </navMap>
+</ncx>

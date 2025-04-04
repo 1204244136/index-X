@@ -1,0 +1,303 @@
+<?xml version='1.0' encoding='utf-8'?>
+<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1" xml:lang="zh">
+  <head>
+    <meta name="dtb:uid" content="uuid:afa76961-fe51-4f63-a4c8-42cdfdd47768"/>
+    <meta name="dtb:depth" content="3"/>
+    <meta name="dtb:generator" content="calibre (7.2.0)"/>
+    <meta name="dtb:totalPageCount" content="0"/>
+    <meta name="dtb:maxPageNumber" content="0"/>
+  </head>
+  <docTitle>
+    <text>新约 某魔法的禁书目录 09X</text>
+  </docTitle>
+  <navMap>
+    <navPoint id="num_1" playOrder="1">
+      <navLabel>
+        <text>制作信息</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_09-Information.xhtml"/>
+    </navPoint>
+    <navPoint id="num_2" playOrder="2">
+      <navLabel>
+        <text>简介</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_09-Introduction.xhtml"/>
+    </navPoint>
+    <navPoint id="num_3" playOrder="3">
+      <navLabel>
+        <text>彩页</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_09-Illustrations.xhtml"/>
+    </navPoint>
+    <navPoint id="num_4" playOrder="4">
+      <navLabel>
+        <text>序　章 某一个世界的终结 Game_Over</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_09-01_Prologue.xhtml"/>
+    </navPoint>
+    <navPoint id="num_5" playOrder="5">
+      <navLabel>
+        <text>第五章 比世界尽头更遥远 Point_Unknown.</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_09-02_Chapter5.xhtml"/>
+      <navPoint id="num_6" playOrder="6">
+        <navLabel>
+          <text>1</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_09-02_Chapter5.xhtml#toc_1"/>
+      </navPoint>
+      <navPoint id="num_7" playOrder="7">
+        <navLabel>
+          <text>2</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_09-02_Chapter5.xhtml#toc_2"/>
+      </navPoint>
+      <navPoint id="num_8" playOrder="8">
+        <navLabel>
+          <text>3</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_09-02_Chapter5.xhtml#toc_3"/>
+      </navPoint>
+    </navPoint>
+    <navPoint id="num_9" playOrder="9">
+      <navLabel>
+        <text>行间四</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_09-03_Between_the_Lines4.xhtml"/>
+    </navPoint>
+    <navPoint id="num_10" playOrder="10">
+      <navLabel>
+        <text>第六章 这更迭动荡的世界 Version_Alpha.</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_09-04_Chapter6_Alpha.xhtml"/>
+      <navPoint id="num_11" playOrder="11">
+        <navLabel>
+          <text>1</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_09-04_Chapter6_Alpha.xhtml#toc_1"/>
+      </navPoint>
+      <navPoint id="num_12" playOrder="12">
+        <navLabel>
+          <text>2</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_09-04_Chapter6_Alpha.xhtml#toc_2"/>
+      </navPoint>
+      <navPoint id="num_13" playOrder="13">
+        <navLabel>
+          <text>3</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_09-04_Chapter6_Alpha.xhtml#toc_3"/>
+      </navPoint>
+    </navPoint>
+    <navPoint id="num_14" playOrder="14">
+      <navLabel>
+        <text>第六章 这更迭动荡的世界 Version_Beta.</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_09-05_Chapter6_Beta.xhtml"/>
+      <navPoint id="num_15" playOrder="15">
+        <navLabel>
+          <text>1</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_09-05_Chapter6_Beta.xhtml#toc_1"/>
+      </navPoint>
+      <navPoint id="num_16" playOrder="16">
+        <navLabel>
+          <text>2</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_09-05_Chapter6_Beta.xhtml#toc_2"/>
+      </navPoint>
+      <navPoint id="num_17" playOrder="17">
+        <navLabel>
+          <text>3</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_09-05_Chapter6_Beta.xhtml#toc_3"/>
+      </navPoint>
+      <navPoint id="num_18" playOrder="18">
+        <navLabel>
+          <text>4</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_09-05_Chapter6_Beta.xhtml#toc_4"/>
+      </navPoint>
+      <navPoint id="num_19" playOrder="19">
+        <navLabel>
+          <text>5</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_09-05_Chapter6_Beta.xhtml#toc_5"/>
+      </navPoint>
+      <navPoint id="num_20" playOrder="20">
+        <navLabel>
+          <text>6</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_09-05_Chapter6_Beta.xhtml#toc_6"/>
+      </navPoint>
+      <navPoint id="num_21" playOrder="21">
+        <navLabel>
+          <text>7</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_09-05_Chapter6_Beta.xhtml#toc_7"/>
+      </navPoint>
+      <navPoint id="num_22" playOrder="22">
+        <navLabel>
+          <text>8</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_09-05_Chapter6_Beta.xhtml#toc_8"/>
+      </navPoint>
+    </navPoint>
+    <navPoint id="num_23" playOrder="23">
+      <navLabel>
+        <text>连接点的夹缝中</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_09-06_Gap.xhtml"/>
+    </navPoint>
+    <navPoint id="num_24" playOrder="24">
+      <navLabel>
+        <text>第六章 这更迭动荡的世界 Version_Omega.</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_09-07_Chapter6_Omega.xhtml"/>
+    </navPoint>
+    <navPoint id="num_25" playOrder="25">
+      <navLabel>
+        <text>行间五</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_09-08_Between_the_Lines5.xhtml"/>
+    </navPoint>
+    <navPoint id="num_26" playOrder="26">
+      <navLabel>
+        <text>第七章 「平凡的高中生」 Black_or_White.</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_09-09_Chapter7.xhtml"/>
+      <navPoint id="num_27" playOrder="27">
+        <navLabel>
+          <text>1</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_09-09_Chapter7.xhtml#toc_1"/>
+      </navPoint>
+      <navPoint id="num_28" playOrder="28">
+        <navLabel>
+          <text>2</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_09-09_Chapter7.xhtml#toc_2"/>
+      </navPoint>
+      <navPoint id="num_29" playOrder="29">
+        <navLabel>
+          <text>3</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_09-09_Chapter7.xhtml#toc_3"/>
+      </navPoint>
+      <navPoint id="num_30" playOrder="30">
+        <navLabel>
+          <text>4</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_09-09_Chapter7.xhtml#toc_4"/>
+      </navPoint>
+      <navPoint id="num_31" playOrder="31">
+        <navLabel>
+          <text>5</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_09-09_Chapter7.xhtml#toc_5"/>
+      </navPoint>
+      <navPoint id="num_32" playOrder="32">
+        <navLabel>
+          <text>6</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_09-09_Chapter7.xhtml#toc_6"/>
+      </navPoint>
+      <navPoint id="num_33" playOrder="33">
+        <navLabel>
+          <text>7</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_09-09_Chapter7.xhtml#toc_7"/>
+      </navPoint>
+      <navPoint id="num_34" playOrder="34">
+        <navLabel>
+          <text>8</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_09-09_Chapter7.xhtml#toc_8"/>
+      </navPoint>
+      <navPoint id="num_35" playOrder="35">
+        <navLabel>
+          <text>9</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_09-09_Chapter7.xhtml#toc_9"/>
+      </navPoint>
+      <navPoint id="num_36" playOrder="36">
+        <navLabel>
+          <text>10</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_09-09_Chapter7.xhtml#toc_10"/>
+      </navPoint>
+    </navPoint>
+    <navPoint id="num_37" playOrder="37">
+      <navLabel>
+        <text>行间六</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_09-10_Between_the_Lines6.xhtml"/>
+    </navPoint>
+    <navPoint id="num_38" playOrder="38">
+      <navLabel>
+        <text>第八章 少女相位，几千亿 Create_V.S._Break.</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_09-11_Chapter8.xhtml"/>
+      <navPoint id="num_39" playOrder="39">
+        <navLabel>
+          <text>1</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_09-11_Chapter8.xhtml#toc_1"/>
+      </navPoint>
+      <navPoint id="num_40" playOrder="40">
+        <navLabel>
+          <text>2</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_09-11_Chapter8.xhtml#toc_2"/>
+      </navPoint>
+      <navPoint id="num_41" playOrder="41">
+        <navLabel>
+          <text>3</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_09-11_Chapter8.xhtml#toc_3"/>
+      </navPoint>
+      <navPoint id="num_42" playOrder="42">
+        <navLabel>
+          <text>4</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_09-11_Chapter8.xhtml#toc_4"/>
+      </navPoint>
+      <navPoint id="num_43" playOrder="43">
+        <navLabel>
+          <text>5</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_09-11_Chapter8.xhtml#toc_5"/>
+      </navPoint>
+      <navPoint id="num_44" playOrder="44">
+        <navLabel>
+          <text>6</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_09-11_Chapter8.xhtml#toc_6"/>
+      </navPoint>
+      <navPoint id="num_45" playOrder="45">
+        <navLabel>
+          <text>7</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_09-11_Chapter8.xhtml#toc_7"/>
+      </navPoint>
+      <navPoint id="num_46" playOrder="46">
+        <navLabel>
+          <text>8</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_09-11_Chapter8.xhtml#toc_8"/>
+      </navPoint>
+    </navPoint>
+    <navPoint id="num_47" playOrder="47">
+      <navLabel>
+        <text>终　章 接受吗，不接受吗 Continue.</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_09-12_Epilogue.xhtml"/>
+    </navPoint>
+    <navPoint id="num_48" playOrder="48">
+      <navLabel>
+        <text>后记</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_09-13_Afterwords.xhtml"/>
+    </navPoint>
+  </navMap>
+</ncx>

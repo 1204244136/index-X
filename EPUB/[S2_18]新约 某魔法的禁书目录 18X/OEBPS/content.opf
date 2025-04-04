@@ -1,0 +1,201 @@
+<?xml version='1.0' encoding='utf-8'?>
+<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
+  <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <dc:title id="id-1">新约 某魔法的禁书目录 18X</dc:title>
+    <dc:creator id="id-2">镰池和马</dc:creator>
+    <dc:identifier>calibre:874</dc:identifier>
+    <dc:identifier id="BookId">uuid:79ef1b6e-4e56-43f8-8ccf-3edb7075d5ed</dc:identifier>
+    <dc:language>zh-CN</dc:language>
+    <dc:description>&lt;div&gt;
+&lt;p style="font-weight: bold"&gt;上条当麻挑战「没有窗户的大楼」，终于与「那个」对决了——！！&lt;/p&gt;
+&lt;p&gt;「计划」。&lt;/p&gt;
+&lt;p&gt;科学的大本营中，坐镇着不死的魔法师，历经百年的夙愿。&lt;/p&gt;
+&lt;p&gt;变化多端，毫不留情──&lt;/p&gt;
+&lt;p&gt;被学园都市的支配者盯上的土御门元春和府兰。两人闯入上条当麻的房间，作为最后手段尝试从学园都市逃脱。&lt;/p&gt;
+&lt;p&gt;然而，穿着绿色手术服的男人绝不会放过他们。他那毒牙般的攻击，以及魔法所带来的「业」，正在侵蚀土御门的妹妹舞夏。&lt;/p&gt;
+&lt;p&gt;为了打破这一局面，上条与土御门决心突入学园都市统括理事长的根据地「没有窗户的大楼」。&lt;/p&gt;
+&lt;p&gt;等待他们的是象征支配者精神般的巨大的虚无空间。&lt;/p&gt;
+&lt;p&gt;上条朝着最高层奋力前进，但突然出现自称米娜·马瑟斯的奇妙猫耳丧服美女引导他体验了不死魔法师走过的「黄金轨迹」，以及「<ruby>幻想杀手<rt>Imagine Breaker</rt></ruby>」的诞生之谜──。&lt;/p&gt;
+&lt;p&gt;最终，帷幕拉开了。&lt;/p&gt;
+&lt;p&gt;接下来开始的是，毫无保留的人类亚雷斯塔·克劳利的故事。&lt;/p&gt;&lt;/div&gt;</dc:description>
+    <dc:subject>重小说</dc:subject>
+    <meta refines="#id-1" property="title-type">main</meta>
+    <meta refines="#id-1" property="file-as">新约 某魔法的禁书目录 18X</meta>
+    <meta name="Sigil version" content="0.9.17"/>
+    <meta name="cover" content="GT_vol_1.jpg"/>
+    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-04-02T01:16:07Z</meta>
+    <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
+    <meta refines="#id-2" property="role" scheme="marc:relators">aut</meta>
+    <meta refines="#id-2" property="file-as">镰池和马</meta>
+    <meta property="calibre:rating">10</meta>
+    <meta property="belongs-to-collection" id="id-3">新约</meta>
+    <meta refines="#id-3" property="collection-type">series</meta>
+    <meta refines="#id-3" property="group-position">18</meta>
+    <meta property="calibre:user_metadata">{
+  "#ace_report": {
+    "#extra#": null,
+    "#value#": null,
+    "category_sort": "value",
+    "colnum": 1,
+    "column": "value",
+    "datatype": "comments",
+    "display": {
+      "description": "ACE report",
+      "heading_position": "side",
+      "interpret_as": "html"
+    },
+    "is_category": false,
+    "is_csp": false,
+    "is_custom": true,
+    "is_editable": true,
+    "is_multiple": null,
+    "is_multiple2": {},
+    "kind": "field",
+    "label": "ace_report",
+    "link_column": "value",
+    "name": "ACE report",
+    "rec_index": 22,
+    "search_terms": [
+      "#ace_report"
+    ],
+    "table": "custom_column_1"
+  },
+  "#ace_result": {
+    "#extra#": null,
+    "#value#": null,
+    "category_sort": "value",
+    "colnum": 2,
+    "column": "value",
+    "datatype": "bool",
+    "display": {
+      "bools_show_icons": true,
+      "bools_show_text": false,
+      "description": "ACE result"
+    },
+    "is_category": false,
+    "is_csp": false,
+    "is_custom": true,
+    "is_editable": true,
+    "is_multiple": null,
+    "is_multiple2": {},
+    "kind": "field",
+    "label": "ace_result",
+    "link_column": "value",
+    "name": "ACE result",
+    "rec_index": 23,
+    "search_terms": [
+      "#ace_result"
+    ],
+    "table": "custom_column_2"
+  },
+  "#epubcheck_report": {
+    "#extra#": null,
+    "#value#": null,
+    "category_sort": "value",
+    "colnum": 3,
+    "column": "value",
+    "datatype": "comments",
+    "display": {
+      "description": "EPUBCheck report",
+      "heading_position": "side",
+      "interpret_as": "html"
+    },
+    "is_category": false,
+    "is_csp": false,
+    "is_custom": true,
+    "is_editable": true,
+    "is_multiple": null,
+    "is_multiple2": {},
+    "kind": "field",
+    "label": "epubcheck_report",
+    "link_column": "value",
+    "name": "EPUBCheck report",
+    "rec_index": 24,
+    "search_terms": [
+      "#epubcheck_report"
+    ],
+    "table": "custom_column_3"
+  },
+  "#epubcheck_result": {
+    "#extra#": null,
+    "#value#": null,
+    "category_sort": "value",
+    "colnum": 4,
+    "column": "value",
+    "datatype": "bool",
+    "display": {
+      "bools_show_icons": true,
+      "bools_show_text": false,
+      "description": "EPUBCheck result"
+    },
+    "is_category": false,
+    "is_csp": false,
+    "is_custom": true,
+    "is_editable": true,
+    "is_multiple": null,
+    "is_multiple2": {},
+    "kind": "field",
+    "label": "epubcheck_result",
+    "link_column": "value",
+    "name": "EPUBCheck result",
+    "rec_index": 25,
+    "search_terms": [
+      "#epubcheck_result"
+    ],
+    "table": "custom_column_4"
+  }
+}</meta>
+  </metadata>
+  <manifest>
+    <item id="S2_18-Cover.xhtml" href="Text/S2_18-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
+    <item id="Message.xhtml" href="Text/S2_18-Information.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id1" href="Text/S2_18-Introduction.xhtml" media-type="application/xhtml+xml"/>
+    <item href="Text/S2_18-01_Prologue.xhtml" id="id3" media-type="application/xhtml+xml"/>
+    <item href="Text/S2_18-02_Chapter1.xhtml" id="id4" media-type="application/xhtml+xml"/>
+    <item href="Text/S2_18-03_Chapter2.xhtml" id="id8" media-type="application/xhtml+xml"/>
+    <item href="Text/S2_18-04_Between_the_Lines1.xhtml" id="id16" media-type="application/xhtml+xml"/>
+    <item href="Text/S2_18-05_Chapter3.xhtml" id="id9" media-type="application/xhtml+xml"/>
+    <item href="Text/S2_18-06_Between_the_Lines2.xhtml" id="id10" media-type="application/xhtml+xml"/>
+    <item href="Text/S2_18-07_Chapter4.xhtml" id="id11" media-type="application/xhtml+xml"/>
+    <item href="Text/S2_18-08_Epilogue.xhtml" id="id12" media-type="application/xhtml+xml"/>
+    <item href="Text/S2_18-09_Afterwords.xhtml" id="id17" media-type="application/xhtml+xml"/>
+    <item href="Text/S2_18-10_After_the_Epilogue.xhtml" id="id15" media-type="application/xhtml+xml"/>
+    <item id="id28" href="Text/S2_18-Back_cover.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id25" href="Text/S2_18-Note.xhtml" media-type="application/xhtml+xml"/>
+    <item id="nav" href="../nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
+    <item id="toc" href="../toc.ncx" media-type="application/x-dtbncx+xml"/>
+    <item href="Styles/style.css" id="id5" media-type="text/css"/>
+    <item id="id27" href="Images/Back_cover.jpg" media-type="image/jpeg"/>
+    <item id="id24" href="Images/Contents.jpg" media-type="image/jpeg"/>
+    <item id="GT_vol_1.jpg" href="Images/Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
+    <item id="id23" href="Images/Deputy_cover.jpg" media-type="image/jpeg"/>
+    <item id="id26" href="Images/Illustrations1.jpg" media-type="image/jpeg"/>
+    <item id="id22" href="Images/Illustrations2.jpg" media-type="image/jpeg"/>
+    <item id="id" href="Images/p1.jpg" media-type="image/jpeg"/>
+    <item id="id7" href="Images/p2.jpg" media-type="image/jpeg"/>
+    <item id="id13" href="Images/p3.jpg" media-type="image/jpeg"/>
+    <item id="id14" href="Images/p4.jpg" media-type="image/jpeg"/>
+    <item id="id18" href="Images/p5.jpg" media-type="image/jpeg"/>
+    <item id="id19" href="Images/p6.jpg" media-type="image/jpeg"/>
+    <item id="id20" href="Images/p7.jpg" media-type="image/jpeg"/>
+    <item href="Text/S2_18-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
+  </manifest>
+  <spine toc="toc">
+    <itemref idref="S2_18-Cover.xhtml"/>
+    <itemref idref="Message.xhtml"/>
+    <itemref idref="id1"/>
+    <itemref idref="Illustrations"/>
+    <itemref idref="id3"/>
+    <itemref idref="id4"/>
+    <itemref idref="id8"/>
+    <itemref idref="id16"/>
+    <itemref idref="id9"/>
+    <itemref idref="id10"/>
+    <itemref idref="id11"/>
+    <itemref idref="id12"/>
+    <itemref idref="id17"/>
+    <itemref idref="id15"/>
+    <itemref idref="id28"/>
+    <itemref idref="id25"/>
+  </spine>
+</package>

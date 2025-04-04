@@ -1,0 +1,81 @@
+<?xml version='1.0' encoding='utf-8'?>
+<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1" xml:lang="zh">
+  <head>
+    <meta name="dtb:uid" content="uuid:afa76961-fe51-4f63-a4c8-42cdfdd47768"/>
+    <meta name="dtb:depth" content="2"/>
+    <meta name="dtb:generator" content="calibre (6.3.0)"/>
+    <meta name="dtb:totalPageCount" content="0"/>
+    <meta name="dtb:maxPageNumber" content="0"/>
+  </head>
+  <docTitle>
+    <text>新约 某魔法的禁书目录 03X</text>
+  </docTitle>
+  <navMap>
+    <navPoint id="num_1" playOrder="1">
+      <navLabel>
+        <text>制作信息</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_03-Information.xhtml"/>
+    </navPoint>
+    <navPoint id="num_2" playOrder="2">
+      <navLabel>
+        <text>简介</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_03-Introduction.xhtml"/>
+    </navPoint>
+    <navPoint id="num_3" playOrder="3">
+      <navLabel>
+        <text>彩页</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_03-Illustrations.xhtml"/>
+    </navPoint>
+    <navPoint id="num_4" playOrder="4">
+      <navLabel>
+        <text>序　章 于第五十个州 Crisis_of_Blue_Ocean.</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_03-01_Prologue.xhtml"/>
+    </navPoint>
+    <navPoint id="num_5" playOrder="5">
+      <navLabel>
+        <text>第一章 哪边会先发制人？ First_Contact.</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_03-02_Chapter1.xhtml"/>
+    </navPoint>
+    <navPoint id="num_6" playOrder="6">
+      <navLabel>
+        <text>第二章 起爆剂 Natural_Bomb.</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_03-03_Chapter2.xhtml"/>
+    </navPoint>
+    <navPoint id="num_7" playOrder="7">
+      <navLabel>
+        <text>第三章 灼热熔岩的目的 Case_to_War.</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_03-04_Chapter3.xhtml"/>
+    </navPoint>
+    <navPoint id="num_8" playOrder="8">
+      <navLabel>
+        <text>第四章 孤立与规则的崩坏 Trident.</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_03-05_Chapter4.xhtml"/>
+    </navPoint>
+    <navPoint id="num_9" playOrder="9">
+      <navLabel>
+        <text>第五章 这份强大为何而生 The_Old_Glory.</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_03-06_Chapter5.xhtml"/>
+    </navPoint>
+    <navPoint id="num_10" playOrder="10">
+      <navLabel>
+        <text>终　章 可靠的柏德蔚 Queen_Period.</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_03-07_Epilogue.xhtml"/>
+    </navPoint>
+    <navPoint id="num_11" playOrder="11">
+      <navLabel>
+        <text>后记</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_03-08_Afterwords.xhtml"/>
+    </navPoint>
+  </navMap>
+</ncx>

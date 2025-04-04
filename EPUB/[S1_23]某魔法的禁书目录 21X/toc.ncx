@@ -1,0 +1,243 @@
+<?xml version='1.0' encoding='utf-8'?>
+<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1" xml:lang="zh">
+  <head>
+    <meta name="dtb:uid" content="uuid:afa76961-fe51-4f63-a4c8-42cdfdd47768"/>
+    <meta name="dtb:depth" content="3"/>
+    <meta name="dtb:generator" content="calibre (6.3.0)"/>
+    <meta name="dtb:totalPageCount" content="0"/>
+    <meta name="dtb:maxPageNumber" content="0"/>
+  </head>
+  <docTitle>
+    <text>某魔法的禁书目录 21X</text>
+  </docTitle>
+  <navMap>
+    <navPoint id="num_1" playOrder="1">
+      <navLabel>
+        <text>制作信息</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_23-Information.xhtml"/>
+    </navPoint>
+    <navPoint id="num_2" playOrder="2">
+      <navLabel>
+        <text>简介</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_23-Introduction.xhtml"/>
+    </navPoint>
+    <navPoint id="num_3" playOrder="3">
+      <navLabel>
+        <text>彩页</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_23-Illustrations.xhtml"/>
+    </navPoint>
+    <navPoint id="num_4" playOrder="4">
+      <navLabel>
+        <text>战况报告</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_23-01_Before_the_Prologue.xhtml"/>
+    </navPoint>
+    <navPoint id="num_5" playOrder="5">
+      <navLabel>
+        <text>第五章 名为战场的复杂棋局 Enter_Project.</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_23-02_Chapter5.xhtml"/>
+      <navPoint id="num_6" playOrder="6">
+        <navLabel>
+          <text>1</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_23-02_Chapter5.xhtml#toc_1"/>
+      </navPoint>
+      <navPoint id="num_7" playOrder="7">
+        <navLabel>
+          <text>2</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_23-02_Chapter5.xhtml#toc_2"/>
+      </navPoint>
+      <navPoint id="num_8" playOrder="8">
+        <navLabel>
+          <text>3</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_23-02_Chapter5.xhtml#toc_3"/>
+      </navPoint>
+      <navPoint id="num_9" playOrder="9">
+        <navLabel>
+          <text>4</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_23-02_Chapter5.xhtml#toc_4"/>
+      </navPoint>
+      <navPoint id="num_10" playOrder="10">
+        <navLabel>
+          <text>5</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_23-02_Chapter5.xhtml#toc_5"/>
+      </navPoint>
+      <navPoint id="num_11" playOrder="11">
+        <navLabel>
+          <text>6</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_23-02_Chapter5.xhtml#toc_6"/>
+      </navPoint>
+    </navPoint>
+    <navPoint id="num_12" playOrder="12">
+      <navLabel>
+        <text>第六章 即将展开的真正黑暗 Up_the_Castle.</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_23-03_Chapter6.xhtml"/>
+      <navPoint id="num_13" playOrder="13">
+        <navLabel>
+          <text>1</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_23-03_Chapter6.xhtml#toc_1"/>
+      </navPoint>
+      <navPoint id="num_14" playOrder="14">
+        <navLabel>
+          <text>2</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_23-03_Chapter6.xhtml#toc_2"/>
+      </navPoint>
+      <navPoint id="num_15" playOrder="15">
+        <navLabel>
+          <text>3</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_23-03_Chapter6.xhtml#toc_3"/>
+      </navPoint>
+    </navPoint>
+    <navPoint id="num_16" playOrder="16">
+      <navLabel>
+        <text>行间四</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_23-04_Between_the_Lines4.xhtml"/>
+    </navPoint>
+    <navPoint id="num_17" playOrder="17">
+      <navLabel>
+        <text>第七章 屠尽天空的嗜杀天使 MISHA_the_Angel_“GABRIEL”.</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_23-05_Chapter7.xhtml"/>
+      <navPoint id="num_18" playOrder="18">
+        <navLabel>
+          <text>1</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_23-05_Chapter7.xhtml#toc_1"/>
+      </navPoint>
+      <navPoint id="num_19" playOrder="19">
+        <navLabel>
+          <text>2</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_23-05_Chapter7.xhtml#toc_2"/>
+      </navPoint>
+      <navPoint id="num_20" playOrder="20">
+        <navLabel>
+          <text>3</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_23-05_Chapter7.xhtml#toc_3"/>
+      </navPoint>
+      <navPoint id="num_21" playOrder="21">
+        <navLabel>
+          <text>4</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_23-05_Chapter7.xhtml#toc_4"/>
+      </navPoint>
+      <navPoint id="num_22" playOrder="22">
+        <navLabel>
+          <text>5</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_23-05_Chapter7.xhtml#toc_5"/>
+      </navPoint>
+      <navPoint id="num_23" playOrder="23">
+        <navLabel>
+          <text>6</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_23-05_Chapter7.xhtml#toc_6"/>
+      </navPoint>
+      <navPoint id="num_24" playOrder="24">
+        <navLabel>
+          <text>7</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_23-05_Chapter7.xhtml#toc_7"/>
+      </navPoint>
+      <navPoint id="num_25" playOrder="25">
+        <navLabel>
+          <text>8</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_23-05_Chapter7.xhtml#toc_8"/>
+      </navPoint>
+    </navPoint>
+    <navPoint id="num_26" playOrder="26">
+      <navLabel>
+        <text>行间五</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_23-06_Between_the_Lines5.xhtml"/>
+    </navPoint>
+    <navPoint id="num_27" playOrder="27">
+      <navLabel>
+        <text>第八章 努力之人的多边反击 Combination.</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_23-07_Chapter8.xhtml"/>
+      <navPoint id="num_28" playOrder="28">
+        <navLabel>
+          <text>1</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_23-07_Chapter8.xhtml#toc_1"/>
+      </navPoint>
+      <navPoint id="num_29" playOrder="29">
+        <navLabel>
+          <text>2</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_23-07_Chapter8.xhtml#toc_2"/>
+      </navPoint>
+      <navPoint id="num_30" playOrder="30">
+        <navLabel>
+          <text>3</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_23-07_Chapter8.xhtml#toc_3"/>
+      </navPoint>
+      <navPoint id="num_31" playOrder="31">
+        <navLabel>
+          <text>4</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_23-07_Chapter8.xhtml#toc_4"/>
+      </navPoint>
+      <navPoint id="num_32" playOrder="32">
+        <navLabel>
+          <text>5</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_23-07_Chapter8.xhtml#toc_5"/>
+      </navPoint>
+      <navPoint id="num_33" playOrder="33">
+        <navLabel>
+          <text>6</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_23-07_Chapter8.xhtml#toc_6"/>
+      </navPoint>
+      <navPoint id="num_34" playOrder="34">
+        <navLabel>
+          <text>7</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_23-07_Chapter8.xhtml#toc_7"/>
+      </navPoint>
+      <navPoint id="num_35" playOrder="35">
+        <navLabel>
+          <text>8</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_23-07_Chapter8.xhtml#toc_8"/>
+      </navPoint>
+      <navPoint id="num_36" playOrder="36">
+        <navLabel>
+          <text>9</text>
+        </navLabel>
+        <content src="OEBPS/Text/S1_23-07_Chapter8.xhtml#toc_9"/>
+      </navPoint>
+    </navPoint>
+    <navPoint id="num_37" playOrder="37">
+      <navLabel>
+        <text>战况报告</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_23-08_After_the_Epilogue.xhtml"/>
+    </navPoint>
+    <navPoint id="num_38" playOrder="38">
+      <navLabel>
+        <text>后记</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_23-09_Afterwords.xhtml"/>
+    </navPoint>
+  </navMap>
+</ncx>

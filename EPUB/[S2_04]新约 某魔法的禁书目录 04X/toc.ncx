@@ -1,0 +1,291 @@
+<?xml version='1.0' encoding='utf-8'?>
+<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1" xml:lang="zh">
+  <head>
+    <meta name="dtb:uid" content="uuid:afa76961-fe51-4f63-a4c8-42cdfdd47768"/>
+    <meta name="dtb:depth" content="3"/>
+    <meta name="dtb:generator" content="calibre (6.3.0)"/>
+    <meta name="dtb:totalPageCount" content="0"/>
+    <meta name="dtb:maxPageNumber" content="0"/>
+  </head>
+  <docTitle>
+    <text>新约 某魔法的禁书目录 04X</text>
+  </docTitle>
+  <navMap>
+    <navPoint id="num_1" playOrder="1">
+      <navLabel>
+        <text>制作信息</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_04-Information.xhtml"/>
+    </navPoint>
+    <navPoint id="num_2" playOrder="2">
+      <navLabel>
+        <text>简介</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_04-Introduction.xhtml"/>
+    </navPoint>
+    <navPoint id="num_3" playOrder="3">
+      <navLabel>
+        <text>彩页</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_04-Illustrations.xhtml"/>
+    </navPoint>
+    <navPoint id="num_4" playOrder="4">
+      <navLabel>
+        <text>Main.01</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_04-02_Main.01.xhtml"/>
+    </navPoint>
+    <navPoint id="num_5" playOrder="5">
+      <navLabel>
+        <text>Sub.02</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_04-03_Sub.02.xhtml"/>
+    </navPoint>
+    <navPoint id="num_6" playOrder="6">
+      <navLabel>
+        <text>Sub.03</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_04-04_Sub.03.xhtml"/>
+    </navPoint>
+    <navPoint id="num_7" playOrder="7">
+      <navLabel>
+        <text>Sub.04</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_04-05_Sub.04.xhtml"/>
+    </navPoint>
+    <navPoint id="num_8" playOrder="8">
+      <navLabel>
+        <text>Sub.05</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_04-06_Sub.05.xhtml"/>
+    </navPoint>
+    <navPoint id="num_9" playOrder="9">
+      <navLabel>
+        <text>Sub.06</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_04-07_Sub.06.xhtml"/>
+    </navPoint>
+    <navPoint id="num_10" playOrder="10">
+      <navLabel>
+        <text>Period.07</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_04-08_Period.07.xhtml"/>
+    </navPoint>
+    <navPoint id="num_11" playOrder="11">
+      <navLabel>
+        <text>Sub.08</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_04-09_Sub.08.xhtml"/>
+    </navPoint>
+    <navPoint id="num_12" playOrder="12">
+      <navLabel>
+        <text>Sub.09</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_04-10_Sub.09.xhtml"/>
+    </navPoint>
+    <navPoint id="num_13" playOrder="13">
+      <navLabel>
+        <text>Sub.10</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_04-11_Sub.10.xhtml"/>
+    </navPoint>
+    <navPoint id="num_14" playOrder="14">
+      <navLabel>
+        <text>Main.11</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_04-12_Main.11.xhtml"/>
+    </navPoint>
+    <navPoint id="num_15" playOrder="15">
+      <navLabel>
+        <text>Main.12</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_04-13_Main.12.xhtml"/>
+    </navPoint>
+    <navPoint id="num_16" playOrder="16">
+      <navLabel>
+        <text>Sub.13</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_04-14_Sub.13.xhtml"/>
+    </navPoint>
+    <navPoint id="num_17" playOrder="17">
+      <navLabel>
+        <text>Sub.14</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_04-15_Sub.14.xhtml"/>
+    </navPoint>
+    <navPoint id="num_18" playOrder="18">
+      <navLabel>
+        <text>Sub.15</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_04-16_Sub.15.xhtml"/>
+    </navPoint>
+    <navPoint id="num_19" playOrder="19">
+      <navLabel>
+        <text>Sub.16</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_04-17_Sub.16.xhtml"/>
+    </navPoint>
+    <navPoint id="num_20" playOrder="20">
+      <navLabel>
+        <text>Sub.17</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_04-18_Sub.17.xhtml"/>
+    </navPoint>
+    <navPoint id="num_21" playOrder="21">
+      <navLabel>
+        <text>Sub.18</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_04-19_Sub.18.xhtml"/>
+    </navPoint>
+    <navPoint id="num_22" playOrder="22">
+      <navLabel>
+        <text>Sub.19</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_04-20_Sub.19.xhtml"/>
+    </navPoint>
+    <navPoint id="num_23" playOrder="23">
+      <navLabel>
+        <text>Main.20</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_04-21_Main.20.xhtml"/>
+    </navPoint>
+    <navPoint id="num_24" playOrder="24">
+      <navLabel>
+        <text>Period.21</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_04-22_Period.21.xhtml"/>
+    </navPoint>
+    <navPoint id="num_25" playOrder="25">
+      <navLabel>
+        <text>Sub.22</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_04-23_Sub.22.xhtml"/>
+    </navPoint>
+    <navPoint id="num_26" playOrder="26">
+      <navLabel>
+        <text>Sub.23</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_04-24_Sub.23.xhtml"/>
+    </navPoint>
+    <navPoint id="num_27" playOrder="27">
+      <navLabel>
+        <text>Sub.24</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_04-25_Sub.24.xhtml"/>
+    </navPoint>
+    <navPoint id="num_28" playOrder="28">
+      <navLabel>
+        <text>Sub.25</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_04-26_Sub.25.xhtml"/>
+    </navPoint>
+    <navPoint id="num_29" playOrder="29">
+      <navLabel>
+        <text>Sub.26</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_04-27_Sub.26.xhtml"/>
+    </navPoint>
+    <navPoint id="num_30" playOrder="30">
+      <navLabel>
+        <text>Sub.27</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_04-28_Sub.27.xhtml"/>
+    </navPoint>
+    <navPoint id="num_31" playOrder="31">
+      <navLabel>
+        <text>Sub.28</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_04-29_Sub.28.xhtml"/>
+    </navPoint>
+    <navPoint id="num_32" playOrder="32">
+      <navLabel>
+        <text>Sub.29</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_04-30_Sub.29.xhtml"/>
+    </navPoint>
+    <navPoint id="num_33" playOrder="33">
+      <navLabel>
+        <text>Main.30</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_04-31_Main.30.xhtml"/>
+    </navPoint>
+    <navPoint id="num_34" playOrder="34">
+      <navLabel>
+        <text>Main.31</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_04-32_Main.31.xhtml"/>
+    </navPoint>
+    <navPoint id="num_35" playOrder="35">
+      <navLabel>
+        <text>Period.32</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_04-33_Period.32.xhtml"/>
+    </navPoint>
+    <navPoint id="num_36" playOrder="36">
+      <navLabel>
+        <text>Sub.33</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_04-34_Sub.33.xhtml"/>
+    </navPoint>
+    <navPoint id="num_37" playOrder="37">
+      <navLabel>
+        <text>A_Cardinal_Error.34</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_04-35_A_Cardinal_Error.34.xhtml"/>
+    </navPoint>
+    <navPoint id="num_38" playOrder="38">
+      <navLabel>
+        <text>连接过程</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_04-36_The_connection_process.xhtml"/>
+    </navPoint>
+    <navPoint id="num_39" playOrder="39">
+      <navLabel>
+        <text>第n章 即使存在着死亡 Dead_to……</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_04-37_Chaptern.xhtml"/>
+      <navPoint id="num_40" playOrder="40">
+        <navLabel>
+          <text>1</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_04-37_Chaptern.xhtml#toc_1"/>
+      </navPoint>
+      <navPoint id="num_41" playOrder="41">
+        <navLabel>
+          <text>2</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_04-37_Chaptern.xhtml#toc_2"/>
+      </navPoint>
+      <navPoint id="num_42" playOrder="42">
+        <navLabel>
+          <text>3</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_04-37_Chaptern.xhtml#toc_3"/>
+      </navPoint>
+      <navPoint id="num_43" playOrder="43">
+        <navLabel>
+          <text>4</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_04-37_Chaptern.xhtml#toc_4"/>
+      </navPoint>
+      <navPoint id="num_44" playOrder="44">
+        <navLabel>
+          <text>5</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_04-37_Chaptern.xhtml#toc_5"/>
+      </navPoint>
+    </navPoint>
+    <navPoint id="num_45" playOrder="45">
+      <navLabel>
+        <text>严重的损伤 ル9ニ1bカケrサ991マ</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_04-38_Severe_damage.xhtml"/>
+    </navPoint>
+    <navPoint id="num_46" playOrder="46">
+      <navLabel>
+        <text>后记</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_04-39_Afterwords.xhtml"/>
+    </navPoint>
+  </navMap>
+</ncx>

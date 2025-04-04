@@ -1,0 +1,200 @@
+<?xml version='1.0' encoding='utf-8'?>
+<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
+  <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <dc:title id="id-1">创约 某魔法的禁书目录 09X</dc:title>
+    <dc:creator id="id-2">镰池和马</dc:creator>
+    <dc:identifier>calibre:982</dc:identifier>
+    <dc:identifier id="BookId">uuid:e1248f13-5898-4f3b-8a5d-4baa7ee0aedd</dc:identifier>
+    <dc:language>zh-CN</dc:language>
+    <dc:description>&lt;div&gt;
+&lt;p style="font-weight: bold"&gt;上条他们，将要挑战阔步蹂躏着学园都市的「复活的罗森克鲁兹」！&lt;/p&gt;
+&lt;p&gt;魔神、超绝者、超 能力者、魔法师。超越一切的存在，CRC（克里斯蒂安·罗森克鲁兹）。&lt;/p&gt;
+&lt;p&gt;能够秒杀拥有恐怖力量的爱丽丝的银发青年，为了「打发无趣」而在学园都市阔步，蹂躏着众人。&lt;/p&gt;
+&lt;p&gt;那天灾化身的前进，是要抹杀沉睡在青蛙脸医生的医院里的安娜·施普伦格尔——&lt;/p&gt;
+&lt;p&gt;上条绝对无法对曾是敌人的那个少女弃之不顾。&lt;/p&gt;
+&lt;p&gt;绝望版的状况中，上条站在了CRC面前。究竟是否会有回应他叫喊的「同伴」呢……！！&lt;/p&gt;&lt;/div&gt;</dc:description>
+    <dc:subject>重小说</dc:subject>
+    <meta refines="#id-1" property="title-type">main</meta>
+    <meta refines="#id-1" property="file-as">创约 某魔法的禁书目录 09X</meta>
+    <meta property="calibre:timestamp" scheme="dcterms:W3CDTF">2022-09-09T06:17:52Z</meta>
+    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-01-25T08:52:49Z</meta>
+    <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
+    <meta refines="#id-2" property="role" scheme="marc:relators">aut</meta>
+    <meta refines="#id-2" property="file-as">镰池和马</meta>
+    <meta property="calibre:rating">10</meta>
+    <meta property="belongs-to-collection" id="id-3">创约</meta>
+    <meta refines="#id-3" property="collection-type">series</meta>
+    <meta refines="#id-3" property="group-position">9</meta>
+    <meta property="calibre:user_metadata">{
+  "#ace_report": {
+    "#extra#": null,
+    "#value#": null,
+    "category_sort": "value",
+    "colnum": 1,
+    "column": "value",
+    "datatype": "comments",
+    "display": {
+      "description": "ACE report",
+      "heading_position": "side",
+      "interpret_as": "html"
+    },
+    "is_category": false,
+    "is_csp": false,
+    "is_custom": true,
+    "is_editable": true,
+    "is_multiple": null,
+    "is_multiple2": {},
+    "kind": "field",
+    "label": "ace_report",
+    "link_column": "value",
+    "name": "ACE report",
+    "rec_index": 22,
+    "search_terms": [
+      "#ace_report"
+    ],
+    "table": "custom_column_1"
+  },
+  "#ace_result": {
+    "#extra#": null,
+    "#value#": null,
+    "category_sort": "value",
+    "colnum": 2,
+    "column": "value",
+    "datatype": "bool",
+    "display": {
+      "bools_show_icons": true,
+      "bools_show_text": false,
+      "description": "ACE result"
+    },
+    "is_category": false,
+    "is_csp": false,
+    "is_custom": true,
+    "is_editable": true,
+    "is_multiple": null,
+    "is_multiple2": {},
+    "kind": "field",
+    "label": "ace_result",
+    "link_column": "value",
+    "name": "ACE result",
+    "rec_index": 23,
+    "search_terms": [
+      "#ace_result"
+    ],
+    "table": "custom_column_2"
+  },
+  "#epubcheck_report": {
+    "#extra#": null,
+    "#value#": null,
+    "category_sort": "value",
+    "colnum": 3,
+    "column": "value",
+    "datatype": "comments",
+    "display": {
+      "description": "EPUBCheck report",
+      "heading_position": "side",
+      "interpret_as": "html"
+    },
+    "is_category": false,
+    "is_csp": false,
+    "is_custom": true,
+    "is_editable": true,
+    "is_multiple": null,
+    "is_multiple2": {},
+    "kind": "field",
+    "label": "epubcheck_report",
+    "link_column": "value",
+    "name": "EPUBCheck report",
+    "rec_index": 24,
+    "search_terms": [
+      "#epubcheck_report"
+    ],
+    "table": "custom_column_3"
+  },
+  "#epubcheck_result": {
+    "#extra#": null,
+    "#value#": null,
+    "category_sort": "value",
+    "colnum": 4,
+    "column": "value",
+    "datatype": "bool",
+    "display": {
+      "bools_show_icons": true,
+      "bools_show_text": false,
+      "description": "EPUBCheck result"
+    },
+    "is_category": false,
+    "is_csp": false,
+    "is_custom": true,
+    "is_editable": true,
+    "is_multiple": null,
+    "is_multiple2": {},
+    "kind": "field",
+    "label": "epubcheck_result",
+    "link_column": "value",
+    "name": "EPUBCheck result",
+    "rec_index": 25,
+    "search_terms": [
+      "#epubcheck_result"
+    ],
+    "table": "custom_column_4"
+  }
+}</meta>
+  </metadata>
+  <manifest>
+    <item id="id5" href="Text/S3_09-Cover.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id1" href="Text/S3_09-Information.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id2" href="Text/S3_09-Introduction.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id7" href="Text/S3_09-01_Prologue.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id9" href="Text/S3_09-02_Chapter1.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id10" href="Text/S3_09-03_Between_the_Lines1.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id11" href="Text/S3_09-04_Chapter2.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id13" href="Text/S3_09-05_Between_the_Lines2.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id12" href="Text/S3_09-06_Chapter3.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id14" href="Text/S3_09-07_Between_the_Lines3.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id15" href="Text/S3_09-08_Chapter4.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id16" href="Text/S3_09-09_Between_the_Lines4.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id17" href="Text/S3_09-10_Epilogue.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id18" href="Text/S3_09-11_Afterwords.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id19" href="Text/S3_09-12_After_the_Epilogue.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id32" href="Text/S3_09-Note.xhtml" media-type="application/xhtml+xml"/>
+    <item id="nav" href="../nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
+    <item href="../toc.ncx" id="ncx" media-type="application/x-dtbncx+xml"/>
+    <item id="id" href="Styles/style.css" media-type="text/css"/>
+    <item id="id20" href="Images/GT09_Contents.jpg" media-type="image/jpeg"/>
+    <item href="Images/GT09_Cover.jpg" id="cover" media-type="image/jpeg" properties="cover-image"/>
+    <item id="id21" href="Images/GT09_Deputy_cover.jpg" media-type="image/jpeg"/>
+    <item id="id22" href="Images/GT09_Illustrations1.jpg" media-type="image/jpeg"/>
+    <item id="id23" href="Images/GT09_Illustrations2.jpg" media-type="image/jpeg"/>
+    <item id="id24" href="Images/GT09_p1.jpg" media-type="image/jpeg"/>
+    <item id="id25" href="Images/GT09_p2.jpg" media-type="image/jpeg"/>
+    <item id="id26" href="Images/GT09_p3.jpg" media-type="image/jpeg"/>
+    <item id="id27" href="Images/GT09_p4.jpg" media-type="image/jpeg"/>
+    <item id="id28" href="Images/GT09_p5.jpg" media-type="image/jpeg"/>
+    <item id="id29" href="Images/GT09_p6.jpg" media-type="image/jpeg"/>
+    <item id="id30" href="Images/GT09_p7.jpg" media-type="image/jpeg"/>
+    <item id="id31" href="Images/GT09_p8.jpg" media-type="image/jpeg"/>
+    <item id="id33" href="Text/S3_09-Back_cover.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id34" href="Images/GT09_Back_cover.jpg" media-type="image/jpeg"/>
+    <item href="Text/S3_09-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
+  </manifest>
+  <spine toc="ncx">
+    <itemref idref="id5"/>
+    <itemref idref="id1"/>
+    <itemref idref="id2"/>
+    <itemref idref="Illustrations"/>
+    <itemref idref="id7"/>
+    <itemref idref="id9"/>
+    <itemref idref="id10"/>
+    <itemref idref="id11"/>
+    <itemref idref="id13"/>
+    <itemref idref="id12"/>
+    <itemref idref="id14"/>
+    <itemref idref="id15"/>
+    <itemref idref="id16"/>
+    <itemref idref="id17"/>
+    <itemref idref="id18"/>
+    <itemref idref="id19"/>
+    <itemref idref="id33"/>
+    <itemref idref="id32"/>
+  </spine>
+</package>

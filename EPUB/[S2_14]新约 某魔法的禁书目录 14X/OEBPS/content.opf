@@ -1,0 +1,212 @@
+<?xml version='1.0' encoding='utf-8'?>
+<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
+  <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <dc:title id="id">新约 某魔法的禁书目录 14X</dc:title>
+    <dc:creator id="id-1">镰池和马</dc:creator>
+    <dc:identifier>calibre:878</dc:identifier>
+    <dc:identifier id="BookId">uuid:3e956d0e-e662-44bf-ba72-1e44bc641b96</dc:identifier>
+    <dc:language>zh-CN</dc:language>
+    <dc:description>&lt;div&gt;
+&lt;p style="font-weight: bold"&gt;消除一切异能之力的右手「<ruby>幻想杀手<rt>Imagine Breaker</rt></ruby>」VS消除一切负面想法的「<ruby>理想放逐<rt>World Rejecter</rt></ruby>」！&lt;/p&gt;
+&lt;p&gt;「呦，<ruby>幻想杀手<rt>Imagine Breaker</rt></ruby>」&lt;/p&gt;
+&lt;p&gt;「也就是说，你是<ruby>理想放逐<rt>World Rejecter</rt></ruby>吗？」&lt;/p&gt;
+&lt;p&gt;无论多少次能够随心所欲地将世界化为尘埃的真正「魔神」们。这样无敌的存在中，有一个少年能在瞬间消除他们。&lt;/p&gt;
+&lt;p&gt;这个少年是「随处可见的普通高中生」，但同时也是寄宿有最大最恶的「<ruby>理想放逐<rt>World Rejecter</rt></ruby>」的存在。这是一种可以消除所有「渴望新天地者」的事物的可怕力量。同时，他与另一位「随处可见的普通男高中生」上条当麻右手中的「<ruby>幻想杀手<rt>Imagine Breaker</rt></ruby>」也有着表里一体的关系。&lt;/p&gt;
+&lt;p&gt;「<ruby>幻想杀手<rt>Imagine Breaker</rt></ruby>。我找『魔神』有事。找那群把我变成这样的『魔神』们有事。」&lt;/p&gt;
+&lt;p&gt;「那是你的事情吧。我们不关心。」&lt;/p&gt;
+&lt;p&gt;两个少年在学园都市的黑暗中对峙。&lt;/p&gt;
+&lt;p&gt;为了彼此无法妥协之物。&lt;/p&gt;
+&lt;p&gt;这场胜负关键掌握在蕾薇妮雅和派翠西亚，两位柏德蔚姐妹手中……？！&lt;/p&gt;
+&lt;p&gt;极大的异常者之间终于激烈碰撞……！&lt;/p&gt;&lt;/div&gt;</dc:description>
+    <dc:subject>重小说</dc:subject>
+    <meta refines="#id" property="title-type">main</meta>
+    <meta refines="#id" property="file-as">新约 某魔法的禁书目录 14X</meta>
+    <meta name="Sigil version" content="0.9.17"/>
+    <meta name="cover" content="GT_vol_1.jpg"/>
+    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-01-24T15:18:17Z</meta>
+    <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
+    <meta refines="#id-1" property="role" scheme="marc:relators">aut</meta>
+    <meta refines="#id-1" property="file-as">镰池和马</meta>
+    <meta property="calibre:rating">10</meta>
+    <meta property="belongs-to-collection" id="id-2">新约</meta>
+    <meta refines="#id-2" property="collection-type">series</meta>
+    <meta refines="#id-2" property="group-position">14</meta>
+    <meta property="calibre:user_metadata">{
+  "#ace_report": {
+    "#extra#": null,
+    "#value#": null,
+    "category_sort": "value",
+    "colnum": 1,
+    "column": "value",
+    "datatype": "comments",
+    "display": {
+      "description": "ACE report",
+      "heading_position": "side",
+      "interpret_as": "html"
+    },
+    "is_category": false,
+    "is_csp": false,
+    "is_custom": true,
+    "is_editable": true,
+    "is_multiple": null,
+    "is_multiple2": {},
+    "kind": "field",
+    "label": "ace_report",
+    "link_column": "value",
+    "name": "ACE report",
+    "rec_index": 22,
+    "search_terms": [
+      "#ace_report"
+    ],
+    "table": "custom_column_1"
+  },
+  "#ace_result": {
+    "#extra#": null,
+    "#value#": null,
+    "category_sort": "value",
+    "colnum": 2,
+    "column": "value",
+    "datatype": "bool",
+    "display": {
+      "bools_show_icons": true,
+      "bools_show_text": false,
+      "description": "ACE result"
+    },
+    "is_category": false,
+    "is_csp": false,
+    "is_custom": true,
+    "is_editable": true,
+    "is_multiple": null,
+    "is_multiple2": {},
+    "kind": "field",
+    "label": "ace_result",
+    "link_column": "value",
+    "name": "ACE result",
+    "rec_index": 23,
+    "search_terms": [
+      "#ace_result"
+    ],
+    "table": "custom_column_2"
+  },
+  "#epubcheck_report": {
+    "#extra#": null,
+    "#value#": null,
+    "category_sort": "value",
+    "colnum": 3,
+    "column": "value",
+    "datatype": "comments",
+    "display": {
+      "description": "EPUBCheck report",
+      "heading_position": "side",
+      "interpret_as": "html"
+    },
+    "is_category": false,
+    "is_csp": false,
+    "is_custom": true,
+    "is_editable": true,
+    "is_multiple": null,
+    "is_multiple2": {},
+    "kind": "field",
+    "label": "epubcheck_report",
+    "link_column": "value",
+    "name": "EPUBCheck report",
+    "rec_index": 24,
+    "search_terms": [
+      "#epubcheck_report"
+    ],
+    "table": "custom_column_3"
+  },
+  "#epubcheck_result": {
+    "#extra#": null,
+    "#value#": null,
+    "category_sort": "value",
+    "colnum": 4,
+    "column": "value",
+    "datatype": "bool",
+    "display": {
+      "bools_show_icons": true,
+      "bools_show_text": false,
+      "description": "EPUBCheck result"
+    },
+    "is_category": false,
+    "is_csp": false,
+    "is_custom": true,
+    "is_editable": true,
+    "is_multiple": null,
+    "is_multiple2": {},
+    "kind": "field",
+    "label": "epubcheck_result",
+    "link_column": "value",
+    "name": "EPUBCheck result",
+    "rec_index": 25,
+    "search_terms": [
+      "#epubcheck_result"
+    ],
+    "table": "custom_column_4"
+  }
+}</meta>
+  </metadata>
+  <manifest>
+    <item id="S2_14-Cover.xhtml" href="Text/S2_14-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
+    <item id="Message.xhtml" href="Text/S2_14-Information.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id1" href="Text/S2_14-Introduction.xhtml" media-type="application/xhtml+xml"/>
+    <item href="Text/S2_14-01_Prologue.xhtml" id="id3" media-type="application/xhtml+xml"/>
+    <item href="Text/S2_14-02_Ingredients1.xhtml" id="id16" media-type="application/xhtml+xml"/>
+    <item href="Text/S2_14-03_Chapter1.xhtml" id="id4" media-type="application/xhtml+xml"/>
+    <item href="Text/S2_14-04_Ingredients2.xhtml" id="id8" media-type="application/xhtml+xml"/>
+    <item href="Text/S2_14-05_Between_the_Lines1.xhtml" id="id9" media-type="application/xhtml+xml"/>
+    <item href="Text/S2_14-06_Chapter2.xhtml" id="id10" media-type="application/xhtml+xml"/>
+    <item href="Text/S2_14-07_Ingredients3.xhtml" id="id11" media-type="application/xhtml+xml"/>
+    <item href="Text/S2_14-08_Between_the_Lines2.xhtml" id="id12" media-type="application/xhtml+xml"/>
+    <item href="Text/S2_14-09_Chapter3.xhtml" id="id13" media-type="application/xhtml+xml"/>
+    <item href="Text/S2_14-10_Ingredients4.xhtml" id="id14" media-type="application/xhtml+xml"/>
+    <item href="Text/S2_14-11_Between_the_Lines3.xhtml" id="id15" media-type="application/xhtml+xml"/>
+    <item href="Text/S2_14-12_Chapter4.xhtml" id="id28" media-type="application/xhtml+xml"/>
+    <item href="Text/S2_14-13_Ingredients5.xhtml" id="id26" media-type="application/xhtml+xml"/>
+    <item href="Text/S2_14-14_Epilogue.xhtml" id="id27" media-type="application/xhtml+xml"/>
+    <item href="Text/S2_14-15_Afterwords.xhtml" id="id17" media-type="application/xhtml+xml"/>
+    <item id="id35" href="Text/S2_14-Back_cover.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id33" href="Text/S2_14-Note.xhtml" media-type="application/xhtml+xml"/>
+    <item id="nav" href="../nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
+    <item id="toc" href="../toc.ncx" media-type="application/x-dtbncx+xml"/>
+    <item href="Styles/style.css" id="id5" media-type="text/css"/>
+    <item id="id34" href="Images/Back_cover.jpg" media-type="image/jpeg"/>
+    <item href="Images/Contents.jpg" id="id32" media-type="image/jpeg"/>
+    <item id="GT_vol_1.jpg" href="Images/Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
+    <item href="Images/Deputy_cover.jpg" id="id31" media-type="image/jpeg"/>
+    <item href="Images/Illustrations1.jpg" id="id29" media-type="image/jpeg"/>
+    <item href="Images/Illustrations2.jpg" id="id30" media-type="image/jpeg"/>
+    <item href="Images/p1.jpg" id="id18" media-type="image/jpeg"/>
+    <item href="Images/p2.jpg" id="id19" media-type="image/jpeg"/>
+    <item href="Images/p3.jpg" id="id20" media-type="image/jpeg"/>
+    <item href="Images/p4.jpg" id="id21" media-type="image/jpeg"/>
+    <item href="Images/p5.jpg" id="id22" media-type="image/jpeg"/>
+    <item href="Images/p6.jpg" id="id23" media-type="image/jpeg"/>
+    <item href="Images/p7.jpg" id="id24" media-type="image/jpeg"/>
+    <item href="Images/p8.jpg" id="id25" media-type="image/jpeg"/>
+    <item href="Text/S2_14-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
+  </manifest>
+  <spine toc="toc">
+    <itemref idref="S2_14-Cover.xhtml"/>
+    <itemref idref="Message.xhtml"/>
+    <itemref idref="id1"/>
+    <itemref idref="Illustrations"/>
+    <itemref idref="id3"/>
+    <itemref idref="id16"/>
+    <itemref idref="id4"/>
+    <itemref idref="id8"/>
+    <itemref idref="id9"/>
+    <itemref idref="id10"/>
+    <itemref idref="id11"/>
+    <itemref idref="id12"/>
+    <itemref idref="id13"/>
+    <itemref idref="id14"/>
+    <itemref idref="id15"/>
+    <itemref idref="id28"/>
+    <itemref idref="id26"/>
+    <itemref idref="id27"/>
+    <itemref idref="id17"/>
+    <itemref idref="id35"/>
+    <itemref idref="id33"/>
+  </spine>
+</package>

@@ -1,0 +1,171 @@
+<?xml version='1.0' encoding='utf-8'?>
+<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1" xml:lang="zh">
+  <head>
+    <meta name="dtb:uid" content="uuid:afa76961-fe51-4f63-a4c8-42cdfdd47768"/>
+    <meta name="dtb:depth" content="2"/>
+    <meta name="dtb:generator" content="calibre (7.24.0)"/>
+    <meta name="dtb:totalPageCount" content="0"/>
+    <meta name="dtb:maxPageNumber" content="0"/>
+  </head>
+  <docTitle>
+    <text>某魔法的禁书目录 SS2X</text>
+  </docTitle>
+  <navMap>
+    <navPoint id="num_1" playOrder="1">
+      <navLabel>
+        <text>制作信息</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_18-Information.xhtml"/>
+    </navPoint>
+    <navPoint id="num_2" playOrder="2">
+      <navLabel>
+        <text>简介</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_18-Introduction.xhtml"/>
+    </navPoint>
+    <navPoint id="num_3" playOrder="3">
+      <navLabel>
+        <text>彩页</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_18-Illustrations.xhtml"/>
+    </navPoint>
+    <navPoint id="num_4" playOrder="4">
+      <navLabel>
+        <text>第一章 寻求钞票与冲突的人们 一月、第三个星期五</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_18-Chapter1.xhtml"/>
+    </navPoint>
+    <navPoint id="num_5" playOrder="5">
+      <navLabel>
+        <text>第二章 北欧神话的战士与舞者 二月、第一个星期五</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_18-Chapter2.xhtml"/>
+    </navPoint>
+    <navPoint id="num_6" playOrder="6">
+      <navLabel>
+        <text>第三章 父亲的愿望促成了交流 二月、第四个星期五</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_18-Chapter3.xhtml"/>
+    </navPoint>
+    <navPoint id="num_7" playOrder="7">
+      <navLabel>
+        <text>第四章 七人之中第七名的实力 三月、第三个星期五</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_18-Chapter4.xhtml"/>
+    </navPoint>
+    <navPoint id="num_8" playOrder="8">
+      <navLabel>
+        <text>第五章 这世界上缺乏的是什么 四月、第一个星期五</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_18-Chapter5.xhtml"/>
+    </navPoint>
+    <navPoint id="num_9" playOrder="9">
+      <navLabel>
+        <text>第六章 美容院闲聊话题的核心 四月、第四个星期五</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_18-Chapter6.xhtml"/>
+    </navPoint>
+    <navPoint id="num_10" playOrder="10">
+      <navLabel>
+        <text>第七章 黑幕的事前准备与善后 五月、第二个星期五</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_18-Chapter7.xhtml"/>
+    </navPoint>
+    <navPoint id="num_11" playOrder="11">
+      <navLabel>
+        <text>第八章 就这样冒出来的女忍者 五月、第四个星期五</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_18-Chapter8.xhtml"/>
+    </navPoint>
+    <navPoint id="num_12" playOrder="12">
+      <navLabel>
+        <text>第九章 电子世界无需现实关系 六月、第二个星期五</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_18-Chapter9.xhtml"/>
+    </navPoint>
+    <navPoint id="num_13" playOrder="13">
+      <navLabel>
+        <text>第十章 一夜的诱惑接受或拒绝 七月、第一个星期五</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_18-Chapter10.xhtml"/>
+    </navPoint>
+    <navPoint id="num_14" playOrder="14">
+      <navLabel>
+        <text>第十一章 每个领域都可能有例外 七月、第二个星期五</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_18-Chapter11.xhtml"/>
+    </navPoint>
+    <navPoint id="num_15" playOrder="15">
+      <navLabel>
+        <text>第十二章 狙击手与炸弹魔的讨论 七月、第四个星期五</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_18-Chapter12.xhtml"/>
+    </navPoint>
+    <navPoint id="num_16" playOrder="16">
+      <navLabel>
+        <text>第十三章 她们的集团占卜准确度 八月、第四个星期五</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_18-Chapter13.xhtml"/>
+    </navPoint>
+    <navPoint id="num_17" playOrder="17">
+      <navLabel>
+        <text>第十四章 看门人与入侵者的斗法 九月、第三个星期五</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_18-Chapter14.xhtml"/>
+    </navPoint>
+    <navPoint id="num_18" playOrder="18">
+      <navLabel>
+        <text>第十五章 艺术区分出天才与怪人 十月、第一个星期五</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_18-Chapter15.xhtml"/>
+    </navPoint>
+    <navPoint id="num_19" playOrder="19">
+      <navLabel>
+        <text>第十六章 看不出母亲是有原因的 十月、第一个星期五</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_18-Chapter16.xhtml"/>
+    </navPoint>
+    <navPoint id="num_20" playOrder="20">
+      <navLabel>
+        <text>第十七章 Ｂ级电影与未研磨原石 十月、第一个星期五</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_18-Chapter17.xhtml"/>
+    </navPoint>
+    <navPoint id="num_21" playOrder="21">
+      <navLabel>
+        <text>第十八章 能够继承这个名字的人 十月、第一个星期五</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_18-Chapter18.xhtml"/>
+    </navPoint>
+    <navPoint id="num_22" playOrder="22">
+      <navLabel>
+        <text>第十九章 闪耀原石与染血的利益 十月、第二个星期五</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_18-Chapter19.xhtml"/>
+    </navPoint>
+    <navPoint id="num_23" playOrder="23">
+      <navLabel>
+        <text>第二十章 同时刻多起悲剧的应对 十月、第二个星期五</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_18-Chapter20.xhtml"/>
+    </navPoint>
+    <navPoint id="num_24" playOrder="24">
+      <navLabel>
+        <text>第二十一章 无法判断真实身份的人 十月、第二个星期五</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_18-Chapter21.xhtml"/>
+    </navPoint>
+    <navPoint id="num_25" playOrder="25">
+      <navLabel>
+        <text>第二十二章 个人无法掌握它的结局 十月、第二个星期五</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_18-Chapter22.xhtml"/>
+    </navPoint>
+    <navPoint id="num_26" playOrder="26">
+      <navLabel>
+        <text>后记</text>
+      </navLabel>
+      <content src="OEBPS/Text/S1_18-Afterwords.xhtml"/>
+    </navPoint>
+  </navMap>
+</ncx>

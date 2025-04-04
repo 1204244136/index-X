@@ -1,0 +1,203 @@
+<?xml version='1.0' encoding='utf-8'?>
+<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
+  <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <dc:title id="id-1">创约 某魔法的禁书目录 03X</dc:title>
+    <dc:creator id="id-2">镰池和马</dc:creator>
+    <dc:identifier>calibre:899</dc:identifier>
+    <dc:identifier id="BookId">uuid:b1329b36-9605-4d66-abeb-cc104d12dbc1</dc:identifier>
+    <dc:language>zh-CN</dc:language>
+    <dc:description>&lt;div&gt;
+&lt;p style="font-weight: bold"&gt;「暗部」与「<ruby>警备员<rt>Anti-Skill</rt></ruby>」的互相杀戮。黑子将踏足学园都市的黑暗之中！&lt;/p&gt;
+&lt;p&gt;与亲爱的姐姐大人·御坂美琴两人一起度过魅惑的圣诞节，终于到我的手里……！这么期待着的白井黑子，回过神来发现她旁边有一位条形码头发、戴着眼镜的「<ruby>警备员<rt>Anti-Skill</rt></ruby>」大叔……！？&lt;/p&gt;
+&lt;p&gt;神圣的夜晚，作为「<ruby>风纪委员<rt>Judgment</rt></ruby>」的黑子背负的是名为「手铐」的作战名称，也就是将学园都市的「暗部」全部击溃的计划。在名单列表上，包含着滨面仕上和泷壶理后的名字……追逐者与被追逐者，双方在为了生存不由分说地激斗之中，突然都感觉到了……这个计划，有哪里不对劲。&lt;/p&gt;
+&lt;p&gt;打破事态的钥匙是被称作「学园都市最大的禁忌」的谜之词语——！&lt;/p&gt;&lt;/div&gt;</dc:description>
+    <dc:subject>重小说</dc:subject>
+    <meta refines="#id-1" property="title-type">main</meta>
+    <meta refines="#id-1" property="file-as">创约 某魔法的禁书目录 03X</meta>
+    <meta name="Sigil version" content="0.9.17"/>
+    <meta name="cover" content="GT_vol_1.jpg"/>
+    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-01-25T12:56:27Z</meta>
+    <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
+    <meta refines="#id-2" property="role" scheme="marc:relators">aut</meta>
+    <meta refines="#id-2" property="file-as">镰池和马</meta>
+    <meta property="calibre:rating">10</meta>
+    <meta property="belongs-to-collection" id="id-3">创约</meta>
+    <meta refines="#id-3" property="collection-type">series</meta>
+    <meta refines="#id-3" property="group-position">3</meta>
+    <meta property="calibre:user_metadata">{
+  "#ace_report": {
+    "#extra#": null,
+    "#value#": null,
+    "category_sort": "value",
+    "colnum": 1,
+    "column": "value",
+    "datatype": "comments",
+    "display": {
+      "description": "ACE report",
+      "heading_position": "side",
+      "interpret_as": "html"
+    },
+    "is_category": false,
+    "is_csp": false,
+    "is_custom": true,
+    "is_editable": true,
+    "is_multiple": null,
+    "is_multiple2": {},
+    "kind": "field",
+    "label": "ace_report",
+    "link_column": "value",
+    "name": "ACE report",
+    "rec_index": 22,
+    "search_terms": [
+      "#ace_report"
+    ],
+    "table": "custom_column_1"
+  },
+  "#ace_result": {
+    "#extra#": null,
+    "#value#": null,
+    "category_sort": "value",
+    "colnum": 2,
+    "column": "value",
+    "datatype": "bool",
+    "display": {
+      "bools_show_icons": true,
+      "bools_show_text": false,
+      "description": "ACE result"
+    },
+    "is_category": false,
+    "is_csp": false,
+    "is_custom": true,
+    "is_editable": true,
+    "is_multiple": null,
+    "is_multiple2": {},
+    "kind": "field",
+    "label": "ace_result",
+    "link_column": "value",
+    "name": "ACE result",
+    "rec_index": 23,
+    "search_terms": [
+      "#ace_result"
+    ],
+    "table": "custom_column_2"
+  },
+  "#epubcheck_report": {
+    "#extra#": null,
+    "#value#": null,
+    "category_sort": "value",
+    "colnum": 3,
+    "column": "value",
+    "datatype": "comments",
+    "display": {
+      "description": "EPUBCheck report",
+      "heading_position": "side",
+      "interpret_as": "html"
+    },
+    "is_category": false,
+    "is_csp": false,
+    "is_custom": true,
+    "is_editable": true,
+    "is_multiple": null,
+    "is_multiple2": {},
+    "kind": "field",
+    "label": "epubcheck_report",
+    "link_column": "value",
+    "name": "EPUBCheck report",
+    "rec_index": 24,
+    "search_terms": [
+      "#epubcheck_report"
+    ],
+    "table": "custom_column_3"
+  },
+  "#epubcheck_result": {
+    "#extra#": null,
+    "#value#": null,
+    "category_sort": "value",
+    "colnum": 4,
+    "column": "value",
+    "datatype": "bool",
+    "display": {
+      "bools_show_icons": true,
+      "bools_show_text": false,
+      "description": "EPUBCheck result"
+    },
+    "is_category": false,
+    "is_csp": false,
+    "is_custom": true,
+    "is_editable": true,
+    "is_multiple": null,
+    "is_multiple2": {},
+    "kind": "field",
+    "label": "epubcheck_result",
+    "link_column": "value",
+    "name": "EPUBCheck result",
+    "rec_index": 25,
+    "search_terms": [
+      "#epubcheck_result"
+    ],
+    "table": "custom_column_4"
+  }
+}</meta>
+  </metadata>
+  <manifest>
+    <item id="S3_03-Cover.xhtml" href="Text/S3_03-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
+    <item id="Message.xhtml" href="Text/S3_03-Information.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id1" href="Text/S3_03-Introduction.xhtml" media-type="application/xhtml+xml"/>
+    <item href="Text/S3_03-01_Prologue.xhtml" id="id3" media-type="application/xhtml+xml"/>
+    <item href="Text/S3_03-02_Chapter1.xhtml" id="id4" media-type="application/xhtml+xml"/>
+    <item href="Text/S3_03-03_Between_the_Lines1.xhtml" id="id16" media-type="application/xhtml+xml"/>
+    <item href="Text/S3_03-04_Chapter2.xhtml" id="id8" media-type="application/xhtml+xml"/>
+    <item href="Text/S3_03-05_Between_the_Lines2.xhtml" id="id9" media-type="application/xhtml+xml"/>
+    <item href="Text/S3_03-06_Chapter3.xhtml" id="id10" media-type="application/xhtml+xml"/>
+    <item href="Text/S3_03-07_Between_the_Lines3.xhtml" id="id11" media-type="application/xhtml+xml"/>
+    <item href="Text/S3_03-08_Chapter4.xhtml" id="id12" media-type="application/xhtml+xml"/>
+    <item href="Text/S3_03-09_Between_the_Lines4.xhtml" id="id13" media-type="application/xhtml+xml"/>
+    <item href="Text/S3_03-10_Epilogue.xhtml" id="id14" media-type="application/xhtml+xml"/>
+    <item href="Text/S3_03-11_Afterwords.xhtml" id="id17" media-type="application/xhtml+xml"/>
+    <item href="Text/S3_03-12_After_the_Epilogue.xhtml" id="id15" media-type="application/xhtml+xml"/>
+    <item id="id35" href="Text/S3_03-Back_cover.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id18" href="Text/S3_03-Note.xhtml" media-type="application/xhtml+xml"/>
+    <item id="nav" href="../nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
+    <item id="toc" href="../toc.ncx" media-type="application/x-dtbncx+xml"/>
+    <item href="Styles/style.css" id="id5" media-type="text/css"/>
+    <item id="id34" href="Images/Back_cover.jpg" media-type="image/jpeg"/>
+    <item id="id21" href="Images/Contents.jpg" media-type="image/jpeg"/>
+    <item id="id" href="Images/Deputy_cover.jpg" media-type="image/jpeg"/>
+    <item id="GT_vol_1.jpg" href="Images/GT03_Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
+    <item id="id19" href="Images/Illustrations1.jpg" media-type="image/jpeg"/>
+    <item id="id20" href="Images/Illustrations2.jpg" media-type="image/jpeg"/>
+    <item id="id28" href="Images/p1.jpg" media-type="image/jpeg"/>
+    <item id="id29" href="Images/p2.jpg" media-type="image/jpeg"/>
+    <item id="id30" href="Images/p3.jpg" media-type="image/jpeg"/>
+    <item id="id31" href="Images/p4.jpg" media-type="image/jpeg"/>
+    <item id="id32" href="Images/p5.jpg" media-type="image/jpeg"/>
+    <item id="id33" href="Images/p6.jpg" media-type="image/jpeg"/>
+    <item id="id22" href="Images/Phase1.jpg" media-type="image/jpeg"/>
+    <item id="id23" href="Images/Phase2.jpg" media-type="image/jpeg"/>
+    <item id="id24" href="Images/Phase3.jpg" media-type="image/jpeg"/>
+    <item id="id25" href="Images/Phase4.jpg" media-type="image/jpeg"/>
+    <item id="id26" href="Images/Phase5.jpg" media-type="image/jpeg"/>
+    <item id="id27" href="Images/Phase6.jpg" media-type="image/jpeg"/>
+    <item href="Text/S3_03-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
+  </manifest>
+  <spine toc="toc">
+    <itemref idref="S3_03-Cover.xhtml"/>
+    <itemref idref="Message.xhtml"/>
+    <itemref idref="id1"/>
+    <itemref idref="Illustrations"/>
+    <itemref idref="id3"/>
+    <itemref idref="id4"/>
+    <itemref idref="id16"/>
+    <itemref idref="id8"/>
+    <itemref idref="id9"/>
+    <itemref idref="id10"/>
+    <itemref idref="id11"/>
+    <itemref idref="id12"/>
+    <itemref idref="id13"/>
+    <itemref idref="id14"/>
+    <itemref idref="id17"/>
+    <itemref idref="id15"/>
+    <itemref idref="id35"/>
+    <itemref idref="id18"/>
+  </spine>
+</package>

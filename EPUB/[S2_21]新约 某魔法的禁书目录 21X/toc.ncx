@@ -1,0 +1,423 @@
+<?xml version='1.0' encoding='utf-8'?>
+<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1" xml:lang="zh">
+  <head>
+    <meta name="dtb:uid" content="uuid:afa76961-fe51-4f63-a4c8-42cdfdd47768"/>
+    <meta name="dtb:depth" content="3"/>
+    <meta name="dtb:generator" content="calibre (6.3.0)"/>
+    <meta name="dtb:totalPageCount" content="0"/>
+    <meta name="dtb:maxPageNumber" content="0"/>
+  </head>
+  <docTitle>
+    <text>新约 某魔法的禁书目录 21X</text>
+  </docTitle>
+  <navMap>
+    <navPoint id="num_1" playOrder="1">
+      <navLabel>
+        <text>制作信息</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_21-Information.xhtml"/>
+    </navPoint>
+    <navPoint id="num_2" playOrder="2">
+      <navLabel>
+        <text>简介</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_21-Introduction.xhtml"/>
+    </navPoint>
+    <navPoint id="num_3" playOrder="3">
+      <navLabel>
+        <text>彩页</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_21-Illustrations.xhtml"/>
+    </navPoint>
+    <navPoint id="num_4" playOrder="4">
+      <navLabel>
+        <text>序　章 黄金，它的历程 True_Wizards.</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_21-02_Prologue.xhtml"/>
+    </navPoint>
+    <navPoint id="num_5" playOrder="5">
+      <navLabel>
+        <text>第一章 狂乱 Welcome_to_GD_Paradise!!</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_21-03_Chapter1.xhtml"/>
+      <navPoint id="num_6" playOrder="6">
+        <navLabel>
+          <text>1</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-03_Chapter1.xhtml#toc_1"/>
+      </navPoint>
+      <navPoint id="num_7" playOrder="7">
+        <navLabel>
+          <text>2</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-03_Chapter1.xhtml#toc_2"/>
+      </navPoint>
+      <navPoint id="num_8" playOrder="8">
+        <navLabel>
+          <text>3</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-03_Chapter1.xhtml#toc_3"/>
+      </navPoint>
+      <navPoint id="num_9" playOrder="9">
+        <navLabel>
+          <text>4</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-03_Chapter1.xhtml#toc_4"/>
+      </navPoint>
+      <navPoint id="num_10" playOrder="10">
+        <navLabel>
+          <text>5</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-03_Chapter1.xhtml#toc_5"/>
+      </navPoint>
+      <navPoint id="num_11" playOrder="11">
+        <navLabel>
+          <text>6</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-03_Chapter1.xhtml#toc_6"/>
+      </navPoint>
+      <navPoint id="num_12" playOrder="12">
+        <navLabel>
+          <text>7</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-03_Chapter1.xhtml#toc_7"/>
+      </navPoint>
+      <navPoint id="num_13" playOrder="13">
+        <navLabel>
+          <text>8</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-03_Chapter1.xhtml#toc_8"/>
+      </navPoint>
+      <navPoint id="num_14" playOrder="14">
+        <navLabel>
+          <text>9</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-03_Chapter1.xhtml#toc_9"/>
+      </navPoint>
+      <navPoint id="num_15" playOrder="15">
+        <navLabel>
+          <text>10</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-03_Chapter1.xhtml#toc_10"/>
+      </navPoint>
+      <navPoint id="num_16" playOrder="16">
+        <navLabel>
+          <text>11</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-03_Chapter1.xhtml#toc_11"/>
+      </navPoint>
+      <navPoint id="num_17" playOrder="17">
+        <navLabel>
+          <text>12</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-03_Chapter1.xhtml#toc_12"/>
+      </navPoint>
+      <navPoint id="num_18" playOrder="18">
+        <navLabel>
+          <text>13</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-03_Chapter1.xhtml#toc_13"/>
+      </navPoint>
+      <navPoint id="num_19" playOrder="19">
+        <navLabel>
+          <text>14</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-03_Chapter1.xhtml#toc_14"/>
+      </navPoint>
+      <navPoint id="num_20" playOrder="20">
+        <navLabel>
+          <text>15</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-03_Chapter1.xhtml#toc_15"/>
+      </navPoint>
+    </navPoint>
+    <navPoint id="num_21" playOrder="21">
+      <navLabel>
+        <text>行间一</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_21-04_Between_the_Lines1.xhtml"/>
+    </navPoint>
+    <navPoint id="num_22" playOrder="22">
+      <navLabel>
+        <text>第二章 编纂人类智慧而成的东西 Grimoire_Nova.</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_21-05_Chapter2.xhtml"/>
+      <navPoint id="num_23" playOrder="23">
+        <navLabel>
+          <text>1</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-05_Chapter2.xhtml#toc_1"/>
+      </navPoint>
+      <navPoint id="num_24" playOrder="24">
+        <navLabel>
+          <text>2</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-05_Chapter2.xhtml#toc_2"/>
+      </navPoint>
+      <navPoint id="num_25" playOrder="25">
+        <navLabel>
+          <text>3</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-05_Chapter2.xhtml#toc_3"/>
+      </navPoint>
+      <navPoint id="num_26" playOrder="26">
+        <navLabel>
+          <text>4</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-05_Chapter2.xhtml#toc_4"/>
+      </navPoint>
+      <navPoint id="num_27" playOrder="27">
+        <navLabel>
+          <text>5</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-05_Chapter2.xhtml#toc_5"/>
+      </navPoint>
+      <navPoint id="num_28" playOrder="28">
+        <navLabel>
+          <text>6</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-05_Chapter2.xhtml#toc_6"/>
+      </navPoint>
+      <navPoint id="num_29" playOrder="29">
+        <navLabel>
+          <text>7</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-05_Chapter2.xhtml#toc_7"/>
+      </navPoint>
+      <navPoint id="num_30" playOrder="30">
+        <navLabel>
+          <text>8</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-05_Chapter2.xhtml#toc_8"/>
+      </navPoint>
+      <navPoint id="num_31" playOrder="31">
+        <navLabel>
+          <text>9</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-05_Chapter2.xhtml#toc_9"/>
+      </navPoint>
+      <navPoint id="num_32" playOrder="32">
+        <navLabel>
+          <text>10</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-05_Chapter2.xhtml#toc_10"/>
+      </navPoint>
+      <navPoint id="num_33" playOrder="33">
+        <navLabel>
+          <text>11</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-05_Chapter2.xhtml#toc_11"/>
+      </navPoint>
+      <navPoint id="num_34" playOrder="34">
+        <navLabel>
+          <text>12</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-05_Chapter2.xhtml#toc_12"/>
+      </navPoint>
+      <navPoint id="num_35" playOrder="35">
+        <navLabel>
+          <text>13</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-05_Chapter2.xhtml#toc_13"/>
+      </navPoint>
+    </navPoint>
+    <navPoint id="num_36" playOrder="36">
+      <navLabel>
+        <text>行间二</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_21-06_Between_the_Lines2.xhtml"/>
+    </navPoint>
+    <navPoint id="num_37" playOrder="37">
+      <navLabel>
+        <text>第三章 高速公路‧锁定目标 Speed_Freaks.</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_21-07_Chapter3.xhtml"/>
+      <navPoint id="num_38" playOrder="38">
+        <navLabel>
+          <text>1</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-07_Chapter3.xhtml#toc_1"/>
+      </navPoint>
+      <navPoint id="num_39" playOrder="39">
+        <navLabel>
+          <text>2</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-07_Chapter3.xhtml#toc_2"/>
+      </navPoint>
+      <navPoint id="num_40" playOrder="40">
+        <navLabel>
+          <text>3</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-07_Chapter3.xhtml#toc_3"/>
+      </navPoint>
+      <navPoint id="num_41" playOrder="41">
+        <navLabel>
+          <text>4</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-07_Chapter3.xhtml#toc_4"/>
+      </navPoint>
+      <navPoint id="num_42" playOrder="42">
+        <navLabel>
+          <text>5</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-07_Chapter3.xhtml#toc_5"/>
+      </navPoint>
+      <navPoint id="num_43" playOrder="43">
+        <navLabel>
+          <text>6</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-07_Chapter3.xhtml#toc_6"/>
+      </navPoint>
+      <navPoint id="num_44" playOrder="44">
+        <navLabel>
+          <text>7</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-07_Chapter3.xhtml#toc_7"/>
+      </navPoint>
+      <navPoint id="num_45" playOrder="45">
+        <navLabel>
+          <text>8</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-07_Chapter3.xhtml#toc_8"/>
+      </navPoint>
+      <navPoint id="num_46" playOrder="46">
+        <navLabel>
+          <text>9</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-07_Chapter3.xhtml#toc_9"/>
+      </navPoint>
+      <navPoint id="num_47" playOrder="47">
+        <navLabel>
+          <text>10</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-07_Chapter3.xhtml#toc_10"/>
+      </navPoint>
+      <navPoint id="num_48" playOrder="48">
+        <navLabel>
+          <text>11</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-07_Chapter3.xhtml#toc_11"/>
+      </navPoint>
+      <navPoint id="num_49" playOrder="49">
+        <navLabel>
+          <text>12</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-07_Chapter3.xhtml#toc_12"/>
+      </navPoint>
+      <navPoint id="num_50" playOrder="50">
+        <navLabel>
+          <text>13</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-07_Chapter3.xhtml#toc_13"/>
+      </navPoint>
+      <navPoint id="num_51" playOrder="51">
+        <navLabel>
+          <text>14</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-07_Chapter3.xhtml#toc_14"/>
+      </navPoint>
+      <navPoint id="num_52" playOrder="52">
+        <navLabel>
+          <text>15</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-07_Chapter3.xhtml#toc_15"/>
+      </navPoint>
+      <navPoint id="num_53" playOrder="53">
+        <navLabel>
+          <text>16</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-07_Chapter3.xhtml#toc_16"/>
+      </navPoint>
+      <navPoint id="num_54" playOrder="54">
+        <navLabel>
+          <text>17</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-07_Chapter3.xhtml#toc_17"/>
+      </navPoint>
+      <navPoint id="num_55" playOrder="55">
+        <navLabel>
+          <text>18</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-07_Chapter3.xhtml#toc_18"/>
+      </navPoint>
+      <navPoint id="num_56" playOrder="56">
+        <navLabel>
+          <text>19</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-07_Chapter3.xhtml#toc_19"/>
+      </navPoint>
+      <navPoint id="num_57" playOrder="57">
+        <navLabel>
+          <text>20</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-07_Chapter3.xhtml#toc_20"/>
+      </navPoint>
+    </navPoint>
+    <navPoint id="num_58" playOrder="58">
+      <navLabel>
+        <text>行间三</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_21-08_Between_the_Lines3.xhtml"/>
+    </navPoint>
+    <navPoint id="num_59" playOrder="59">
+      <navLabel>
+        <text>第四章 当不成弥赛亚 Battle_of_Scotland.</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_21-09_Chapter4.xhtml"/>
+      <navPoint id="num_60" playOrder="60">
+        <navLabel>
+          <text>1</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-09_Chapter4.xhtml#toc_1"/>
+      </navPoint>
+      <navPoint id="num_61" playOrder="61">
+        <navLabel>
+          <text>2</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-09_Chapter4.xhtml#toc_2"/>
+      </navPoint>
+      <navPoint id="num_62" playOrder="62">
+        <navLabel>
+          <text>3</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-09_Chapter4.xhtml#toc_3"/>
+      </navPoint>
+      <navPoint id="num_63" playOrder="63">
+        <navLabel>
+          <text>4</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-09_Chapter4.xhtml#toc_4"/>
+      </navPoint>
+      <navPoint id="num_64" playOrder="64">
+        <navLabel>
+          <text>5</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-09_Chapter4.xhtml#toc_5"/>
+      </navPoint>
+      <navPoint id="num_65" playOrder="65">
+        <navLabel>
+          <text>6</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-09_Chapter4.xhtml#toc_6"/>
+      </navPoint>
+      <navPoint id="num_66" playOrder="66">
+        <navLabel>
+          <text>7</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_21-09_Chapter4.xhtml#toc_7"/>
+      </navPoint>
+    </navPoint>
+    <navPoint id="num_67" playOrder="67">
+      <navLabel>
+        <text>终　章 能允许这种结局吗 Go_for_Broke!!</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_21-10_Epilogue.xhtml"/>
+    </navPoint>
+    <navPoint id="num_68" playOrder="68">
+      <navLabel>
+        <text>后记</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_21-11_Afterwords.xhtml"/>
+    </navPoint>
+  </navMap>
+</ncx>
