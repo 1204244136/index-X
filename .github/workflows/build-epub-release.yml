@@ -1,0 +1,121 @@
+name: Build EPUB Release
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  release-epubs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Clean old output
+        run: rm -rf output/
+
+      - name: Create EPUB files
+        run: |
+          mkdir -p output/epubs
+
+          shopt -s nullglob
+          for dir in EPUB/*/ ; do
+            name=$(basename "$dir")
+            zip -r "output/epubs/${name}.epub" "$dir"
+          done
+
+      - name: Create merged ZIPs
+        run: |
+          DATE=$(date +'%Y.%m.%d')
+          cd output/epubs
+
+          Collections=(
+            "All:["
+            "A_Certain_Magical_Index:[S1_"
+            "A_Certain_Magical_Index_New_Testament:[S2_"
+            "A_Certain_Magical_Index_Genesis_Testament:[S3_"
+            "A_Certain_Dark_Side_Item:[S4_"
+            "A_Certain_Magical_Index_SP:[S5_ [S6_"
+          )
+          for entry in "${Collections[@]}"; do
+            ARCHIVE_NAME="${entry%%:*}"
+            PREFIXES="${entry#*:}"
+
+            FILES=""
+            for PREFIX in ${PREFIXES}; do
+              FILES+=" ${PREFIX}*.epub"
+            done
+
+            zip -r ../${ARCHIVE_NAME}.${DATE}.zip ${FILES}
+          done
+
+          cd -
+
+      - name: Generate Release Notes and Rename EPUB files
+        id: release_notes
+        run: |
+          DATE=$(date +'%Y.%m.%d')
+          BASE_URL="https://github.com/${{ github.repository }}/releases/download/auto/"
+          shopt -s nullglob
+
+          NOTE="## 合集\n\n"
+          Collections=(
+            "All:[${DATE}]合集"
+            "A_Certain_Magical_Index:[${DATE}]某魔法的禁书目录 旧约"
+            "A_Certain_Magical_Index_New_Testament:[${DATE}]某魔法的禁书目录 新约"
+            "A_Certain_Magical_Index_Genesis_Testament:[${DATE}]某魔法的禁书目录 创约"
+            "A_Certain_Dark_Side_Item:[${DATE}]某暗部的少女共栖"
+            "A_Certain_Magical_Index_SP:[${DATE}]某魔法的禁书目录 番外"
+          )
+          for entry in "${Collections[@]}"; do
+            ARCHIVE_NAME="${entry%%:*}"
+            NAME="${entry#*:}"
+            NOTE="${NOTE}- [${NAME}](${BASE_URL}${ARCHIVE_NAME}.${DATE}.zip)\n"
+          done
+          
+
+          NOTE="${NOTE}\n## 单行本\n"
+          SERIES_GROUPS=(
+            "某魔法的禁书目录 旧约:[S1_"
+            "某魔法的禁书目录 新约:[S2_"
+            "某魔法的禁书目录 创约:[S3_"
+            "某暗部的少女共栖:[S4_"
+            "某魔法的禁书目录 番外:[S5_ [S6_"
+          )
+          for entry in "${SERIES_GROUPS[@]}"; do
+            LABEL="${entry%%:*}"
+            PREFIXES="${entry#*:}"
+            NOTE="${NOTE}\n### ${LABEL}\n\n"
+            for PREFIX in ${PREFIXES}; do
+              for file in output/epubs/${PREFIX}*.epub; do
+                filename=$(basename "$file")
+                short_name=$(echo "$filename" | grep -oP '\[.*?\]' | tr -d '[]').epub
+                mv "output/epubs/${filename}" "output/epubs/${short_name}"
+                name=$(basename "$filename" .epub)
+                NOTE="${NOTE}- [${name}](${BASE_URL}${short_name})\n"
+              done
+            done
+          done
+
+          echo -e "${NOTE}" > output/release_notes.md
+
+      - name: Upload to Release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: auto
+          allowUpdates: true
+          removeArtifacts: true
+          makeLatest: true
+          bodyFile: output/release_notes.md
+          artifacts: |
+            output/All.*.zip
+            output/A_Certain_Magical_Index.*.zip
+            output/A_Certain_Magical_Index_New_Testament.*.zip
+            output/A_Certain_Magical_Index_Genesis_Testament.*.zip
+            output/A_Certain_Dark_Side_Item.*.zip
+            output/A_Certain_Magical_Index_SP.*.zip
+            output/epubs/*.epub
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
