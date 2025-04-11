@@ -23,7 +23,9 @@ jobs:
           shopt -s nullglob
           for dir in EPUB/*/ ; do
             name=$(basename "$dir")
-            zip -r "output/epubs/${name}.epub" "$dir"
+            (
+              cd "$dir" && zip -r "../../output/epubs/${name}.epub" ./*
+            )
           done
 
       - name: Create merged ZIPs
