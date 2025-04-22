@@ -175,3 +175,7 @@ Chansey：
 支持X系列作者**知一一**
 - 点亮该项目右上角的小星星⭐，让更多人看到
 - 在群里提出更多有用的建议✏️
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=1204244136/index-X&type=Date)](https://www.star-history.com/#1204244136/index-X&Date)
