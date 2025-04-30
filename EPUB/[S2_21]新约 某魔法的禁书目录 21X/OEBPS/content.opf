@@ -17,7 +17,7 @@
     <meta refines="#id-1" property="file-as">新约 某魔法的禁书目录 21X</meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
-    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-01-24T16:01:28Z</meta>
+    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-04-17T06:17:21Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
     <meta refines="#id-2" property="role" scheme="marc:relators">aut</meta>
     <meta refines="#id-2" property="file-as">镰池和马</meta>

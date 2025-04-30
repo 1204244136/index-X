@@ -11,7 +11,7 @@
     <meta refines="#id" property="file-as">某科学的超电磁炮 SS2 能力实演旅行篇X</meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
-    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-04-04T07:10:37Z</meta>
+    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-04-25T07:11:27Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
     <meta refines="#id-1" property="role" scheme="marc:relators">aut</meta>
     <meta refines="#id-1" property="file-as">镰池和马</meta>
@@ -138,14 +138,14 @@
     <item id="S5_02_02-Cover.xhtml" href="Text/S5_02_02-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
     <item id="Message.xhtml" href="Text/S5_02_02-Information.xhtml" media-type="application/xhtml+xml"/>
     <item id="id1" href="Text/S5_02_02-Introduction.xhtml" media-type="application/xhtml+xml"/>
-    <item href="Text/S5_02_02-Chapter1.xhtml" id="id3" media-type="application/xhtml+xml"/>
-    <item href="Text/S5_02_02-Chapter2.xhtml" id="id16" media-type="application/xhtml+xml"/>
-    <item href="Text/S5_02_02-Chapter3.xhtml" id="id4" media-type="application/xhtml+xml"/>
-    <item href="Text/S5_02_02-Chapter4.xhtml" id="id8" media-type="application/xhtml+xml"/>
-    <item href="Text/S5_02_02-Chapter5.xhtml" id="id9" media-type="application/xhtml+xml"/>
-    <item href="Text/S5_02_02-Chapter6.xhtml" id="id10" media-type="application/xhtml+xml"/>
-    <item href="Text/S5_02_02-Chapter7.xhtml" id="id11" media-type="application/xhtml+xml"/>
-    <item href="Text/S5_02_02-Chapter8.xhtml" id="id12" media-type="application/xhtml+xml"/>
+    <item href="Text/S5_02_02-01_Chapter1.xhtml" id="id3" media-type="application/xhtml+xml"/>
+    <item href="Text/S5_02_02-02_Chapter2.xhtml" id="id16" media-type="application/xhtml+xml"/>
+    <item href="Text/S5_02_02-03_Chapter3.xhtml" id="id4" media-type="application/xhtml+xml"/>
+    <item href="Text/S5_02_02-04_Chapter4.xhtml" id="id8" media-type="application/xhtml+xml"/>
+    <item href="Text/S5_02_02-05_Chapter5.xhtml" id="id9" media-type="application/xhtml+xml"/>
+    <item href="Text/S5_02_02-06_Chapter6.xhtml" id="id10" media-type="application/xhtml+xml"/>
+    <item href="Text/S5_02_02-07_Chapter7.xhtml" id="id11" media-type="application/xhtml+xml"/>
+    <item href="Text/S5_02_02-08_Chapter8.xhtml" id="id12" media-type="application/xhtml+xml"/>
     <item id="id21" href="Text/S5_02_02-Back_cover.xhtml" media-type="application/xhtml+xml"/>
     <item id="id2" href="Text/S5_02_02-Note.xhtml" media-type="application/xhtml+xml"/>
     <item id="nav" href="../nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>

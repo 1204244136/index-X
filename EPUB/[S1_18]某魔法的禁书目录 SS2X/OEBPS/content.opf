@@ -14,7 +14,7 @@
     <meta refines="#id" property="file-as">某魔法的禁书目录 SS2X</meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
-    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-03-11T04:15:14Z</meta>
+    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-04-25T13:45:28Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
     <meta refines="#id-1" property="role" scheme="marc:relators">aut</meta>
     <meta refines="#id-1" property="file-as">镰池和马</meta>
@@ -141,29 +141,29 @@
     <item id="S1_18-Cover.xhtml" href="Text/S1_18-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
     <item id="Message.xhtml" href="Text/S1_18-Information.xhtml" media-type="application/xhtml+xml"/>
     <item id="id1" href="Text/S1_18-Introduction.xhtml" media-type="application/xhtml+xml"/>
-    <item href="Text/S1_18-Chapter1.xhtml" id="id34" media-type="application/xhtml+xml"/>
-    <item href="Text/S1_18-Chapter2.xhtml" id="id39" media-type="application/xhtml+xml"/>
-    <item href="Text/S1_18-Chapter3.xhtml" id="id3" media-type="application/xhtml+xml"/>
-    <item href="Text/S1_18-Chapter4.xhtml" id="id33" media-type="application/xhtml+xml"/>
-    <item href="Text/S1_18-Chapter5.xhtml" id="id35" media-type="application/xhtml+xml"/>
-    <item href="Text/S1_18-Chapter6.xhtml" id="id37" media-type="application/xhtml+xml"/>
-    <item href="Text/S1_18-Chapter7.xhtml" id="id40" media-type="application/xhtml+xml"/>
-    <item href="Text/S1_18-Chapter8.xhtml" id="id13" media-type="application/xhtml+xml"/>
-    <item href="Text/S1_18-Chapter9.xhtml" id="id12" media-type="application/xhtml+xml"/>
-    <item href="Text/S1_18-Chapter10.xhtml" id="id9" media-type="application/xhtml+xml"/>
-    <item href="Text/S1_18-Chapter11.xhtml" id="id11" media-type="application/xhtml+xml"/>
-    <item href="Text/S1_18-Chapter12.xhtml" id="id4" media-type="application/xhtml+xml"/>
-    <item href="Text/S1_18-Chapter13.xhtml" id="id10" media-type="application/xhtml+xml"/>
-    <item href="Text/S1_18-Chapter14.xhtml" id="id31" media-type="application/xhtml+xml"/>
-    <item href="Text/S1_18-Chapter15.xhtml" id="id8" media-type="application/xhtml+xml"/>
-    <item href="Text/S1_18-Chapter16.xhtml" id="id36" media-type="application/xhtml+xml"/>
-    <item href="Text/S1_18-Chapter17.xhtml" id="id16" media-type="application/xhtml+xml"/>
-    <item href="Text/S1_18-Chapter18.xhtml" id="id14" media-type="application/xhtml+xml"/>
-    <item href="Text/S1_18-Chapter19.xhtml" id="id15" media-type="application/xhtml+xml"/>
-    <item href="Text/S1_18-Chapter20.xhtml" id="id38" media-type="application/xhtml+xml"/>
-    <item href="Text/S1_18-Chapter21.xhtml" id="id32" media-type="application/xhtml+xml"/>
-    <item href="Text/S1_18-Chapter22.xhtml" id="id41" media-type="application/xhtml+xml"/>
-    <item href="Text/S1_18-Afterwords.xhtml" id="id17" media-type="application/xhtml+xml"/>
+    <item href="Text/S1_18-01_Chapter1.xhtml" id="id34" media-type="application/xhtml+xml"/>
+    <item href="Text/S1_18-02_Chapter2.xhtml" id="id39" media-type="application/xhtml+xml"/>
+    <item href="Text/S1_18-03_Chapter3.xhtml" id="id3" media-type="application/xhtml+xml"/>
+    <item href="Text/S1_18-04_Chapter4.xhtml" id="id33" media-type="application/xhtml+xml"/>
+    <item href="Text/S1_18-05_Chapter5.xhtml" id="id35" media-type="application/xhtml+xml"/>
+    <item href="Text/S1_18-06_Chapter6.xhtml" id="id37" media-type="application/xhtml+xml"/>
+    <item href="Text/S1_18-07_Chapter7.xhtml" id="id40" media-type="application/xhtml+xml"/>
+    <item href="Text/S1_18-08_Chapter8.xhtml" id="id13" media-type="application/xhtml+xml"/>
+    <item href="Text/S1_18-09_Chapter9.xhtml" id="id12" media-type="application/xhtml+xml"/>
+    <item href="Text/S1_18-10_Chapter10.xhtml" id="id9" media-type="application/xhtml+xml"/>
+    <item href="Text/S1_18-11_Chapter11.xhtml" id="id11" media-type="application/xhtml+xml"/>
+    <item href="Text/S1_18-12_Chapter12.xhtml" id="id4" media-type="application/xhtml+xml"/>
+    <item href="Text/S1_18-13_Chapter13.xhtml" id="id10" media-type="application/xhtml+xml"/>
+    <item href="Text/S1_18-14_Chapter14.xhtml" id="id31" media-type="application/xhtml+xml"/>
+    <item href="Text/S1_18-15_Chapter15.xhtml" id="id8" media-type="application/xhtml+xml"/>
+    <item href="Text/S1_18-16_Chapter16.xhtml" id="id36" media-type="application/xhtml+xml"/>
+    <item href="Text/S1_18-17_Chapter17.xhtml" id="id16" media-type="application/xhtml+xml"/>
+    <item href="Text/S1_18-18_Chapter18.xhtml" id="id14" media-type="application/xhtml+xml"/>
+    <item href="Text/S1_18-19_Chapter19.xhtml" id="id15" media-type="application/xhtml+xml"/>
+    <item href="Text/S1_18-20_Chapter20.xhtml" id="id38" media-type="application/xhtml+xml"/>
+    <item href="Text/S1_18-21_Chapter21.xhtml" id="id32" media-type="application/xhtml+xml"/>
+    <item href="Text/S1_18-22_Chapter22.xhtml" id="id41" media-type="application/xhtml+xml"/>
+    <item href="Text/S1_18-23_Afterwords.xhtml" id="id17" media-type="application/xhtml+xml"/>
     <item id="id44" href="Text/S1_18-Back_cover.xhtml" media-type="application/xhtml+xml"/>
     <item id="id42" href="Text/S1_18-Note.xhtml" media-type="application/xhtml+xml"/>
     <item id="nav" href="../nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
