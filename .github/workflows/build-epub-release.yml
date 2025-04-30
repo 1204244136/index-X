@@ -67,12 +67,12 @@ jobs:
 
           NOTE="## 合集\n\n"
           Collections=(
-            "All:[${DATE}]合集"
-            "A_Certain_Magical_Index:[${DATE}]某魔法的禁书目录 旧约"
-            "A_Certain_Magical_Index_New_Testament:[${DATE}]某魔法的禁书目录 新约"
-            "A_Certain_Magical_Index_Genesis_Testament:[${DATE}]某魔法的禁书目录 创约"
-            "A_Certain_Dark_Side_Item:[${DATE}]某暗部的少女共栖"
-            "A_Certain_Magical_Index_SP:[${DATE}]某魔法的禁书目录 番外"
+            "All:合集(${DATE})"
+            "A_Certain_Magical_Index:某魔法的禁书目录 旧约(${DATE})"
+            "A_Certain_Magical_Index_New_Testament:某魔法的禁书目录 新约(${DATE})"
+            "A_Certain_Magical_Index_Genesis_Testament:某魔法的禁书目录 创约(${DATE})"
+            "A_Certain_Dark_Side_Item:某暗部的少女共栖(${DATE})"
+            "A_Certain_Magical_Index_SP:某魔法的禁书目录 番外(${DATE})"
           )
           for entry in "${Collections[@]}"; do
             ARCHIVE_NAME="${entry%%:*}"
@@ -122,5 +122,3 @@ jobs:
             output/A_Certain_Dark_Side_Item.*.zip
             output/A_Certain_Magical_Index_SP.*.zip
             output/epubs/*.epub
-        env:
-          GITHUB_TOKEN: ${{ secrets.TOKEN }}
