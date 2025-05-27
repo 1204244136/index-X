@@ -11,7 +11,7 @@
     <meta refines="#id" property="file-as">某魔法的禁书目录 通向恩底弥翁之路X</meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
-    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-04-04T07:07:28Z</meta>
+    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-05-16T01:15:21Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
     <meta refines="#id-1" property="role" scheme="marc:relators">aut</meta>
     <meta refines="#id-1" property="file-as">镰池和马</meta>
@@ -138,11 +138,11 @@
     <item id="S5_01_03-Cover.xhtml" href="Text/S5_01_03-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
     <item id="Message.xhtml" href="Text/S5_01_03-Information.xhtml" media-type="application/xhtml+xml"/>
     <item id="id1" href="Text/S5_01_03-Introduction.xhtml" media-type="application/xhtml+xml"/>
-    <item href="Text/S5_01_03-Chapter1.xhtml" id="id3" media-type="application/xhtml+xml"/>
-    <item href="Text/S5_01_03-Chapter2.xhtml" id="id16" media-type="application/xhtml+xml"/>
-    <item href="Text/S5_01_03-Chapter3.xhtml" id="id4" media-type="application/xhtml+xml"/>
-    <item href="Text/S5_01_03-Chapter4.xhtml" id="id8" media-type="application/xhtml+xml"/>
-    <item href="Text/S5_01_03-Chapter5.xhtml" id="id9" media-type="application/xhtml+xml"/>
+    <item href="Text/S5_01_03-_01Chapter1.xhtml" id="id3" media-type="application/xhtml+xml"/>
+    <item href="Text/S5_01_03-02_Chapter2.xhtml" id="id16" media-type="application/xhtml+xml"/>
+    <item href="Text/S5_01_03-03_Chapter3.xhtml" id="id4" media-type="application/xhtml+xml"/>
+    <item href="Text/S5_01_03-04_Chapter4.xhtml" id="id8" media-type="application/xhtml+xml"/>
+    <item href="Text/S5_01_03-05_Chapter5.xhtml" id="id9" media-type="application/xhtml+xml"/>
     <item id="id14" href="Text/S5_01_03-Back_cover.xhtml" media-type="application/xhtml+xml"/>
     <item id="id6" href="Text/S5_01_03-Note.xhtml" media-type="application/xhtml+xml"/>
     <item id="nav" href="../nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>

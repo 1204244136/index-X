@@ -23,7 +23,7 @@
     <meta refines="#id" property="file-as">新约 某魔法的禁书目录 14X</meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
-    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-01-24T15:18:17Z</meta>
+    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-05-07T01:09:24Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
     <meta refines="#id-1" property="role" scheme="marc:relators">aut</meta>
     <meta refines="#id-1" property="file-as">镰池和马</meta>
@@ -174,7 +174,7 @@
     <item href="Images/Contents.jpg" id="id32" media-type="image/jpeg"/>
     <item id="GT_vol_1.jpg" href="Images/Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
     <item href="Images/Deputy_cover.jpg" id="id31" media-type="image/jpeg"/>
-    <item href="Images/Illustrations1.jpg" id="id29" media-type="image/jpeg"/>
+    <item href="Images/S2_14-Illustrations1.jpg" id="id29" media-type="image/jpeg"/>
     <item href="Images/Illustrations2.jpg" id="id30" media-type="image/jpeg"/>
     <item href="Images/p1.jpg" id="id18" media-type="image/jpeg"/>
     <item href="Images/p2.jpg" id="id19" media-type="image/jpeg"/>

@@ -79,7 +79,7 @@
     </navPoint>
     <navPoint id="num_12" playOrder="12">
       <navLabel>
-        <text>第十章 最终术式下准备完毕 Rebirth_the...</text>
+        <text>第十章 最终术式下准备完毕 Rebirth_the…</text>
       </navLabel>
       <content src="OEBPS/Text/S1_24-04_Chapter10.xhtml"/>
       <navPoint id="num_13" playOrder="13">

@@ -11,7 +11,7 @@
     <meta refines="#id" property="file-as">某魔法的禁书目录SS 神裂火织篇X</meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
-    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-04-03T07:52:54Z</meta>
+    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-05-10T13:50:40Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
     <meta refines="#id-1" property="role" scheme="marc:relators">aut</meta>
     <meta refines="#id-1" property="file-as">镰池和马</meta>
