@@ -168,7 +168,7 @@ Chansey：
 ### 关于译名
 
 - X 系列的部分译名与台版或网翻的均不同，可以部分参考维基的[译名表](https://toaru.huijiwiki.com/p/265)
-- X 系列的部分译名甚至可能与与维基或者汉化组的也不同，如果想知道具体有哪些，可以查看[我在维基上的博客](https://toaru.huijiwiki.com/wiki/Project:%E6%B2%99%E7%9B%92/%E7%9F%A5%E4%B8%80%E4%B8%80)。
+- X 系列的部分译名甚至可能与维基或者汉化组的也不同，如果想知道具体有哪些，可以查看[我在维基上的博客](https://toaru.huijiwiki.com/wiki/Project:%E6%B2%99%E7%9B%92/%E7%9F%A5%E4%B8%80%E4%B8%80)。
 
 ### 反馈注意事项
 
