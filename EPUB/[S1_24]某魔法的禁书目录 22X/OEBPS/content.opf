@@ -16,7 +16,7 @@
     <meta refines="#id" property="file-as">某魔法的禁书目录 22X</meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
-    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-01-24T12:13:14Z</meta>
+    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-07-26T11:05:17Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
     <meta refines="#id-1" property="role" scheme="marc:relators">aut</meta>
     <meta refines="#id-1" property="file-as">镰池和马</meta>
@@ -161,7 +161,7 @@
     <item id="toc" href="../toc.ncx" media-type="application/x-dtbncx+xml"/>
     <item href="Styles/style.css" id="id5" media-type="text/css"/>
     <item id="id30" href="Images/Back_cover.jpg" media-type="image/jpeg"/>
-    <item href="Images/Contents.jpg" id="id22" media-type="image/jpeg"/>
+    <item href="Images/S1_24-Contents.jpg" id="id22" media-type="image/jpeg"/>
     <item id="GT_vol_1.jpg" href="Images/Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
     <item href="Images/Deputy_cover.jpg" id="id19" media-type="image/jpeg"/>
     <item href="Images/Illustrations1.jpg" id="id20" media-type="image/jpeg"/>
