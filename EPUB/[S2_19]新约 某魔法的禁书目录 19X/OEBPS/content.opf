@@ -1,28 +1,22 @@
-<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:title id="id-1">新约 某魔法的禁书目录 19X</dc:title>
+    <dc:title id="id-1">[S2_19]新约 某魔法的禁书目录 19X</dc:title>
     <dc:creator id="id-2">镰池和马</dc:creator>
-    <dc:identifier>calibre:873</dc:identifier>
+    <dc:identifier>calibre:125</dc:identifier>
+    <dc:identifier>uuid:d94f188a-28fb-45f8-8493-bf77e9d021e5</dc:identifier>
     <dc:identifier id="BookId">uuid:70f51e8c-4149-4b33-bfdc-32397f29fd71</dc:identifier>
     <dc:language>zh-CN</dc:language>
-    <dc:description>&lt;div&gt;
-&lt;p style="font-weight: bold"&gt;本应被打倒的学园都市统括理事长变成了美少女，出现在上条面前——？！&lt;/p&gt;
-&lt;p&gt;醒来就发全身都被特殊的紧身衣覆盖还无法脱掉的滨面，被卷入了某种犯罪。甚至在街上与<ruby>一方通行<rt>Accelerator</rt></ruby>为敌。在此期间他还背负上了新的麻烦，那就是路边被丢弃的小婴儿。婴儿的手腕上的标签还刻着以L开头的六个字母？愚蠢的混混滨面能否让穿着迷你裙圣诞装的巨乳女友泷壶理后注意到他呢？&lt;/p&gt;
-&lt;p&gt;与此同时，上条正身处险境。不知为何，他遭到了究极美少女还讨人厌的宿敌亚雷斯塔的反向性骚扰。对方是死敌，但却是无与伦比的美少女，你要怎么做啊刺猬头！&lt;/p&gt;&lt;/div&gt;</dc:description>
+    <dc:contributor id="id-4">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
+    <dc:description>&lt;p style=&quot;font-weight: bold&quot;&gt;本应被打倒的学园都市统括理事长变成了美少女，出现在上条面前——？！&lt;/p&gt;
+&lt;p&gt;醒来就发全身都被特殊的紧身衣覆盖还无法脱掉的滨面，被卷入了某种犯罪。甚至在街上与一方通行为敌。在此期间他还背负上了新的麻烦，那就是路边被丢弃的小婴儿。婴儿的手腕上的标签还刻着以L开头的六个字母？愚蠢的混混滨面能否让穿着迷你裙圣诞装的巨乳女友泷壶理后注意到他呢？&lt;/p&gt;
+&lt;p&gt;与此同时，上条正身处险境。不知为何，他遭到了究极美少女还讨人厌的宿敌亚雷斯塔的反向性骚扰。对方是死敌，但却是无与伦比的美少女，你要怎么做啊刺猬头！&lt;/p&gt;</dc:description>
     <dc:subject>重小说</dc:subject>
-    <meta refines="#id-1" property="title-type">main</meta>
-    <meta refines="#id-1" property="file-as">新约 某魔法的禁书目录 19X</meta>
+    <opf:meta refines="#id-1" property="title-type">main</opf:meta>
+    <opf:meta refines="#id-1" property="file-as">[S2_19]新约 某魔法的禁书目录 19X</opf:meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
     <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-03-28T04:13:29Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
-    <meta refines="#id-2" property="role" scheme="marc:relators">aut</meta>
-    <meta refines="#id-2" property="file-as">镰池和马</meta>
-    <meta property="calibre:rating">10</meta>
-    <meta property="belongs-to-collection" id="id-3">新约</meta>
-    <meta refines="#id-3" property="collection-type">series</meta>
-    <meta refines="#id-3" property="group-position">19</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
     "#extra#": null,
@@ -137,11 +131,16 @@
     "table": "custom_column_4"
   }
 }</meta>
+    <opf:meta refines="#id-4" property="role" scheme="marc:relators">bkp</opf:meta>
+    <opf:meta refines="#id-2" property="role" scheme="marc:relators">aut</opf:meta>
+    <opf:meta refines="#id-2" property="file-as">镰池和马</opf:meta>
+    <opf:meta property="calibre:rating">10</opf:meta>
   </metadata>
   <manifest>
     <item id="S2_19-Cover.xhtml" href="Text/S2_19-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
     <item id="Message.xhtml" href="Text/S2_19-Information.xhtml" media-type="application/xhtml+xml"/>
     <item id="id1" href="Text/S2_19-Introduction.xhtml" media-type="application/xhtml+xml"/>
+    <item href="Text/S2_19-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
     <item href="Text/S2_19-01_Before_the_Prologue.xhtml" id="id3" media-type="application/xhtml+xml"/>
     <item id="id22" href="Text/S2_19-02_Prologue.xhtml" media-type="application/xhtml+xml"/>
     <item href="Text/S2_19-03_Chapter1.xhtml" id="id4" media-type="application/xhtml+xml"/>
@@ -173,7 +172,6 @@
     <item id="id27" href="Images/p5.jpg" media-type="image/jpeg"/>
     <item id="id28" href="Images/p6.jpg" media-type="image/jpeg"/>
     <item id="id29" href="Images/p7.jpg" media-type="image/jpeg"/>
-    <item href="Text/S2_19-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
   </manifest>
   <spine toc="toc">
     <itemref idref="S2_19-Cover.xhtml"/>

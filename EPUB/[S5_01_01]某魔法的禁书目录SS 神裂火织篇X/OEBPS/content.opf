@@ -1,24 +1,19 @@
-<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:title id="id">某魔法的禁书目录SS 神裂火织篇X</dc:title>
+    <dc:title id="id">[S5_01_01]某魔法的禁书目录SS 神裂火织篇X</dc:title>
     <dc:creator id="id-1">镰池和马</dc:creator>
-    <dc:identifier>calibre:933</dc:identifier>
+    <dc:identifier>calibre:110</dc:identifier>
+    <dc:identifier>uuid:f9388fb7-eb87-4d8d-8aa9-f3ddffa6de1f</dc:identifier>
     <dc:identifier id="BookId">uuid:10eb9295-2278-451c-ad7d-0cf97866a097</dc:identifier>
     <dc:language>zh-CN</dc:language>
+    <dc:contributor id="id-3">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
     <dc:subject>重小说</dc:subject>
-    <meta refines="#id" property="title-type">main</meta>
-    <meta refines="#id" property="file-as">某魔法的禁书目录SS 神裂火织篇X</meta>
+    <opf:meta refines="#id" property="title-type">main</opf:meta>
+    <opf:meta refines="#id" property="file-as">[S5_01_01]某魔法的禁书目录SS 神裂火织篇X</opf:meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
     <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-05-10T13:50:40Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
-    <meta refines="#id-1" property="role" scheme="marc:relators">aut</meta>
-    <meta refines="#id-1" property="file-as">镰池和马</meta>
-    <meta property="calibre:rating">10</meta>
-    <meta property="belongs-to-collection" id="id-2">番外</meta>
-    <meta refines="#id-2" property="collection-type">series</meta>
-    <meta refines="#id-2" property="group-position">10</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
     "#extra#": null,
@@ -133,6 +128,10 @@
     "table": "custom_column_4"
   }
 }</meta>
+    <opf:meta refines="#id-3" property="role" scheme="marc:relators">bkp</opf:meta>
+    <opf:meta refines="#id-1" property="role" scheme="marc:relators">aut</opf:meta>
+    <opf:meta refines="#id-1" property="file-as">镰池和马</opf:meta>
+    <opf:meta property="calibre:rating">10</opf:meta>
   </metadata>
   <manifest>
     <item id="S5_01_01-Cover.xhtml" href="Text/S5_01_01-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
@@ -146,6 +145,7 @@
     <item href="Text/S5_01_01-06_Chapter6.xhtml" id="id10" media-type="application/xhtml+xml"/>
     <item href="Text/S5_01_01-07_Chapter7.xhtml" id="id11" media-type="application/xhtml+xml"/>
     <item href="Text/S5_01_01-08_Chapter8.xhtml" id="id12" media-type="application/xhtml+xml"/>
+    <item id="id22" href="Text/S5_01_01-09_Afterwords.xhtml" media-type="application/xhtml+xml"/>
     <item id="id7" href="Text/S5_01_01-Back_cover.xhtml" media-type="application/xhtml+xml"/>
     <item id="id2" href="Text/S5_01_01-Note.xhtml" media-type="application/xhtml+xml"/>
     <item id="nav" href="../nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
@@ -161,7 +161,6 @@
     <item id="id19" href="Images/p6.jpg" media-type="image/jpeg"/>
     <item id="id20" href="Images/p7.jpg" media-type="image/jpeg"/>
     <item id="id21" href="Images/p8.jpg" media-type="image/jpeg"/>
-    <item id="id22" href="Text/S5_01_01-09_Afterwords.xhtml" media-type="application/xhtml+xml"/>
   </manifest>
   <spine toc="toc">
     <itemref idref="S5_01_01-Cover.xhtml"/>

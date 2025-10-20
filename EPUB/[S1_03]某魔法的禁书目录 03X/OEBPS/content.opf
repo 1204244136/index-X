@@ -1,13 +1,14 @@
 <?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:title id="id">某魔法的禁书目录 03X</dc:title>
+    <dc:title id="id">[S1_03]某魔法的禁书目录 03X</dc:title>
     <dc:creator id="id-1">镰池和马</dc:creator>
-    <dc:identifier>calibre:862</dc:identifier>
+    <dc:identifier>calibre:168</dc:identifier>
+    <dc:identifier>uuid:90399ae0-fd16-4197-9322-d54b6983de00</dc:identifier>
     <dc:identifier id="BookId">uuid:de5ea45f-230d-4734-b0d8-6b6429ad750d</dc:identifier>
     <dc:language>zh-CN</dc:language>
-    <dc:description>&lt;div&gt;
-&lt;p style="font-weight: bold"&gt;「超能力」，「<ruby>一方通行<rt>Accelerator</rt></ruby>」，「茵蒂克丝」，以及上条当麻。当所有支线交汇之时，故事就从此开始——！&lt;/p&gt;
+    <dc:contributor id="id-3">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
+    <dc:description>&lt;p style="font-weight: bold"&gt;「超能力」，「一方通行」，「茵蒂克丝」，以及上条当麻。当所有支线交汇之时，故事就从此开始——！&lt;/p&gt;
 &lt;p&gt;「不幸啊……」&lt;/p&gt;
 &lt;p&gt;盛夏的黄昏，补习班回来上条当麻在吞钱的自动售货机前不禁感慨道。&lt;/p&gt;
 &lt;p&gt;「喂，你在干什么呢？」&lt;/p&gt;
@@ -16,20 +17,14 @@
 &lt;p&gt;一个与美琴长相一模一样的御坂妹妹在这之后出现了。&lt;/p&gt;
 &lt;p&gt;三个人的相遇。&lt;/p&gt;
 &lt;p&gt;那便是事件的开端。&lt;/p&gt;
-&lt;p&gt;被称为<ruby>一方通行<rt>Accelerator</rt></ruby>的<ruby>超能力者<rt>Level 5</rt></ruby>所引发的杀戮惨剧，就此拉开了序幕——&lt;/p&gt;&lt;/div&gt;</dc:description>
+&lt;p&gt;被称为一方通行的超能力者所引发的杀戮惨剧，就此拉开了序幕——&lt;/p&gt;</dc:description>
     <dc:subject>重小说</dc:subject>
     <meta refines="#id" property="title-type">main</meta>
-    <meta refines="#id" property="file-as">某魔法的禁书目录 03X</meta>
+    <meta refines="#id" property="file-as">[S1_03]某魔法的禁书目录 03X</meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
-    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-01-22T15:12:25Z</meta>
+    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-10-20T03:20:14Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
-    <meta refines="#id-1" property="role" scheme="marc:relators">aut</meta>
-    <meta refines="#id-1" property="file-as">镰池和马</meta>
-    <meta property="calibre:rating">10</meta>
-    <meta property="belongs-to-collection" id="id-2">旧约</meta>
-    <meta refines="#id-2" property="collection-type">series</meta>
-    <meta refines="#id-2" property="group-position">3</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
     "#extra#": null,
@@ -144,11 +139,16 @@
     "table": "custom_column_4"
   }
 }</meta>
+    <meta refines="#id-3" property="role" scheme="marc:relators">bkp</meta>
+    <meta refines="#id-1" property="role" scheme="marc:relators">aut</meta>
+    <meta refines="#id-1" property="file-as">镰池和马</meta>
+    <meta property="calibre:rating">10</meta>
   </metadata>
   <manifest>
     <item id="S1_03-Cover.xhtml" href="Text/S1_03-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
     <item id="Message.xhtml" href="Text/S1_03-Information.xhtml" media-type="application/xhtml+xml"/>
     <item id="id1" href="Text/S1_03-Introduction.xhtml" media-type="application/xhtml+xml"/>
+    <item href="Text/S1_03-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
     <item href="Text/S1_03-01_Prologue.xhtml" id="id3" media-type="application/xhtml+xml"/>
     <item href="Text/S1_03-02_Chapter1.xhtml" id="id30" media-type="application/xhtml+xml"/>
     <item href="Text/S1_03-03_Chapter2.xhtml" id="id31" media-type="application/xhtml+xml"/>
@@ -182,7 +182,6 @@
     <item href="Images/p7.jpg" id="id4" media-type="image/jpeg"/>
     <item href="Images/p8.jpg" id="id24" media-type="image/jpeg"/>
     <item href="Images/p9.jpg" id="id25" media-type="image/jpeg"/>
-    <item href="Text/S1_03-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
   </manifest>
   <spine toc="toc">
     <itemref idref="S1_03-Cover.xhtml"/>

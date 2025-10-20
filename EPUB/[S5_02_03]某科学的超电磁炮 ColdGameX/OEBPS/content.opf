@@ -1,26 +1,21 @@
-<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:title id="id">某科学的超电磁炮 ColdGameX</dc:title>
+    <dc:title id="id">[S5_02_03]某科学的超电磁炮 ColdGameX</dc:title>
     <dc:creator id="id-1">镰池和马</dc:creator>
-    <dc:identifier>calibre:938</dc:identifier>
+    <dc:identifier>calibre:103</dc:identifier>
+    <dc:identifier>uuid:a08ea1ec-8ce0-483a-90d6-49ae4bed3fce</dc:identifier>
     <dc:identifier id="BookId">uuid:41894a94-68dd-4faa-9fe6-507e32ecad0d</dc:identifier>
     <dc:language>zh-CN</dc:language>
+    <dc:contributor id="id-3">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
     <dc:description>&lt;div&gt;
 &lt;p&gt;正社会参观着警备中心的佐天泪子和初春饰利。而佐天刚好用手机拍的照片却照到了疑似凶恶事件的犯人……&lt;/p&gt;&lt;/div&gt;</dc:description>
     <dc:subject>重小说</dc:subject>
-    <meta refines="#id" property="title-type">main</meta>
-    <meta refines="#id" property="file-as">某科学的超电磁炮 ColdGameX</meta>
+    <opf:meta refines="#id" property="title-type">main</opf:meta>
+    <opf:meta refines="#id" property="file-as">[S5_02_03]某科学的超电磁炮 ColdGameX</opf:meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
     <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-04-04T07:11:03Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
-    <meta refines="#id-1" property="role" scheme="marc:relators">aut</meta>
-    <meta refines="#id-1" property="file-as">镰池和马</meta>
-    <meta property="calibre:rating">10</meta>
-    <meta property="belongs-to-collection" id="id-2">番外</meta>
-    <meta refines="#id-2" property="collection-type">series</meta>
-    <meta refines="#id-2" property="group-position">1</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
     "#extra#": null,
@@ -135,6 +130,10 @@
     "table": "custom_column_4"
   }
 }</meta>
+    <opf:meta refines="#id-3" property="role" scheme="marc:relators">bkp</opf:meta>
+    <opf:meta refines="#id-1" property="role" scheme="marc:relators">aut</opf:meta>
+    <opf:meta refines="#id-1" property="file-as">镰池和马</opf:meta>
+    <opf:meta property="calibre:rating">10</opf:meta>
   </metadata>
   <manifest>
     <item id="S5_02_03-Cover.xhtml" href="Text/S5_02_03-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>

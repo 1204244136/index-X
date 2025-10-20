@@ -1,36 +1,30 @@
-<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:title id="id">新约 某魔法的禁书目录 14X</dc:title>
+    <dc:title id="id">[S2_14]新约 某魔法的禁书目录 14X</dc:title>
     <dc:creator id="id-1">镰池和马</dc:creator>
-    <dc:identifier>calibre:878</dc:identifier>
+    <dc:identifier>calibre:131</dc:identifier>
+    <dc:identifier>uuid:55f51985-af29-49e7-b3f6-9baeb0607f3b</dc:identifier>
     <dc:identifier id="BookId">uuid:3e956d0e-e662-44bf-ba72-1e44bc641b96</dc:identifier>
     <dc:language>zh-CN</dc:language>
-    <dc:description>&lt;div&gt;
-&lt;p style="font-weight: bold"&gt;消除一切异能之力的右手「<ruby>幻想杀手<rt>Imagine Breaker</rt></ruby>」VS消除一切负面想法的「<ruby>理想放逐<rt>World Rejecter</rt></ruby>」！&lt;/p&gt;
-&lt;p&gt;「呦，<ruby>幻想杀手<rt>Imagine Breaker</rt></ruby>」&lt;/p&gt;
-&lt;p&gt;「也就是说，你是<ruby>理想放逐<rt>World Rejecter</rt></ruby>吗？」&lt;/p&gt;
+    <dc:contributor id="id-3">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
+    <dc:description>&lt;p style=&quot;font-weight: bold&quot;&gt;消除一切异能之力的右手「幻想杀手」VS消除一切负面想法的「理想放逐」！&lt;/p&gt;
+&lt;p&gt;「呦，幻想杀手」&lt;/p&gt;
+&lt;p&gt;「也就是说，你是理想放逐吗？」&lt;/p&gt;
 &lt;p&gt;无论多少次能够随心所欲地将世界化为尘埃的真正「魔神」们。这样无敌的存在中，有一个少年能在瞬间消除他们。&lt;/p&gt;
-&lt;p&gt;这个少年是「随处可见的普通高中生」，但同时也是寄宿有最大最恶的「<ruby>理想放逐<rt>World Rejecter</rt></ruby>」的存在。这是一种可以消除所有「渴望新天地者」的事物的可怕力量。同时，他与另一位「随处可见的普通男高中生」上条当麻右手中的「<ruby>幻想杀手<rt>Imagine Breaker</rt></ruby>」也有着表里一体的关系。&lt;/p&gt;
-&lt;p&gt;「<ruby>幻想杀手<rt>Imagine Breaker</rt></ruby>。我找『魔神』有事。找那群把我变成这样的『魔神』们有事。」&lt;/p&gt;
+&lt;p&gt;这个少年是「随处可见的普通高中生」，但同时也是寄宿有最大最恶的「理想放逐」的存在。这是一种可以消除所有「渴望新天地者」的事物的可怕力量。同时，他与另一位「随处可见的普通男高中生」上条当麻右手中的「幻想杀手」也有着表里一体的关系。&lt;/p&gt;
+&lt;p&gt;「幻想杀手。我找『魔神』有事。找那群把我变成这样的『魔神』们有事。」&lt;/p&gt;
 &lt;p&gt;「那是你的事情吧。我们不关心。」&lt;/p&gt;
 &lt;p&gt;两个少年在学园都市的黑暗中对峙。&lt;/p&gt;
 &lt;p&gt;为了彼此无法妥协之物。&lt;/p&gt;
 &lt;p&gt;这场胜负关键掌握在蕾薇妮雅和派翠西亚，两位柏德蔚姐妹手中……？！&lt;/p&gt;
-&lt;p&gt;极大的异常者之间终于激烈碰撞……！&lt;/p&gt;&lt;/div&gt;</dc:description>
+&lt;p&gt;极大的异常者之间终于激烈碰撞……！&lt;/p&gt;</dc:description>
     <dc:subject>重小说</dc:subject>
-    <meta refines="#id" property="title-type">main</meta>
-    <meta refines="#id" property="file-as">新约 某魔法的禁书目录 14X</meta>
+    <opf:meta refines="#id" property="title-type">main</opf:meta>
+    <opf:meta refines="#id" property="file-as">[S2_14]新约 某魔法的禁书目录 14X</opf:meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
     <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-05-07T01:09:24Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
-    <meta refines="#id-1" property="role" scheme="marc:relators">aut</meta>
-    <meta refines="#id-1" property="file-as">镰池和马</meta>
-    <meta property="calibre:rating">10</meta>
-    <meta property="belongs-to-collection" id="id-2">新约</meta>
-    <meta refines="#id-2" property="collection-type">series</meta>
-    <meta refines="#id-2" property="group-position">14</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
     "#extra#": null,
@@ -145,11 +139,16 @@
     "table": "custom_column_4"
   }
 }</meta>
+    <opf:meta refines="#id-3" property="role" scheme="marc:relators">bkp</opf:meta>
+    <opf:meta refines="#id-1" property="role" scheme="marc:relators">aut</opf:meta>
+    <opf:meta refines="#id-1" property="file-as">镰池和马</opf:meta>
+    <opf:meta property="calibre:rating">10</opf:meta>
   </metadata>
   <manifest>
     <item id="S2_14-Cover.xhtml" href="Text/S2_14-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
     <item id="Message.xhtml" href="Text/S2_14-Information.xhtml" media-type="application/xhtml+xml"/>
     <item id="id1" href="Text/S2_14-Introduction.xhtml" media-type="application/xhtml+xml"/>
+    <item href="Text/S2_14-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
     <item href="Text/S2_14-01_Prologue.xhtml" id="id3" media-type="application/xhtml+xml"/>
     <item href="Text/S2_14-02_Ingredients1.xhtml" id="id16" media-type="application/xhtml+xml"/>
     <item href="Text/S2_14-03_Chapter1.xhtml" id="id4" media-type="application/xhtml+xml"/>
@@ -174,7 +173,6 @@
     <item href="Images/Contents.jpg" id="id32" media-type="image/jpeg"/>
     <item id="GT_vol_1.jpg" href="Images/Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
     <item href="Images/Deputy_cover.jpg" id="id31" media-type="image/jpeg"/>
-    <item href="Images/S2_14-Illustrations1.jpg" id="id29" media-type="image/jpeg"/>
     <item href="Images/Illustrations2.jpg" id="id30" media-type="image/jpeg"/>
     <item href="Images/p1.jpg" id="id18" media-type="image/jpeg"/>
     <item href="Images/p2.jpg" id="id19" media-type="image/jpeg"/>
@@ -184,7 +182,7 @@
     <item href="Images/p6.jpg" id="id23" media-type="image/jpeg"/>
     <item href="Images/p7.jpg" id="id24" media-type="image/jpeg"/>
     <item href="Images/p8.jpg" id="id25" media-type="image/jpeg"/>
-    <item href="Text/S2_14-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
+    <item href="Images/S2_14-Illustrations1.jpg" id="id29" media-type="image/jpeg"/>
   </manifest>
   <spine toc="toc">
     <itemref idref="S2_14-Cover.xhtml"/>

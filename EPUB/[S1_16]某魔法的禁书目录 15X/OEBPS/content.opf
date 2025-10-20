@@ -1,13 +1,13 @@
-<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:title id="id">某魔法的禁书目录 15X</dc:title>
+    <dc:title id="id">[S1_16]某魔法的禁书目录 15X</dc:title>
     <dc:creator id="id-1">镰池和马</dc:creator>
-    <dc:identifier>calibre:851</dc:identifier>
+    <dc:identifier>calibre:155</dc:identifier>
+    <dc:identifier>uuid:1205a2bf-e1cf-4a4e-a460-9436480455ba</dc:identifier>
     <dc:identifier id="BookId">uuid:9c33af59-c94f-47af-85d3-3eb81abea155</dc:identifier>
     <dc:language>zh-CN</dc:language>
-    <dc:description>&lt;div&gt;
-&lt;p style="font-weight: bold"&gt;这个故事中，<ruby>幻想杀手<rt>Imagine Breaker</rt></ruby>的少年并未登场。当「集团」的超能力者·<ruby>一方通行<rt>Accelerator</rt></ruby>与神秘组织「学校」邂逅之时，学园都市「暗部」的故事就从此开始——！&lt;/p&gt;
+    <dc:contributor id="id-3">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
+    <dc:description>&lt;p style=&quot;font-weight: bold&quot;&gt;这个故事中，幻想杀手的少年并未登场。当「GROUP」的能力者·一方通行与神秘组织「SCHOOL」邂逅之时，学园都市「暗部」的故事就从此开始——！&lt;/p&gt;
 &lt;p&gt;在阿维尼翁进攻作战中，治安维持力量缺席的学园都市成为了无法之地。在那里，黑暗组织们正在暗中活动。&lt;/p&gt;
 &lt;p&gt;——为自己而行动的人。&lt;/p&gt;
 &lt;p&gt;——喜好黑暗、享受杀戮的人。&lt;/p&gt;
@@ -17,20 +17,14 @@
 &lt;p&gt;——消灭叛乱分子的人。&lt;/p&gt;
 &lt;p&gt;——以暴力阻止失控局面的人。&lt;/p&gt;
 &lt;p&gt;在这个由科学支配一切的城市里，能够生存下来的将是……&lt;/p&gt;
-&lt;p&gt;当「集团」的超能力者·<ruby>一方通行<rt>Accelerator</rt></ruby>与神秘组织「学校」邂逅之时，学园都市「暗部」的故事就从此开始——！&lt;/p&gt;&lt;/div&gt;</dc:description>
+&lt;p&gt;当「GROUP」的能力者·一方通行与神秘组织「SCHOOL」邂逅之时，学园都市「暗部」的故事就从此开始——！&lt;/p&gt;</dc:description>
     <dc:subject>重小说</dc:subject>
-    <meta refines="#id" property="title-type">main</meta>
-    <meta refines="#id" property="file-as">某魔法的禁书目录 15X</meta>
+    <opf:meta refines="#id" property="title-type">main</opf:meta>
+    <opf:meta refines="#id" property="file-as">[S1_16]某魔法的禁书目录 15X</opf:meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
     <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-01-24T09:51:22Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
-    <meta refines="#id-1" property="role" scheme="marc:relators">aut</meta>
-    <meta refines="#id-1" property="file-as">镰池和马</meta>
-    <meta property="calibre:rating">10</meta>
-    <meta property="belongs-to-collection" id="id-2">旧约</meta>
-    <meta refines="#id-2" property="collection-type">series</meta>
-    <meta refines="#id-2" property="group-position">15</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
     "#extra#": null,
@@ -145,11 +139,16 @@
     "table": "custom_column_4"
   }
 }</meta>
+    <opf:meta refines="#id-3" property="role" scheme="marc:relators">bkp</opf:meta>
+    <opf:meta refines="#id-1" property="role" scheme="marc:relators">aut</opf:meta>
+    <opf:meta refines="#id-1" property="file-as">镰池和马</opf:meta>
+    <opf:meta property="calibre:rating">10</opf:meta>
   </metadata>
   <manifest>
     <item id="S1_16-Cover.xhtml" href="Text/S1_16-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
     <item id="Message.xhtml" href="Text/S1_16-Information.xhtml" media-type="application/xhtml+xml"/>
     <item id="id1" href="Text/S1_16-Introduction.xhtml" media-type="application/xhtml+xml"/>
+    <item href="Text/S1_16-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
     <item href="Text/S1_16-01_Prologue.xhtml" id="id3" media-type="application/xhtml+xml"/>
     <item href="Text/S1_16-02_Chapter1.xhtml" id="id16" media-type="application/xhtml+xml"/>
     <item href="Text/S1_16-03_Between_the_Lines1.xhtml" id="id4" media-type="application/xhtml+xml"/>
@@ -185,7 +184,6 @@
     <item href="Images/Phase3.jpg" id="id27" media-type="image/jpeg"/>
     <item href="Images/Phase4.jpg" id="id28" media-type="image/jpeg"/>
     <item href="Images/Phase5.jpg" id="id29" media-type="image/jpeg"/>
-    <item href="Text/S1_16-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
   </manifest>
   <spine toc="toc">
     <itemref idref="S1_16-Cover.xhtml"/>

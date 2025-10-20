@@ -1,33 +1,27 @@
-<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:title id="id">某魔法的禁书目录 13X</dc:title>
+    <dc:title id="id">[S1_13]某魔法的禁书目录 13X</dc:title>
     <dc:creator id="id-1">镰池和马</dc:creator>
-    <dc:identifier>calibre:853</dc:identifier>
+    <dc:identifier>calibre:157</dc:identifier>
+    <dc:identifier>uuid:09de2bbe-5976-43f2-af61-b6643f077a1b</dc:identifier>
     <dc:identifier id="BookId">uuid:76f95b09-69dc-4005-ae09-7589e4d86fde</dc:identifier>
     <dc:language>zh-CN</dc:language>
-    <dc:description>&lt;div&gt;
-&lt;p style="font-weight: bold"&gt;最强的超能力者·<ruby>一方通行<rt>Accelerator</rt></ruby>VS武装集团「猎犬部队」！！ 最弱的<ruby>无能力者<rt>Level 0</rt></ruby>·上条当麻VS前方之风！！ 当科学与魔法交汇之时，故事就从此开始——！&lt;/p&gt;
+    <dc:contributor id="id-3">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
+    <dc:description>&lt;p style=&quot;font-weight: bold&quot;&gt;最强的能力者·一方通行VS武装集团「猎犬部队」！！ 最弱的无能力者·上条当麻VS前方之风！！ 当科学与魔法交汇之时，故事就从此开始——！&lt;/p&gt;
 &lt;p&gt;罗马正教「神之右席」的一员，「前方之风」入侵了学园都市。她操控的谜之魔法使得城市机能完全瘫痪，大部分人失去意识而倒下。&lt;/p&gt;
 &lt;p&gt;她的目标是上条当麻。&lt;/p&gt;
 &lt;p&gt;罗马正教正式认定的敌人。&lt;/p&gt;
 &lt;p&gt;与此同时，&lt;/p&gt;
-&lt;p&gt;最强超能力者·<ruby>一方通行<rt>Accelerator</rt></ruby>为了保护支持他的少女「最后之作」，与科学家木原数多率领的武装集团「猎犬部队」展开激战。&lt;/p&gt;
+&lt;p&gt;最强能力者·一方通行为了保护支持他的少女「最后之作」，与科学家木原数多率领的武装集团「猎犬部队」展开激战。&lt;/p&gt;
 &lt;p&gt;魔法与科学，两场灾难同时袭击学园都市。&lt;/p&gt;
-&lt;p&gt;上条当麻、茵蒂克丝、<ruby>一方通行<rt>Accelerator</rt></ruby>、最后之作。当四者的四种心情交汇之时，故事就从此开始——！&lt;/p&gt;&lt;/div&gt;</dc:description>
+&lt;p&gt;上条当麻、茵蒂克丝、一方通行、最后之作。当四者的四种心情交汇之时，故事就从此开始——！&lt;/p&gt;</dc:description>
     <dc:subject>重小说</dc:subject>
-    <meta refines="#id" property="title-type">main</meta>
-    <meta refines="#id" property="file-as">某魔法的禁书目录 13X</meta>
+    <opf:meta refines="#id" property="title-type">main</opf:meta>
+    <opf:meta refines="#id" property="file-as">[S1_13]某魔法的禁书目录 13X</opf:meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
     <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-03-29T12:15:28Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
-    <meta refines="#id-1" property="role" scheme="marc:relators">aut</meta>
-    <meta refines="#id-1" property="file-as">镰池和马</meta>
-    <meta property="calibre:rating">10</meta>
-    <meta property="belongs-to-collection" id="id-2">旧约</meta>
-    <meta refines="#id-2" property="collection-type">series</meta>
-    <meta refines="#id-2" property="group-position">13</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
     "#extra#": null,
@@ -142,11 +136,16 @@
     "table": "custom_column_4"
   }
 }</meta>
+    <opf:meta refines="#id-3" property="role" scheme="marc:relators">bkp</opf:meta>
+    <opf:meta refines="#id-1" property="role" scheme="marc:relators">aut</opf:meta>
+    <opf:meta refines="#id-1" property="file-as">镰池和马</opf:meta>
+    <opf:meta property="calibre:rating">10</opf:meta>
   </metadata>
   <manifest>
     <item id="S1_13-Cover.xhtml" href="Text/S1_13-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
     <item id="Message.xhtml" href="Text/S1_13-Information.xhtml" media-type="application/xhtml+xml"/>
     <item id="id1" href="Text/S1_13-Introduction.xhtml" media-type="application/xhtml+xml"/>
+    <item href="Text/S1_13-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
     <item href="Text/S1_13-01_Chapter6.xhtml" id="id3" media-type="application/xhtml+xml"/>
     <item href="Text/S1_13-02_Between_the_Lines6.xhtml" id="id16" media-type="application/xhtml+xml"/>
     <item href="Text/S1_13-03_Chapter7.xhtml" id="id4" media-type="application/xhtml+xml"/>
@@ -163,11 +162,11 @@
     <item id="toc" href="../toc.ncx" media-type="application/x-dtbncx+xml"/>
     <item href="Styles/style.css" id="id5" media-type="text/css"/>
     <item id="id15" href="Images/Back_cover.jpg" media-type="image/jpeg"/>
-    <item href="Images/OT13_Contents.jpg" id="id19" media-type="image/jpeg"/>
     <item id="GT_vol_1.jpg" href="Images/Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
     <item href="Images/Deputy_cover.jpg" id="id18" media-type="image/jpeg"/>
     <item href="Images/Illustrations1.jpg" id="id20" media-type="image/jpeg"/>
     <item href="Images/Illustrations2.jpg" id="id21" media-type="image/jpeg"/>
+    <item href="Images/OT13_Contents.jpg" id="id19" media-type="image/jpeg"/>
     <item href="Images/p1.jpg" id="id23" media-type="image/jpeg"/>
     <item href="Images/p2.jpg" id="id24" media-type="image/jpeg"/>
     <item href="Images/p3.jpg" id="id26" media-type="image/jpeg"/>
@@ -176,7 +175,6 @@
     <item href="Images/p6.jpg" id="id25" media-type="image/jpeg"/>
     <item href="Images/p7.jpg" id="id22" media-type="image/jpeg"/>
     <item href="Images/p8.jpg" id="id29" media-type="image/jpeg"/>
-    <item href="Text/S1_13-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
   </manifest>
   <spine toc="toc">
     <itemref idref="S1_13-Cover.xhtml"/>

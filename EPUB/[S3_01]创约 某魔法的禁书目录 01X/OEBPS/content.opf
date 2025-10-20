@@ -1,33 +1,27 @@
-<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:title id="id">创约 某魔法的禁书目录 01X</dc:title>
+    <dc:title id="id">[S3_01]创约 某魔法的禁书目录 01X</dc:title>
     <dc:creator id="id-1">镰池和马</dc:creator>
-    <dc:identifier>calibre:891</dc:identifier>
+    <dc:identifier>calibre:122</dc:identifier>
+    <dc:identifier>uuid:6209fb39-4165-4028-bce3-e2befa337c71</dc:identifier>
     <dc:identifier id="BookId">uuid:c8318f38-7272-4b3f-89af-3008a1e878d5</dc:identifier>
     <dc:language>zh-CN</dc:language>
-    <dc:description>&lt;div&gt;
-&lt;p style="font-weight: bold"&gt;超越新约，开创新的时代！「创约」篇，开幕！！&lt;/p&gt;
+    <dc:contributor id="id-3">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
+    <dc:description>&lt;p style=&quot;font-weight: bold&quot;&gt;超越新约，开创新的时代！「创约」篇，开幕！！&lt;/p&gt;
 &lt;p&gt;科学与魔法交错的世界。&lt;/p&gt;
 &lt;p&gt;这里是进行超能力课程教学的学园都市。这座总人口里有八成为学生的城市，终于迎来了所有人都心跳不已的季节！&lt;/p&gt;
 &lt;p&gt;圣诞平安夜。&lt;/p&gt;
 &lt;p&gt;在城市欢快的喧闹声中，平凡的掉队少年上条当麻为了赶上这个节日，不得不忙于完成补习授课……&lt;/p&gt;
 &lt;p&gt;但是受到不幸体质的眷顾，寄住于宿舍的银发修女茵蒂克丝在与往常日子不同的节日氛围影响下，开启了全新的贪吃鬼技能？！&lt;/p&gt;
 &lt;p&gt;在拼死阻止她的上条面前，出现了同样被气氛影响的御坂美琴？！&lt;/p&gt;
-&lt;p&gt;「创约」篇在此华丽开幕！！&lt;/p&gt;&lt;/div&gt;</dc:description>
+&lt;p&gt;「创约」篇在此华丽开幕！！&lt;/p&gt;</dc:description>
     <dc:subject>重小说</dc:subject>
-    <meta refines="#id" property="title-type">main</meta>
-    <meta refines="#id" property="file-as">创约 某魔法的禁书目录 01X</meta>
+    <opf:meta refines="#id" property="title-type">main</opf:meta>
+    <opf:meta refines="#id" property="file-as">[S3_01]创约 某魔法的禁书目录 01X</opf:meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
     <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-03-29T12:32:06Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
-    <meta refines="#id-1" property="role" scheme="marc:relators">aut</meta>
-    <meta refines="#id-1" property="file-as">镰池和马</meta>
-    <meta property="calibre:rating">10</meta>
-    <meta property="belongs-to-collection" id="id-2">创约</meta>
-    <meta refines="#id-2" property="collection-type">series</meta>
-    <meta refines="#id-2" property="group-position">1</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
     "#extra#": null,
@@ -142,11 +136,16 @@
     "table": "custom_column_4"
   }
 }</meta>
+    <opf:meta refines="#id-3" property="role" scheme="marc:relators">bkp</opf:meta>
+    <opf:meta refines="#id-1" property="role" scheme="marc:relators">aut</opf:meta>
+    <opf:meta refines="#id-1" property="file-as">镰池和马</opf:meta>
+    <opf:meta property="calibre:rating">10</opf:meta>
   </metadata>
   <manifest>
     <item id="S3_01-Cover.xhtml" href="Text/S3_01-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
     <item id="Message.xhtml" href="Text/S3_01-Information.xhtml" media-type="application/xhtml+xml"/>
     <item id="id1" href="Text/S3_01-Introduction.xhtml" media-type="application/xhtml+xml"/>
+    <item href="Text/S3_01-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
     <item id="Chapter0.xhtml" href="Text/S3_01-01_Prologue.xhtml" media-type="application/xhtml+xml"/>
     <item id="BT1.xhtml" href="Text/S3_01-02_Between_the_Lines1.xhtml" media-type="application/xhtml+xml"/>
     <item href="Text/S3_01-03_Chapter1.xhtml" id="id2" media-type="application/xhtml+xml"/>
@@ -178,7 +177,6 @@
     <item id="id17" href="Images/p6.jpg" media-type="image/jpeg"/>
     <item id="id16" href="Images/p7.jpg" media-type="image/jpeg"/>
     <item id="id19" href="Images/p8.jpg" media-type="image/jpeg"/>
-    <item href="Text/S3_01-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
   </manifest>
   <spine toc="toc">
     <itemref idref="S3_01-Cover.xhtml"/>

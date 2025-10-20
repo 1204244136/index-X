@@ -1,34 +1,28 @@
-<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:title id="id">新约 某魔法的禁书目录 15X</dc:title>
+    <dc:title id="id">[S2_15]新约 某魔法的禁书目录 15X</dc:title>
     <dc:creator id="id-1">镰池和马</dc:creator>
-    <dc:identifier>calibre:877</dc:identifier>
+    <dc:identifier>calibre:133</dc:identifier>
+    <dc:identifier>uuid:e7973725-ae75-4cd8-9bf9-6846fcc91bdd</dc:identifier>
     <dc:identifier id="BookId">uuid:86561a44-0596-4c98-bc92-6983362e16b5</dc:identifier>
     <dc:language>zh-CN</dc:language>
-    <dc:description>&lt;div&gt;
-&lt;p style="font-weight: bold"&gt;转去的学校里，上里手中握着「<ruby>理想放逐<rt>World Rejecter</rt></ruby>」出现了。「上条的日常」正在轰然崩溃——！&lt;/p&gt;
-&lt;p&gt;「我的『<ruby>理想放逐<rt>World Rejecter</rt></ruby>』和你的『<ruby>幻想杀手<rt>Imagine Breaker</rt></ruby>』进行对决的话，谁会胜利呢？」&lt;/p&gt;
+    <dc:contributor id="id-3">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
+    <dc:description>&lt;p style=&quot;font-weight: bold&quot;&gt;转去的学校里，上里手中握着「理想放逐」出现了。「上条的日常」正在轰然崩溃——！&lt;/p&gt;
+&lt;p&gt;「我的『理想放逐』和你的『幻想杀手』进行对决的话，谁会胜利呢？」&lt;/p&gt;
 &lt;p&gt;拥有超越神明的右手的两名少年激烈对抗，一夜之后。&lt;/p&gt;
 &lt;p&gt;上条当麻和上里翔流怀着无法妥协的心情，在学校食堂中一边拿着菜单一边对峙？！&lt;/p&gt;
 &lt;p&gt;解释一下。由于魔神·僧正的暴走，上条被迫转学以避免留级。在那里，他遇到了非常不靠谱的迷你学生会长女孩·惊吓兔，以及与他有宿怨的上里……？！&lt;/p&gt;
 &lt;p&gt;比起赌上世界的战斗，上条更感受到留级带来的威胁，根本无暇顾及。而另一方面，上里却莫名其妙地表现得很友好。这难道是意外地转向热血友情路线吗？就在这么想的时候。&lt;/p&gt;
 &lt;p&gt;街头出现了一位半裸雨衣少女。&lt;/p&gt;
 &lt;p&gt;她以压倒性的力量玩弄着学园都市中的超能力者们……！&lt;/p&gt;
-&lt;p&gt;那位半裸少女的真实身份并不是神秘第三势力，而是连上里都畏惧的妹妹·去鸣——？！&lt;/p&gt;&lt;/div&gt;</dc:description>
+&lt;p&gt;那位半裸少女的真实身份并不是神秘第三势力，而是连上里都畏惧的妹妹·去鸣——？！&lt;/p&gt;</dc:description>
     <dc:subject>重小说</dc:subject>
-    <meta refines="#id" property="title-type">main</meta>
-    <meta refines="#id" property="file-as">新约 某魔法的禁书目录 15X</meta>
+    <opf:meta refines="#id" property="title-type">main</opf:meta>
+    <opf:meta refines="#id" property="file-as">[S2_15]新约 某魔法的禁书目录 15X</opf:meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
     <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-01-24T15:23:08Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
-    <meta refines="#id-1" property="role" scheme="marc:relators">aut</meta>
-    <meta refines="#id-1" property="file-as">镰池和马</meta>
-    <meta property="calibre:rating">10</meta>
-    <meta property="belongs-to-collection" id="id-2">新约</meta>
-    <meta refines="#id-2" property="collection-type">series</meta>
-    <meta refines="#id-2" property="group-position">15</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
     "#extra#": null,
@@ -143,11 +137,16 @@
     "table": "custom_column_4"
   }
 }</meta>
+    <opf:meta refines="#id-3" property="role" scheme="marc:relators">bkp</opf:meta>
+    <opf:meta refines="#id-1" property="role" scheme="marc:relators">aut</opf:meta>
+    <opf:meta refines="#id-1" property="file-as">镰池和马</opf:meta>
+    <opf:meta property="calibre:rating">10</opf:meta>
   </metadata>
   <manifest>
     <item id="S2_15-Cover.xhtml" href="Text/S2_15-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
     <item id="Message.xhtml" href="Text/S2_15-Information.xhtml" media-type="application/xhtml+xml"/>
     <item id="id1" href="Text/S2_15-Introduction.xhtml" media-type="application/xhtml+xml"/>
+    <item href="Text/S2_15-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
     <item href="Text/S2_15-01_Prologue.xhtml" id="id3" media-type="application/xhtml+xml"/>
     <item href="Text/S2_15-02_Chapter1.xhtml" id="id16" media-type="application/xhtml+xml"/>
     <item href="Text/S2_15-03_Between_the_Lines1.xhtml" id="id4" media-type="application/xhtml+xml"/>
@@ -179,7 +178,6 @@
     <item id="id23" href="Images/p6.jpg" media-type="image/jpeg"/>
     <item id="id24" href="Images/p7.jpg" media-type="image/jpeg"/>
     <item id="id25" href="Images/p8.jpg" media-type="image/jpeg"/>
-    <item href="Text/S2_15-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
   </manifest>
   <spine toc="toc">
     <itemref idref="S2_15-Cover.xhtml"/>

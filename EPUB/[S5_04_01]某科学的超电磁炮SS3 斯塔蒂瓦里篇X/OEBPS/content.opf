@@ -1,14 +1,15 @@
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:title id="id">某科学的超电磁炮 SS3 斯塔蒂瓦里篇X</dc:title>
+    <dc:title id="id">[S5_04_01]某科学的超电磁炮SS3 斯塔蒂瓦里篇X</dc:title>
     <dc:creator id="id-1">镰池和马</dc:creator>
-    <dc:identifier>calibre:4</dc:identifier>
+    <dc:identifier>calibre:101</dc:identifier>
+    <dc:identifier>uuid:77a09599-3779-4aca-8c86-d7ea121db18c</dc:identifier>
     <dc:identifier id="BookId">uuid:0b4979fe-e445-449b-bc93-8a90d3f10f15</dc:identifier>
     <dc:language>zh-CN</dc:language>
-    <dc:contributor id="id-3">calibre (8.3.0) [https://calibre-ebook.com]</dc:contributor>
+    <dc:contributor id="id-3">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
     <dc:subject>重小说</dc:subject>
     <opf:meta refines="#id" property="title-type">main</opf:meta>
-    <opf:meta refines="#id" property="file-as">某科学的超电磁炮 SS3 斯塔蒂瓦里篇X</opf:meta>
+    <opf:meta refines="#id" property="file-as">[S5_04_01]某科学的超电磁炮SS3 斯塔蒂瓦里篇X</opf:meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
     <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-05-08T09:48:07Z</meta>
@@ -131,9 +132,6 @@
     <opf:meta refines="#id-1" property="role" scheme="marc:relators">aut</opf:meta>
     <opf:meta refines="#id-1" property="file-as">镰池和马</opf:meta>
     <opf:meta property="calibre:rating">10</opf:meta>
-    <opf:meta property="belongs-to-collection" id="id-2">番外</opf:meta>
-    <opf:meta refines="#id-2" property="collection-type">series</opf:meta>
-    <opf:meta refines="#id-2" property="group-position">4</opf:meta>
   </metadata>
   <manifest>
     <item id="S5_04_01-Cover.xhtml" href="Text/S5_04_01-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>

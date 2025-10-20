@@ -1,27 +1,21 @@
-<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:title id="id">某魔法的禁书目录 SS2X</dc:title>
+    <dc:title id="id">[S1_18]某魔法的禁书目录 SS2X</dc:title>
     <dc:creator id="id-1">镰池和马</dc:creator>
-    <dc:identifier>calibre:867</dc:identifier>
+    <dc:identifier>calibre:153</dc:identifier>
+    <dc:identifier>uuid:88fd36f4-f8ed-470e-9951-3f6235861bc1</dc:identifier>
     <dc:identifier id="BookId">uuid:c537d708-734f-4f8c-a22a-0e12bc5c9508</dc:identifier>
     <dc:language>zh-CN</dc:language>
-    <dc:description>&lt;div&gt;
-&lt;p style="font-weight: bold"&gt;让老角色与新角色大显身手！补完正篇的SS系列第二弹！当科学与魔法交汇之时，故事就从此开始——！&lt;/p&gt;
-&lt;p&gt;追踪牛仔裤切割魔的神裂，与贩卖奇怪魔草的少女相遇的上条刀夜，强度微妙的超能力者·第七名，挡在决心杀人的少女面前的自称「御坂」的男人，对偷懒美容师发火的白井，本应成为「魔神」的温柔男人，爱上半藏的少女·小郭，挑战初春的黑客少年，被高挑美女仰慕的砂皿致密，对血型占卜痴迷的御坂<ruby>妹妹们<rt>Sisters</rt></ruby>，被某种东西所觉醒的雪莉，与绢旗电影约会(？！)的滨面……让老角色与新角色大显身手！补完正篇的SS系列第二弹！&lt;/p&gt;&lt;/div&gt;</dc:description>
+    <dc:contributor id="id-3">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
+    <dc:description>&lt;p style=&quot;font-weight: bold&quot;&gt;让老角色与新角色大显身手！补完正篇的SS系列第二弹！当科学与魔法交汇之时，故事就从此开始——！&lt;/p&gt;
+&lt;p&gt;追踪牛仔裤切割魔的神裂，与贩卖奇怪魔草的少女相遇的上条刀夜，强度微妙的超能力者·第七名，挡在决心杀人的少女面前的自称「御坂」的男人，对偷懒美容师发火的白井，本应成为「魔神」的温柔男人，爱上半藏的少女·小郭，挑战初春的黑客少年，被高挑美女仰慕的砂皿致密，对血型占卜痴迷的御坂妹妹们，被某种东西所触动的雪莉，与绢旗电影约会(？！)的滨面……让老角色与新角色大显身手！补完正篇的SS系列第二弹！&lt;/p&gt;</dc:description>
     <dc:subject>重小说</dc:subject>
-    <meta refines="#id" property="title-type">main</meta>
-    <meta refines="#id" property="file-as">某魔法的禁书目录 SS2X</meta>
+    <opf:meta refines="#id" property="title-type">main</opf:meta>
+    <opf:meta refines="#id" property="file-as">[S1_18]某魔法的禁书目录 SS2X</opf:meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
     <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-04-25T13:45:28Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
-    <meta refines="#id-1" property="role" scheme="marc:relators">aut</meta>
-    <meta refines="#id-1" property="file-as">镰池和马</meta>
-    <meta property="calibre:rating">10</meta>
-    <meta property="belongs-to-collection" id="id-2">番外</meta>
-    <meta refines="#id-2" property="collection-type">series</meta>
-    <meta refines="#id-2" property="group-position">8</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
     "#extra#": null,
@@ -136,11 +130,16 @@
     "table": "custom_column_4"
   }
 }</meta>
+    <opf:meta refines="#id-3" property="role" scheme="marc:relators">bkp</opf:meta>
+    <opf:meta refines="#id-1" property="role" scheme="marc:relators">aut</opf:meta>
+    <opf:meta refines="#id-1" property="file-as">镰池和马</opf:meta>
+    <opf:meta property="calibre:rating">10</opf:meta>
   </metadata>
   <manifest>
     <item id="S1_18-Cover.xhtml" href="Text/S1_18-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
     <item id="Message.xhtml" href="Text/S1_18-Information.xhtml" media-type="application/xhtml+xml"/>
     <item id="id1" href="Text/S1_18-Introduction.xhtml" media-type="application/xhtml+xml"/>
+    <item href="Text/S1_18-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
     <item href="Text/S1_18-01_Chapter1.xhtml" id="id34" media-type="application/xhtml+xml"/>
     <item href="Text/S1_18-02_Chapter2.xhtml" id="id39" media-type="application/xhtml+xml"/>
     <item href="Text/S1_18-03_Chapter3.xhtml" id="id3" media-type="application/xhtml+xml"/>
@@ -183,7 +182,6 @@
     <item href="Images/p5.jpg" id="id25" media-type="image/jpeg"/>
     <item href="Images/p6.jpg" id="id28" media-type="image/jpeg"/>
     <item href="Images/p7.jpg" id="id26" media-type="image/jpeg"/>
-    <item href="Text/S1_18-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
   </manifest>
   <spine toc="toc">
     <itemref idref="S1_18-Cover.xhtml"/>

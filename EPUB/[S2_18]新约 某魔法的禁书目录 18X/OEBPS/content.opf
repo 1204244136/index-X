@@ -1,13 +1,13 @@
-<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:title id="id-1">新约 某魔法的禁书目录 18X</dc:title>
+    <dc:title id="id-1">[S2_18]新约 某魔法的禁书目录 18X</dc:title>
     <dc:creator id="id-2">镰池和马</dc:creator>
-    <dc:identifier>calibre:874</dc:identifier>
+    <dc:identifier>calibre:128</dc:identifier>
+    <dc:identifier>uuid:2ed2fa50-50b6-4ab0-a61e-50dfc9faa1bb</dc:identifier>
     <dc:identifier id="BookId">uuid:79ef1b6e-4e56-43f8-8ccf-3edb7075d5ed</dc:identifier>
     <dc:language>zh-CN</dc:language>
-    <dc:description>&lt;div&gt;
-&lt;p style="font-weight: bold"&gt;上条当麻挑战「没有窗户的大楼」，终于与「那个」对决了——！！&lt;/p&gt;
+    <dc:contributor id="id-4">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
+    <dc:description>&lt;p style=&quot;font-weight: bold&quot;&gt;上条当麻挑战「没有窗户的大楼」，终于与「那个」对决了——！！&lt;/p&gt;
 &lt;p&gt;「计划」。&lt;/p&gt;
 &lt;p&gt;科学的大本营中，坐镇着不死的魔法师，历经百年的夙愿。&lt;/p&gt;
 &lt;p&gt;变化多端，毫不留情──&lt;/p&gt;
@@ -15,22 +15,16 @@
 &lt;p&gt;然而，穿着绿色手术服的男人绝不会放过他们。他那毒牙般的攻击，以及魔法所带来的「业」，正在侵蚀土御门的妹妹舞夏。&lt;/p&gt;
 &lt;p&gt;为了打破这一局面，上条与土御门决心突入学园都市统括理事长的根据地「没有窗户的大楼」。&lt;/p&gt;
 &lt;p&gt;等待他们的是象征支配者精神般的巨大的虚无空间。&lt;/p&gt;
-&lt;p&gt;上条朝着最高层奋力前进，但突然出现自称米娜·马瑟斯的奇妙猫耳丧服美女引导他体验了不死魔法师走过的「黄金轨迹」，以及「<ruby>幻想杀手<rt>Imagine Breaker</rt></ruby>」的诞生之谜──。&lt;/p&gt;
+&lt;p&gt;上条朝着最高层奋力前进，但突然出现自称米娜·马瑟斯的奇妙猫耳丧服美女引导他体验了不死魔法师走过的「黄金轨迹」，以及「幻想杀手」的诞生之谜──。&lt;/p&gt;
 &lt;p&gt;最终，帷幕拉开了。&lt;/p&gt;
-&lt;p&gt;接下来开始的是，毫无保留的人类亚雷斯塔·克劳利的故事。&lt;/p&gt;&lt;/div&gt;</dc:description>
+&lt;p&gt;接下来开始的是，毫无保留的人类亚雷斯塔·克劳利的故事。&lt;/p&gt;</dc:description>
     <dc:subject>重小说</dc:subject>
-    <meta refines="#id-1" property="title-type">main</meta>
-    <meta refines="#id-1" property="file-as">新约 某魔法的禁书目录 18X</meta>
+    <opf:meta refines="#id-1" property="title-type">main</opf:meta>
+    <opf:meta refines="#id-1" property="file-as">[S2_18]新约 某魔法的禁书目录 18X</opf:meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
     <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-04-02T01:16:07Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
-    <meta refines="#id-2" property="role" scheme="marc:relators">aut</meta>
-    <meta refines="#id-2" property="file-as">镰池和马</meta>
-    <meta property="calibre:rating">10</meta>
-    <meta property="belongs-to-collection" id="id-3">新约</meta>
-    <meta refines="#id-3" property="collection-type">series</meta>
-    <meta refines="#id-3" property="group-position">18</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
     "#extra#": null,
@@ -145,11 +139,16 @@
     "table": "custom_column_4"
   }
 }</meta>
+    <opf:meta refines="#id-4" property="role" scheme="marc:relators">bkp</opf:meta>
+    <opf:meta refines="#id-2" property="role" scheme="marc:relators">aut</opf:meta>
+    <opf:meta refines="#id-2" property="file-as">镰池和马</opf:meta>
+    <opf:meta property="calibre:rating">10</opf:meta>
   </metadata>
   <manifest>
     <item id="S2_18-Cover.xhtml" href="Text/S2_18-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
     <item id="Message.xhtml" href="Text/S2_18-Information.xhtml" media-type="application/xhtml+xml"/>
     <item id="id1" href="Text/S2_18-Introduction.xhtml" media-type="application/xhtml+xml"/>
+    <item href="Text/S2_18-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
     <item href="Text/S2_18-01_Prologue.xhtml" id="id3" media-type="application/xhtml+xml"/>
     <item href="Text/S2_18-02_Chapter1.xhtml" id="id4" media-type="application/xhtml+xml"/>
     <item href="Text/S2_18-03_Chapter2.xhtml" id="id8" media-type="application/xhtml+xml"/>
@@ -178,7 +177,6 @@
     <item id="id18" href="Images/p5.jpg" media-type="image/jpeg"/>
     <item id="id19" href="Images/p6.jpg" media-type="image/jpeg"/>
     <item id="id20" href="Images/p7.jpg" media-type="image/jpeg"/>
-    <item href="Text/S2_18-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
   </manifest>
   <spine toc="toc">
     <itemref idref="S2_18-Cover.xhtml"/>

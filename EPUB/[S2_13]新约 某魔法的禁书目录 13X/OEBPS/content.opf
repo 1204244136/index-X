@@ -1,36 +1,30 @@
-<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:title id="id">新约 某魔法的禁书目录 13X</dc:title>
+    <dc:title id="id">[S2_13]新约 某魔法的禁书目录 13X</dc:title>
     <dc:creator id="id-1">镰池和马</dc:creator>
-    <dc:identifier>calibre:879</dc:identifier>
+    <dc:identifier>calibre:132</dc:identifier>
+    <dc:identifier>uuid:ac7b2730-612e-4526-8db1-f821f6fd1dee</dc:identifier>
     <dc:identifier id="BookId">uuid:2f19965f-9acc-434e-9fe6-8fda18f76d9a</dc:identifier>
     <dc:language>zh-CN</dc:language>
-    <dc:description>&lt;div&gt;
-&lt;p style="font-weight: bold"&gt;地球灭亡之际，上条当麻与御坂美琴的追逐战拉开帷幕——！&lt;/p&gt;
+    <dc:contributor id="id-3">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
+    <dc:description>&lt;p style=&quot;font-weight: bold&quot;&gt;地球灭亡之际，上条当麻与御坂美琴的追逐战拉开帷幕——！&lt;/p&gt;
 &lt;p&gt;上条当麻正在全速前进。&lt;/p&gt;
 &lt;p&gt;他骑着高科技自行车「特技自行车」，在学园都市中逃窜。背后是生怕被甩掉的，紧紧搂住他腰部的御坂美琴。&lt;/p&gt;
 &lt;p&gt;——两人身后，「巨大的黑暗」正逼近。&lt;/p&gt;
 &lt;p&gt;那股「黑暗」以超越次元的压倒性破坏力追赶上条。&lt;/p&gt;
 &lt;p&gt;这一次无法像欧提努斯那样和解。&lt;/p&gt;
 &lt;p&gt;也不是像圣日耳曼那样的「假货」。真正的魔神，真正的格雷姆林正在逼近。&lt;/p&gt;
-&lt;p&gt;如今，上条和美琴已无力抵抗。两人已经用尽了所有办法，但意外的人物却伸出了救援之手……！&lt;/p&gt;
+&lt;p&gt;如今，上条和美琴已无力抵抗。两人已经用尽了所有办法，但意外的人物却伸出了援手……！&lt;/p&gt;
 &lt;p&gt;同一时刻，依靠着彼此，共同作战的美琴心中开始酝酿一种不安的「对上条的情感」……&lt;/p&gt;
 &lt;p&gt;为了拯救地球而展开追逐战！「格雷姆林：魔神袭来」篇登场！&lt;/p&gt;
-&lt;p&gt;当科学与魔法交汇之时，故事就从此开始——！&lt;/p&gt;&lt;/div&gt;</dc:description>
+&lt;p&gt;当科学与魔法交汇之时，故事就从此开始——！&lt;/p&gt;</dc:description>
     <dc:subject>重小说</dc:subject>
-    <meta refines="#id" property="title-type">main</meta>
-    <meta refines="#id" property="file-as">新约 某魔法的禁书目录 13X</meta>
+    <opf:meta refines="#id" property="title-type">main</opf:meta>
+    <opf:meta refines="#id" property="file-as">[S2_13]新约 某魔法的禁书目录 13X</opf:meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
     <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-01-24T15:16:55Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
-    <meta refines="#id-1" property="role" scheme="marc:relators">aut</meta>
-    <meta refines="#id-1" property="file-as">镰池和马</meta>
-    <meta property="calibre:rating">10</meta>
-    <meta property="belongs-to-collection" id="id-2">新约</meta>
-    <meta refines="#id-2" property="collection-type">series</meta>
-    <meta refines="#id-2" property="group-position">13</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
     "#extra#": null,
@@ -145,11 +139,16 @@
     "table": "custom_column_4"
   }
 }</meta>
+    <opf:meta refines="#id-3" property="role" scheme="marc:relators">bkp</opf:meta>
+    <opf:meta refines="#id-1" property="role" scheme="marc:relators">aut</opf:meta>
+    <opf:meta refines="#id-1" property="file-as">镰池和马</opf:meta>
+    <opf:meta property="calibre:rating">10</opf:meta>
   </metadata>
   <manifest>
     <item id="S2_13-Cover.xhtml" href="Text/S2_13-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
     <item id="Message.xhtml" href="Text/S2_13-Information.xhtml" media-type="application/xhtml+xml"/>
     <item id="id1" href="Text/S2_13-Introduction.xhtml" media-type="application/xhtml+xml"/>
+    <item href="Text/S2_13-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
     <item href="Text/S2_13-01_Prologue.xhtml" id="id3" media-type="application/xhtml+xml"/>
     <item href="Text/S2_13-02_Chapter1.xhtml" id="id16" media-type="application/xhtml+xml"/>
     <item href="Text/S2_13-03_Bike_stunt1.xhtml" id="id4" media-type="application/xhtml+xml"/>
@@ -183,7 +182,6 @@
     <item href="Images/p6.jpg" id="id27" media-type="image/jpeg"/>
     <item href="Images/p7.jpg" id="id20" media-type="image/jpeg"/>
     <item href="Images/p8.jpg" id="id25" media-type="image/jpeg"/>
-    <item href="Text/S2_13-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
   </manifest>
   <spine toc="toc">
     <itemref idref="S2_13-Cover.xhtml"/>

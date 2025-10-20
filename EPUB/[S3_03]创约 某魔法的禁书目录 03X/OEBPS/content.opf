@@ -1,29 +1,23 @@
-<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:title id="id-1">创约 某魔法的禁书目录 03X</dc:title>
+    <dc:title id="id-1">[S3_03]创约 某魔法的禁书目录 03X</dc:title>
     <dc:creator id="id-2">镰池和马</dc:creator>
-    <dc:identifier>calibre:899</dc:identifier>
+    <dc:identifier>calibre:120</dc:identifier>
+    <dc:identifier>uuid:ed2012e6-1841-4552-940a-8f9298b33235</dc:identifier>
     <dc:identifier id="BookId">uuid:b1329b36-9605-4d66-abeb-cc104d12dbc1</dc:identifier>
     <dc:language>zh-CN</dc:language>
-    <dc:description>&lt;div&gt;
-&lt;p style="font-weight: bold"&gt;「暗部」与「<ruby>警备员<rt>Anti-Skill</rt></ruby>」的互相杀戮。黑子将踏足学园都市的黑暗之中！&lt;/p&gt;
-&lt;p&gt;与亲爱的姐姐大人·御坂美琴两人一起度过魅惑的圣诞节，终于到我的手里……！这么期待着的白井黑子，回过神来发现她旁边有一位条形码头发、戴着眼镜的「<ruby>警备员<rt>Anti-Skill</rt></ruby>」大叔……！？&lt;/p&gt;
-&lt;p&gt;神圣的夜晚，作为「<ruby>风纪委员<rt>Judgment</rt></ruby>」的黑子背负的是名为「手铐」的作战名称，也就是将学园都市的「暗部」全部击溃的计划。在名单列表上，包含着滨面仕上和泷壶理后的名字……追逐者与被追逐者，双方在为了生存不由分说地激斗之中，突然都感觉到了……这个计划，有哪里不对劲。&lt;/p&gt;
-&lt;p&gt;打破事态的钥匙是被称作「学园都市最大的禁忌」的谜之词语——！&lt;/p&gt;&lt;/div&gt;</dc:description>
+    <dc:contributor id="id-4">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
+    <dc:description>&lt;p style=&quot;font-weight: bold&quot;&gt;「暗部」与「警备员」的互相杀戮。黑子将踏足学园都市的黑暗之中！&lt;/p&gt;
+&lt;p&gt;与亲爱的姐姐大人·御坂美琴两人一起度过魅惑的圣诞节，终于到我的手里……！这么期待着的白井黑子，回过神来发现她旁边有一位条形码头发、戴着眼镜的「警备员」大叔……！？&lt;/p&gt;
+&lt;p&gt;神圣的夜晚，作为「风纪委员」的黑子背负的是名为「手铐」的作战名称，也就是将学园都市的「暗部」全部击溃的计划。在名单列表上，包含着滨面仕上和泷壶理后的名字……追逐者与被追逐者，双方在为了生存不由分说地激斗之中，突然都感觉到了……这个计划，有哪里不对劲。&lt;/p&gt;
+&lt;p&gt;打破事态的钥匙是被称作「学园都市最大的禁忌」的谜之词语——！&lt;/p&gt;</dc:description>
     <dc:subject>重小说</dc:subject>
-    <meta refines="#id-1" property="title-type">main</meta>
-    <meta refines="#id-1" property="file-as">创约 某魔法的禁书目录 03X</meta>
+    <opf:meta refines="#id-1" property="title-type">main</opf:meta>
+    <opf:meta refines="#id-1" property="file-as">[S3_03]创约 某魔法的禁书目录 03X</opf:meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
     <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-01-25T12:56:27Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
-    <meta refines="#id-2" property="role" scheme="marc:relators">aut</meta>
-    <meta refines="#id-2" property="file-as">镰池和马</meta>
-    <meta property="calibre:rating">10</meta>
-    <meta property="belongs-to-collection" id="id-3">创约</meta>
-    <meta refines="#id-3" property="collection-type">series</meta>
-    <meta refines="#id-3" property="group-position">3</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
     "#extra#": null,
@@ -138,11 +132,16 @@
     "table": "custom_column_4"
   }
 }</meta>
+    <opf:meta refines="#id-4" property="role" scheme="marc:relators">bkp</opf:meta>
+    <opf:meta refines="#id-2" property="role" scheme="marc:relators">aut</opf:meta>
+    <opf:meta refines="#id-2" property="file-as">镰池和马</opf:meta>
+    <opf:meta property="calibre:rating">10</opf:meta>
   </metadata>
   <manifest>
     <item id="S3_03-Cover.xhtml" href="Text/S3_03-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
     <item id="Message.xhtml" href="Text/S3_03-Information.xhtml" media-type="application/xhtml+xml"/>
     <item id="id1" href="Text/S3_03-Introduction.xhtml" media-type="application/xhtml+xml"/>
+    <item href="Text/S3_03-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
     <item href="Text/S3_03-01_Prologue.xhtml" id="id3" media-type="application/xhtml+xml"/>
     <item href="Text/S3_03-02_Chapter1.xhtml" id="id4" media-type="application/xhtml+xml"/>
     <item href="Text/S3_03-03_Between_the_Lines1.xhtml" id="id16" media-type="application/xhtml+xml"/>
@@ -178,7 +177,6 @@
     <item id="id25" href="Images/Phase4.jpg" media-type="image/jpeg"/>
     <item id="id26" href="Images/Phase5.jpg" media-type="image/jpeg"/>
     <item id="id27" href="Images/Phase6.jpg" media-type="image/jpeg"/>
-    <item href="Text/S3_03-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
   </manifest>
   <spine toc="toc">
     <itemref idref="S3_03-Cover.xhtml"/>

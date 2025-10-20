@@ -1,20 +1,18 @@
-<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" unique-identifier="BookId" version="3.0" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:title id="id-1">读前必看</dc:title>
+    <dc:title id="id-1">[S0_00]读前必看</dc:title>
     <dc:creator id="id-2">未知</dc:creator>
-    <dc:identifier>calibre:986</dc:identifier>
+    <dc:identifier>calibre:95</dc:identifier>
+    <dc:identifier>uuid:9252d6d2-20dd-4340-8759-6848c26fb877</dc:identifier>
     <dc:identifier id="BookId">uuid:8a02b213-ec0c-48b3-a241-548624dbc9dd</dc:identifier>
     <dc:language>zh-CN</dc:language>
+    <dc:contributor id="id-3">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
     <dc:subject>重小说</dc:subject>
-    <meta refines="#id-1" property="title-type">main</meta>
-    <meta refines="#id-1" property="file-as">读前必看</meta>
+    <opf:meta refines="#id-1" property="title-type">main</opf:meta>
+    <opf:meta refines="#id-1" property="file-as">[S0_00]读前必看</opf:meta>
     <meta property="calibre:timestamp" scheme="dcterms:W3CDTF">2022-09-09T06:17:52Z</meta>
     <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-05-06T06:57:56Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
-    <meta refines="#id-2" property="role" scheme="marc:relators">aut</meta>
-    <meta refines="#id-2" property="file-as">未知</meta>
-    <meta property="calibre:rating">10</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
     "#extra#": null,
@@ -129,17 +127,21 @@
     "table": "custom_column_4"
   }
 }</meta>
+    <opf:meta refines="#id-3" property="role" scheme="marc:relators">bkp</opf:meta>
+    <opf:meta refines="#id-2" property="role" scheme="marc:relators">aut</opf:meta>
+    <opf:meta refines="#id-2" property="file-as">未知</opf:meta>
+    <opf:meta property="calibre:rating">10</opf:meta>
   </metadata>
   <manifest>
     <item id="id5" href="Text/S0_00-Cover.xhtml" media-type="application/xhtml+xml"/>
     <item id="id1" href="Text/S0_00-Information.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id3" href="Text/S0_00-Note.xhtml" media-type="application/xhtml+xml"/>
     <item id="nav" href="../nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
     <item href="../toc.ncx" id="ncx" media-type="application/x-dtbncx+xml"/>
     <item id="id" href="Styles/style.css" media-type="text/css"/>
-    <item id="id6" href="Images/Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
     <item id="id2" href="Images/01.png" media-type="image/png"/>
-    <item id="id3" href="Text/S0_00-Note.xhtml" media-type="application/xhtml+xml"/>
     <item id="id4" href="Images/02.jpg" media-type="image/jpeg"/>
+    <item id="id6" href="Images/Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
   </manifest>
   <spine toc="ncx">
     <itemref idref="id5"/>

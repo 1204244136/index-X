@@ -1,31 +1,25 @@
-<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:title id="id">某魔法的禁书目录 09X</dc:title>
+    <dc:title id="id">[S1_09]某魔法的禁书目录 09X</dc:title>
     <dc:creator id="id-1">镰池和马</dc:creator>
-    <dc:identifier>calibre:857</dc:identifier>
+    <dc:identifier>calibre:163</dc:identifier>
+    <dc:identifier>uuid:9f7307bf-b79a-4aa9-ab1f-24f003599e7b</dc:identifier>
     <dc:identifier id="BookId">uuid:e0ff52bf-6d63-4604-81f8-c9b265549078</dc:identifier>
     <dc:language>zh-CN</dc:language>
-    <dc:description>&lt;div&gt;
-&lt;p style="font-weight: bold"&gt;学园都市的大规模体育祭「大霸星祭」中，围绕着神秘的灵装「刺突杭剑」，有某种魔法入侵了——！当科学与魔法交汇之时，上条当麻的故事就从此开始——！&lt;/p&gt;
-&lt;p&gt;学园都市最盛大的活动「大霸星祭」。 &lt;/p&gt;
-&lt;p&gt;这是由存在于超能力开发机构——学园都市中的所有学校联合举办的超大规模的体育节。 &lt;/p&gt;
-&lt;p&gt;当然，上条当麻也参加了这个活动。然而，他的不幸依然如故，被饥饿的茵蒂克丝咬，被大霸星祭运营委员吹寄制理责难，还在比赛中被御坂美琴电击……？！ &lt;/p&gt;
-&lt;p&gt;就在此时，一位魔法师为了争夺神秘灵装「刺突杭剑」潜入了学园都市。她是欧莉安娜·汤姆森，魔术界首屈一指的「送货人」，被称为「追踪封锁」，她的目的究竟是什么……？！ &lt;/p&gt;
-&lt;p&gt;当科学与魔法交汇之时，上条当麻的故事就从此开始——！&lt;/p&gt;&lt;/div&gt;</dc:description>
+    <dc:contributor id="id-3">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
+    <dc:description>&lt;p style=&quot;font-weight: bold&quot;&gt;学园都市的大规模体育祭「大霸星祭」中，围绕着神秘的灵装「刺突杭剑」，有某种魔法入侵了——！当科学与魔法交汇之时，上条当麻的故事就从此开始——！&lt;/p&gt;
+&lt;p&gt;学园都市最盛大的活动「大霸星祭」。  &lt;/p&gt;
+&lt;p&gt;这是由存在于超能力开发机构——学园都市中的所有学校联合举办的超大规模的体育节。  &lt;/p&gt;
+&lt;p&gt;当然，上条当麻也参加了这个活动。然而，他的不幸依然如故，被饥饿的茵蒂克丝咬，被大霸星祭运营委员吹寄制理责难，还在比赛中被御坂美琴电击……？！  &lt;/p&gt;
+&lt;p&gt;就在此时，一位魔法师为了争夺神秘灵装「刺突杭剑」潜入了学园都市。她是欧莉安娜·汤姆森，魔法界首屈一指的「送货人」，被称为「追踪封锁」，她的目的究竟是什么……？！  &lt;/p&gt;
+&lt;p&gt;当科学与魔法交汇之时，上条当麻的故事就从此开始——！&lt;/p&gt;</dc:description>
     <dc:subject>重小说</dc:subject>
-    <meta refines="#id" property="title-type">main</meta>
-    <meta refines="#id" property="file-as">某魔法的禁书目录 09X</meta>
+    <opf:meta refines="#id" property="title-type">main</opf:meta>
+    <opf:meta refines="#id" property="file-as">[S1_09]某魔法的禁书目录 09X</opf:meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
-    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-03-28T03:33:49Z</meta>
+    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-08-13T13:30:11Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
-    <meta refines="#id-1" property="role" scheme="marc:relators">aut</meta>
-    <meta refines="#id-1" property="file-as">镰池和马</meta>
-    <meta property="calibre:rating">10</meta>
-    <meta property="belongs-to-collection" id="id-2">旧约</meta>
-    <meta refines="#id-2" property="collection-type">series</meta>
-    <meta refines="#id-2" property="group-position">9</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
     "#extra#": null,
@@ -140,11 +134,16 @@
     "table": "custom_column_4"
   }
 }</meta>
+    <opf:meta refines="#id-3" property="role" scheme="marc:relators">bkp</opf:meta>
+    <opf:meta refines="#id-1" property="role" scheme="marc:relators">aut</opf:meta>
+    <opf:meta refines="#id-1" property="file-as">镰池和马</opf:meta>
+    <opf:meta property="calibre:rating">10</opf:meta>
   </metadata>
   <manifest>
     <item id="S1_09-Cover.xhtml" href="Text/S1_09-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
     <item id="Message.xhtml" href="Text/S1_09-Information.xhtml" media-type="application/xhtml+xml"/>
     <item id="id1" href="Text/S1_09-Introduction.xhtml" media-type="application/xhtml+xml"/>
+    <item href="Text/S1_09-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
     <item href="Text/S1_09-01_Prologue.xhtml" id="id3" media-type="application/xhtml+xml"/>
     <item href="Text/S1_09-02_Chapter1.xhtml" id="id16" media-type="application/xhtml+xml"/>
     <item href="Text/S1_09-03_Between_the_Lines1.xhtml" id="id4" media-type="application/xhtml+xml"/>
@@ -160,7 +159,6 @@
     <item id="toc" href="../toc.ncx" media-type="application/x-dtbncx+xml"/>
     <item href="Styles/style.css" id="id5" media-type="text/css"/>
     <item id="id14" href="Images/Back_cover.jpg" media-type="image/jpeg"/>
-    <item href="Images/OT09_Contents.jpg" id="id19" media-type="image/jpeg"/>
     <item id="GT_vol_1.jpg" href="Images/Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
     <item href="Images/Deputy_cover.jpg" id="id20" media-type="image/jpeg"/>
     <item href="Images/Illustrations1.jpg" id="id22" media-type="image/jpeg"/>
@@ -173,7 +171,7 @@
     <item href="Images/p6.jpg" id="id18" media-type="image/jpeg"/>
     <item href="Images/p7.jpg" id="id27" media-type="image/jpeg"/>
     <item href="Images/p8.jpg" id="id23" media-type="image/jpeg"/>
-    <item href="Text/S1_09-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
+    <item href="Images/S1_09-Contents.jpg" id="id19" media-type="image/jpeg"/>
   </manifest>
   <spine toc="toc">
     <itemref idref="S1_09-Cover.xhtml"/>

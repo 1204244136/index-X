@@ -1,31 +1,25 @@
-<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:title id="id">某魔法的禁书目录 08X</dc:title>
+    <dc:title id="id">[S1_08]某魔法的禁书目录 08X</dc:title>
     <dc:creator id="id-1">镰池和马</dc:creator>
-    <dc:identifier>calibre:858</dc:identifier>
+    <dc:identifier>calibre:162</dc:identifier>
+    <dc:identifier>uuid:b563cf5f-c248-4807-b4fc-adcb87c6cc41</dc:identifier>
     <dc:identifier id="BookId">uuid:a4c45a29-1d4f-4522-b31f-b47e834abac2</dc:identifier>
     <dc:language>zh-CN</dc:language>
-    <dc:description>&lt;div&gt;
-&lt;p style="font-weight: bold"&gt;当姐姐大人与「那位先生」交汇之时，白井黑子的故事从此开始？！这是姐姐大人与白井黑子的人气学园动作系列第八弹。&lt;/p&gt;
-&lt;p&gt;这里是学园都市中所有女学生都心驰神往的名门女子高中·常盘台中学。当然，入读的学生全都是「大小姐」。&lt;/p&gt;
+    <dc:contributor id="id-3">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
+    <dc:description>&lt;p style=&quot;font-weight: bold&quot;&gt;当姐姐大人与「那位先生」交汇之时，白井黑子的故事从此开始？！这是姐姐大人与白井黑子的人气学园动作系列第八弹。&lt;/p&gt;
+&lt;p&gt;这里是学园都市中所有女学生都心驰神往的名门女子学校·常盘台中学。当然，入读的学生全都是「大小姐」。&lt;/p&gt;
 &lt;p&gt;其中一位「大小姐」御坂美琴在体育课后，为了洗去汗水而淋浴时，隔壁传来了一个少女的声音。&lt;/p&gt;
-&lt;p&gt;白井黑子。她是守护学园都市治安的「<ruby>风纪委员<rt>Judgment</rt></ruby>」，也是拥有<ruby>空间移动<rt>Teleport</rt></ruby>能力的<ruby>大能力者<rt>Level 4</rt></ruby>。她邀请美琴放学后一起去购物。&lt;/p&gt;
+&lt;p&gt;白井黑子。她是守护学园都市治安的「风纪委员」，也是拥有空间移动能力的大能力者。她邀请美琴放学后一起去购物。&lt;/p&gt;
 &lt;p&gt;——黑子漫长的一天就这么开始了。了解姐姐大人·御坂美琴真正面貌的，漫长的一天……&lt;/p&gt;
-&lt;p&gt;当姐姐大人与「那位先生」交汇之时，白井黑子的故事从此开始？！&lt;/p&gt;&lt;/div&gt;</dc:description>
+&lt;p&gt;当姐姐大人与「那位先生」交汇之时，白井黑子的故事从此开始？！&lt;/p&gt;</dc:description>
     <dc:subject>重小说</dc:subject>
-    <meta refines="#id" property="title-type">main</meta>
-    <meta refines="#id" property="file-as">某魔法的禁书目录 08X</meta>
+    <opf:meta refines="#id" property="title-type">main</opf:meta>
+    <opf:meta refines="#id" property="file-as">[S1_08]某魔法的禁书目录 08X</opf:meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
     <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-01-24T06:04:17Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
-    <meta refines="#id-1" property="role" scheme="marc:relators">aut</meta>
-    <meta refines="#id-1" property="file-as">镰池和马</meta>
-    <meta property="calibre:rating">10</meta>
-    <meta property="belongs-to-collection" id="id-2">旧约</meta>
-    <meta refines="#id-2" property="collection-type">series</meta>
-    <meta refines="#id-2" property="group-position">8</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
     "#extra#": null,
@@ -140,11 +134,16 @@
     "table": "custom_column_4"
   }
 }</meta>
+    <opf:meta refines="#id-3" property="role" scheme="marc:relators">bkp</opf:meta>
+    <opf:meta refines="#id-1" property="role" scheme="marc:relators">aut</opf:meta>
+    <opf:meta refines="#id-1" property="file-as">镰池和马</opf:meta>
+    <opf:meta property="calibre:rating">10</opf:meta>
   </metadata>
   <manifest>
     <item id="S1_08-Cover.xhtml" href="Text/S1_08-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
     <item id="Message.xhtml" href="Text/S1_08-Information.xhtml" media-type="application/xhtml+xml"/>
     <item id="id1" href="Text/S1_08-Introduction.xhtml" media-type="application/xhtml+xml"/>
+    <item href="Text/S1_08-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
     <item href="Text/S1_08-01_Prologue.xhtml" id="id3" media-type="application/xhtml+xml"/>
     <item href="Text/S1_08-02_Chapter1.xhtml" id="id16" media-type="application/xhtml+xml"/>
     <item href="Text/S1_08-03_Between_the_Lines1.xhtml" id="id4" media-type="application/xhtml+xml"/>
@@ -181,7 +180,6 @@
     <item href="Images/p7.jpg" id="id24" media-type="image/jpeg"/>
     <item href="Images/p8.jpg" id="id28" media-type="image/jpeg"/>
     <item href="Images/p9.jpg" id="id30" media-type="image/jpeg"/>
-    <item href="Text/S1_08-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
   </manifest>
   <spine toc="toc">
     <itemref idref="S1_08-Cover.xhtml"/>

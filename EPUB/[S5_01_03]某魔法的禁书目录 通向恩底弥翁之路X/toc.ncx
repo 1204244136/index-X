@@ -33,54 +33,54 @@
       <navLabel>
         <text>第一章</text>
       </navLabel>
-      <content src="OEBPS/Text/S5_01_03-_01Chapter1.xhtml"/>
+      <content src="OEBPS/Text/S5_01_03-01Chapter1.xhtml"/>
       <navPoint id="num_5" playOrder="5">
         <navLabel>
           <text>1</text>
         </navLabel>
-        <content src="OEBPS/Text/S5_01_03-_01Chapter1.xhtml#toc_1"/>
+        <content src="OEBPS/Text/S5_01_03-01Chapter1.xhtml#toc_1"/>
       </navPoint>
       <navPoint id="num_6" playOrder="6">
         <navLabel>
           <text>2</text>
         </navLabel>
-        <content src="OEBPS/Text/S5_01_03-_01Chapter1.xhtml#toc_2"/>
+        <content src="OEBPS/Text/S5_01_03-01Chapter1.xhtml#toc_2"/>
       </navPoint>
       <navPoint id="num_7" playOrder="7">
         <navLabel>
           <text>3</text>
         </navLabel>
-        <content src="OEBPS/Text/S5_01_03-_01Chapter1.xhtml#toc_3"/>
+        <content src="OEBPS/Text/S5_01_03-01Chapter1.xhtml#toc_3"/>
       </navPoint>
       <navPoint id="num_8" playOrder="8">
         <navLabel>
           <text>4</text>
         </navLabel>
-        <content src="OEBPS/Text/S5_01_03-_01Chapter1.xhtml#toc_4"/>
+        <content src="OEBPS/Text/S5_01_03-01Chapter1.xhtml#toc_4"/>
       </navPoint>
       <navPoint id="num_9" playOrder="9">
         <navLabel>
           <text>5</text>
         </navLabel>
-        <content src="OEBPS/Text/S5_01_03-_01Chapter1.xhtml#toc_5"/>
+        <content src="OEBPS/Text/S5_01_03-01Chapter1.xhtml#toc_5"/>
       </navPoint>
       <navPoint id="num_10" playOrder="10">
         <navLabel>
           <text>6</text>
         </navLabel>
-        <content src="OEBPS/Text/S5_01_03-_01Chapter1.xhtml#toc_6"/>
+        <content src="OEBPS/Text/S5_01_03-01Chapter1.xhtml#toc_6"/>
       </navPoint>
       <navPoint id="num_11" playOrder="11">
         <navLabel>
           <text>7</text>
         </navLabel>
-        <content src="OEBPS/Text/S5_01_03-_01Chapter1.xhtml#toc_7"/>
+        <content src="OEBPS/Text/S5_01_03-01Chapter1.xhtml#toc_7"/>
       </navPoint>
       <navPoint id="num_12" playOrder="12">
         <navLabel>
           <text>8</text>
         </navLabel>
-        <content src="OEBPS/Text/S5_01_03-_01Chapter1.xhtml#toc_8"/>
+        <content src="OEBPS/Text/S5_01_03-01Chapter1.xhtml#toc_8"/>
       </navPoint>
     </navPoint>
     <navPoint id="num_13" playOrder="13">

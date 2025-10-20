@@ -31,7 +31,7 @@
     </navPoint>
     <navPoint id="num_4" playOrder="4">
       <navLabel>
-        <text>序 章 幻想杀手少年的故事 The_Imagine Breaker.</text>
+        <text>序 章 幻想杀手少年的故事 The_Imagine-Breaker.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_01-01_Prologue.xhtml"/>
     </navPoint>

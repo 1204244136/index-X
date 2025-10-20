@@ -1,29 +1,23 @@
-<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:title id="id">某魔法的禁书目录 16X</dc:title>
+    <dc:title id="id">[S1_17]某魔法的禁书目录 16X</dc:title>
     <dc:creator id="id-1">镰池和马</dc:creator>
-    <dc:identifier>calibre:850</dc:identifier>
+    <dc:identifier>calibre:154</dc:identifier>
+    <dc:identifier>uuid:5e67fd66-fbef-4770-a87f-68c32fecc5c2</dc:identifier>
     <dc:identifier id="BookId">uuid:74eb2a95-a2ba-44f4-8112-43d9521eb11d</dc:identifier>
     <dc:language>zh-CN</dc:language>
-    <dc:description>&lt;div&gt;
-&lt;p style="font-weight: bold"&gt;罗马正教暗部「神之右席」的第三使徒，即便是上条当麻的「右手」也无法奏效！<ruby>无能力者<rt>Level 0</rt></ruby>·上条当麻VS罗马正教的暗部·后方之水！当科学与魔法交汇之时，故事就从此开始——！&lt;/p&gt;
+    <dc:contributor id="id-3">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
+    <dc:description>&lt;p style=&quot;font-weight: bold&quot;&gt;罗马正教暗部「神之右席」的第三使徒，即便是上条当麻的「右手」也无法奏效！无能力者·上条当麻VS罗马正教的暗部·后方之水！当科学与魔法交汇之时，故事就从此开始——！&lt;/p&gt;
 &lt;p&gt;罗马正教的暗部「神之右席」中的后方之水终于行动了。这个同时拥有「圣人」的力量和「神之右席」「特性」的最强大、最凶恶的敌人，看上了上条当麻的「右手」，从而潜入学园都市。&lt;/p&gt;
-&lt;p&gt;接到后方之水宣告的英国清教，派遣天草式十字凄教的五和作为保镖前往保护上条。当她住在上条家中进行护卫时，以压倒性的料理技能和勤劳细致，让寄宿修女茵蒂克丝的地位置都变得岌岌可危。而看到这一幕，上条眼中不禁流下了一行泪……&lt;/p&gt;
-&lt;p&gt;然而，这样短暂的安息时刻也很快结束，最强、最大的敌人终于现身……！！&lt;/p&gt;&lt;/div&gt;</dc:description>
+&lt;p&gt;接到后方之水宣告的英国清教，派遣天草式十字凄教的五和作为保镖前往保护上条。当她住在上条家中进行护卫时，以压倒性的料理技能和勤劳细致，让寄宿修女茵蒂克丝的地位变得岌岌可危。而看到这一幕，上条眼中不禁流下了一行泪……&lt;/p&gt;
+&lt;p&gt;然而，这样短暂的安息时刻也很快结束，最强、最大的敌人终于现身……！！&lt;/p&gt;</dc:description>
     <dc:subject>重小说</dc:subject>
-    <meta refines="#id" property="title-type">main</meta>
-    <meta refines="#id" property="file-as">某魔法的禁书目录 16X</meta>
+    <opf:meta refines="#id" property="title-type">main</opf:meta>
+    <opf:meta refines="#id" property="file-as">[S1_17]某魔法的禁书目录 16X</opf:meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
     <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-01-25T12:35:34Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
-    <meta refines="#id-1" property="role" scheme="marc:relators">aut</meta>
-    <meta refines="#id-1" property="file-as">镰池和马</meta>
-    <meta property="calibre:rating">10</meta>
-    <meta property="belongs-to-collection" id="id-2">旧约</meta>
-    <meta refines="#id-2" property="collection-type">series</meta>
-    <meta refines="#id-2" property="group-position">16</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
     "#extra#": null,
@@ -138,11 +132,16 @@
     "table": "custom_column_4"
   }
 }</meta>
+    <opf:meta refines="#id-3" property="role" scheme="marc:relators">bkp</opf:meta>
+    <opf:meta refines="#id-1" property="role" scheme="marc:relators">aut</opf:meta>
+    <opf:meta refines="#id-1" property="file-as">镰池和马</opf:meta>
+    <opf:meta property="calibre:rating">10</opf:meta>
   </metadata>
   <manifest>
     <item id="S1_17-Cover.xhtml" href="Text/S1_17-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
     <item id="Message.xhtml" href="Text/S1_17-Information.xhtml" media-type="application/xhtml+xml"/>
     <item id="id1" href="Text/S1_17-Introduction.xhtml" media-type="application/xhtml+xml"/>
+    <item href="Text/S1_17-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
     <item href="Text/S1_17-01_Prologue.xhtml" id="id3" media-type="application/xhtml+xml"/>
     <item href="Text/S1_17-02_Chapter1.xhtml" id="id16" media-type="application/xhtml+xml"/>
     <item href="Text/S1_17-03_Between_the_Lines1.xhtml" id="id4" media-type="application/xhtml+xml"/>
@@ -175,7 +174,6 @@
     <item href="Images/p6.jpg" id="id25" media-type="image/jpeg"/>
     <item href="Images/p7.jpg" id="id26" media-type="image/jpeg"/>
     <item href="Images/p8.jpg" id="id30" media-type="image/jpeg"/>
-    <item href="Text/S1_17-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
   </manifest>
   <spine toc="toc">
     <itemref idref="S1_17-Cover.xhtml"/>

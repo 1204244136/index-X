@@ -1,32 +1,26 @@
-<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:title id="id">新约 某魔法的禁书目录 22RX</dc:title>
+    <dc:title id="id">[S2_23]新约 某魔法的禁书目录 22REVERSEX</dc:title>
     <dc:creator id="id-1">镰池和马</dc:creator>
-    <dc:identifier>calibre:870</dc:identifier>
+    <dc:identifier>calibre:123</dc:identifier>
+    <dc:identifier>uuid:ff5dc927-90e5-4027-bf4a-0d048a4c9ff0</dc:identifier>
     <dc:identifier id="BookId">uuid:40671f8d-e537-4cf7-8bde-d24d7bd76a0a</dc:identifier>
     <dc:language>zh-CN</dc:language>
-    <dc:description>&lt;div&gt;
-&lt;p style="font-weight: bold"&gt;「新约篇」终于完结！身着派对礼服的女主们齐聚庆祝会！&lt;/p&gt;
+    <dc:contributor id="id-3">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
+    <dc:description>&lt;p style=&quot;font-weight: bold&quot;&gt;「新约篇」终于完结！身着派对礼服的女主们齐聚庆祝会！&lt;/p&gt;
 &lt;p&gt;世界毁灭的威胁大恶魔科隆尊已经消失。以「学园都市统括理事长亚雷斯塔的牺牲」为代价，上条当麻终于，终于拯救了科学与魔法的世界。&lt;/p&gt;
 &lt;p&gt;这里是英国清教的圣地·温莎城。在庆祝会上受到热烈欢迎的上条转过目光，看向茵蒂克丝、御坂美琴、食蜂祈操等人的身影。真的，「和平」降临了。&lt;/p&gt;
 &lt;p&gt;——然而。&lt;/p&gt;
 &lt;p&gt;难道忘记了什么吗……没错，在科隆尊战斗结束后，上条的右手应该已经破裂了？！&lt;/p&gt;
 &lt;p&gt;随即。一只怪物袭击了温莎城。这只拥有翅膀的蜥蜴所代表的是什么呢？&lt;/p&gt;
-&lt;p&gt;这是一个魔法与科学交汇并集结的故事。请见证「新约」篇章的结局！&lt;/p&gt;&lt;/div&gt;</dc:description>
+&lt;p&gt;这是一个魔法与科学交汇并集结的故事。请见证「新约」篇章的结局！&lt;/p&gt;</dc:description>
     <dc:subject>重小说</dc:subject>
-    <meta refines="#id" property="title-type">main</meta>
-    <meta refines="#id" property="file-as">新约 某魔法的禁书目录 22RX</meta>
+    <opf:meta refines="#id" property="title-type">main</opf:meta>
+    <opf:meta refines="#id" property="file-as">[S2_23]新约 某魔法的禁书目录 22REVERSEX</opf:meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
     <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-01-25T04:12:38Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
-    <meta refines="#id-1" property="role" scheme="marc:relators">aut</meta>
-    <meta refines="#id-1" property="file-as">镰池和马</meta>
-    <meta property="calibre:rating">10</meta>
-    <meta property="belongs-to-collection" id="id-2">新约</meta>
-    <meta refines="#id-2" property="collection-type">series</meta>
-    <meta refines="#id-2" property="group-position">23</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
     "#extra#": null,
@@ -141,11 +135,16 @@
     "table": "custom_column_4"
   }
 }</meta>
+    <opf:meta refines="#id-3" property="role" scheme="marc:relators">bkp</opf:meta>
+    <opf:meta refines="#id-1" property="role" scheme="marc:relators">aut</opf:meta>
+    <opf:meta refines="#id-1" property="file-as">镰池和马</opf:meta>
+    <opf:meta property="calibre:rating">10</opf:meta>
   </metadata>
   <manifest>
     <item id="S2_23-Cover.xhtml" href="Text/S2_23-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
     <item id="Message.xhtml" href="Text/S2_23-Information.xhtml" media-type="application/xhtml+xml"/>
     <item id="id1" href="Text/S2_23-Introduction.xhtml" media-type="application/xhtml+xml"/>
+    <item href="Text/S2_23-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
     <item href="Text/S2_23-01_Prologue.xhtml" id="id3" media-type="application/xhtml+xml"/>
     <item href="Text/S2_23-02_Chapter1.xhtml" id="id4" media-type="application/xhtml+xml"/>
     <item href="Text/S2_23-03_Between_the_Lines1.xhtml" id="id16" media-type="application/xhtml+xml"/>
@@ -175,7 +174,6 @@
     <item id="id26" href="Images/p5.jpg" media-type="image/jpeg"/>
     <item id="id27" href="Images/p6.jpg" media-type="image/jpeg"/>
     <item id="id28" href="Images/p7.jpg" media-type="image/jpeg"/>
-    <item href="Text/S2_23-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
   </manifest>
   <spine toc="toc">
     <itemref idref="S2_23-Cover.xhtml"/>

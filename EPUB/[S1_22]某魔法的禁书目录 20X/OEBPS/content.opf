@@ -1,32 +1,26 @@
-<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:title id="id">某魔法的禁书目录 20X</dc:title>
+    <dc:title id="id">[S1_22]某魔法的禁书目录 20X</dc:title>
     <dc:creator id="id-1">镰池和马</dc:creator>
-    <dc:identifier>calibre:846</dc:identifier>
+    <dc:identifier>calibre:149</dc:identifier>
+    <dc:identifier>uuid:5f20c641-c9a4-4aaf-b6c4-f8e8bfdf6a6f</dc:identifier>
     <dc:identifier id="BookId">uuid:7f1eb84a-24e3-49de-8c77-f88c6283f955</dc:identifier>
     <dc:language>zh-CN</dc:language>
-    <dc:description>&lt;div&gt;
-&lt;p style="font-weight: bold"&gt;「神之右席」最终　章，俄罗斯篇开始！！第三次世界大战的宣战布告已经发布。「神之右席」火的野心在俄罗斯涌动，上条当麻、<ruby>一方通行<rt>Accelerator</rt></ruby>、滨面仕上奔赴前线——！当科学与魔法交汇之时，故事就从此开始——！&lt;/p&gt;
+    <dc:contributor id="id-3">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
+    <dc:description>&lt;p style=&quot;font-weight: bold&quot;&gt;「神之右席」最终章，俄罗斯篇开始！！第三次世界大战的宣战布告已经发布。「神之右席」火的野心在俄罗斯涌动，上条当麻、一方通行、滨面仕上奔赴前线——！当科学与魔法交汇之时，故事就从此开始——！&lt;/p&gt;
 &lt;p&gt;10月18日。&lt;/p&gt;
 &lt;p&gt;俄罗斯发布了第三次世界大战的宣战布告。&lt;/p&gt;
 &lt;p&gt;学园都市与俄罗斯的冲突将演变成席卷全球的大规模战争。在这背后，是「神之右席」最后一人火在暗中进行政治活动。&lt;/p&gt;
 &lt;p&gt;在这场世界大战的硝烟中，有一些人在奔走着。&lt;/p&gt;
-&lt;p&gt;为了拯救因火夺取灵装而陷入昏迷状态的茵蒂克丝，学园都市高中生上条当麻踏上了旅程；为了拯救因神秘存在「爱华斯」的出现而承受高负荷的最后之作，最强超能力者<ruby>一方通行<rt>Accelerator</rt></ruby>也行动了起来；前暗部组织「道具」的杂兵滨面仕上则是为了治疗因滥用能力促进剂「体晶」而虚弱不堪的泷壶理后。他们怀揣各自不同的想法，向紧张局势中的俄罗斯进发！在那里等待他们的是……？&lt;/p&gt;
-&lt;p&gt;当科学与魔法交汇之时，故事就从此开始——！&lt;/p&gt;&lt;/div&gt;</dc:description>
+&lt;p&gt;为了拯救因火夺取灵装而陷入昏迷状态的茵蒂克丝，学园都市高中生上条当麻踏上了旅程；为了拯救因神秘存在「爱华斯」的出现而承受高负荷的最后之作，最强能力者一方通行也行动了起来；前暗部组织「道具」的杂兵滨面仕上则是为了治疗因滥用能力促进剂「体晶」而虚弱不堪的泷壶理后。他们怀揣各自不同的想法，向紧张局势中的俄罗斯进发！在那里等待他们的是……？&lt;/p&gt;
+&lt;p&gt;当科学与魔法交汇之时，故事就从此开始——！&lt;/p&gt;</dc:description>
     <dc:subject>重小说</dc:subject>
-    <meta refines="#id" property="title-type">main</meta>
-    <meta refines="#id" property="file-as">某魔法的禁书目录 20X</meta>
+    <opf:meta refines="#id" property="title-type">main</opf:meta>
+    <opf:meta refines="#id" property="file-as">[S1_22]某魔法的禁书目录 20X</opf:meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
     <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-01-24T12:03:02Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
-    <meta refines="#id-1" property="role" scheme="marc:relators">aut</meta>
-    <meta refines="#id-1" property="file-as">镰池和马</meta>
-    <meta property="calibre:rating">10</meta>
-    <meta property="belongs-to-collection" id="id-2">旧约</meta>
-    <meta refines="#id-2" property="collection-type">series</meta>
-    <meta refines="#id-2" property="group-position">20</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
     "#extra#": null,
@@ -141,11 +135,16 @@
     "table": "custom_column_4"
   }
 }</meta>
+    <opf:meta refines="#id-3" property="role" scheme="marc:relators">bkp</opf:meta>
+    <opf:meta refines="#id-1" property="role" scheme="marc:relators">aut</opf:meta>
+    <opf:meta refines="#id-1" property="file-as">镰池和马</opf:meta>
+    <opf:meta property="calibre:rating">10</opf:meta>
   </metadata>
   <manifest>
     <item id="S1_22-Cover.xhtml" href="Text/S1_22-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
     <item id="Message.xhtml" href="Text/S1_22-Information.xhtml" media-type="application/xhtml+xml"/>
     <item id="id1" href="Text/S1_22-Introduction.xhtml" media-type="application/xhtml+xml"/>
+    <item href="Text/S1_22-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
     <item href="Text/S1_22-01_Before_the_Prologue.xhtml" id="id16" media-type="application/xhtml+xml"/>
     <item href="Text/S1_22-02_Prologue.xhtml" id="id3" media-type="application/xhtml+xml"/>
     <item href="Text/S1_22-03_Chapter1.xhtml" id="id4" media-type="application/xhtml+xml"/>
@@ -177,7 +176,6 @@
     <item href="Images/p6.jpg" id="id24" media-type="image/jpeg"/>
     <item href="Images/p7.jpg" id="id26" media-type="image/jpeg"/>
     <item href="Images/p8.jpg" id="id30" media-type="image/jpeg"/>
-    <item href="Text/S1_22-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
   </manifest>
   <spine toc="toc">
     <itemref idref="S1_22-Cover.xhtml"/>

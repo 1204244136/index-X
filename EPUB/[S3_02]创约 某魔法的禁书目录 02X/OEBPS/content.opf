@@ -1,31 +1,25 @@
-<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:title id="id-1">创约 某魔法的禁书目录 02X</dc:title>
+    <dc:title id="id-1">[S3_02]创约 某魔法的禁书目录 02X</dc:title>
     <dc:creator id="id-2">镰池和马</dc:creator>
-    <dc:identifier>calibre:898</dc:identifier>
+    <dc:identifier>calibre:121</dc:identifier>
+    <dc:identifier>uuid:b09048fa-35f9-495a-8c2e-876c930f4c18</dc:identifier>
     <dc:identifier id="BookId">uuid:d0b67f9f-bc7c-4202-b336-4581239840a1</dc:identifier>
     <dc:language>zh-CN</dc:language>
-    <dc:description>&lt;div&gt;
-&lt;p style="font-weight: bold"&gt;永别了二十四日，二十五日就轮到火力全开我的出场了哦☆&lt;/p&gt;
+    <dc:contributor id="id-4">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
+    <dc:description>&lt;p style=&quot;font-weight: bold&quot;&gt;永别了二十四日，二十五日就轮到火力全开我的出场了哦☆&lt;/p&gt;
 &lt;p&gt;当上条当麻醒来的时候，他就已经身处医院，虽然自己和魔法结社「蔷薇十字」的安娜·施普伦格尔唇齿相交的事情仍存在于记忆中……&lt;/p&gt;
 &lt;p&gt;但是请等下。&lt;/p&gt;
 &lt;p&gt;作为一个处于思春期的健康男性高中生，上条当麻为一个谜之美女献出了自己的初吻——&lt;/p&gt;
 &lt;p&gt;过了一段时间的现在，把他送到医院的御坂美琴和茵蒂克丝，甚至当时不在现场的蜂蜜色少女都来到了这里！科学和魔法交错的声讨大会即将开始——本来是这么以为的，不知为何却变成了美少女们的看护狂潮？！&lt;/p&gt;
-&lt;p&gt;觉察了安娜目的的美琴和食蜂，水火不容的二人为了同样的目的而联手！在此，最强的<ruby>超能力者<rt>Level 5</rt></ruby>组合诞生！！&lt;/p&gt;&lt;/div&gt;</dc:description>
+&lt;p&gt;觉察了安娜目的的美琴和食蜂，水火不容的二人为了同样的目的而联手！在此，最强的超能力者组合诞生！！&lt;/p&gt;</dc:description>
     <dc:subject>重小说</dc:subject>
-    <meta refines="#id-1" property="title-type">main</meta>
-    <meta refines="#id-1" property="file-as">创约 某魔法的禁书目录 02X</meta>
+    <opf:meta refines="#id-1" property="title-type">main</opf:meta>
+    <opf:meta refines="#id-1" property="file-as">[S3_02]创约 某魔法的禁书目录 02X</opf:meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
     <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-03-28T06:04:22Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
-    <meta refines="#id-2" property="role" scheme="marc:relators">aut</meta>
-    <meta refines="#id-2" property="file-as">镰池和马</meta>
-    <meta property="calibre:rating">10</meta>
-    <meta property="belongs-to-collection" id="id-3">创约</meta>
-    <meta refines="#id-3" property="collection-type">series</meta>
-    <meta refines="#id-3" property="group-position">2</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
     "#extra#": null,
@@ -140,11 +134,16 @@
     "table": "custom_column_4"
   }
 }</meta>
+    <opf:meta refines="#id-4" property="role" scheme="marc:relators">bkp</opf:meta>
+    <opf:meta refines="#id-2" property="role" scheme="marc:relators">aut</opf:meta>
+    <opf:meta refines="#id-2" property="file-as">镰池和马</opf:meta>
+    <opf:meta property="calibre:rating">10</opf:meta>
   </metadata>
   <manifest>
     <item id="S3_02-Cover.xhtml" href="Text/S3_02-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
     <item id="Message.xhtml" href="Text/S3_02-Information.xhtml" media-type="application/xhtml+xml"/>
     <item id="id1" href="Text/S3_02-Introduction.xhtml" media-type="application/xhtml+xml"/>
+    <item href="Text/S3_02-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
     <item href="Text/S3_02-01_Prologue.xhtml" id="id3" media-type="application/xhtml+xml"/>
     <item href="Text/S3_02-02_Between_the_Lines0.xhtml" id="id16" media-type="application/xhtml+xml"/>
     <item href="Text/S3_02-03_Chapter1.xhtml" id="id4" media-type="application/xhtml+xml"/>
@@ -176,7 +175,6 @@
     <item id="id27" href="Images/p6.jpg" media-type="image/jpeg"/>
     <item id="id28" href="Images/p7.jpg" media-type="image/jpeg"/>
     <item id="id29" href="Images/p8.jpg" media-type="image/jpeg"/>
-    <item href="Text/S3_02-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
   </manifest>
   <spine toc="toc">
     <itemref idref="S3_02-Cover.xhtml"/>

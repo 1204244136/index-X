@@ -1,30 +1,24 @@
-<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:title id="id-1">新约 某魔法的禁书目录 21X</dc:title>
+    <dc:title id="id-1">[S2_21]新约 某魔法的禁书目录 21X</dc:title>
     <dc:creator id="id-2">镰池和马</dc:creator>
-    <dc:identifier>calibre:871</dc:identifier>
+    <dc:identifier>calibre:127</dc:identifier>
+    <dc:identifier>uuid:4f3bd11c-1aa2-427a-b113-dc080b20da8b</dc:identifier>
     <dc:identifier id="BookId">uuid:b8d3b14c-0a26-4e24-90f6-89ce00d08e15</dc:identifier>
     <dc:language>zh-CN</dc:language>
-    <dc:description>&lt;div&gt;
-&lt;p style="font-weight: bold"&gt;科学与魔法。跨越百年的决战就在此刻……！&lt;/p&gt;
+    <dc:contributor id="id-4">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
+    <dc:description>&lt;p style=&quot;font-weight: bold&quot;&gt;科学与魔法。跨越百年的决战就在此刻……！&lt;/p&gt;
 &lt;p&gt;亚雷斯塔终于到达了打破大恶魔科隆尊的关键点，威斯敏斯特教堂的墓地。在那里他看到了——&lt;/p&gt;
 &lt;p&gt;世界最大的魔法结社「黄金」的首领，马瑟斯。100年前，在因缘之地·布莱斯路就已完全与之一刀两断的男人。&lt;/p&gt;
 &lt;p&gt;不仅仅是马瑟斯。他所率领的强大「黄金」的魔法师们也齐齐向科学之长露出獠牙。在魔法实力上无法胜过马瑟斯，亚雷斯塔无计可施，但在科学领域建立起来并积累的一百年并非徒劳。&lt;/p&gt;
-&lt;p&gt;上条当麻和<ruby>一方通行<rt>Accelerator</rt></ruby>。这两人是科学的大本营·学园都市中积攒的「成果」，他们终于要与最强大的马瑟斯对抗——！&lt;/p&gt;&lt;/div&gt;</dc:description>
+&lt;p&gt;上条当麻和一方通行。这两人是科学的大本营·学园都市中积攒的「成果」，他们终于要与最强大的马瑟斯对抗——！&lt;/p&gt;</dc:description>
     <dc:subject>重小说</dc:subject>
-    <meta refines="#id-1" property="title-type">main</meta>
-    <meta refines="#id-1" property="file-as">新约 某魔法的禁书目录 21X</meta>
+    <opf:meta refines="#id-1" property="title-type">main</opf:meta>
+    <opf:meta refines="#id-1" property="file-as">[S2_21]新约 某魔法的禁书目录 21X</opf:meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
     <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-04-17T06:17:21Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
-    <meta refines="#id-2" property="role" scheme="marc:relators">aut</meta>
-    <meta refines="#id-2" property="file-as">镰池和马</meta>
-    <meta property="calibre:rating">10</meta>
-    <meta property="belongs-to-collection" id="id-3">新约</meta>
-    <meta refines="#id-3" property="collection-type">series</meta>
-    <meta refines="#id-3" property="group-position">21</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
     "#extra#": null,
@@ -139,11 +133,16 @@
     "table": "custom_column_4"
   }
 }</meta>
+    <opf:meta refines="#id-4" property="role" scheme="marc:relators">bkp</opf:meta>
+    <opf:meta refines="#id-2" property="role" scheme="marc:relators">aut</opf:meta>
+    <opf:meta refines="#id-2" property="file-as">镰池和马</opf:meta>
+    <opf:meta property="calibre:rating">10</opf:meta>
   </metadata>
   <manifest>
     <item id="S2_21-Cover.xhtml" href="Text/S2_21-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
     <item id="Message.xhtml" href="Text/S2_21-Information.xhtml" media-type="application/xhtml+xml"/>
     <item id="id1" href="Text/S2_21-Introduction.xhtml" media-type="application/xhtml+xml"/>
+    <item href="Text/S2_21-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
     <item href="Text/S2_21-01_Before_the_Prologue.xhtml" id="id8" media-type="application/xhtml+xml"/>
     <item href="Text/S2_21-02_Prologue.xhtml" id="id3" media-type="application/xhtml+xml"/>
     <item href="Text/S2_21-03_Chapter1.xhtml" id="id4" media-type="application/xhtml+xml"/>
@@ -174,7 +173,6 @@
     <item id="id27" href="Images/p6.jpg" media-type="image/jpeg"/>
     <item id="id28" href="Images/p7.jpg" media-type="image/jpeg"/>
     <item id="id29" href="Images/p8.jpg" media-type="image/jpeg"/>
-    <item href="Text/S2_21-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
   </manifest>
   <spine toc="toc">
     <itemref idref="S2_21-Cover.xhtml"/>

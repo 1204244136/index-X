@@ -1,24 +1,19 @@
-<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:title id="id">某魔法的禁书目录 通向恩底弥翁之路X</dc:title>
+    <dc:title id="id">[S5_01_03]某魔法的禁书目录 通向恩底弥翁之路X</dc:title>
     <dc:creator id="id-1">镰池和马</dc:creator>
-    <dc:identifier>calibre:931</dc:identifier>
+    <dc:identifier>calibre:108</dc:identifier>
+    <dc:identifier>uuid:0a6020ca-52e3-4803-b394-05b57c58fac2</dc:identifier>
     <dc:identifier id="BookId">uuid:ae30307f-2202-41ca-9322-a71462eb9acd</dc:identifier>
     <dc:language>zh-CN</dc:language>
+    <dc:contributor id="id-3">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
     <dc:subject>重小说</dc:subject>
-    <meta refines="#id" property="title-type">main</meta>
-    <meta refines="#id" property="file-as">某魔法的禁书目录 通向恩底弥翁之路X</meta>
+    <opf:meta refines="#id" property="title-type">main</opf:meta>
+    <opf:meta refines="#id" property="file-as">[S5_01_03]某魔法的禁书目录 通向恩底弥翁之路X</opf:meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
-    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-05-16T01:15:21Z</meta>
+    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-10-13T14:34:56Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
-    <meta refines="#id-1" property="role" scheme="marc:relators">aut</meta>
-    <meta refines="#id-1" property="file-as">镰池和马</meta>
-    <meta property="calibre:rating">10</meta>
-    <meta property="belongs-to-collection" id="id-2">番外</meta>
-    <meta refines="#id-2" property="collection-type">series</meta>
-    <meta refines="#id-2" property="group-position">5</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
     "#extra#": null,
@@ -133,12 +128,17 @@
     "table": "custom_column_4"
   }
 }</meta>
+    <opf:meta refines="#id-3" property="role" scheme="marc:relators">bkp</opf:meta>
+    <opf:meta refines="#id-1" property="role" scheme="marc:relators">aut</opf:meta>
+    <opf:meta refines="#id-1" property="file-as">镰池和马</opf:meta>
+    <opf:meta property="calibre:rating">10</opf:meta>
   </metadata>
   <manifest>
     <item id="S5_01_03-Cover.xhtml" href="Text/S5_01_03-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
     <item id="Message.xhtml" href="Text/S5_01_03-Information.xhtml" media-type="application/xhtml+xml"/>
     <item id="id1" href="Text/S5_01_03-Introduction.xhtml" media-type="application/xhtml+xml"/>
-    <item href="Text/S5_01_03-_01Chapter1.xhtml" id="id3" media-type="application/xhtml+xml"/>
+    <item href="Text/S5_01_03-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
+    <item href="Text/S5_01_03-01Chapter1.xhtml" id="id3" media-type="application/xhtml+xml"/>
     <item href="Text/S5_01_03-02_Chapter2.xhtml" id="id16" media-type="application/xhtml+xml"/>
     <item href="Text/S5_01_03-03_Chapter3.xhtml" id="id4" media-type="application/xhtml+xml"/>
     <item href="Text/S5_01_03-04_Chapter4.xhtml" id="id8" media-type="application/xhtml+xml"/>
@@ -156,7 +156,6 @@
     <item id="id10" href="Images/p2.jpg" media-type="image/jpeg"/>
     <item id="id11" href="Images/p3.jpg" media-type="image/jpeg"/>
     <item id="id12" href="Images/p4.jpg" media-type="image/jpeg"/>
-    <item href="Text/S5_01_03-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
   </manifest>
   <spine toc="toc">
     <itemref idref="S5_01_03-Cover.xhtml"/>

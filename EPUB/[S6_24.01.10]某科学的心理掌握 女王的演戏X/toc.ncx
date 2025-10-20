@@ -1,0 +1,99 @@
+<?xml version='1.0' encoding='utf-8'?>
+<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1" xml:lang="zh">
+  <head>
+    <meta name="dtb:uid" content="uuid:1ffc6038-be43-40bc-a2ce-6de06e702c7b"/>
+    <meta name="dtb:depth" content="2"/>
+    <meta name="dtb:generator" content="calibre (8.13.0)"/>
+    <meta name="dtb:totalPageCount" content="0"/>
+    <meta name="dtb:maxPageNumber" content="0"/>
+  </head>
+  <docTitle>
+    <text>[S6_24.01.10]某科学的心理掌握 女王的演戏X</text>
+  </docTitle>
+  <navMap>
+    <navPoint id="num_1" playOrder="1">
+      <navLabel>
+        <text>1</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_24.01.10-Main.xhtml"/>
+    </navPoint>
+    <navPoint id="num_2" playOrder="2">
+      <navLabel>
+        <text>2</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_24.01.10-Main.xhtml#toc_1"/>
+    </navPoint>
+    <navPoint id="num_3" playOrder="3">
+      <navLabel>
+        <text>3</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_24.01.10-Main.xhtml#toc_2"/>
+    </navPoint>
+    <navPoint id="num_4" playOrder="4">
+      <navLabel>
+        <text>4</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_24.01.10-Main.xhtml#toc_3"/>
+    </navPoint>
+    <navPoint id="num_5" playOrder="5">
+      <navLabel>
+        <text>5</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_24.01.10-Main.xhtml#toc_4"/>
+    </navPoint>
+    <navPoint id="num_6" playOrder="6">
+      <navLabel>
+        <text>6</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_24.01.10-Main.xhtml#toc_5"/>
+    </navPoint>
+    <navPoint id="num_7" playOrder="7">
+      <navLabel>
+        <text>7</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_24.01.10-Main.xhtml#toc_6"/>
+    </navPoint>
+    <navPoint id="num_8" playOrder="8">
+      <navLabel>
+        <text>8</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_24.01.10-Main.xhtml#toc_7"/>
+    </navPoint>
+    <navPoint id="num_9" playOrder="9">
+      <navLabel>
+        <text>9</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_24.01.10-Main.xhtml#toc_8"/>
+    </navPoint>
+    <navPoint id="num_10" playOrder="10">
+      <navLabel>
+        <text>10</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_24.01.10-Main.xhtml#toc_9"/>
+    </navPoint>
+    <navPoint id="num_11" playOrder="11">
+      <navLabel>
+        <text>11</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_24.01.10-Main.xhtml#toc_10"/>
+    </navPoint>
+    <navPoint id="num_12" playOrder="12">
+      <navLabel>
+        <text>12</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_24.01.10-Main.xhtml#toc_11"/>
+    </navPoint>
+    <navPoint id="num_13" playOrder="13">
+      <navLabel>
+        <text>13</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_24.01.10-Main.xhtml#toc_12"/>
+    </navPoint>
+    <navPoint id="num_14" playOrder="14">
+      <navLabel>
+        <text>14</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_24.01.10-Main.xhtml#toc_13"/>
+    </navPoint>
+  </navMap>
+</ncx>

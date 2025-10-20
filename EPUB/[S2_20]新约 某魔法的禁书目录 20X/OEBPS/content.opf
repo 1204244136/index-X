@@ -1,24 +1,19 @@
-<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:title id="id-1">新约 某魔法的禁书目录 20X</dc:title>
+    <dc:title id="id-1">[S2_20]新约 某魔法的禁书目录 20X</dc:title>
     <dc:creator id="id-2">镰池和马</dc:creator>
-    <dc:identifier>calibre:872</dc:identifier>
+    <dc:identifier>calibre:126</dc:identifier>
+    <dc:identifier>uuid:4b439a4e-453f-47c8-a3bd-867a62eec7fe</dc:identifier>
     <dc:identifier id="BookId">uuid:ed4e69c2-e11e-4707-b05d-666be97620b1</dc:identifier>
     <dc:language>zh-CN</dc:language>
+    <dc:contributor id="id-4">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
     <dc:subject>重小说</dc:subject>
-    <meta refines="#id-1" property="title-type">main</meta>
-    <meta refines="#id-1" property="file-as">新约 某魔法的禁书目录 20X</meta>
+    <opf:meta refines="#id-1" property="title-type">main</opf:meta>
+    <opf:meta refines="#id-1" property="file-as">[S2_20]新约 某魔法的禁书目录 20X</opf:meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
     <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-03-29T12:30:03Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
-    <meta refines="#id-2" property="role" scheme="marc:relators">aut</meta>
-    <meta refines="#id-2" property="file-as">镰池和马</meta>
-    <meta property="calibre:rating">10</meta>
-    <meta property="belongs-to-collection" id="id-3">新约</meta>
-    <meta refines="#id-3" property="collection-type">series</meta>
-    <meta refines="#id-3" property="group-position">20</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
     "#extra#": null,
@@ -133,11 +128,20 @@
     "table": "custom_column_4"
   }
 }</meta>
-  </metadata>
+    <opf:meta refines="#id-4" property="role" scheme="marc:relators">bkp</opf:meta>
+    <opf:meta refines="#id-2" property="role" scheme="marc:relators">aut</opf:meta>
+    <opf:meta refines="#id-2" property="file-as">镰池和马</opf:meta>
+    <opf:meta property="calibre:rating">10</opf:meta>
+    <dc:description>&lt;p style=&quot;font-weight: bold&quot;&gt;学园都市与英国清教的全面战争，爆发——&lt;/p&gt;
+&lt;p&gt;毫不犹豫地抛弃了自己的根据地·学园都市的亚雷斯塔，开始对魔法大国英国进行总攻。看似非正义的作战中，却不知为何显现出上条、茵蒂克丝、一方通行、滨面和泷壶的身影——&lt;/p&gt;
+&lt;p&gt;超越大天使爱华斯力量的大恶魔科隆尊的封印即将被解除。在此之前必须在伦敦抓住他的弱点，但对于被大恶魔附身的萝拉所率领的英国清教来说，这只会被视为科学一方的侵略。&lt;/p&gt;
+&lt;p&gt;上条正在挑战这场无人希望发生的决战。在如此激烈的情况下，救他于危难之中的，竟然是意想不到的管理员系温柔天然姐姐奥索拉？？？&lt;/p&gt;</dc:description>
+</metadata>
   <manifest>
     <item id="S2_20-Cover.xhtml" href="Text/S2_20-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
     <item id="Message.xhtml" href="Text/S2_20-Information.xhtml" media-type="application/xhtml+xml"/>
     <item id="id1" href="Text/S2_20-Introduction.xhtml" media-type="application/xhtml+xml"/>
+    <item href="Text/S2_20-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
     <item href="Text/S2_20-01_Prologue.xhtml" id="id3" media-type="application/xhtml+xml"/>
     <item href="Text/S2_20-02_Chapter1.xhtml" id="id4" media-type="application/xhtml+xml"/>
     <item href="Text/S2_20-03_Between_the_Lines1.xhtml" id="id16" media-type="application/xhtml+xml"/>
@@ -168,7 +172,6 @@
     <item id="id26" href="Images/p5.jpg" media-type="image/jpeg"/>
     <item id="id27" href="Images/p6.jpg" media-type="image/jpeg"/>
     <item id="id28" href="Images/p7.jpg" media-type="image/jpeg"/>
-    <item href="Text/S2_20-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
   </manifest>
   <spine toc="toc">
     <itemref idref="S2_20-Cover.xhtml"/>

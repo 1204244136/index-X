@@ -1,26 +1,23 @@
-<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:title id="id">某自动贩卖机的存在证明X</dc:title>
+    <dc:title id="id">[S6_10.06.26]某自动贩卖机的存在证明X</dc:title>
     <dc:creator id="id-1">成田良悟</dc:creator>
-    <dc:identifier>calibre:5119</dc:identifier>
+    <dc:identifier>calibre:100</dc:identifier>
+    <dc:identifier>uuid:84ce2b3a-e379-4507-95eb-5f747e455cf6</dc:identifier>
     <dc:identifier id="BookId">uuid:7d6fb36d-ddad-458b-984b-ba0fbdd530f1</dc:identifier>
     <dc:language>zh-CN</dc:language>
-    <dc:contributor id="id-3">calibre (6.9.0) [https://calibre-ebook.com]</dc:contributor>
+    <dc:contributor id="id-3">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
     <dc:subject>重小说</dc:subject>
-    <meta refines="#id" property="title-type">main</meta>
-    <meta refines="#id" property="file-as">某自动贩卖机的存在证明X</meta>
+    <opf:meta refines="#id" property="title-type">main</opf:meta>
+    <opf:meta refines="#id" property="file-as">[S6_10.06.26]某自动贩卖机的存在证明X</opf:meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
     <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-01-29T13:34:11Z</meta>
-    <meta refines="#id-3" property="role" scheme="marc:relators">bkp</meta>
-    <meta refines="#id-1" property="role" scheme="marc:relators">aut</meta>
-    <meta refines="#id-1" property="file-as">成田良悟</meta>
-    <meta property="calibre:rating">10</meta>
-    <meta property="belongs-to-collection" id="id-2">番外</meta>
-    <meta refines="#id-2" property="collection-type">series</meta>
-    <meta refines="#id-2" property="group-position">12</meta>
     <meta property="calibre:author_link_map">{"成田良悟": ""}</meta>
+    <opf:meta refines="#id-3" property="role" scheme="marc:relators">bkp</opf:meta>
+    <opf:meta refines="#id-1" property="role" scheme="marc:relators">aut</opf:meta>
+    <opf:meta refines="#id-1" property="file-as">成田良悟</opf:meta>
+    <opf:meta property="calibre:rating">10</opf:meta>
   </metadata>
   <manifest>
     <item id="S6_10.06.26-Cover.xhtml" href="Text/S6_10.06.26-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>

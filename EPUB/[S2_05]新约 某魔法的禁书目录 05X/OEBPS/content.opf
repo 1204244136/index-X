@@ -1,29 +1,23 @@
-<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:title id="id">新约 某魔法的禁书目录 05X</dc:title>
+    <dc:title id="id">[S2_05]新约 某魔法的禁书目录 05X</dc:title>
     <dc:creator id="id-1">镰池和马</dc:creator>
-    <dc:identifier>calibre:888</dc:identifier>
+    <dc:identifier>calibre:141</dc:identifier>
+    <dc:identifier>uuid:e3ce68ad-596b-4047-b347-eef12d8971f6</dc:identifier>
     <dc:identifier id="BookId">uuid:bf839fbf-2aae-43b4-a276-4944e53c6502</dc:identifier>
     <dc:language>zh-CN</dc:language>
-    <dc:description>&lt;div&gt;
-&lt;p style="font-weight: bold"&gt;「新约」系列，进入新展开！&lt;/p&gt;
+    <dc:contributor id="id-3">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
+    <dc:description>&lt;p style=&quot;font-weight: bold&quot;&gt;「新约」系列，进入新展开！&lt;/p&gt;
 &lt;p&gt;11月。超巨大文化祭「一端览祭」的季节来临了。&lt;/p&gt;
 &lt;p&gt;在这样的时刻，终于回到学园都市的上条当麻。在因俄罗斯爆发的第三次世界大战而引发的「对格雷姆林远征」之后，他与茵蒂克丝和御坂美琴之间那种温馨平稳的日常生活终于回归──。本以为可以快乐地享受这一切，但意外人物的出现让他的愿望化为泡影？！出现在他面前的最强「敌人」究竟是谁？&lt;/p&gt;
-&lt;p&gt;作为路痴芙蕾梅亚的监护人，在学园都市内四处奔波的滨面、一如既往地照顾最后之作的<ruby>一方通行<rt>Accelerator</rt></ruby>，以及顺便做做料理进行康复训练的麦野沉利等等…… 以学园都市为舞台，「新约」系列迎来了新的展开！&lt;/p&gt;&lt;/div&gt;</dc:description>
+&lt;p&gt;作为路痴芙蕾梅亚的监护人，在学园都市内四处奔波的滨面、一如既往地照顾最后之作的一方通行，以及顺便做做料理进行康复训练的麦野沉利等等…… 以学园都市为舞台，「新约」系列迎来了新的展开！&lt;/p&gt;</dc:description>
     <dc:subject>重小说</dc:subject>
-    <meta refines="#id" property="title-type">main</meta>
-    <meta refines="#id" property="file-as">新约 某魔法的禁书目录 05X</meta>
+    <opf:meta refines="#id" property="title-type">main</opf:meta>
+    <opf:meta refines="#id" property="file-as">[S2_05]新约 某魔法的禁书目录 05X</opf:meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
     <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-01-15T14:20:03Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
-    <meta refines="#id-1" property="role" scheme="marc:relators">aut</meta>
-    <meta refines="#id-1" property="file-as">镰池和马</meta>
-    <meta property="calibre:rating">10</meta>
-    <meta property="belongs-to-collection" id="id-2">新约</meta>
-    <meta refines="#id-2" property="collection-type">series</meta>
-    <meta refines="#id-2" property="group-position">5</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
     "#extra#": null,
@@ -138,11 +132,16 @@
     "table": "custom_column_4"
   }
 }</meta>
+    <opf:meta refines="#id-3" property="role" scheme="marc:relators">bkp</opf:meta>
+    <opf:meta refines="#id-1" property="role" scheme="marc:relators">aut</opf:meta>
+    <opf:meta refines="#id-1" property="file-as">镰池和马</opf:meta>
+    <opf:meta property="calibre:rating">10</opf:meta>
   </metadata>
   <manifest>
     <item id="S2_05-Cover.xhtml" href="Text/S2_05-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
     <item id="Message.xhtml" href="Text/S2_05-Information.xhtml" media-type="application/xhtml+xml"/>
     <item id="id1" href="Text/S2_05-Introduction.xhtml" media-type="application/xhtml+xml"/>
+    <item href="Text/S2_05-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
     <item href="Text/S2_05-01_Prologue.xhtml" id="id3" media-type="application/xhtml+xml"/>
     <item href="Text/S2_05-02_Chapter1.xhtml" id="id16" media-type="application/xhtml+xml"/>
     <item href="Text/S2_05-03_Between_the_Lines1.xhtml" id="id4" media-type="application/xhtml+xml"/>
@@ -172,7 +171,6 @@
     <item href="Images/p6.jpg" id="id29" media-type="image/jpeg"/>
     <item href="Images/p7.jpg" id="id24" media-type="image/jpeg"/>
     <item href="Images/p8.jpg" id="id21" media-type="image/jpeg"/>
-    <item href="Text/S2_05-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
   </manifest>
   <spine toc="toc">
     <itemref idref="S2_05-Cover.xhtml"/>

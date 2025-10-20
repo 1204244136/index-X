@@ -1,31 +1,25 @@
-<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:title id="id">新约 某魔法的禁书目录 01X</dc:title>
+    <dc:title id="id">[S2_01]新约 某魔法的禁书目录 01X</dc:title>
     <dc:creator id="id-1">镰池和马</dc:creator>
-    <dc:identifier>calibre:868</dc:identifier>
+    <dc:identifier>calibre:145</dc:identifier>
+    <dc:identifier>uuid:6255e026-53fe-426d-ae09-e77a2f75f4f7</dc:identifier>
     <dc:identifier id="BookId">uuid:38478633-1bf9-4268-bf3b-6fc04664cdec</dc:identifier>
     <dc:language>zh-CN</dc:language>
-    <dc:description>&lt;div&gt;
-&lt;p style="font-weight: bold"&gt;没有上条当麻的世界。他用生命所守护的，各种各样的人们的各种各样的安宁日常。&lt;/p&gt;
+    <dc:contributor id="id-3">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
+    <dc:description>&lt;p style=&quot;font-weight: bold&quot;&gt;没有上条当麻的世界。他用生命所守护的，各种各样的人们的各种各样的安宁日常。&lt;/p&gt;
 &lt;p&gt;罗马正教的暗部「神之右席」最后一人，火从俄罗斯引发的第三次世界大战，在上条当麻的活跃下得以终结。他本人也随之消失。&lt;/p&gt;
 &lt;p&gt;这里是一个没有上条当麻的世界。&lt;/p&gt;
-&lt;p&gt;魔术侧正在进行重组和改善，信徒们迎来了安息的日子。在科学侧总本山学园都市中，最强超能力者·<ruby>一方通行<rt>Accelerator</rt></ruby>与「黑暗」切断了联系，与最后之作和番外个体一起度过着喧闹却平稳的日常生活。那里也不再有「集团」的影子。&lt;/p&gt;
-&lt;p&gt;前Skill-Out成员、<ruby>无能力者<rt>Level 0</rt></ruby>滨面仕上怀揣在俄罗斯获得的与「黑暗」的交涉材料，与绢旗、泷壶以及归来的麦野共同组成新生「道具」，重新开始活动。&lt;/p&gt;
-&lt;p&gt;这些从黑暗中毕业的人们已经获得了平静——直到凶恶的「新入生」出现在他们面前为止。&lt;/p&gt;&lt;/div&gt;</dc:description>
+&lt;p&gt;魔法侧正在进行重组和改善，信徒们迎来了安息的日子。在科学侧总本山学园都市中，最强超能力者·一方通行与「黑暗」切断了联系，与最后之作和番外个体一起度过着喧闹却平稳的日常生活。那里也不再有「GROUP」的影子。&lt;/p&gt;
+&lt;p&gt;前Skill-Out成员、无能力者滨面仕上怀揣在俄罗斯获得的与「黑暗」的交涉材料，与绢旗、泷壶以及归来的麦野共同组成新生「道具」，重新开始活动。&lt;/p&gt;
+&lt;p&gt;这些从黑暗中毕业的人们已经获得了平静——直到凶恶的「新入生」出现在他们面前为止。&lt;/p&gt;</dc:description>
     <dc:subject>重小说</dc:subject>
-    <meta refines="#id" property="title-type">main</meta>
-    <meta refines="#id" property="file-as">新约 某魔法的禁书目录 01X</meta>
+    <opf:meta refines="#id" property="title-type">main</opf:meta>
+    <opf:meta refines="#id" property="file-as">[S2_01]新约 某魔法的禁书目录 01X</opf:meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
     <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-01-24T12:21:38Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
-    <meta refines="#id-1" property="role" scheme="marc:relators">aut</meta>
-    <meta refines="#id-1" property="file-as">镰池和马</meta>
-    <meta property="calibre:rating">10</meta>
-    <meta property="belongs-to-collection" id="id-2">新约</meta>
-    <meta refines="#id-2" property="collection-type">series</meta>
-    <meta refines="#id-2" property="group-position">1</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
     "#extra#": null,
@@ -140,11 +134,16 @@
     "table": "custom_column_4"
   }
 }</meta>
+    <opf:meta refines="#id-3" property="role" scheme="marc:relators">bkp</opf:meta>
+    <opf:meta refines="#id-1" property="role" scheme="marc:relators">aut</opf:meta>
+    <opf:meta refines="#id-1" property="file-as">镰池和马</opf:meta>
+    <opf:meta property="calibre:rating">10</opf:meta>
   </metadata>
   <manifest>
     <item id="S2_01-Cover.xhtml" href="Text/S2_01-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
     <item id="Message.xhtml" href="Text/S2_01-Information.xhtml" media-type="application/xhtml+xml"/>
     <item id="id1" href="Text/S2_01-Introduction.xhtml" media-type="application/xhtml+xml"/>
+    <item href="Text/S2_01-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
     <item href="Text/S2_01-01_Prologue.xhtml" id="id3" media-type="application/xhtml+xml"/>
     <item href="Text/S2_01-02_Chapter1.xhtml" id="id16" media-type="application/xhtml+xml"/>
     <item href="Text/S2_01-03_Between_the_Lines1.xhtml" id="id4" media-type="application/xhtml+xml"/>
@@ -176,7 +175,6 @@
     <item href="Images/p6.jpg" id="id19" media-type="image/jpeg"/>
     <item href="Images/p7.jpg" id="id25" media-type="image/jpeg"/>
     <item href="Images/p8.jpg" id="id24" media-type="image/jpeg"/>
-    <item href="Text/S2_01-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
   </manifest>
   <spine toc="toc">
     <itemref idref="S2_01-Cover.xhtml"/>

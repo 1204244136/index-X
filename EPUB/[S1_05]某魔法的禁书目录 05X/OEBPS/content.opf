@@ -1,32 +1,26 @@
-<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:title id="id">某魔法的禁书目录 05X</dc:title>
+    <dc:title id="id">[S1_05]某魔法的禁书目录 05X</dc:title>
     <dc:creator id="id-1">镰池和马</dc:creator>
-    <dc:identifier>calibre:861</dc:identifier>
+    <dc:identifier>calibre:166</dc:identifier>
+    <dc:identifier>uuid:6182fcfc-5820-4e9a-bae5-6dfb8aa88935</dc:identifier>
     <dc:identifier id="BookId">uuid:6576569f-1b68-4e88-b17b-4fb50aa91c10</dc:identifier>
     <dc:language>zh-CN</dc:language>
-    <dc:description>&lt;div&gt;
-&lt;p style="font-weight: bold"&gt;8月31日的学园都市。御坂美琴、<ruby>一方通行<rt>Accelerator</rt></ruby>、上条当麻。三人各不相同的「暑假最后一天」开始了——！&lt;/p&gt;
+    <dc:contributor id="id-3">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
+    <dc:description>&lt;p style=&quot;font-weight: bold&quot;&gt;8月31日的学园都市。御坂美琴、一方通行、上条当麻。三人各不相同的「暑假最后一天」开始了——！&lt;/p&gt;
 &lt;p&gt;8月31日。&lt;/p&gt;
-&lt;p&gt;那天，<ruby>一方通行<rt>Accelerator</rt></ruby>在小巷中遇见了一个神秘的少女。她的脸庞似曾相识——&lt;/p&gt;
+&lt;p&gt;那天，一方通行在小巷中遇见了一个神秘的少女。她的脸庞似曾相识——&lt;/p&gt;
 &lt;p&gt;御坂美琴那天在学生宿舍前被一个男生邀请约会。那个男生超帅气——&lt;/p&gt;
 &lt;p&gt;上条当麻那天在家中感受到不幸的一天即将开始。因为他意识到自己完全没做暑假作业——&lt;/p&gt;
 &lt;p&gt;8月31日，学园都市的暑假最后一天。他们各自的故事拉开了帷幕——！&lt;/p&gt;
-&lt;p&gt;鎌池×灰村组合带来的超人气学园动作系列第五弹登场！&lt;/p&gt;&lt;/div&gt;</dc:description>
+&lt;p&gt;镰池×灰村组合带来的超人气学园动作系列第五弹登场！&lt;/p&gt;</dc:description>
     <dc:subject>重小说</dc:subject>
-    <meta refines="#id" property="title-type">main</meta>
-    <meta refines="#id" property="file-as">某魔法的禁书目录 05X</meta>
+    <opf:meta refines="#id" property="title-type">main</opf:meta>
+    <opf:meta refines="#id" property="file-as">[S1_05]某魔法的禁书目录 05X</opf:meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
     <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-01-23T06:22:40Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
-    <meta refines="#id-1" property="role" scheme="marc:relators">aut</meta>
-    <meta refines="#id-1" property="file-as">镰池和马</meta>
-    <meta property="calibre:rating">10</meta>
-    <meta property="belongs-to-collection" id="id-2">旧约</meta>
-    <meta refines="#id-2" property="collection-type">series</meta>
-    <meta refines="#id-2" property="group-position">5</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
     "#extra#": null,
@@ -141,11 +135,16 @@
     "table": "custom_column_4"
   }
 }</meta>
+    <opf:meta refines="#id-3" property="role" scheme="marc:relators">bkp</opf:meta>
+    <opf:meta refines="#id-1" property="role" scheme="marc:relators">aut</opf:meta>
+    <opf:meta refines="#id-1" property="file-as">镰池和马</opf:meta>
+    <opf:meta property="calibre:rating">10</opf:meta>
   </metadata>
   <manifest>
     <item id="S1_05-Cover.xhtml" href="Text/S1_05-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
     <item id="Message.xhtml" href="Text/S1_05-Information.xhtml" media-type="application/xhtml+xml"/>
     <item id="id1" href="Text/S1_05-Introduction.xhtml" media-type="application/xhtml+xml"/>
+    <item href="Text/S1_05-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
     <item href="Text/S1_05-01_Prologue.xhtml" id="id3" media-type="application/xhtml+xml"/>
     <item href="Text/S1_05-02_Chapter1.xhtml" id="id16" media-type="application/xhtml+xml"/>
     <item href="Text/S1_05-03_Chapter2.xhtml" id="id4" media-type="application/xhtml+xml"/>
@@ -178,7 +177,6 @@
     <item href="Images/p7.jpg" id="id25" media-type="image/jpeg"/>
     <item href="Images/p8.jpg" id="id26" media-type="image/jpeg"/>
     <item href="Images/p9.jpg" id="id27" media-type="image/jpeg"/>
-    <item href="Text/S1_05-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
   </manifest>
   <spine toc="toc">
     <itemref idref="S1_05-Cover.xhtml"/>

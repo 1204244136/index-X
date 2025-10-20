@@ -1,27 +1,33 @@
-<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:title id="id">某魔法的禁书目录 SPX</dc:title>
+    <dc:title id="id">[S1_25]某魔法的禁书目录 SPX</dc:title>
     <dc:creator id="id-1">镰池和马</dc:creator>
-    <dc:identifier>calibre:900</dc:identifier>
+    <dc:identifier>calibre:146</dc:identifier>
+    <dc:identifier>uuid:6494a14e-afa2-46fa-8eb2-0ee2c04a267a</dc:identifier>
     <dc:identifier id="BookId">uuid:40bbc587-6713-4e10-ba3a-49fc2c0f7ad8</dc:identifier>
     <dc:language>zh-CN</dc:language>
-    <dc:description>&lt;div&gt;
-&lt;p style="font-weight: bold"&gt;补充本篇的短篇小说！&lt;/p&gt;
-&lt;p&gt;《电击文库MAGAZINE》本刊及附录中刊登的《史提尔·马格努斯》篇、《马克·史佩斯》篇。电击文库MAGAZINE增刊《龙与虎！VS禁书目录》中刊登的《上条当麻》篇。漫画电击大王2008年10月号附录中刊登的《初春饰利》篇……至今为止只能在杂志上看到的《禁书目录》，一次性收录！&lt;/p&gt;&lt;/div&gt;</dc:description>
+    <dc:contributor id="id-3">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
+    <dc:description>&lt;p style=&quot;font-weight: bold&quot;&gt;补充本篇的短篇小说！&lt;/p&gt;
+&lt;p&gt;《电击文库MAGAZINE》本刊及附录中刊登的《史提尔·马格努斯》篇、《马克·史佩斯》篇。电击文库MAGAZINE增刊《龙与虎！VS禁书目录》中刊登的《上条当麻》篇。漫画电击大王2008年10月号附录中刊登的《初春饰利》篇……至今为止只能在杂志上看到的《禁书目录》，一次性收录！&lt;/p&gt;
+&lt;br/&gt;
+&lt;p&gt;——「史提尔·马格努斯」——&lt;/p&gt;
+&lt;p&gt;英国清教「必要之恶教会」下达了一道指令。于再度前往学园都市的史提尔面前，所出现的是同样隶属于必要之恶教会的迪奥多西亚·伊蕾翠。她与史提尔交战的理由，是个名叫派翠西亚·柏德蔚的少女——为争夺北欧神话「黑侏儒」的技术，魔法师之间的战斗如今开始。&lt;/p&gt;
+&lt;br/&gt;
+&lt;p&gt;——「马克·史佩斯」——&lt;/p&gt;
+&lt;p&gt;隶属于英国魔法结社「黎明晨光」的魔法师马克，接获首领少女要求救出其妹的委托，马克虽然成功与在海洋资源调查船「蓝海探查」上活动中的首领之妹接触，但却有看来是其他结社的魔法师来袭。马克运用以塔罗牌发挥的个性派魔法，试图将首领之妹救回。&lt;/p&gt;
+&lt;br/&gt;
+&lt;p&gt;——「上条当麻」——&lt;/p&gt;
+&lt;p&gt;学园都市第二十一学区。散步中的上条当麻与茵蒂克丝，遇见了魔法师芙蕾丝。由于上条的「不幸体质」，不知为何陷入了与被学园都市追击的芙蕾丝共同行动的状态，三人的逃亡戏码上演了。在此时，上条从芙蕾丝那里听到了关于火星未知生命体的意外情报——&lt;/p&gt;
+&lt;br/&gt;
+&lt;p&gt;——「初春饰利」——&lt;/p&gt;
+&lt;p&gt;学园都市发生了车辆劫案。「风纪委员」初春饰利也为了解决事件投入协助。劫车案的最终目的，与对学园都市发动的大规模恐怖活动有关。为了阻止以时速120km狂飙中的大型特殊车辆，初春与「警备员」黄泉川爱穗共同在现场奋斗，然而——&lt;/p&gt;</dc:description>
     <dc:subject>重小说</dc:subject>
-    <meta refines="#id" property="title-type">main</meta>
-    <meta refines="#id" property="file-as">某魔法的禁书目录 SPX</meta>
+    <opf:meta refines="#id" property="title-type">main</opf:meta>
+    <opf:meta refines="#id" property="file-as">[S1_25]某魔法的禁书目录 SPX</opf:meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
     <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-04-08T10:01:42Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
-    <meta refines="#id-1" property="role" scheme="marc:relators">aut</meta>
-    <meta refines="#id-1" property="file-as">镰池和马</meta>
-    <meta property="calibre:rating">10</meta>
-    <meta property="belongs-to-collection" id="id-2">番外</meta>
-    <meta refines="#id-2" property="collection-type">series</meta>
-    <meta refines="#id-2" property="group-position">6</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
     "#extra#": null,
@@ -136,11 +142,16 @@
     "table": "custom_column_4"
   }
 }</meta>
+    <opf:meta refines="#id-3" property="role" scheme="marc:relators">bkp</opf:meta>
+    <opf:meta refines="#id-1" property="role" scheme="marc:relators">aut</opf:meta>
+    <opf:meta refines="#id-1" property="file-as">镰池和马</opf:meta>
+    <opf:meta property="calibre:rating">10</opf:meta>
   </metadata>
   <manifest>
     <item id="S1_25-Cover.xhtml" href="Text/S1_25-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
     <item id="Message.xhtml" href="Text/S1_25-Information.xhtml" media-type="application/xhtml+xml"/>
     <item id="id1" href="Text/S1_25-Introduction.xhtml" media-type="application/xhtml+xml"/>
+    <item href="Text/S1_25-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
     <item href="Text/S1_25-Stiyl_Magnus.xhtml" id="id3" media-type="application/xhtml+xml"/>
     <item href="Text/S1_25-Mark_Space.xhtml" id="id16" media-type="application/xhtml+xml"/>
     <item href="Text/S1_25-Kamijou_Touma.xhtml" id="id4" media-type="application/xhtml+xml"/>
@@ -177,7 +188,6 @@
     <item href="Images/p2.jpg" id="id24" media-type="image/jpeg"/>
     <item href="Images/Stiyl_Magnus.jpg" id="id19" media-type="image/jpeg"/>
     <item href="Images/Uiharu_Kazari.jpg" id="id22" media-type="image/jpeg"/>
-    <item href="Text/S1_25-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
   </manifest>
   <spine toc="toc">
     <itemref idref="S1_25-Cover.xhtml"/>
