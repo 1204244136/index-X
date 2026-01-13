@@ -1,17 +1,18 @@
+<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" unique-identifier="BookId" version="3.0" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:title id="id-1">[S6_24.01.10]某科学的心理掌握 女王的演戏X</dc:title>
+    <dc:title id="id-1">[S6_24.01.10]某科学的心理掌握 女王的戏剧X</dc:title>
     <dc:creator id="id-2">镰池和马</dc:creator>
-    <dc:identifier>calibre:186</dc:identifier>
-    <dc:identifier>uuid:c479aec8-9d61-48f4-83ae-407b6690f7ff</dc:identifier>
+    <dc:identifier>calibre:189</dc:identifier>
+    <dc:identifier>uuid:d4572d25-6fa6-414a-ab41-c3117352a6be</dc:identifier>
     <dc:identifier id="BookId">uuid:1ffc6038-be43-40bc-a2ce-6de06e702c7b</dc:identifier>
     <dc:language>zh-CN</dc:language>
     <dc:contributor id="id-7">calibre (8.13.0) [https://calibre-ebook.com]</dc:contributor>
     <dc:subject>重小说</dc:subject>
-    <opf:meta refines="#id-1" property="title-type">main</opf:meta>
-    <opf:meta refines="#id-1" property="file-as">[S6_24.01.10]某科学的心理掌握 女王的演戏X</opf:meta>
+    <meta refines="#id-1" property="title-type">main</meta>
+    <meta refines="#id-1" property="file-as">[S6_24.01.10]某科学的心理掌握 女王的戏剧X</meta>
     <meta property="calibre:timestamp" scheme="dcterms:W3CDTF">2022-09-09T06:17:52Z</meta>
-    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-10-20T02:46:06Z</meta>
+    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-10-23T12:44:32Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
@@ -127,10 +128,10 @@
     "table": "custom_column_4"
   }
 }</meta>
-    <opf:meta refines="#id-7" property="role" scheme="marc:relators">bkp</opf:meta>
-    <opf:meta refines="#id-2" property="role" scheme="marc:relators">aut</opf:meta>
-    <opf:meta refines="#id-2" property="file-as">镰池和马</opf:meta>
-    <opf:meta property="calibre:rating">10</opf:meta>
+    <meta refines="#id-7" property="role" scheme="marc:relators">bkp</meta>
+    <meta refines="#id-2" property="role" scheme="marc:relators">aut</meta>
+    <meta refines="#id-2" property="file-as">镰池和马</meta>
+    <meta property="calibre:rating">10</meta>
   </metadata>
   <manifest>
     <item id="id5" href="Text/S6_24.01.10-Cover.xhtml" media-type="application/xhtml+xml"/>

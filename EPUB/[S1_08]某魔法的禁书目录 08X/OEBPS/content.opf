@@ -1,3 +1,4 @@
+<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
     <dc:title id="id">[S1_08]某魔法的禁书目录 08X</dc:title>
@@ -7,18 +8,18 @@
     <dc:identifier id="BookId">uuid:a4c45a29-1d4f-4522-b31f-b47e834abac2</dc:identifier>
     <dc:language>zh-CN</dc:language>
     <dc:contributor id="id-3">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
-    <dc:description>&lt;p style=&quot;font-weight: bold&quot;&gt;当姐姐大人与「那位先生」交汇之时，白井黑子的故事从此开始？！这是姐姐大人与白井黑子的人气学园动作系列第八弹。&lt;/p&gt;
+    <dc:description>&lt;p style="font-weight: bold"&gt;当姐姐大人与「那位先生」交汇之时，白井黑子的故事从此开始？！这是姐姐大人与白井黑子的人气学园动作系列第八弹。&lt;/p&gt;
 &lt;p&gt;这里是学园都市中所有女学生都心驰神往的名门女子学校·常盘台中学。当然，入读的学生全都是「大小姐」。&lt;/p&gt;
 &lt;p&gt;其中一位「大小姐」御坂美琴在体育课后，为了洗去汗水而淋浴时，隔壁传来了一个少女的声音。&lt;/p&gt;
 &lt;p&gt;白井黑子。她是守护学园都市治安的「风纪委员」，也是拥有空间移动能力的大能力者。她邀请美琴放学后一起去购物。&lt;/p&gt;
 &lt;p&gt;——黑子漫长的一天就这么开始了。了解姐姐大人·御坂美琴真正面貌的，漫长的一天……&lt;/p&gt;
 &lt;p&gt;当姐姐大人与「那位先生」交汇之时，白井黑子的故事从此开始？！&lt;/p&gt;</dc:description>
     <dc:subject>重小说</dc:subject>
-    <opf:meta refines="#id" property="title-type">main</opf:meta>
-    <opf:meta refines="#id" property="file-as">[S1_08]某魔法的禁书目录 08X</opf:meta>
+    <meta refines="#id" property="title-type">main</meta>
+    <meta refines="#id" property="file-as">[S1_08]某魔法的禁书目录 08X</meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
-    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-01-24T06:04:17Z</meta>
+    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-10-21T15:37:06Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
@@ -134,10 +135,10 @@
     "table": "custom_column_4"
   }
 }</meta>
-    <opf:meta refines="#id-3" property="role" scheme="marc:relators">bkp</opf:meta>
-    <opf:meta refines="#id-1" property="role" scheme="marc:relators">aut</opf:meta>
-    <opf:meta refines="#id-1" property="file-as">镰池和马</opf:meta>
-    <opf:meta property="calibre:rating">10</opf:meta>
+    <meta refines="#id-3" property="role" scheme="marc:relators">bkp</meta>
+    <meta refines="#id-1" property="role" scheme="marc:relators">aut</meta>
+    <meta refines="#id-1" property="file-as">镰池和马</meta>
+    <meta property="calibre:rating">10</meta>
   </metadata>
   <manifest>
     <item id="S1_08-Cover.xhtml" href="Text/S1_08-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
@@ -160,7 +161,7 @@
     <item id="nav" href="../nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
     <item id="toc" href="../toc.ncx" media-type="application/x-dtbncx+xml"/>
     <item href="Styles/style.css" id="id5" media-type="text/css"/>
-    <item id="id40" href="Images/Back_cover.jpg" media-type="image/jpeg"/>
+    <item id="id40" href="Images/S1_08-Back_cover.jpg" media-type="image/jpeg"/>
     <item href="Images/Contents.jpg" id="id31" media-type="image/jpeg"/>
     <item id="GT_vol_1.jpg" href="Images/Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
     <item href="Images/Deputy_cover.jpg" id="id26" media-type="image/jpeg"/>

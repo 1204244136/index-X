@@ -1,3 +1,4 @@
+<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
     <dc:title id="id">[S1_21]某魔法的禁书目录 19X</dc:title>
@@ -7,16 +8,16 @@
     <dc:identifier id="BookId">uuid:b55cab7b-71c9-439c-99a4-d694c8fd4912</dc:identifier>
     <dc:language>zh-CN</dc:language>
     <dc:contributor id="id-3">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
-    <dc:description>&lt;p style=&quot;font-weight: bold&quot;&gt;第15卷、SS系列之后继续描绘，「学园都市暗部篇」登场！拥有学园都市最高权力的统括理事会成员。其强大的势力向最强能力者·一方通行露出獠牙。当科学与魔法交汇之时，故事就从此开始——！&lt;/p&gt;
+    <dc:description>&lt;p style="font-weight: bold"&gt;第15卷、SS系列之后继续描绘，「学园都市暗部篇」登场！拥有学园都市最高权力的统括理事会成员。其强大的势力向最强能力者·一方通行露出獠牙。当科学与魔法交汇之时，故事就从此开始——！&lt;/p&gt;
 &lt;p&gt;在学园都市的暗部中处理事件的「GROUP」。由最强能力者·一方通行和同时也是魔法师的土御门元春等人组成的这个团队，正在探寻神秘关键词「龙」的真相。他们相信，这将是打破当前「糟糕透顶」局面的唯一线索。&lt;/p&gt;
 &lt;p&gt;与此同时，有人对他们未经上层批准进行的活动感到厌烦。此人正是学园都市最高权力机构——统括理事会的一员。他那强大的势力开始向「GROUP」露出獠牙。&lt;/p&gt;
 &lt;p&gt;同一时间，前「道具」成员滨面与绢旗来到医院探望泷壶。在那里突然爆发了关于滨面是否超级喜欢兔女郎装扮的疑云。尽管绢旗和泷壶对此表示极度无语，但滨面却拼命地辩解……？！ 第15卷、SS系列之后继续描绘，「学园都市暗部篇」登场！&lt;/p&gt;</dc:description>
     <dc:subject>重小说</dc:subject>
-    <opf:meta refines="#id" property="title-type">main</opf:meta>
-    <opf:meta refines="#id" property="file-as">[S1_21]某魔法的禁书目录 19X</opf:meta>
+    <meta refines="#id" property="title-type">main</meta>
+    <meta refines="#id" property="file-as">[S1_21]某魔法的禁书目录 19X</meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
-    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-02-06T06:15:01Z</meta>
+    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-10-22T07:48:24Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
@@ -132,10 +133,10 @@
     "table": "custom_column_4"
   }
 }</meta>
-    <opf:meta refines="#id-3" property="role" scheme="marc:relators">bkp</opf:meta>
-    <opf:meta refines="#id-1" property="role" scheme="marc:relators">aut</opf:meta>
-    <opf:meta refines="#id-1" property="file-as">镰池和马</opf:meta>
-    <opf:meta property="calibre:rating">10</opf:meta>
+    <meta refines="#id-3" property="role" scheme="marc:relators">bkp</meta>
+    <meta refines="#id-1" property="role" scheme="marc:relators">aut</meta>
+    <meta refines="#id-1" property="file-as">镰池和马</meta>
+    <meta property="calibre:rating">10</meta>
   </metadata>
   <manifest>
     <item id="S1_21-Cover.xhtml" href="Text/S1_21-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
@@ -156,7 +157,7 @@
     <item id="nav" href="../nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
     <item id="toc" href="../toc.ncx" media-type="application/x-dtbncx+xml"/>
     <item href="Styles/style.css" id="id5" media-type="text/css"/>
-    <item id="id14" href="Images/Back_cover.jpg" media-type="image/jpeg"/>
+    <item id="id14" href="Images/S1_21-Back_cover.jpg" media-type="image/jpeg"/>
     <item href="Images/Contents.jpg" id="id22" media-type="image/jpeg"/>
     <item id="GT_vol_1.jpg" href="Images/Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
     <item href="Images/Deputy_cover.jpg" id="id21" media-type="image/jpeg"/>

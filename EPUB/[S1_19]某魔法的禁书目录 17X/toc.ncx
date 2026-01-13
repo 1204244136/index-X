@@ -85,7 +85,7 @@
     </navPoint>
     <navPoint id="num_13" playOrder="13">
       <navLabel>
-        <text>第二章 于云端上漂浮的钢铁战场 Sky_Bus_365.</text>
+        <text>第二章 于云端上飘浮的钢铁战场 Sky_Bus_365.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_19-03_Chapter2.xhtml"/>
       <navPoint id="num_14" playOrder="14">

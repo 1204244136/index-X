@@ -1,3 +1,4 @@
+<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
     <dc:title id="id">[S1_13]某魔法的禁书目录 13X</dc:title>
@@ -7,7 +8,7 @@
     <dc:identifier id="BookId">uuid:76f95b09-69dc-4005-ae09-7589e4d86fde</dc:identifier>
     <dc:language>zh-CN</dc:language>
     <dc:contributor id="id-3">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
-    <dc:description>&lt;p style=&quot;font-weight: bold&quot;&gt;最强的能力者·一方通行VS武装集团「猎犬部队」！！ 最弱的无能力者·上条当麻VS前方之风！！ 当科学与魔法交汇之时，故事就从此开始——！&lt;/p&gt;
+    <dc:description>&lt;p style="font-weight: bold"&gt;最强的能力者·一方通行VS武装集团「猎犬部队」！！ 最弱的无能力者·上条当麻VS前方之风！！ 当科学与魔法交汇之时，故事就从此开始——！&lt;/p&gt;
 &lt;p&gt;罗马正教「神之右席」的一员，「前方之风」入侵了学园都市。她操控的谜之魔法使得城市机能完全瘫痪，大部分人失去意识而倒下。&lt;/p&gt;
 &lt;p&gt;她的目标是上条当麻。&lt;/p&gt;
 &lt;p&gt;罗马正教正式认定的敌人。&lt;/p&gt;
@@ -16,11 +17,11 @@
 &lt;p&gt;魔法与科学，两场灾难同时袭击学园都市。&lt;/p&gt;
 &lt;p&gt;上条当麻、茵蒂克丝、一方通行、最后之作。当四者的四种心情交汇之时，故事就从此开始——！&lt;/p&gt;</dc:description>
     <dc:subject>重小说</dc:subject>
-    <opf:meta refines="#id" property="title-type">main</opf:meta>
-    <opf:meta refines="#id" property="file-as">[S1_13]某魔法的禁书目录 13X</opf:meta>
+    <meta refines="#id" property="title-type">main</meta>
+    <meta refines="#id" property="file-as">[S1_13]某魔法的禁书目录 13X</meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
-    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-03-29T12:15:28Z</meta>
+    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-10-22T07:43:20Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
@@ -136,10 +137,10 @@
     "table": "custom_column_4"
   }
 }</meta>
-    <opf:meta refines="#id-3" property="role" scheme="marc:relators">bkp</opf:meta>
-    <opf:meta refines="#id-1" property="role" scheme="marc:relators">aut</opf:meta>
-    <opf:meta refines="#id-1" property="file-as">镰池和马</opf:meta>
-    <opf:meta property="calibre:rating">10</opf:meta>
+    <meta refines="#id-3" property="role" scheme="marc:relators">bkp</meta>
+    <meta refines="#id-1" property="role" scheme="marc:relators">aut</meta>
+    <meta refines="#id-1" property="file-as">镰池和马</meta>
+    <meta property="calibre:rating">10</meta>
   </metadata>
   <manifest>
     <item id="S1_13-Cover.xhtml" href="Text/S1_13-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
@@ -161,7 +162,7 @@
     <item id="nav" href="../nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
     <item id="toc" href="../toc.ncx" media-type="application/x-dtbncx+xml"/>
     <item href="Styles/style.css" id="id5" media-type="text/css"/>
-    <item id="id15" href="Images/Back_cover.jpg" media-type="image/jpeg"/>
+    <item id="id15" href="Images/S1_13-Back_cover.jpg" media-type="image/jpeg"/>
     <item id="GT_vol_1.jpg" href="Images/Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
     <item href="Images/Deputy_cover.jpg" id="id18" media-type="image/jpeg"/>
     <item href="Images/Illustrations1.jpg" id="id20" media-type="image/jpeg"/>

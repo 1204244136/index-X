@@ -1,3 +1,4 @@
+<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
     <dc:title id="id">[S2_02]新约 某魔法的禁书目录 02X</dc:title>
@@ -7,18 +8,18 @@
     <dc:identifier id="BookId">uuid:39395c20-ece4-4efa-be9a-03e965198da5</dc:identifier>
     <dc:language>zh-CN</dc:language>
     <dc:contributor id="id-3">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
-    <dc:description>&lt;p style=&quot;font-weight: bold&quot;&gt;由于英雄的复活，世界再次发生重大事件──才怪！而是突然进入日常恋爱喜剧篇！！&lt;/p&gt;
+    <dc:description>&lt;p style="font-weight: bold"&gt;由于英雄的复活，世界再次发生重大事件——才怪！而是突然进入日常恋爱喜剧篇！！&lt;/p&gt;
 &lt;p&gt;11月5日的学园都市。上条当麻、一方通行，以及滨面仕上三人终于相遇。然而，这意味着三者需要面对各自担心他们的女孩「你们到底在干什么」的问题大爆发……！&lt;/p&gt;
 &lt;p&gt;上条握紧呱太纪念品挂件，小心翼翼地对意气消沉中的美琴搭话，结果遭遇超电磁炮地狱。而且，他还以同样的语气与茵蒂克丝交谈……&lt;/p&gt;
 &lt;p&gt;滨面终于被正在进行「输了就要屈辱地扮兔女郎了！」游戏的麦野等人发现。然而，在他身边有一个与已故「道具」前成员芙兰达一模一样的少女……&lt;/p&gt;
 &lt;p&gt;一方通行对突然出现的最后之作和番外个体感到厌烦，但总是喜欢捣乱的番外个体在上条面前却变得安静，不知为何让他感到恼火……&lt;/p&gt;
 &lt;p&gt;当科学与魔法交汇之时，日常故事（喜剧部分）就从此开始——！&lt;/p&gt;</dc:description>
     <dc:subject>重小说</dc:subject>
-    <opf:meta refines="#id" property="title-type">main</opf:meta>
-    <opf:meta refines="#id" property="file-as">[S2_02]新约 某魔法的禁书目录 02X</opf:meta>
+    <meta refines="#id" property="title-type">main</meta>
+    <meta refines="#id" property="file-as">[S2_02]新约 某魔法的禁书目录 02X</meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
-    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-01-24T12:27:07Z</meta>
+    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-12-10T02:35:31Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
@@ -134,10 +135,10 @@
     "table": "custom_column_4"
   }
 }</meta>
-    <opf:meta refines="#id-3" property="role" scheme="marc:relators">bkp</opf:meta>
-    <opf:meta refines="#id-1" property="role" scheme="marc:relators">aut</opf:meta>
-    <opf:meta refines="#id-1" property="file-as">镰池和马</opf:meta>
-    <opf:meta property="calibre:rating">10</opf:meta>
+    <meta refines="#id-3" property="role" scheme="marc:relators">bkp</meta>
+    <meta refines="#id-1" property="role" scheme="marc:relators">aut</meta>
+    <meta refines="#id-1" property="file-as">镰池和马</meta>
+    <meta property="calibre:rating">10</meta>
   </metadata>
   <manifest>
     <item id="S2_02-Cover.xhtml" href="Text/S2_02-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>

@@ -1,3 +1,4 @@
+<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
     <dc:title id="id-1">[S6_20.05.09]创约 某魔法的禁书目录SS 黑夜海鸟篇X</dc:title>
@@ -8,11 +9,11 @@
     <dc:language>zh-CN</dc:language>
     <dc:contributor id="id-4">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
     <dc:subject>重小说</dc:subject>
-    <opf:meta refines="#id-1" property="title-type">main</opf:meta>
-    <opf:meta refines="#id-1" property="file-as">[S6_20.05.09]创约 某魔法的禁书目录SS 黑夜海鸟篇X</opf:meta>
+    <meta refines="#id-1" property="title-type">main</meta>
+    <meta refines="#id-1" property="file-as">[S6_20.05.09]创约 某魔法的禁书目录SS 黑夜海鸟篇X</meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
-    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-02-09T08:25:20Z</meta>
+    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-12-10T15:43:16Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
@@ -128,10 +129,10 @@
     "table": "custom_column_4"
   }
 }</meta>
-    <opf:meta refines="#id-4" property="role" scheme="marc:relators">bkp</opf:meta>
-    <opf:meta refines="#id-2" property="role" scheme="marc:relators">aut</opf:meta>
-    <opf:meta refines="#id-2" property="file-as">镰池和马</opf:meta>
-    <opf:meta property="calibre:rating">10</opf:meta>
+    <meta refines="#id-4" property="role" scheme="marc:relators">bkp</meta>
+    <meta refines="#id-2" property="role" scheme="marc:relators">aut</meta>
+    <meta refines="#id-2" property="file-as">镰池和马</meta>
+    <meta property="calibre:rating">10</meta>
   </metadata>
   <manifest>
     <item id="S6_20.05.09-Cover.xhtml" href="Text/S6_20.05.09-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
@@ -142,10 +143,12 @@
     <item href="Styles/style.css" id="id5" media-type="text/css"/>
     <item id="GT_vol_1.jpg" href="Images/Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
     <item id="id" href="Images/p1.jpg" media-type="image/jpeg"/>
+    <item id="id-3" href="Text/S6_20.05.09-Note.xhtml" media-type="application/xhtml+xml"/>
   </manifest>
   <spine toc="toc">
     <itemref idref="S6_20.05.09-Cover.xhtml"/>
     <itemref idref="Message.xhtml"/>
     <itemref idref="id4"/>
+    <itemref idref="id-3"/>
   </spine>
 </package>

@@ -1,3 +1,4 @@
+<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
     <dc:title id="id">[S1_16]某魔法的禁书目录 15X</dc:title>
@@ -7,7 +8,7 @@
     <dc:identifier id="BookId">uuid:9c33af59-c94f-47af-85d3-3eb81abea155</dc:identifier>
     <dc:language>zh-CN</dc:language>
     <dc:contributor id="id-3">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
-    <dc:description>&lt;p style=&quot;font-weight: bold&quot;&gt;这个故事中，幻想杀手的少年并未登场。当「GROUP」的能力者·一方通行与神秘组织「SCHOOL」邂逅之时，学园都市「暗部」的故事就从此开始——！&lt;/p&gt;
+    <dc:description>&lt;p style="font-weight: bold"&gt;这个故事中，幻想杀手的少年并未登场。当「GROUP」的能力者·一方通行与神秘组织「SCHOOL」邂逅之时，学园都市「暗部」的故事就从此开始——！&lt;/p&gt;
 &lt;p&gt;在阿维尼翁进攻作战中，治安维持力量缺席的学园都市成为了无法之地。在那里，黑暗组织们正在暗中活动。&lt;/p&gt;
 &lt;p&gt;——为自己而行动的人。&lt;/p&gt;
 &lt;p&gt;——喜好黑暗、享受杀戮的人。&lt;/p&gt;
@@ -19,11 +20,11 @@
 &lt;p&gt;在这个由科学支配一切的城市里，能够生存下来的将是……&lt;/p&gt;
 &lt;p&gt;当「GROUP」的能力者·一方通行与神秘组织「SCHOOL」邂逅之时，学园都市「暗部」的故事就从此开始——！&lt;/p&gt;</dc:description>
     <dc:subject>重小说</dc:subject>
-    <opf:meta refines="#id" property="title-type">main</opf:meta>
-    <opf:meta refines="#id" property="file-as">[S1_16]某魔法的禁书目录 15X</opf:meta>
+    <meta refines="#id" property="title-type">main</meta>
+    <meta refines="#id" property="file-as">[S1_16]某魔法的禁书目录 15X</meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
-    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-01-24T09:51:22Z</meta>
+    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-10-22T07:46:42Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
@@ -139,10 +140,10 @@
     "table": "custom_column_4"
   }
 }</meta>
-    <opf:meta refines="#id-3" property="role" scheme="marc:relators">bkp</opf:meta>
-    <opf:meta refines="#id-1" property="role" scheme="marc:relators">aut</opf:meta>
-    <opf:meta refines="#id-1" property="file-as">镰池和马</opf:meta>
-    <opf:meta property="calibre:rating">10</opf:meta>
+    <meta refines="#id-3" property="role" scheme="marc:relators">bkp</meta>
+    <meta refines="#id-1" property="role" scheme="marc:relators">aut</meta>
+    <meta refines="#id-1" property="file-as">镰池和马</meta>
+    <meta property="calibre:rating">10</meta>
   </metadata>
   <manifest>
     <item id="S1_16-Cover.xhtml" href="Text/S1_16-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
@@ -166,7 +167,7 @@
     <item id="nav" href="../nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
     <item id="toc" href="../toc.ncx" media-type="application/x-dtbncx+xml"/>
     <item href="Styles/style.css" id="id5" media-type="text/css"/>
-    <item id="id35" href="Images/Back_cover.jpg" media-type="image/jpeg"/>
+    <item id="id35" href="Images/S1_16-Back_cover.jpg" media-type="image/jpeg"/>
     <item href="Images/Contents.jpg" id="id22" media-type="image/jpeg"/>
     <item id="GT_vol_1.jpg" href="Images/Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
     <item href="Images/Deputy_cover.jpg" id="id21" media-type="image/jpeg"/>

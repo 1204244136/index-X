@@ -1,3 +1,4 @@
+<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
     <dc:title id="id">[S2_04]新约 某魔法的禁书目录 04X</dc:title>
@@ -7,8 +8,8 @@
     <dc:identifier id="BookId">uuid:2e0e6056-dd1a-43db-99d3-4b61148ad084</dc:identifier>
     <dc:language>zh-CN</dc:language>
     <dc:contributor id="id-3">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
-    <dc:description>&lt;p style=&quot;font-weight: bold&quot;&gt;破坏一切「木原」一族与粉碎万物的「格雷姆林」。两者的激烈冲突，开始了。&lt;/p&gt;
-&lt;p&gt;──『11月13日起，我们反学园都市科学守护者二七社将在东欧的巴格吉城举办格斗大会「天择者」』──&lt;/p&gt;
+    <dc:description>&lt;p style="font-weight: bold"&gt;破坏一切「木原」一族与粉碎万物的「格雷姆林」。两者的激烈冲突，开始了。&lt;/p&gt;
+&lt;p&gt;——『11月13日起，我们反学园都市科学守护者二七社将在东欧的巴格吉城举办格斗大会「天择者」』——&lt;/p&gt;
 &lt;p&gt;这个公告是开始。&lt;/p&gt;
 &lt;p&gt;以第三次世界大战为契机，反学园都市势力在各地探索各种抵抗运动。在这场「天择者」异种格斗大会中，通过淘汰赛制以证明「超能力所无法比拟的『异能』」。这无疑是从根本上摧毁学园都市的身份认同。&lt;/p&gt;
 &lt;p&gt;借助魔法与科学融合组织「格雷姆林」的力量，其阴谋得以推进。&lt;/p&gt;
@@ -16,11 +17,11 @@
 &lt;p&gt;学园都市不会允许这一切发生。&lt;/p&gt;
 &lt;p&gt;这是仅有三位「木原」和三位「格雷姆林」的事情。绝不仅止于此，这是最糟糕的骚乱。&lt;/p&gt;</dc:description>
     <dc:subject>重小说</dc:subject>
-    <opf:meta refines="#id" property="title-type">main</opf:meta>
-    <opf:meta refines="#id" property="file-as">[S2_04]新约 某魔法的禁书目录 04X</opf:meta>
+    <meta refines="#id" property="title-type">main</meta>
+    <meta refines="#id" property="file-as">[S2_04]新约 某魔法的禁书目录 04X</meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
-    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-03-29T12:17:54Z</meta>
+    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2026-01-04T03:21:29Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
@@ -136,10 +137,10 @@
     "table": "custom_column_4"
   }
 }</meta>
-    <opf:meta refines="#id-3" property="role" scheme="marc:relators">bkp</opf:meta>
-    <opf:meta refines="#id-1" property="role" scheme="marc:relators">aut</opf:meta>
-    <opf:meta refines="#id-1" property="file-as">镰池和马</opf:meta>
-    <opf:meta property="calibre:rating">10</opf:meta>
+    <meta refines="#id-3" property="role" scheme="marc:relators">bkp</meta>
+    <meta refines="#id-1" property="role" scheme="marc:relators">aut</meta>
+    <meta refines="#id-1" property="file-as">镰池和马</meta>
+    <meta property="calibre:rating">10</meta>
   </metadata>
   <manifest>
     <item id="S2_04-Cover.xhtml" href="Text/S2_04-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>

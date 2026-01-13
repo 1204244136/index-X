@@ -1,3 +1,4 @@
+<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
     <dc:title id="id">[S1_12]某魔法的禁书目录 12X</dc:title>
@@ -7,7 +8,7 @@
     <dc:identifier id="BookId">uuid:e5ab7119-bad5-4ad5-83fd-f34f75059778</dc:identifier>
     <dc:language>zh-CN</dc:language>
     <dc:contributor id="id-3">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
-    <dc:description>&lt;p style=&quot;font-weight: bold&quot;&gt;科学与魔法的学园喜剧篇终于开始了？当上条当麻和御坂美琴交汇之时，围绕惩罚游戏的故事就从此开始——？！&lt;/p&gt;
+    <dc:description>&lt;p style="font-weight: bold"&gt;科学与魔法的学园喜剧篇终于开始了？当上条当麻和御坂美琴交汇之时，围绕惩罚游戏的故事就从此开始——？！&lt;/p&gt;
 &lt;p&gt;九月三十日——学园都市迎来了换季期。&lt;/p&gt;
 &lt;p&gt;将周围的喧嚣抛之脑后，精英大小姐学校·常盘台中学的超能力者御坂美琴站在音乐厅前的广场上。&lt;/p&gt;
 &lt;p&gt;她正在等待某人。&lt;/p&gt;
@@ -15,11 +16,11 @@
 &lt;p&gt;本应接受惩罚游戏的「那个少年」却始终没有出现。美琴一边叹气，一边抱着薄薄的学生包和小提琴盒子等待着那家伙——&lt;/p&gt;
 &lt;p&gt;当上条当麻和御坂美琴交汇之时，围绕惩罚游戏的故事就从此开始——？！&lt;/p&gt;</dc:description>
     <dc:subject>重小说</dc:subject>
-    <opf:meta refines="#id" property="title-type">main</opf:meta>
-    <opf:meta refines="#id" property="file-as">[S1_12]某魔法的禁书目录 12X</opf:meta>
+    <meta refines="#id" property="title-type">main</meta>
+    <meta refines="#id" property="file-as">[S1_12]某魔法的禁书目录 12X</meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
-    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-01-25T12:15:53Z</meta>
+    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-10-22T07:42:52Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
@@ -135,10 +136,10 @@
     "table": "custom_column_4"
   }
 }</meta>
-    <opf:meta refines="#id-3" property="role" scheme="marc:relators">bkp</opf:meta>
-    <opf:meta refines="#id-1" property="role" scheme="marc:relators">aut</opf:meta>
-    <opf:meta refines="#id-1" property="file-as">镰池和马</opf:meta>
-    <opf:meta property="calibre:rating">10</opf:meta>
+    <meta refines="#id-3" property="role" scheme="marc:relators">bkp</meta>
+    <meta refines="#id-1" property="role" scheme="marc:relators">aut</meta>
+    <meta refines="#id-1" property="file-as">镰池和马</meta>
+    <meta property="calibre:rating">10</meta>
   </metadata>
   <manifest>
     <item id="S1_12-Cover.xhtml" href="Text/S1_12-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
@@ -162,7 +163,7 @@
     <item id="nav" href="../nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
     <item id="toc" href="../toc.ncx" media-type="application/x-dtbncx+xml"/>
     <item href="Styles/style.css" id="id5" media-type="text/css"/>
-    <item id="id33" href="Images/Back_cover.jpg" media-type="image/jpeg"/>
+    <item id="id33" href="Images/S1_12-Back_cover.jpg" media-type="image/jpeg"/>
     <item id="GT_vol_1.jpg" href="Images/Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
     <item href="Images/Deputy_cover.jpg" id="id18" media-type="image/jpeg"/>
     <item href="Images/Illustrations1.jpg" id="id21" media-type="image/jpeg"/>

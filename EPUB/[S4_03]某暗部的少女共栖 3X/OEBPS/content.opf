@@ -1,0 +1,192 @@
+<?xml version='1.0' encoding='utf-8'?>
+<package xmlns="http://www.idpf.org/2007/opf" unique-identifier="BookId" version="3.0" prefix="calibre: https://calibre-ebook.com">
+  <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <dc:title id="id-1">[S4_03]某暗部的少女共栖 3X</dc:title>
+    <dc:creator id="id-2">镰池和马</dc:creator>
+    <dc:identifier>calibre:198</dc:identifier>
+    <dc:identifier>uuid:2ee89a89-3208-45b1-a382-ff97247092ce</dc:identifier>
+    <dc:identifier id="BookId">uuid:1ffc6038-be43-40bc-a2ce-6de06e702c7b</dc:identifier>
+    <dc:language>zh-CN</dc:language>
+    <dc:contributor id="id-28">calibre (8.16.2) [https://calibre-ebook.com]</dc:contributor>
+    <dc:description>&lt;div&gt;
+&lt;p style="font-weight: bold"&gt;一边要与自称「正义」的暗部组织展开争斗。而另一边，有人联系上了麦野——&lt;/p&gt;
+&lt;p&gt;夏天结束，ITEM的基地被炸毁，少女们无家可归。尽管接下了新工作，可功劳却被自称「正义的伙伴」的竞争对手夺走了。这时，麦野接到了来自「明面的学校」的朋友的联系……&lt;/p&gt;&lt;/div&gt;</dc:description>
+    <dc:subject>重小说</dc:subject>
+    <meta refines="#id-1" property="title-type">main</meta>
+    <meta refines="#id-1" property="file-as">[S4_03]某暗部的少女共栖 3X</meta>
+    <meta property="calibre:timestamp" scheme="dcterms:W3CDTF">2022-09-09T06:17:52Z</meta>
+    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2026-01-05T03:35:25Z</meta>
+    <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
+    <meta property="calibre:user_metadata">{
+  "#ace_report": {
+    "#extra#": null,
+    "#value#": null,
+    "category_sort": "value",
+    "colnum": 1,
+    "column": "value",
+    "datatype": "comments",
+    "display": {
+      "description": "ACE report",
+      "heading_position": "side",
+      "interpret_as": "html"
+    },
+    "is_category": false,
+    "is_csp": false,
+    "is_custom": true,
+    "is_editable": true,
+    "is_multiple": null,
+    "is_multiple2": {},
+    "kind": "field",
+    "label": "ace_report",
+    "link_column": "value",
+    "name": "ACE report",
+    "rec_index": 22,
+    "search_terms": [
+      "#ace_report"
+    ],
+    "table": "custom_column_1"
+  },
+  "#ace_result": {
+    "#extra#": null,
+    "#value#": null,
+    "category_sort": "value",
+    "colnum": 2,
+    "column": "value",
+    "datatype": "bool",
+    "display": {
+      "bools_show_icons": true,
+      "bools_show_text": false,
+      "description": "ACE result"
+    },
+    "is_category": false,
+    "is_csp": false,
+    "is_custom": true,
+    "is_editable": true,
+    "is_multiple": null,
+    "is_multiple2": {},
+    "kind": "field",
+    "label": "ace_result",
+    "link_column": "value",
+    "name": "ACE result",
+    "rec_index": 23,
+    "search_terms": [
+      "#ace_result"
+    ],
+    "table": "custom_column_2"
+  },
+  "#epubcheck_report": {
+    "#extra#": null,
+    "#value#": null,
+    "category_sort": "value",
+    "colnum": 3,
+    "column": "value",
+    "datatype": "comments",
+    "display": {
+      "description": "EPUBCheck report",
+      "heading_position": "side",
+      "interpret_as": "html"
+    },
+    "is_category": false,
+    "is_csp": false,
+    "is_custom": true,
+    "is_editable": true,
+    "is_multiple": null,
+    "is_multiple2": {},
+    "kind": "field",
+    "label": "epubcheck_report",
+    "link_column": "value",
+    "name": "EPUBCheck report",
+    "rec_index": 24,
+    "search_terms": [
+      "#epubcheck_report"
+    ],
+    "table": "custom_column_3"
+  },
+  "#epubcheck_result": {
+    "#extra#": null,
+    "#value#": null,
+    "category_sort": "value",
+    "colnum": 4,
+    "column": "value",
+    "datatype": "bool",
+    "display": {
+      "bools_show_icons": true,
+      "bools_show_text": false,
+      "description": "EPUBCheck result"
+    },
+    "is_category": false,
+    "is_csp": false,
+    "is_custom": true,
+    "is_editable": true,
+    "is_multiple": null,
+    "is_multiple2": {},
+    "kind": "field",
+    "label": "epubcheck_result",
+    "link_column": "value",
+    "name": "EPUBCheck result",
+    "rec_index": 25,
+    "search_terms": [
+      "#epubcheck_result"
+    ],
+    "table": "custom_column_4"
+  }
+}</meta>
+    <meta refines="#id-28" property="role" scheme="marc:relators">bkp</meta>
+    <meta refines="#id-2" property="role" scheme="marc:relators">aut</meta>
+    <meta refines="#id-2" property="file-as">镰池和马</meta>
+    <meta property="calibre:rating">10</meta>
+  </metadata>
+  <manifest>
+    <item id="id5" href="Text/S4_03-Cover.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id1" href="Text/S4_03-Information.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id2" href="Text/S4_03-Introduction.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id-3" href="Text/S4_03-Illustrations.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id-14" href="Text/S4_03-01_Before_the_Prologue.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id-15" href="Text/S4_03-02_Prologue.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id-16" href="Text/S4_03-03_Between_the_Lines1.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id-17" href="Text/S4_03-04_Chapter1.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id-18" href="Text/S4_03-05_Chapter2.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id-19" href="Text/S4_03-06_Chapter3.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id-20" href="Text/S4_03-07_Between_the_Lines2.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id-21" href="Text/S4_03-08_Chapter4.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id-22" href="Text/S4_03-09_Between_the_Lines3.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id-23" href="Text/S4_03-10_Epilogue.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id-24" href="Text/S4_03-11_Afterwords.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id-25" href="Text/S4_03-12_After_the_Epilogue.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id-26" href="Text/S4_03-Note.xhtml" media-type="application/xhtml+xml"/>
+    <item id="nav" href="../nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
+    <item href="../toc.ncx" id="ncx" media-type="application/x-dtbncx+xml"/>
+    <item id="id" href="Styles/style.css" media-type="text/css"/>
+    <item id="id-4" href="i-052.jpg" media-type="image/jpeg"/>
+    <item id="id-5" href="i-070.jpg" media-type="image/jpeg"/>
+    <item id="id-6" href="i-143.jpg" media-type="image/jpeg"/>
+    <item id="id-7" href="i-239.jpg" media-type="image/jpeg"/>
+    <item id="id-8" href="i-277.jpg" media-type="image/jpeg"/>
+    <item id="id-9" href="i-305.jpg" media-type="image/jpeg"/>
+    <item id="id-10" href="i-347.jpg" media-type="image/jpeg"/>
+    <item href="OEBPS/cover.jpg" id="cover" media-type="image/jpeg" properties="cover-image"/>
+    <item id="id-11" href="S4_03-Contents.jpg" media-type="image/jpeg"/>
+    <item id="id-12" href="S4_03-Cover.jpg" media-type="image/jpeg"/>
+    <item id="id-13" href="S4_03-Illustrations1.jpg" media-type="image/jpeg"/>
+    <item id="id-27" href="S4_03-Illustrations2.jpg" media-type="image/jpeg"/>
+  </manifest>
+  <spine toc="ncx">
+    <itemref idref="id5"/>
+    <itemref idref="id1"/>
+    <itemref idref="id2"/>
+    <itemref idref="id-3"/>
+    <itemref idref="id-14"/>
+    <itemref idref="id-15"/>
+    <itemref idref="id-16"/>
+    <itemref idref="id-17"/>
+    <itemref idref="id-18"/>
+    <itemref idref="id-19"/>
+    <itemref idref="id-20"/>
+    <itemref idref="id-21"/>
+    <itemref idref="id-22"/>
+    <itemref idref="id-23"/>
+    <itemref idref="id-24"/>
+    <itemref idref="id-25"/>
+    <itemref idref="id-26"/>
+  </spine>
+</package>

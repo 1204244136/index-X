@@ -1,18 +1,23 @@
-<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" unique-identifier="BookId" version="3.0" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
     <dc:title id="id-1">[S4_02]某暗部的少女共栖 2X</dc:title>
     <dc:creator id="id-2">镰池和马</dc:creator>
-    <dc:identifier>calibre:111</dc:identifier>
-    <dc:identifier>uuid:6c8bf93e-24ec-4216-8d1a-a94d0124ea5f</dc:identifier>
+    <dc:identifier>calibre:199</dc:identifier>
+    <dc:identifier>uuid:ac50117f-56f0-414d-9720-7ff3025a18f3</dc:identifier>
     <dc:identifier id="BookId">uuid:1ffc6038-be43-40bc-a2ce-6de06e702c7b</dc:identifier>
     <dc:language>zh-CN</dc:language>
-    <dc:contributor id="id-27">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
+    <dc:contributor id="id-27">calibre (8.16.2) [https://calibre-ebook.com]</dc:contributor>
+    <dc:description>&lt;div&gt;
+&lt;p&gt;&lt;strong&gt;ITEM迎来了新的委托&lt;/strong&gt;。&lt;strong&gt;阻挡在她们面前的&lt;/strong&gt;，&lt;strong&gt;竟是能够操控心灵的金发少女&lt;/strong&gt;？！&lt;/p&gt;
+&lt;p&gt;正式成为ITEM的四人接到了新的任务。&lt;/p&gt;
+&lt;p&gt;目标是在网络上暗中活跃的美人结婚欺诈师「蜂蜜女王」。她将手伸向了能力开发的机密，且伤害了「原子崩坏」的能力开发人员。被一直小瞧下去不是暗部的作风。因此，麦野决定接下这份委托。&lt;/p&gt;
+&lt;p&gt;就在她们接受委托时，ITEM的据点突然遭到了敌袭！尽管成功抵挡了首波攻击，但敌方的进攻并未停止。有种像是被敌人诱导的违和感侵袭着麦野她们。&lt;/p&gt;
+&lt;p&gt;接下来，出现在被逼入绝境的ITEM面前的是，因在「暗部」中过于异端，而被研究机构驱逐的前「原子崩坏」主任研究员——&lt;/p&gt;&lt;/div&gt;</dc:description>
     <dc:subject>重小说</dc:subject>
-    <meta refines="#id-1" property="title-type">main</meta>
-    <meta refines="#id-1" property="file-as">[S4_02]某暗部的少女共栖 2X</meta>
+    <opf:meta refines="#id-1" property="title-type">main</opf:meta>
+    <opf:meta refines="#id-1" property="file-as">[S4_02]某暗部的少女共栖 2X</opf:meta>
     <meta property="calibre:timestamp" scheme="dcterms:W3CDTF">2022-09-09T06:17:52Z</meta>
-    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-10-20T03:12:20Z</meta>
+    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2026-01-04T03:45:01Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
@@ -128,10 +133,10 @@
     "table": "custom_column_4"
   }
 }</meta>
-    <meta refines="#id-27" property="role" scheme="marc:relators">bkp</meta>
-    <meta refines="#id-2" property="role" scheme="marc:relators">aut</meta>
-    <meta refines="#id-2" property="file-as">镰池和马</meta>
-    <meta property="calibre:rating">10</meta>
+    <opf:meta refines="#id-27" property="role" scheme="marc:relators">bkp</opf:meta>
+    <opf:meta refines="#id-2" property="role" scheme="marc:relators">aut</opf:meta>
+    <opf:meta refines="#id-2" property="file-as">镰池和马</opf:meta>
+    <opf:meta property="calibre:rating">10</opf:meta>
   </metadata>
   <manifest>
     <item id="id5" href="Text/S4_02-Cover.xhtml" media-type="application/xhtml+xml"/>
@@ -155,17 +160,17 @@
     <item id="nav" href="../nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
     <item href="../toc.ncx" id="ncx" media-type="application/x-dtbncx+xml"/>
     <item id="id" href="Styles/style.css" media-type="text/css"/>
-    <item href="Images/cover.jpg" id="cover" media-type="image/jpeg" properties="cover-image"/>
-    <item id="id-20" href="Images/S4_02_P1.jpg" media-type="image/jpeg"/>
-    <item id="id-21" href="Images/S4_02_P2.jpg" media-type="image/jpeg"/>
-    <item id="id-22" href="Images/S4_02_P3.jpg" media-type="image/jpeg"/>
-    <item id="id-23" href="Images/S4_02_P4.jpg" media-type="image/jpeg"/>
-    <item id="id-24" href="Images/S4_02_P5.jpg" media-type="image/jpeg"/>
-    <item id="id-25" href="Images/S4_02_P6.jpg" media-type="image/jpeg"/>
-    <item id="id-26" href="Images/S4_02_P7.jpg" media-type="image/jpeg"/>
     <item id="id-3" href="Images/S4_02-Contents.jpg" media-type="image/jpeg"/>
+    <item href="Images/S4_02-Cover.jpg" id="cover" media-type="image/jpeg" properties="cover-image"/>
     <item id="id-4" href="Images/S4_02-Illustrations1.jpg" media-type="image/jpeg"/>
     <item id="id-5" href="Images/S4_02-Illustrations2.jpg" media-type="image/jpeg"/>
+    <item id="id-20" href="Images/S4_02-p1.jpg" media-type="image/jpeg"/>
+    <item id="id-21" href="Images/S4_02-p2.jpg" media-type="image/jpeg"/>
+    <item id="id-22" href="Images/S4_02-p3.jpg" media-type="image/jpeg"/>
+    <item id="id-23" href="Images/S4_02-p4.jpg" media-type="image/jpeg"/>
+    <item id="id-24" href="Images/S4_02-p5.jpg" media-type="image/jpeg"/>
+    <item id="id-25" href="Images/S4_02-p6.jpg" media-type="image/jpeg"/>
+    <item id="id-26" href="Images/S4_02-p7.jpg" media-type="image/jpeg"/>
   </manifest>
   <spine toc="ncx">
     <itemref idref="id5"/>

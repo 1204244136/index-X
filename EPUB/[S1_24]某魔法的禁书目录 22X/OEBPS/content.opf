@@ -1,3 +1,4 @@
+<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
     <dc:title id="id">[S1_24]某魔法的禁书目录 22X</dc:title>
@@ -7,16 +8,16 @@
     <dc:identifier id="BookId">uuid:faf873eb-2f63-4db9-8396-e462fcf04b3e</dc:identifier>
     <dc:language>zh-CN</dc:language>
     <dc:contributor id="id-3">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
-    <dc:description>&lt;p style=&quot;font-weight: bold&quot;&gt;俄罗斯篇完结！然而上条当麻的下场是——！&lt;/p&gt;
+    <dc:description>&lt;p style="font-weight: bold"&gt;俄罗斯篇完结！然而上条当麻的下场是——！&lt;/p&gt;
 &lt;p&gt;罗马正教的暗部「神之右席」最后一人，右方之火。他所策划的「计划」即将启动。&lt;/p&gt;
-&lt;p&gt;在第三次世界大战中的俄罗斯上空漂浮着巨大的要塞「伯利恒之星」。据说它能拯救全世界的人类，但这意味着前所未有的大灾难即将降临。在火称之「净化」的阴谋蠢动之时，三名少年继续战斗。&lt;/p&gt;
+&lt;p&gt;在第三次世界大战中的俄罗斯上空飘浮着巨大的要塞「伯利恒之星」。据说它能拯救全世界的人类，但这意味着前所未有的大灾难即将降临。在火称之「净化」的阴谋蠢动之时，三名少年继续战斗。&lt;/p&gt;
 &lt;p&gt;滨面仕上结束了对泷壶理后的治疗，并在阻止克里姆林报告之前，与宿敌麦野沉利相遇。一方通行勉强击退了大天使米夏，终于找到了拯救最后之作的方法。然而，这却是禁忌的一步。而上条当麻则为了阻止「伯利恒之星」计划，为了解放茵蒂克丝，只身挑战火……！&lt;/p&gt;</dc:description>
     <dc:subject>重小说</dc:subject>
-    <opf:meta refines="#id" property="title-type">main</opf:meta>
-    <opf:meta refines="#id" property="file-as">[S1_24]某魔法的禁书目录 22X</opf:meta>
+    <meta refines="#id" property="title-type">main</meta>
+    <meta refines="#id" property="file-as">[S1_24]某魔法的禁书目录 22X</meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
-    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-07-26T11:05:17Z</meta>
+    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-10-22T07:50:33Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
@@ -132,10 +133,10 @@
     "table": "custom_column_4"
   }
 }</meta>
-    <opf:meta refines="#id-3" property="role" scheme="marc:relators">bkp</opf:meta>
-    <opf:meta refines="#id-1" property="role" scheme="marc:relators">aut</opf:meta>
-    <opf:meta refines="#id-1" property="file-as">镰池和马</opf:meta>
-    <opf:meta property="calibre:rating">10</opf:meta>
+    <meta refines="#id-3" property="role" scheme="marc:relators">bkp</meta>
+    <meta refines="#id-1" property="role" scheme="marc:relators">aut</meta>
+    <meta refines="#id-1" property="file-as">镰池和马</meta>
+    <meta property="calibre:rating">10</meta>
   </metadata>
   <manifest>
     <item id="S1_24-Cover.xhtml" href="Text/S1_24-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
@@ -159,7 +160,7 @@
     <item id="nav" href="../nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
     <item id="toc" href="../toc.ncx" media-type="application/x-dtbncx+xml"/>
     <item href="Styles/style.css" id="id5" media-type="text/css"/>
-    <item id="id30" href="Images/Back_cover.jpg" media-type="image/jpeg"/>
+    <item id="id30" href="Images/S1_24-Back_cover.jpg" media-type="image/jpeg"/>
     <item id="GT_vol_1.jpg" href="Images/Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
     <item href="Images/Deputy_cover.jpg" id="id19" media-type="image/jpeg"/>
     <item href="Images/Illustrations1.jpg" id="id20" media-type="image/jpeg"/>

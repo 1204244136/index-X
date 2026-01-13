@@ -1,3 +1,4 @@
+<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
     <dc:title id="id">[S1_22]某魔法的禁书目录 20X</dc:title>
@@ -7,7 +8,7 @@
     <dc:identifier id="BookId">uuid:7f1eb84a-24e3-49de-8c77-f88c6283f955</dc:identifier>
     <dc:language>zh-CN</dc:language>
     <dc:contributor id="id-3">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
-    <dc:description>&lt;p style=&quot;font-weight: bold&quot;&gt;「神之右席」最终章，俄罗斯篇开始！！第三次世界大战的宣战布告已经发布。「神之右席」火的野心在俄罗斯涌动，上条当麻、一方通行、滨面仕上奔赴前线——！当科学与魔法交汇之时，故事就从此开始——！&lt;/p&gt;
+    <dc:description>&lt;p style="font-weight: bold"&gt;「神之右席」最终章，俄罗斯篇开始！！第三次世界大战的宣战布告已经发布。「神之右席」火的野心在俄罗斯涌动，上条当麻、一方通行、滨面仕上奔赴前线——！当科学与魔法交汇之时，故事就从此开始——！&lt;/p&gt;
 &lt;p&gt;10月18日。&lt;/p&gt;
 &lt;p&gt;俄罗斯发布了第三次世界大战的宣战布告。&lt;/p&gt;
 &lt;p&gt;学园都市与俄罗斯的冲突将演变成席卷全球的大规模战争。在这背后，是「神之右席」最后一人火在暗中进行政治活动。&lt;/p&gt;
@@ -15,11 +16,11 @@
 &lt;p&gt;为了拯救因火夺取灵装而陷入昏迷状态的茵蒂克丝，学园都市高中生上条当麻踏上了旅程；为了拯救因神秘存在「爱华斯」的出现而承受高负荷的最后之作，最强能力者一方通行也行动了起来；前暗部组织「道具」的杂兵滨面仕上则是为了治疗因滥用能力促进剂「体晶」而虚弱不堪的泷壶理后。他们怀揣各自不同的想法，向紧张局势中的俄罗斯进发！在那里等待他们的是……？&lt;/p&gt;
 &lt;p&gt;当科学与魔法交汇之时，故事就从此开始——！&lt;/p&gt;</dc:description>
     <dc:subject>重小说</dc:subject>
-    <opf:meta refines="#id" property="title-type">main</opf:meta>
-    <opf:meta refines="#id" property="file-as">[S1_22]某魔法的禁书目录 20X</opf:meta>
+    <meta refines="#id" property="title-type">main</meta>
+    <meta refines="#id" property="file-as">[S1_22]某魔法的禁书目录 20X</meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
-    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-01-24T12:03:02Z</meta>
+    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-10-22T07:49:31Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
@@ -135,10 +136,10 @@
     "table": "custom_column_4"
   }
 }</meta>
-    <opf:meta refines="#id-3" property="role" scheme="marc:relators">bkp</opf:meta>
-    <opf:meta refines="#id-1" property="role" scheme="marc:relators">aut</opf:meta>
-    <opf:meta refines="#id-1" property="file-as">镰池和马</opf:meta>
-    <opf:meta property="calibre:rating">10</opf:meta>
+    <meta refines="#id-3" property="role" scheme="marc:relators">bkp</meta>
+    <meta refines="#id-1" property="role" scheme="marc:relators">aut</meta>
+    <meta refines="#id-1" property="file-as">镰池和马</meta>
+    <meta property="calibre:rating">10</meta>
   </metadata>
   <manifest>
     <item id="S1_22-Cover.xhtml" href="Text/S1_22-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
@@ -161,7 +162,7 @@
     <item id="nav" href="../nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
     <item id="toc" href="../toc.ncx" media-type="application/x-dtbncx+xml"/>
     <item href="Styles/style.css" id="id5" media-type="text/css"/>
-    <item id="id32" href="Images/Back_cover.jpg" media-type="image/jpeg"/>
+    <item id="id32" href="Images/S1_22-Back_cover.jpg" media-type="image/jpeg"/>
     <item href="Images/Contents.jpg" id="id22" media-type="image/jpeg"/>
     <item id="GT_vol_1.jpg" href="Images/Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
     <item href="Images/Deputy_cover.jpg" id="id23" media-type="image/jpeg"/>

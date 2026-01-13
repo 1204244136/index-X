@@ -1,3 +1,4 @@
+<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
     <dc:title id="id">[S2_06]新约 某魔法的禁书目录 06X</dc:title>
@@ -7,22 +8,22 @@
     <dc:identifier id="BookId">uuid:0487a764-4174-4bfd-b278-d761a541008c</dc:identifier>
     <dc:language>zh-CN</dc:language>
     <dc:contributor id="id-3">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
-    <dc:description>&lt;p style=&quot;font-weight: bold&quot;&gt;紧迫的第六卷！&lt;/p&gt;
+    <dc:description>&lt;p style="font-weight: bold"&gt;紧迫的第六卷！&lt;/p&gt;
 &lt;p&gt;学园都市迎来了「一端览祭」。&lt;/p&gt;
 &lt;p&gt;人们欢快的喧嚣声和热闹的踩踏声回荡着。&lt;/p&gt;
 &lt;p&gt;与此同时，街道背后发生的事件开始了。&lt;/p&gt;
 &lt;p&gt;亚雷斯塔的大本营「没有窗户的大楼」中，不死少女芙罗兰彷徨而出，怪物们围绕着她集结。&lt;/p&gt;
-&lt;p&gt;魔法与科学混合组织「格雷姆林」派出灵装制造者玛丽安和雷神托尔。&lt;/p&gt;
+&lt;p&gt;魔法与科学混合组织「格雷姆林」派出灵装制造者玛莉安和雷神托尔。&lt;/p&gt;
 &lt;p&gt;从魔法阵营出发的是「圣人」布伦希尔德和席薇娅。&lt;/p&gt;
 &lt;p&gt;来自学园都市的是「超能力者」一方通行、麦野沉利，还有御坂美琴。此外，已经超越了人类范畴的垣根提督也在其中。&lt;/p&gt;
 &lt;p&gt;各种「最强」同时爆发决战，怪物们引起的风暴席卷了正在举行「一端览祭」的学园都市。&lt;/p&gt;
-&lt;p&gt;在这其中，身负重伤的「最弱」上条当麻正追赶着芙罗兰──！&lt;/p&gt;</dc:description>
+&lt;p&gt;在这其中，身负重伤的「最弱」上条当麻正追赶着芙罗兰——！&lt;/p&gt;</dc:description>
     <dc:subject>重小说</dc:subject>
-    <opf:meta refines="#id" property="title-type">main</opf:meta>
-    <opf:meta refines="#id" property="file-as">[S2_06]新约 某魔法的禁书目录 06X</opf:meta>
+    <meta refines="#id" property="title-type">main</meta>
+    <meta refines="#id" property="file-as">[S2_06]新约 某魔法的禁书目录 06X</meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
-    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-01-24T14:20:17Z</meta>
+    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2026-01-13T10:46:07Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
@@ -138,10 +139,10 @@
     "table": "custom_column_4"
   }
 }</meta>
-    <opf:meta refines="#id-3" property="role" scheme="marc:relators">bkp</opf:meta>
-    <opf:meta refines="#id-1" property="role" scheme="marc:relators">aut</opf:meta>
-    <opf:meta refines="#id-1" property="file-as">镰池和马</opf:meta>
-    <opf:meta property="calibre:rating">10</opf:meta>
+    <meta refines="#id-3" property="role" scheme="marc:relators">bkp</meta>
+    <meta refines="#id-1" property="role" scheme="marc:relators">aut</meta>
+    <meta refines="#id-1" property="file-as">镰池和马</meta>
+    <meta property="calibre:rating">10</meta>
   </metadata>
   <manifest>
     <item id="S2_06-Cover.xhtml" href="Text/S2_06-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
@@ -168,7 +169,7 @@
     <item href="Images/Contents.jpg" id="id24" media-type="image/jpeg"/>
     <item id="GT_vol_1.jpg" href="Images/Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
     <item href="Images/Deputy_cover.jpg" id="id21" media-type="image/jpeg"/>
-    <item href="Images/Illustrations1.jpg" id="id19" media-type="image/jpeg"/>
+    <item href="Images/S2_06-Illustrations1.jpg" id="id19" media-type="image/jpeg"/>
     <item href="Images/Illustrations2.jpg" id="id18" media-type="image/jpeg"/>
     <item href="Images/p1.jpg" id="id26" media-type="image/jpeg"/>
     <item href="Images/p2.jpg" id="id27" media-type="image/jpeg"/>
