@@ -73,7 +73,7 @@
     </navPoint>
     <navPoint id="num_11" playOrder="11">
       <navLabel>
-        <text>行间六</text>
+        <text>行间　六</text>
       </navLabel>
       <content src="OEBPS/Text/S1_24-03_Between_the_Lines6.xhtml"/>
     </navPoint>
@@ -103,7 +103,7 @@
     </navPoint>
     <navPoint id="num_16" playOrder="16">
       <navLabel>
-        <text>行间七</text>
+        <text>行间　七</text>
       </navLabel>
       <content src="OEBPS/Text/S1_24-05_Between_the_Lines7.xhtml"/>
     </navPoint>
@@ -133,7 +133,7 @@
     </navPoint>
     <navPoint id="num_21" playOrder="21">
       <navLabel>
-        <text>行间八</text>
+        <text>行间　八</text>
       </navLabel>
       <content src="OEBPS/Text/S1_24-07_Between_the_Lines8.xhtml"/>
     </navPoint>

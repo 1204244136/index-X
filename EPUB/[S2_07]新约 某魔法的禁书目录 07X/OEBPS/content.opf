@@ -1,3 +1,4 @@
+<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
     <dc:title id="id">[S2_07]新约 某魔法的禁书目录 07X</dc:title>
@@ -7,7 +8,7 @@
     <dc:identifier id="BookId">uuid:f8af2ea4-a787-46b9-919a-8ca2d2aff59c</dc:identifier>
     <dc:language>zh-CN</dc:language>
     <dc:contributor id="id-3">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
-    <dc:description>&lt;p style=&quot;font-weight: bold&quot;&gt;上条的下一个「使命」是潜入覆盖常盘台中学的大小姐区域的「学舍之园」进行调查？！&lt;/p&gt;
+    <dc:description>&lt;p style="font-weight: bold"&gt;上条的下一个「使命」是潜入覆盖常盘台中学的大小姐区域的「学舍之园」进行调查？！&lt;/p&gt;
 &lt;p&gt;上条当麻从「黑暗的密室」醒来。将他送到那里的是土御门元春。潜入学园都市的敌对魔法师似乎正在利用灵装来毁灭学园。&lt;/p&gt;
 &lt;p&gt;身负了阻止大规模术式发动「使命」的上条，在剩下几小时内成功从「黑暗的密室」逃脱！！&lt;/p&gt;
 &lt;p&gt;——然而，眼前展开的是名门女校的更衣室……&lt;/p&gt;
@@ -17,11 +18,11 @@
 &lt;p&gt;这次相遇，是偶然产生，还是「某种」必然的产物呢——&lt;/p&gt;
 &lt;p&gt;当科学与魔法交汇之时，故事就从此开始——！&lt;/p&gt;</dc:description>
     <dc:subject>重小说</dc:subject>
-    <opf:meta refines="#id" property="title-type">main</opf:meta>
-    <opf:meta refines="#id" property="file-as">[S2_07]新约 某魔法的禁书目录 07X</opf:meta>
+    <meta refines="#id" property="title-type">main</meta>
+    <meta refines="#id" property="file-as">[S2_07]新约 某魔法的禁书目录 07X</meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
-    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-01-24T14:36:43Z</meta>
+    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2026-01-16T11:13:27Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
@@ -137,10 +138,10 @@
     "table": "custom_column_4"
   }
 }</meta>
-    <opf:meta refines="#id-3" property="role" scheme="marc:relators">bkp</opf:meta>
-    <opf:meta refines="#id-1" property="role" scheme="marc:relators">aut</opf:meta>
-    <opf:meta refines="#id-1" property="file-as">镰池和马</opf:meta>
-    <opf:meta property="calibre:rating">10</opf:meta>
+    <meta refines="#id-3" property="role" scheme="marc:relators">bkp</meta>
+    <meta refines="#id-1" property="role" scheme="marc:relators">aut</meta>
+    <meta refines="#id-1" property="file-as">镰池和马</meta>
+    <meta property="calibre:rating">10</meta>
   </metadata>
   <manifest>
     <item id="S2_07-Cover.xhtml" href="Text/S2_07-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
@@ -166,7 +167,7 @@
     <item href="Images/Contents.jpg" id="id27" media-type="image/jpeg"/>
     <item id="GT_vol_1.jpg" href="Images/Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
     <item href="Images/Deputy_cover.jpg" id="id24" media-type="image/jpeg"/>
-    <item href="Images/Illustrations1.jpg" id="id19" media-type="image/jpeg"/>
+    <item href="Images/S2_07-Illustrations1.jpg" id="id19" media-type="image/jpeg"/>
     <item href="Images/Illustrations2.jpg" id="id18" media-type="image/jpeg"/>
     <item href="Images/p1.jpg" id="id20" media-type="image/jpeg"/>
     <item href="Images/p2.jpg" id="id23" media-type="image/jpeg"/>

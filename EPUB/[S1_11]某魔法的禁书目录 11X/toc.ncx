@@ -1,14 +1,14 @@
 <?xml version='1.0' encoding='utf-8'?>
 <ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1" xml:lang="zh">
   <head>
-    <meta name="dtb:uid" content="uuid:afa76961-fe51-4f63-a4c8-42cdfdd47768"/>
+    <meta name="dtb:uid" content="uuid:60c37165-48eb-41fe-b037-836afac51b0b"/>
     <meta name="dtb:depth" content="3"/>
-    <meta name="dtb:generator" content="calibre (7.24.0)"/>
+    <meta name="dtb:generator" content="calibre (8.16.2)"/>
     <meta name="dtb:totalPageCount" content="0"/>
     <meta name="dtb:maxPageNumber" content="0"/>
   </head>
   <docTitle>
-    <text>某魔法的禁书目录 11X</text>
+    <text>[S1_11]某魔法的禁书目录 11X</text>
   </docTitle>
   <navMap>
     <navPoint id="num_1" playOrder="1">
@@ -37,7 +37,7 @@
     </navPoint>
     <navPoint id="num_5" playOrder="5">
       <navLabel>
-        <text>第一章 在基奥贾的街道 Il_Vento_di_Chioggia.</text>
+        <text>第一章 基奥贾市的街景 Il_Vento_di_Chioggia.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_11-02_Chapter1.xhtml"/>
       <navPoint id="num_6" playOrder="6">
@@ -67,13 +67,13 @@
     </navPoint>
     <navPoint id="num_10" playOrder="10">
       <navLabel>
-        <text>行间一</text>
+        <text>行间　一</text>
       </navLabel>
       <content src="OEBPS/Text/S1_11-03_Between_the_Lines1.xhtml"/>
     </navPoint>
     <navPoint id="num_11" playOrder="11">
       <navLabel>
-        <text>第二章 前往伦敦的准备 Un_Frammento_di_un_Piano.</text>
+        <text>第二章 赴伦敦前的准备 Un_Frammento_di_un_Piano.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_11-04_Chapter2.xhtml"/>
       <navPoint id="num_12" playOrder="12">
@@ -103,13 +103,13 @@
     </navPoint>
     <navPoint id="num_16" playOrder="16">
       <navLabel>
-        <text>行间二</text>
+        <text>行间　二</text>
       </navLabel>
       <content src="OEBPS/Text/S1_11-05_Between_the_Lines2.xhtml"/>
     </navPoint>
     <navPoint id="num_17" playOrder="17">
       <navLabel>
-        <text>第三章 于水之都的船上 Il_Mare_e_la_Sconfitta.</text>
+        <text>第三章 水之都上的舟行 Il_Mare_e_la_Sconfitta.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_11-06_Chapter3.xhtml"/>
       <navPoint id="num_18" playOrder="18">
@@ -145,13 +145,13 @@
     </navPoint>
     <navPoint id="num_23" playOrder="23">
       <navLabel>
-        <text>行间三</text>
+        <text>行间　三</text>
       </navLabel>
       <content src="OEBPS/Text/S1_11-07_Between_the_Lines3.xhtml"/>
     </navPoint>
     <navPoint id="num_24" playOrder="24">
       <navLabel>
-        <text>第四章 船与炮火的战争 Lotte_di_Liberazione.</text>
+        <text>第四章 火船炮火的激战 Lotte_di_Liberazione.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_11-08_Chapter4.xhtml"/>
       <navPoint id="num_25" playOrder="25">
@@ -193,13 +193,13 @@
     </navPoint>
     <navPoint id="num_31" playOrder="31">
       <navLabel>
-        <text>行间四</text>
+        <text>行间　四</text>
       </navLabel>
       <content src="OEBPS/Text/S1_11-09_Between_the_Lines4.xhtml"/>
     </navPoint>
     <navPoint id="num_32" playOrder="32">
       <navLabel>
-        <text>第五章 亚德里亚的女王 La_Regina_del_Mar_Adriatico.</text>
+        <text>第五章 亚得里亚的女王 La_Regina_del_Mar_Adriatico.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_11-10_Chapter5.xhtml"/>
       <navPoint id="num_33" playOrder="33">

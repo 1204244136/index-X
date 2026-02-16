@@ -15,7 +15,7 @@
     <meta refines="#id-1" property="title-type">main</meta>
     <meta refines="#id-1" property="file-as">[S4_03]某暗部的少女共栖 3X</meta>
     <meta property="calibre:timestamp" scheme="dcterms:W3CDTF">2022-09-09T06:17:52Z</meta>
-    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2026-01-05T03:35:25Z</meta>
+    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2026-01-13T14:11:29Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
@@ -157,18 +157,18 @@
     <item id="nav" href="../nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
     <item href="../toc.ncx" id="ncx" media-type="application/x-dtbncx+xml"/>
     <item id="id" href="Styles/style.css" media-type="text/css"/>
-    <item id="id-4" href="i-052.jpg" media-type="image/jpeg"/>
-    <item id="id-5" href="i-070.jpg" media-type="image/jpeg"/>
-    <item id="id-6" href="i-143.jpg" media-type="image/jpeg"/>
-    <item id="id-7" href="i-239.jpg" media-type="image/jpeg"/>
-    <item id="id-8" href="i-277.jpg" media-type="image/jpeg"/>
-    <item id="id-9" href="i-305.jpg" media-type="image/jpeg"/>
-    <item id="id-10" href="i-347.jpg" media-type="image/jpeg"/>
+    <item id="id-4" href="Images/i-052.jpg" media-type="image/jpeg"/>
+    <item id="id-5" href="Images/i-070.jpg" media-type="image/jpeg"/>
+    <item id="id-6" href="Images/i-143.jpg" media-type="image/jpeg"/>
+    <item id="id-7" href="Images/i-239.jpg" media-type="image/jpeg"/>
+    <item id="id-8" href="Images/i-277.jpg" media-type="image/jpeg"/>
+    <item id="id-9" href="Images/i-305.jpg" media-type="image/jpeg"/>
+    <item id="id-10" href="Images/i-347.jpg" media-type="image/jpeg"/>
     <item href="OEBPS/cover.jpg" id="cover" media-type="image/jpeg" properties="cover-image"/>
-    <item id="id-11" href="S4_03-Contents.jpg" media-type="image/jpeg"/>
-    <item id="id-12" href="S4_03-Cover.jpg" media-type="image/jpeg"/>
-    <item id="id-13" href="S4_03-Illustrations1.jpg" media-type="image/jpeg"/>
-    <item id="id-27" href="S4_03-Illustrations2.jpg" media-type="image/jpeg"/>
+    <item id="id-11" href="Images/S4_03-Contents.jpg" media-type="image/jpeg"/>
+    <item id="id-12" href="Images/S4_03-Cover.jpg" media-type="image/jpeg"/>
+    <item id="id-13" href="Images/S4_03-Illustrations1.jpg" media-type="image/jpeg"/>
+    <item id="id-27" href="Images/S4_03-Illustrations2.jpg" media-type="image/jpeg"/>
   </manifest>
   <spine toc="ncx">
     <itemref idref="id5"/>

@@ -1,3 +1,4 @@
+<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
     <dc:title id="id-1">[S2_16]新约 某魔法的禁书目录 16X</dc:title>
@@ -7,7 +8,7 @@
     <dc:identifier id="BookId">uuid:d021fbc2-dd55-4d45-af89-ccb7e98c2ce8</dc:identifier>
     <dc:language>zh-CN</dc:language>
     <dc:contributor id="id-3">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
-    <dc:description>&lt;p style=&quot;font-weight: bold&quot;&gt;今次是（大小姐）学校的全体学生动员？从「元素」手中，守护「圣域」！&lt;/p&gt;
+    <dc:description>&lt;p style="font-weight: bold"&gt;今次是（大小姐）学校的全体学生动员？从「元素」手中，守护「圣域」！&lt;/p&gt;
 &lt;p&gt;上里翔流已经消失了三天。&lt;/p&gt;
 &lt;p&gt;虽然上条已经转移到下一场战斗，但等待他的却是身着泳装的食蜂操祈和御坂美琴等一众贵族小姐们的常盘台中学……？&lt;/p&gt;
 &lt;p&gt;季节是冬天。12月的学园都市——尽管如此，气温却超过了摄氏50度。由于原因不明的大热浪，学园都市的所有基础设施都停止运作，而那种「不可预测的威胁」也随之而来。&lt;/p&gt;
@@ -15,11 +16,11 @@
 &lt;p&gt;在灼热地狱中爬行的异形怪物。它们喜欢「黑暗」，在停电中的学园都市接连袭击学生，凶残无比。凭借唯一能对抗它们的「右手」，上条通过吹寄和茵蒂克丝的帮助前往激战区域，却寡不敌众。在这种危急时刻，那位被异形机械「对魔法式驱动铠」包裹的少女出现了……？&lt;/p&gt;
 &lt;p&gt;在以食蜂操祈为参谋、大小姐学校总动员之时，上条逐渐逼近策划「大热浪」和「元素」的黑幕！&lt;/p&gt;</dc:description>
     <dc:subject>重小说</dc:subject>
-    <opf:meta refines="#id-1" property="title-type">main</opf:meta>
-    <opf:meta refines="#id-1" property="file-as">[S2_16]新约 某魔法的禁书目录 16X</opf:meta>
+    <meta refines="#id-1" property="title-type">main</meta>
+    <meta refines="#id-1" property="file-as">[S2_16]新约 某魔法的禁书目录 16X</meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
-    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2024-08-28T07:31:54Z</meta>
+    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2026-01-31T07:13:51Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
@@ -135,10 +136,10 @@
     "table": "custom_column_4"
   }
 }</meta>
-    <opf:meta refines="#id-3" property="role" scheme="marc:relators">bkp</opf:meta>
-    <opf:meta refines="#id" property="role" scheme="marc:relators">aut</opf:meta>
-    <opf:meta refines="#id" property="file-as">镰池和马</opf:meta>
-    <opf:meta property="calibre:rating">10</opf:meta>
+    <meta refines="#id-3" property="role" scheme="marc:relators">bkp</meta>
+    <meta refines="#id" property="role" scheme="marc:relators">aut</meta>
+    <meta refines="#id" property="file-as">镰池和马</meta>
+    <meta property="calibre:rating">10</meta>
   </metadata>
   <manifest>
     <item id="S2_16-Cover.xhtml" href="Text/S2_16-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>

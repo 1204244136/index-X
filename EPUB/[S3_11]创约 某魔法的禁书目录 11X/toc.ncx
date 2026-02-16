@@ -1,0 +1,201 @@
+<?xml version='1.0' encoding='utf-8'?>
+<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1" xml:lang="zh">
+  <head>
+    <meta name="dtb:uid" content="uuid:1ffc6038-be43-40bc-a2ce-6de06e702c7b"/>
+    <meta name="dtb:depth" content="3"/>
+    <meta name="dtb:generator" content="calibre (9.2.1)"/>
+    <meta name="dtb:totalPageCount" content="0"/>
+    <meta name="dtb:maxPageNumber" content="0"/>
+  </head>
+  <docTitle>
+    <text>[S3_11]创约 某魔法的禁书目录 11X</text>
+  </docTitle>
+  <navMap>
+    <navPoint id="num_1" playOrder="1">
+      <navLabel>
+        <text>制作信息</text>
+      </navLabel>
+      <content src="OEBPS/Text/S3_11-Information.xhtml"/>
+    </navPoint>
+    <navPoint id="num_2" playOrder="2">
+      <navLabel>
+        <text>简介</text>
+      </navLabel>
+      <content src="OEBPS/Text/S3_11-Introduction.xhtml"/>
+    </navPoint>
+    <navPoint id="num_3" playOrder="3">
+      <navLabel>
+        <text>彩页</text>
+      </navLabel>
+      <content src="OEBPS/Text/S3_11-Illustrations.xhtml"/>
+    </navPoint>
+    <navPoint id="num_4" playOrder="4">
+      <navLabel>
+        <text>序 章 欢迎 the_DIE_After_Tomorrow.</text>
+      </navLabel>
+      <content src="OEBPS/Text/S3_11-01_Prologue.xhtml"/>
+    </navPoint>
+    <navPoint id="num_5" playOrder="5">
+      <navLabel>
+        <text>第一章 理所当然的反面 Hell, Hades, and Gehenna.</text>
+      </navLabel>
+      <content src="OEBPS/Text/S3_11-02_Chapter1.xhtml"/>
+      <navPoint id="num_6" playOrder="6">
+        <navLabel>
+          <text>1</text>
+        </navLabel>
+        <content src="OEBPS/Text/S3_11-02_Chapter1.xhtml#toc_1"/>
+      </navPoint>
+      <navPoint id="num_7" playOrder="7">
+        <navLabel>
+          <text>2</text>
+        </navLabel>
+        <content src="OEBPS/Text/S3_11-02_Chapter1.xhtml#toc_2"/>
+      </navPoint>
+      <navPoint id="num_8" playOrder="8">
+        <navLabel>
+          <text>3</text>
+        </navLabel>
+        <content src="OEBPS/Text/S3_11-02_Chapter1.xhtml#toc_3"/>
+      </navPoint>
+      <navPoint id="num_9" playOrder="9">
+        <navLabel>
+          <text>4</text>
+        </navLabel>
+        <content src="OEBPS/Text/S3_11-02_Chapter1.xhtml#toc_4"/>
+      </navPoint>
+    </navPoint>
+    <navPoint id="num_10" playOrder="10">
+      <navLabel>
+        <text>第二章 旅途 What's That Adventure's Party?</text>
+      </navLabel>
+      <content src="OEBPS/Text/S3_11-03_Chapter2.xhtml"/>
+      <navPoint id="num_11" playOrder="11">
+        <navLabel>
+          <text>1</text>
+        </navLabel>
+        <content src="OEBPS/Text/S3_11-03_Chapter2.xhtml#toc_1"/>
+      </navPoint>
+      <navPoint id="num_12" playOrder="12">
+        <navLabel>
+          <text>2</text>
+        </navLabel>
+        <content src="OEBPS/Text/S3_11-03_Chapter2.xhtml#toc_2"/>
+      </navPoint>
+      <navPoint id="num_13" playOrder="13">
+        <navLabel>
+          <text>3</text>
+        </navLabel>
+        <content src="OEBPS/Text/S3_11-03_Chapter2.xhtml#toc_3"/>
+      </navPoint>
+      <navPoint id="num_14" playOrder="14">
+        <navLabel>
+          <text>4</text>
+        </navLabel>
+        <content src="OEBPS/Text/S3_11-03_Chapter2.xhtml#toc_4"/>
+      </navPoint>
+      <navPoint id="num_15" playOrder="15">
+        <navLabel>
+          <text>5</text>
+        </navLabel>
+        <content src="OEBPS/Text/S3_11-03_Chapter2.xhtml#toc_5"/>
+      </navPoint>
+      <navPoint id="num_16" playOrder="16">
+        <navLabel>
+          <text>6</text>
+        </navLabel>
+        <content src="OEBPS/Text/S3_11-03_Chapter2.xhtml#toc_6"/>
+      </navPoint>
+      <navPoint id="num_17" playOrder="17">
+        <navLabel>
+          <text>7</text>
+        </navLabel>
+        <content src="OEBPS/Text/S3_11-03_Chapter2.xhtml#toc_7"/>
+      </navPoint>
+      <navPoint id="num_18" playOrder="18">
+        <navLabel>
+          <text>8</text>
+        </navLabel>
+        <content src="OEBPS/Text/S3_11-03_Chapter2.xhtml#toc_8"/>
+      </navPoint>
+      <navPoint id="num_19" playOrder="19">
+        <navLabel>
+          <text>9</text>
+        </navLabel>
+        <content src="OEBPS/Text/S3_11-03_Chapter2.xhtml#toc_9"/>
+      </navPoint>
+    </navPoint>
+    <navPoint id="num_20" playOrder="20">
+      <navLabel>
+        <text>第三章 唯一的谎言·解答篇 Seat_the_Only_One.</text>
+      </navLabel>
+      <content src="OEBPS/Text/S3_11-04_Chapter3.xhtml"/>
+      <navPoint id="num_21" playOrder="21">
+        <navLabel>
+          <text>1</text>
+        </navLabel>
+        <content src="OEBPS/Text/S3_11-04_Chapter3.xhtml#toc_1"/>
+      </navPoint>
+      <navPoint id="num_22" playOrder="22">
+        <navLabel>
+          <text>2</text>
+        </navLabel>
+        <content src="OEBPS/Text/S3_11-04_Chapter3.xhtml#toc_2"/>
+      </navPoint>
+      <navPoint id="num_23" playOrder="23">
+        <navLabel>
+          <text>3</text>
+        </navLabel>
+        <content src="OEBPS/Text/S3_11-04_Chapter3.xhtml#toc_3"/>
+      </navPoint>
+      <navPoint id="num_24" playOrder="24">
+        <navLabel>
+          <text>4</text>
+        </navLabel>
+        <content src="OEBPS/Text/S3_11-04_Chapter3.xhtml#toc_4"/>
+      </navPoint>
+    </navPoint>
+    <navPoint id="num_25" playOrder="25">
+      <navLabel>
+        <text>第四章 想与你共行此事 Duel_and_Struggle,XXX_Revenge.</text>
+      </navLabel>
+      <content src="OEBPS/Text/S3_11-05_Chapter4.xhtml"/>
+      <navPoint id="num_26" playOrder="26">
+        <navLabel>
+          <text>1</text>
+        </navLabel>
+        <content src="OEBPS/Text/S3_11-05_Chapter4.xhtml#toc_1"/>
+      </navPoint>
+      <navPoint id="num_27" playOrder="27">
+        <navLabel>
+          <text>2</text>
+        </navLabel>
+        <content src="OEBPS/Text/S3_11-05_Chapter4.xhtml#toc_2"/>
+      </navPoint>
+      <navPoint id="num_28" playOrder="28">
+        <navLabel>
+          <text>3</text>
+        </navLabel>
+        <content src="OEBPS/Text/S3_11-05_Chapter4.xhtml#toc_3"/>
+      </navPoint>
+      <navPoint id="num_29" playOrder="29">
+        <navLabel>
+          <text>4</text>
+        </navLabel>
+        <content src="OEBPS/Text/S3_11-05_Chapter4.xhtml#toc_4"/>
+      </navPoint>
+    </navPoint>
+    <navPoint id="num_30" playOrder="30">
+      <navLabel>
+        <text>终 章 仪式的结局 Flat_Line…</text>
+      </navLabel>
+      <content src="OEBPS/Text/S3_11-06_Epilogue.xhtml"/>
+    </navPoint>
+    <navPoint id="num_31" playOrder="31">
+      <navLabel>
+        <text>后记</text>
+      </navLabel>
+      <content src="OEBPS/Text/S3_11-07_Afterwords.xhtml"/>
+    </navPoint>
+  </navMap>
+</ncx>

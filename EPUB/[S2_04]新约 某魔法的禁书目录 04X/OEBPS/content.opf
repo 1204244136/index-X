@@ -21,7 +21,7 @@
     <meta refines="#id" property="file-as">[S2_04]新约 某魔法的禁书目录 04X</meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
-    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2026-01-04T03:21:29Z</meta>
+    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2026-01-22T11:53:59Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
@@ -205,20 +205,20 @@
     <item href="Images/p5.jpg" id="id24" media-type="image/jpeg"/>
     <item href="Images/p6.jpg" id="id25" media-type="image/jpeg"/>
     <item href="Images/Phase1.jpg" id="id29" media-type="image/jpeg"/>
-    <item href="Images/Phase10.jpg" id="id38" media-type="image/jpeg"/>
-    <item href="Images/Phase11.jpg" id="id39" media-type="image/jpeg"/>
-    <item href="Images/Phase12.jpg" id="id40" media-type="image/jpeg"/>
-    <item href="Images/Phase13.jpg" id="id41" media-type="image/jpeg"/>
-    <item href="Images/Phase14.jpg" id="id42" media-type="image/jpeg"/>
-    <item href="Images/Phase15.jpg" id="id43" media-type="image/jpeg"/>
+    <item href="Images/S2_04-Phase10.jpg" id="id38" media-type="image/jpeg"/>
+    <item href="Images/S2_04-Phase11.jpg" id="id39" media-type="image/jpeg"/>
+    <item href="Images/S2_04-Phase12.jpg" id="id40" media-type="image/jpeg"/>
+    <item href="Images/S2_04-Phase13.jpg" id="id41" media-type="image/jpeg"/>
+    <item href="Images/S2_04-Phase14.jpg" id="id42" media-type="image/jpeg"/>
+    <item href="Images/S2_04-Phase15.jpg" id="id43" media-type="image/jpeg"/>
     <item href="Images/Phase2.jpg" id="id30" media-type="image/jpeg"/>
     <item href="Images/Phase3.jpg" id="id31" media-type="image/jpeg"/>
     <item href="Images/Phase4.jpg" id="id32" media-type="image/jpeg"/>
-    <item href="Images/Phase5.jpg" id="id33" media-type="image/jpeg"/>
-    <item href="Images/Phase6.jpg" id="id34" media-type="image/jpeg"/>
-    <item href="Images/Phase7.jpg" id="id35" media-type="image/jpeg"/>
-    <item href="Images/Phase8.jpg" id="id36" media-type="image/jpeg"/>
-    <item href="Images/Phase9.jpg" id="id37" media-type="image/jpeg"/>
+    <item href="Images/S2_04-Phase5.jpg" id="id33" media-type="image/jpeg"/>
+    <item href="Images/S2_04-Phase6.jpg" id="id34" media-type="image/jpeg"/>
+    <item href="Images/S2_04-Phase7.jpg" id="id35" media-type="image/jpeg"/>
+    <item href="Images/S2_04-Phase8.jpg" id="id36" media-type="image/jpeg"/>
+    <item href="Images/S2_04-Phase9.jpg" id="id37" media-type="image/jpeg"/>
   </manifest>
   <spine toc="toc">
     <itemref idref="S2_04-Cover.xhtml"/>

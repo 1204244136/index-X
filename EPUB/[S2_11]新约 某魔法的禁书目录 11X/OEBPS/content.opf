@@ -1,3 +1,4 @@
+<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
     <dc:title id="id">[S2_11]新约 某魔法的禁书目录 11X</dc:title>
@@ -7,7 +8,7 @@
     <dc:identifier id="BookId">uuid:5e0cf24c-aa35-4a9d-8c73-1cc3d332e11b</dc:identifier>
     <dc:language>zh-CN</dc:language>
     <dc:contributor id="id-3">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
-    <dc:description>&lt;p style=&quot;font-weight: bold&quot;&gt;期待已久的最新刊中，新女主角食蜂操祈登场！&lt;/p&gt;
+    <dc:description>&lt;p style="font-weight: bold"&gt;期待已久的最新刊中，新女主角食蜂操祈登场！&lt;/p&gt;
 &lt;p&gt;「说起来，我第一次遇到『那个人』也是在那个交叉口吧。」&lt;/p&gt;
 &lt;p&gt;食蜂操祈第一次与上条当麻相遇，是在掌握许多魔道书的白色修女从魔法世界逃出，从天而降之前的，很久以前的故事。&lt;/p&gt;
 &lt;p&gt;至今，食蜂操祈仍然记得与那个刺猬头少年之间的回忆。&lt;/p&gt;
@@ -20,11 +21,11 @@
 &lt;p&gt;那是她人生中数一数二的「幸福时光」。精神系最强&lt;!--分隔--&gt;能力者「心理掌握」的重要「记忆」。&lt;/p&gt;
 &lt;p&gt;揭开食蜂操祈过去的故事，现在开始。&lt;/p&gt;</dc:description>
     <dc:subject>重小说</dc:subject>
-    <opf:meta refines="#id" property="title-type">main</opf:meta>
-    <opf:meta refines="#id" property="file-as">[S2_11]新约 某魔法的禁书目录 11X</opf:meta>
+    <meta refines="#id" property="title-type">main</meta>
+    <meta refines="#id" property="file-as">[S2_11]新约 某魔法的禁书目录 11X</meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
-    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-03-29T12:25:35Z</meta>
+    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2026-02-07T13:09:57Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
@@ -140,10 +141,10 @@
     "table": "custom_column_4"
   }
 }</meta>
-    <opf:meta refines="#id-3" property="role" scheme="marc:relators">bkp</opf:meta>
-    <opf:meta refines="#id-1" property="role" scheme="marc:relators">aut</opf:meta>
-    <opf:meta refines="#id-1" property="file-as">镰池和马</opf:meta>
-    <opf:meta property="calibre:rating">10</opf:meta>
+    <meta refines="#id-3" property="role" scheme="marc:relators">bkp</meta>
+    <meta refines="#id-1" property="role" scheme="marc:relators">aut</meta>
+    <meta refines="#id-1" property="file-as">镰池和马</meta>
+    <meta property="calibre:rating">10</meta>
   </metadata>
   <manifest>
     <item id="S2_11-Cover.xhtml" href="Text/S2_11-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
@@ -194,7 +195,7 @@
     <itemref idref="id11"/>
     <itemref idref="id12"/>
     <itemref idref="id13"/>
-    <itemref idref="id15"/>
     <itemref idref="id17"/>
+    <itemref idref="id15"/>
   </spine>
 </package>

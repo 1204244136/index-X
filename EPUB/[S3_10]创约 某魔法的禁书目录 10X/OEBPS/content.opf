@@ -8,7 +8,7 @@
     <dc:identifier id="BookId">uuid:538a554c-1a0a-4f48-afb6-3bb55c6fc216</dc:identifier>
     <dc:language>zh-CN</dc:language>
     <dc:contributor id="id-12">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
-    <dc:description>&lt;p style=&quot;font-weight: bold&quot;&gt;镰池和马《某魔法的禁书目录》20周年！「超绝者」篇，波澜动荡！&lt;/p&gt;
+    <dc:description>&lt;p style="font-weight: bold"&gt;镰池和马《某魔法的禁书目录》20周年！「超绝者」篇，波澜动荡！&lt;/p&gt;
 &lt;p&gt;爱丽丝・异典。&lt;/p&gt;
 &lt;p&gt;本已死去的少女，以意外的姿态再次复活。&lt;/p&gt;
 &lt;p&gt;目击一切的茵蒂克丝陷入绝境。但只有与她一起的欧提努斯成功逃了出来，向住院的上条当麻告知了危机。&lt;/p&gt;
@@ -21,7 +21,7 @@
     <meta refines="#id-1" property="title-type">main</meta>
     <meta refines="#id-1" property="file-as">[S3_10]创约 某魔法的禁书目录 10X</meta>
     <meta property="calibre:timestamp" scheme="dcterms:W3CDTF">2022-09-09T06:17:52Z</meta>
-    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-10-18T08:07:25Z</meta>
+    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2026-02-16T06:22:47Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {

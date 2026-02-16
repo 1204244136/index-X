@@ -1,3 +1,4 @@
+<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
     <dc:title id="id">[S2_17]新约 某魔法的禁书目录 17X</dc:title>
@@ -7,7 +8,7 @@
     <dc:identifier id="BookId">uuid:ac99c12d-a274-4a75-a6d3-d8daf3c39c21</dc:identifier>
     <dc:language>zh-CN</dc:language>
     <dc:contributor id="id-3">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
-    <dc:description>&lt;p style=&quot;font-weight: bold&quot;&gt;木原唯一释放了上百名上里势力的少女。在压倒性的劣势中，上条当麻的反击开始了——！&lt;/p&gt;
+    <dc:description>&lt;p style="font-weight: bold"&gt;木原唯一释放了上百名上里势力的少女。在压倒性的劣势中，上条当麻的反击开始了——！&lt;/p&gt;
 &lt;p&gt;大热浪过去了，学园都市逐渐复苏。由于通信基础设施被切断，场面相当混乱，即使是「警备员」也无法掌控局面，变成了无政府状态。&lt;/p&gt;
 &lt;p&gt;在这样的学园都市中，相信上里翔流会归来的「上里势力」的少女们，自由自在地肆意妄为！&lt;/p&gt;
 &lt;p&gt;追踪专家绘恋、擅长直接战斗的变身海盗少女琉华、利用网络操控大众的幽灵少女冥亚……她们被木原唯一以「右手」作为要挟，被命令抹杀上条当麻，但她们的内心并未改变。要夺回心爱之人。正因如此，她们坚定不移地奔走着。&lt;/p&gt;
@@ -17,11 +18,11 @@
 &lt;p&gt;来吧，拯救上里翔流。&lt;/p&gt;
 &lt;p&gt;为了阻止她们悲伤的暴走，为了给这场争斗画下句号。&lt;/p&gt;</dc:description>
     <dc:subject>重小说</dc:subject>
-    <opf:meta refines="#id" property="title-type">main</opf:meta>
-    <opf:meta refines="#id" property="file-as">[S2_17]新约 某魔法的禁书目录 17X</opf:meta>
+    <meta refines="#id" property="title-type">main</meta>
+    <meta refines="#id" property="file-as">[S2_17]新约 某魔法的禁书目录 17X</meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
-    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-01-15T14:25:39Z</meta>
+    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2026-01-31T07:08:50Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
@@ -137,10 +138,10 @@
     "table": "custom_column_4"
   }
 }</meta>
-    <opf:meta refines="#id-3" property="role" scheme="marc:relators">bkp</opf:meta>
-    <opf:meta refines="#id-1" property="role" scheme="marc:relators">aut</opf:meta>
-    <opf:meta refines="#id-1" property="file-as">镰池和马</opf:meta>
-    <opf:meta property="calibre:rating">10</opf:meta>
+    <meta refines="#id-3" property="role" scheme="marc:relators">bkp</meta>
+    <meta refines="#id-1" property="role" scheme="marc:relators">aut</meta>
+    <meta refines="#id-1" property="file-as">镰池和马</meta>
+    <meta property="calibre:rating">10</meta>
   </metadata>
   <manifest>
     <item id="S2_17-Cover.xhtml" href="Text/S2_17-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
@@ -158,7 +159,7 @@
     <item href="Text/S2_17-09_Between_the_Lines4.xhtml" id="id13" media-type="application/xhtml+xml"/>
     <item href="Text/S2_17-10_Epilogue.xhtml" id="id14" media-type="application/xhtml+xml"/>
     <item id="id30" href="Text/S2_17-Back_cover.xhtml" media-type="application/xhtml+xml"/>
-    <item href="Text/S2_17-Afterwords.xhtml" id="id17" media-type="application/xhtml+xml"/>
+    <item href="Text/S2_17-11_Afterwords.xhtml" id="id17" media-type="application/xhtml+xml"/>
     <item id="nav" href="../nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
     <item id="toc" href="../toc.ncx" media-type="application/x-dtbncx+xml"/>
     <item href="Styles/style.css" id="id5" media-type="text/css"/>
@@ -192,7 +193,7 @@
     <itemref idref="id12"/>
     <itemref idref="id13"/>
     <itemref idref="id14"/>
-    <itemref idref="id30"/>
     <itemref idref="id17"/>
+    <itemref idref="id30"/>
   </spine>
 </package>
