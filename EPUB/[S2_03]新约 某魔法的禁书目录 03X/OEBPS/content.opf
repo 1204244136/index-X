@@ -1,3 +1,4 @@
+<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
     <dc:title id="id">[S2_03]新约 某魔法的禁书目录 03X</dc:title>
@@ -7,18 +8,18 @@
     <dc:identifier id="BookId">uuid:c6abcc72-ee56-4e2b-bb38-400299b7f381</dc:identifier>
     <dc:language>zh-CN</dc:language>
     <dc:contributor id="id-3">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
-    <dc:description>&lt;p style=&quot;font-weight: bold&quot;&gt;科学与魔法交汇的学园动作小说，这次的舞台是夏威夷——！&lt;/p&gt;
+    <dc:description>&lt;p style="font-weight: bold"&gt;科学与魔法交汇的学园动作小说，这次的舞台是夏威夷——！&lt;/p&gt;
 &lt;p&gt;格雷姆林。魔法与科学融合的世界级敌对势力。一个在第三次世界大战后突然出现的神秘组织，似乎正在美国第五十个州·夏威夷暗中活动。&lt;/p&gt;
 &lt;p&gt;在英国黄金系魔法结社「黎明晨光」的首领蕾薇妮雅的带领下，上条等人前往夏威夷。成员包括上条当麻、御坂美琴、一方通行、滨面仕上、番外个体和黑夜海鸟。而就在他们抵达新檀香山国际机场后不久，格雷姆林的魔法师袭击便开始了。&lt;/p&gt;
 &lt;p&gt;水面下进行着格雷姆林的阴谋。在美国方面唯一察觉到这一点的人，正独自寻求抗争。他是个精力充沛、情绪高涨的家伙。&lt;/p&gt;
 &lt;p&gt;他的名字是罗伯特·卡崔。&lt;/p&gt;
 &lt;p&gt;他是人人皆知的美利坚合众国总统。&lt;/p&gt;</dc:description>
     <dc:subject>重小说</dc:subject>
-    <opf:meta refines="#id" property="title-type">main</opf:meta>
-    <opf:meta refines="#id" property="file-as">[S2_03]新约 某魔法的禁书目录 03X</opf:meta>
+    <meta refines="#id" property="title-type">main</meta>
+    <meta refines="#id" property="file-as">[S2_03]新约 某魔法的禁书目录 03X</meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
-    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-01-24T12:43:02Z</meta>
+    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2026-03-02T06:10:14Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
@@ -134,10 +135,10 @@
     "table": "custom_column_4"
   }
 }</meta>
-    <opf:meta refines="#id-3" property="role" scheme="marc:relators">bkp</opf:meta>
-    <opf:meta refines="#id-1" property="role" scheme="marc:relators">aut</opf:meta>
-    <opf:meta refines="#id-1" property="file-as">镰池和马</opf:meta>
-    <opf:meta property="calibre:rating">10</opf:meta>
+    <meta refines="#id-3" property="role" scheme="marc:relators">bkp</meta>
+    <meta refines="#id-1" property="role" scheme="marc:relators">aut</meta>
+    <meta refines="#id-1" property="file-as">镰池和马</meta>
+    <meta property="calibre:rating">10</meta>
   </metadata>
   <manifest>
     <item id="S2_03-Cover.xhtml" href="Text/S2_03-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
@@ -162,7 +163,7 @@
     <item id="GT_vol_1.jpg" href="Images/Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
     <item href="Images/Deputy_cover.jpg" id="id29" media-type="image/jpeg"/>
     <item href="Images/Illustrations1.jpg" id="id19" media-type="image/jpeg"/>
-    <item href="Images/Illustrations2.jpg" id="id22" media-type="image/jpeg"/>
+    <item href="Images/S2_03-Illustrations2.jpg" id="id22" media-type="image/jpeg"/>
     <item href="Images/p1.jpg" id="id28" media-type="image/jpeg"/>
     <item href="Images/p2.jpg" id="id20" media-type="image/jpeg"/>
     <item href="Images/p3.jpg" id="id25" media-type="image/jpeg"/>
