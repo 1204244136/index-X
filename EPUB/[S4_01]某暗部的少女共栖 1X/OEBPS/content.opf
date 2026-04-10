@@ -1,3 +1,4 @@
+<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" unique-identifier="BookId" version="3.0" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
     <dc:title id="id-1">[S4_01]某暗部的少女共栖 1X</dc:title>
@@ -15,10 +16,10 @@
 &lt;p&gt;「我・一・定・要・宰・了・你」&lt;/p&gt;
 &lt;p&gt;这是讲述着少女们的相遇、友情与黑暗，而在不久后引发了「凄惨事件」的故事。&lt;/p&gt;&lt;/div&gt;</dc:description>
     <dc:subject>重小说</dc:subject>
-    <opf:meta refines="#id-1" property="title-type">main</opf:meta>
-    <opf:meta refines="#id-1" property="file-as">[S4_01]某暗部的少女共栖 1X</opf:meta>
+    <meta refines="#id-1" property="title-type">main</meta>
+    <meta refines="#id-1" property="file-as">[S4_01]某暗部的少女共栖 1X</meta>
     <meta property="calibre:timestamp" scheme="dcterms:W3CDTF">2022-09-09T06:17:52Z</meta>
-    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-05-17T14:11:38Z</meta>
+    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2026-04-10T11:07:57Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
@@ -134,10 +135,10 @@
     "table": "custom_column_4"
   }
 }</meta>
-    <opf:meta refines="#id-3" property="role" scheme="marc:relators">bkp</opf:meta>
-    <opf:meta refines="#id-2" property="role" scheme="marc:relators">aut</opf:meta>
-    <opf:meta refines="#id-2" property="file-as">镰池和马</opf:meta>
-    <opf:meta property="calibre:rating">10</opf:meta>
+    <meta refines="#id-3" property="role" scheme="marc:relators">bkp</meta>
+    <meta refines="#id-2" property="role" scheme="marc:relators">aut</meta>
+    <meta refines="#id-2" property="file-as">镰池和马</meta>
+    <meta property="calibre:rating">10</meta>
   </metadata>
   <manifest>
     <item id="id5" href="Text/S4_01-Cover.xhtml" media-type="application/xhtml+xml"/>
@@ -156,7 +157,7 @@
     <item id="id27" href="Text/S4_01-10_Epilogue.xhtml" media-type="application/xhtml+xml"/>
     <item id="id28" href="Text/S4_01-11_Afterwords.xhtml" media-type="application/xhtml+xml"/>
     <item id="id29" href="Text/S4_01-12_After_the_Epilogue.xhtml" media-type="application/xhtml+xml"/>
-    <item id="id30" href="Text/S4_01-13_Special.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id30" href="Text/S4_01-Special.xhtml" media-type="application/xhtml+xml"/>
     <item id="id3" href="Text/S4_01-Note.xhtml" media-type="application/xhtml+xml"/>
     <item id="nav" href="../nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
     <item href="../toc.ncx" id="ncx" media-type="application/x-dtbncx+xml"/>

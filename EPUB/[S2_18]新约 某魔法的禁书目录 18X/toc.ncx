@@ -1,14 +1,14 @@
 <?xml version='1.0' encoding='utf-8'?>
 <ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1" xml:lang="zh">
   <head>
-    <meta name="dtb:uid" content="uuid:afa76961-fe51-4f63-a4c8-42cdfdd47768"/>
+    <meta name="dtb:uid" content="uuid:79ef1b6e-4e56-43f8-8ccf-3edb7075d5ed"/>
     <meta name="dtb:depth" content="3"/>
-    <meta name="dtb:generator" content="calibre (6.3.0)"/>
+    <meta name="dtb:generator" content="calibre (9.2.1)"/>
     <meta name="dtb:totalPageCount" content="0"/>
     <meta name="dtb:maxPageNumber" content="0"/>
   </head>
   <docTitle>
-    <text>新约 某魔法的禁书目录 18X</text>
+    <text>[S2_18]新约 某魔法的禁书目录 18X</text>
   </docTitle>
   <navMap>
     <navPoint id="num_1" playOrder="1">
@@ -31,7 +31,7 @@
     </navPoint>
     <navPoint id="num_4" playOrder="4">
       <navLabel>
-        <text>序　章 接点 Destiny_Joint.</text>
+        <text>序 章 接点 Destiny_Joint.</text>
       </navLabel>
       <content src="OEBPS/Text/S2_18-01_Prologue.xhtml"/>
     </navPoint>
@@ -109,13 +109,13 @@
     </navPoint>
     <navPoint id="num_17" playOrder="17">
       <navLabel>
-        <text>行间　一</text>
+        <text>行间 一</text>
       </navLabel>
       <content src="OEBPS/Text/S2_18-04_Between_the_Lines1.xhtml"/>
     </navPoint>
     <navPoint id="num_18" playOrder="18">
       <navLabel>
-        <text>第三章 「黄金」 A.D.1900_Invisible_War.</text>
+        <text>第三章 「黄金」A.D.1900_Invisible_War.</text>
       </navLabel>
       <content src="OEBPS/Text/S2_18-05_Chapter3.xhtml"/>
       <navPoint id="num_19" playOrder="19">
@@ -229,7 +229,7 @@
     </navPoint>
     <navPoint id="num_37" playOrder="37">
       <navLabel>
-        <text>行间　二</text>
+        <text>行间 二</text>
       </navLabel>
       <content src="OEBPS/Text/S2_18-06_Between_the_Lines2.xhtml"/>
     </navPoint>
@@ -295,7 +295,7 @@
     </navPoint>
     <navPoint id="num_48" playOrder="48">
       <navLabel>
-        <text>终　章 破裂的恶意 Devil_in_Evil.</text>
+        <text>终 章 破裂的恶意 Devil_in_Evil.</text>
       </navLabel>
       <content src="OEBPS/Text/S2_18-08_Epilogue.xhtml"/>
     </navPoint>
@@ -304,6 +304,18 @@
         <text>后记</text>
       </navLabel>
       <content src="OEBPS/Text/S2_18-09_Afterwords.xhtml"/>
+    </navPoint>
+    <navPoint id="num_50" playOrder="50">
+      <navLabel>
+        <text>特典短篇</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_18-Special.xhtml"/>
+      <navPoint id="num_51" playOrder="51">
+        <navLabel>
+          <text>GAMERS特典</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_18-Special.xhtml#toc_1"/>
+      </navPoint>
     </navPoint>
   </navMap>
 </ncx>

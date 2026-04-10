@@ -1,14 +1,14 @@
 <?xml version='1.0' encoding='utf-8'?>
 <ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1" xml:lang="zh">
   <head>
-    <meta name="dtb:uid" content="uuid:afa76961-fe51-4f63-a4c8-42cdfdd47768"/>
+    <meta name="dtb:uid" content="uuid:ed4e69c2-e11e-4707-b05d-666be97620b1"/>
     <meta name="dtb:depth" content="3"/>
-    <meta name="dtb:generator" content="calibre (6.3.0)"/>
+    <meta name="dtb:generator" content="calibre (9.2.1)"/>
     <meta name="dtb:totalPageCount" content="0"/>
     <meta name="dtb:maxPageNumber" content="0"/>
   </head>
   <docTitle>
-    <text>新约 某魔法的禁书目录 20X</text>
+    <text>[S2_20]新约 某魔法的禁书目录 20X</text>
   </docTitle>
   <navMap>
     <navPoint id="num_1" playOrder="1">
@@ -31,13 +31,13 @@
     </navPoint>
     <navPoint id="num_4" playOrder="4">
       <navLabel>
-        <text>序　章 科学与魔法彻底翻转 Become_to_War.</text>
+        <text>序 章 科学与魔法彻底翻转 Become_to_War.</text>
       </navLabel>
       <content src="OEBPS/Text/S2_20-01_Prologue.xhtml"/>
     </navPoint>
     <navPoint id="num_5" playOrder="5">
       <navLabel>
-        <text>第一章 不动魔法大国与变态 Welcome_Home, A.C!!</text>
+        <text>第一章 不动魔法大国与变态 Welcome_Home, A.C！！</text>
       </navLabel>
       <content src="OEBPS/Text/S2_20-02_Chapter1.xhtml"/>
       <navPoint id="num_6" playOrder="6">
@@ -67,13 +67,13 @@
     </navPoint>
     <navPoint id="num_10" playOrder="10">
       <navLabel>
-        <text>行间　一</text>
+        <text>行间 一</text>
       </navLabel>
       <content src="OEBPS/Text/S2_20-03_Between_the_Lines1.xhtml"/>
     </navPoint>
     <navPoint id="num_11" playOrder="11">
       <navLabel>
-        <text>第二章 处刑塔张开大嘴等待 the_Abyss_of_London.</text>
+        <text>第二章 处刑塔伦敦塔张开大嘴等待 the_Abyss_of_London.</text>
       </navLabel>
       <content src="OEBPS/Text/S2_20-04_Chapter2.xhtml"/>
       <navPoint id="num_12" playOrder="12">
@@ -127,7 +127,7 @@
     </navPoint>
     <navPoint id="num_20" playOrder="20">
       <navLabel>
-        <text>行间　二</text>
+        <text>行间 二</text>
       </navLabel>
       <content src="OEBPS/Text/S2_20-05_Between_the_Lines2.xhtml"/>
     </navPoint>
@@ -217,7 +217,7 @@
     </navPoint>
     <navPoint id="num_35" playOrder="35">
       <navLabel>
-        <text>行间　三</text>
+        <text>行间 三</text>
       </navLabel>
       <content src="OEBPS/Text/S2_20-07_Between_the_Lines3.xhtml"/>
     </navPoint>
@@ -307,13 +307,13 @@
     </navPoint>
     <navPoint id="num_50" playOrder="50">
       <navLabel>
-        <text>行间　四</text>
+        <text>行间 四</text>
       </navLabel>
       <content src="OEBPS/Text/S2_20-09_Between_the_Lines4.xhtml"/>
     </navPoint>
     <navPoint id="num_51" playOrder="51">
       <navLabel>
-        <text>终　章 黄金自地平彼方逼近 Dawn_to_the_……</text>
+        <text>终 章 黄金自地平彼方逼近 Dawn_to_the_……</text>
       </navLabel>
       <content src="OEBPS/Text/S2_20-10_Epilogue.xhtml"/>
     </navPoint>
@@ -322,6 +322,18 @@
         <text>后记</text>
       </navLabel>
       <content src="OEBPS/Text/S2_20-11_Afterwords.xhtml"/>
+    </navPoint>
+    <navPoint id="num_53" playOrder="53">
+      <navLabel>
+        <text>特典短篇</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_20-Special.xhtml"/>
+      <navPoint id="num_54" playOrder="54">
+        <navLabel>
+          <text>GAMERS特典</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_20-Special.xhtml#toc_1"/>
+      </navPoint>
     </navPoint>
   </navMap>
 </ncx>

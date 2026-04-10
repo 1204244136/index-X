@@ -1,14 +1,14 @@
 <?xml version='1.0' encoding='utf-8'?>
 <ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1" xml:lang="zh">
   <head>
-    <meta name="dtb:uid" content="uuid:afa76961-fe51-4f63-a4c8-42cdfdd47768"/>
+    <meta name="dtb:uid" content="uuid:ac99c12d-a274-4a75-a6d3-d8daf3c39c21"/>
     <meta name="dtb:depth" content="3"/>
-    <meta name="dtb:generator" content="calibre (6.3.0)"/>
+    <meta name="dtb:generator" content="calibre (9.2.1)"/>
     <meta name="dtb:totalPageCount" content="0"/>
     <meta name="dtb:maxPageNumber" content="0"/>
   </head>
   <docTitle>
-    <text>新约 某魔法的禁书目录 17X</text>
+    <text>[S2_17]新约 某魔法的禁书目录 17X</text>
   </docTitle>
   <navMap>
     <navPoint id="num_1" playOrder="1">
@@ -31,7 +31,7 @@
     </navPoint>
     <navPoint id="num_4" playOrder="4">
       <navLabel>
-        <text>序　章 或许正因是前提才包含结论 to_the_Girl’s_ABYSS.</text>
+        <text>序 章 或许正因是前提才包含结论 to_the_Girl’s_ABYSS.</text>
       </navLabel>
       <content src="OEBPS/Text/S2_17-01_Prologue.xhtml"/>
     </navPoint>
@@ -97,7 +97,7 @@
     </navPoint>
     <navPoint id="num_15" playOrder="15">
       <navLabel>
-        <text>行间　一</text>
+        <text>行间 一</text>
       </navLabel>
       <content src="OEBPS/Text/S2_17-03_Between_the_Lines1.xhtml"/>
     </navPoint>
@@ -205,7 +205,7 @@
     </navPoint>
     <navPoint id="num_33" playOrder="33">
       <navLabel>
-        <text>行间　二</text>
+        <text>行间 二</text>
       </navLabel>
       <content src="OEBPS/Text/S2_17-05_Between_the_Lines2.xhtml"/>
     </navPoint>
@@ -301,7 +301,7 @@
     </navPoint>
     <navPoint id="num_49" playOrder="49">
       <navLabel>
-        <text>行间　三</text>
+        <text>行间 三</text>
       </navLabel>
       <content src="OEBPS/Text/S2_17-07_Between_the_Lines3.xhtml"/>
     </navPoint>
@@ -385,13 +385,13 @@
     </navPoint>
     <navPoint id="num_63" playOrder="63">
       <navLabel>
-        <text>行间　四</text>
+        <text>行间 四</text>
       </navLabel>
       <content src="OEBPS/Text/S2_17-09_Between_the_Lines4.xhtml"/>
     </navPoint>
     <navPoint id="num_64" playOrder="64">
       <navLabel>
-        <text>终　章 或许正因是疑念才存有真理 Bet_Time.Red_or_Black.</text>
+        <text>终 章 或许正因是疑念才存有真理 Bet_Time.Red_or_Black.</text>
       </navLabel>
       <content src="OEBPS/Text/S2_17-10_Epilogue.xhtml"/>
     </navPoint>
@@ -400,6 +400,18 @@
         <text>后记</text>
       </navLabel>
       <content src="OEBPS/Text/S2_17-11_Afterwords.xhtml"/>
+    </navPoint>
+    <navPoint id="num_66" playOrder="66">
+      <navLabel>
+        <text>特典短篇</text>
+      </navLabel>
+      <content src="OEBPS/Text/S2_17-Special.xhtml"/>
+      <navPoint id="num_67" playOrder="67">
+        <navLabel>
+          <text>GAMERS特典 通过最终Boss来判定社会威胁的理论</text>
+        </navLabel>
+        <content src="OEBPS/Text/S2_17-Special.xhtml#toc_1"/>
+      </navPoint>
     </navPoint>
   </navMap>
 </ncx>

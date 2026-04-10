@@ -285,24 +285,24 @@
       <navLabel>
         <text>特典短篇</text>
       </navLabel>
-      <content src="OEBPS/Text/S4_01-13_Special.xhtml"/>
+      <content src="OEBPS/Text/S4_01-Special.xhtml"/>
       <navPoint id="num_47" playOrder="47">
         <navLabel>
           <text>Animate特典 洗浴用品和杂货商店</text>
         </navLabel>
-        <content src="OEBPS/Text/S4_01-13_Special.xhtml#toc_1"/>
+        <content src="OEBPS/Text/S4_01-Special.xhtml#toc_1"/>
       </navPoint>
       <navPoint id="num_48" playOrder="48">
         <navLabel>
           <text>GAMERS特典 「暗部」的手机选择</text>
         </navLabel>
-        <content src="OEBPS/Text/S4_01-13_Special.xhtml#toc_2"/>
+        <content src="OEBPS/Text/S4_01-Special.xhtml#toc_2"/>
       </navPoint>
       <navPoint id="num_49" playOrder="49">
         <navLabel>
           <text>Melonbooks特典 体重秤是不会放过零食的</text>
         </navLabel>
-        <content src="OEBPS/Text/S4_01-13_Special.xhtml#toc_3"/>
+        <content src="OEBPS/Text/S4_01-Special.xhtml#toc_3"/>
       </navPoint>
     </navPoint>
   </navMap>
