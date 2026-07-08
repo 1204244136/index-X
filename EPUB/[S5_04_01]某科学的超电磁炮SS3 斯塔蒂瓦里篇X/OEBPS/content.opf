@@ -149,15 +149,15 @@
     <item id="nav" href="../nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
     <item id="toc" href="../toc.ncx" media-type="application/x-dtbncx+xml"/>
     <item href="Styles/style.css" id="id5" media-type="text/css"/>
-    <item id="GT_vol_1.jpg" href="Images/Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
-    <item id="id2" href="Images/p1.jpg" media-type="image/jpeg"/>
-    <item id="id3" href="Images/p2.jpg" media-type="image/jpeg"/>
-    <item id="id4" href="Images/p3.jpg" media-type="image/jpeg"/>
-    <item id="id6" href="Images/p4.jpg" media-type="image/jpeg"/>
-    <item id="id7" href="Images/p5.jpg" media-type="image/jpeg"/>
-    <item id="id19" href="Images/p6.jpg" media-type="image/jpeg"/>
-    <item id="id20" href="Images/p7.jpg" media-type="image/jpeg"/>
-    <item id="id21" href="Images/p8.jpg" media-type="image/jpeg"/>
+    <item id="GT_vol_1.jpg" href="Images/S5_04_01-Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
+    <item id="id2" href="Images/S5_04_01-p1.jpg" media-type="image/jpeg"/>
+    <item id="id3" href="Images/S5_04_01-p2.jpg" media-type="image/jpeg"/>
+    <item id="id4" href="Images/S5_04_01-p3.jpg" media-type="image/jpeg"/>
+    <item id="id6" href="Images/S5_04_01-p4.jpg" media-type="image/jpeg"/>
+    <item id="id7" href="Images/S5_04_01-p5.jpg" media-type="image/jpeg"/>
+    <item id="id19" href="Images/S5_04_01-p6.jpg" media-type="image/jpeg"/>
+    <item id="id20" href="Images/S5_04_01-p7.jpg" media-type="image/jpeg"/>
+    <item id="id21" href="Images/S5_04_01-p8.jpg" media-type="image/jpeg"/>
   </manifest>
   <spine toc="toc">
     <itemref idref="S5_04_01-Cover.xhtml"/>

@@ -161,20 +161,20 @@
     <item id="nav" href="../nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
     <item href="../toc.ncx" id="ncx" media-type="application/x-dtbncx+xml"/>
     <item id="id" href="Styles/style.css" media-type="text/css"/>
-    <item id="id34" href="Images/GT09_Back_cover.jpg" media-type="image/jpeg"/>
-    <item id="id20" href="Images/GT09_Contents.jpg" media-type="image/jpeg"/>
-    <item href="Images/GT09_Cover.jpg" id="cover" media-type="image/jpeg" properties="cover-image"/>
-    <item id="id21" href="Images/GT09_Deputy_cover.jpg" media-type="image/jpeg"/>
-    <item id="id22" href="Images/GT09_Illustrations1.jpg" media-type="image/jpeg"/>
-    <item id="id23" href="Images/GT09_Illustrations2.jpg" media-type="image/jpeg"/>
-    <item id="id24" href="Images/GT09_p1.jpg" media-type="image/jpeg"/>
-    <item id="id25" href="Images/GT09_p2.jpg" media-type="image/jpeg"/>
-    <item id="id26" href="Images/GT09_p3.jpg" media-type="image/jpeg"/>
-    <item id="id27" href="Images/GT09_p4.jpg" media-type="image/jpeg"/>
-    <item id="id28" href="Images/GT09_p5.jpg" media-type="image/jpeg"/>
-    <item id="id29" href="Images/GT09_p6.jpg" media-type="image/jpeg"/>
-    <item id="id30" href="Images/GT09_p7.jpg" media-type="image/jpeg"/>
-    <item id="id31" href="Images/GT09_p8.jpg" media-type="image/jpeg"/>
+    <item id="id34" href="Images/S3_09-Back_cover.jpg" media-type="image/jpeg"/>
+    <item id="id20" href="Images/S3_09-Contents.jpg" media-type="image/jpeg"/>
+    <item href="Images/S3_09-Cover.jpg" id="cover" media-type="image/jpeg" properties="cover-image"/>
+    <item id="id21" href="Images/S3_09-Deputy_cover.jpg" media-type="image/jpeg"/>
+    <item id="id22" href="Images/S3_09-Illustrations1.jpg" media-type="image/jpeg"/>
+    <item id="id23" href="Images/S3_09-Illustrations2.jpg" media-type="image/jpeg"/>
+    <item id="id24" href="Images/S3_09-p1.jpg" media-type="image/jpeg"/>
+    <item id="id25" href="Images/S3_09-p2.jpg" media-type="image/jpeg"/>
+    <item id="id26" href="Images/S3_09-p3.jpg" media-type="image/jpeg"/>
+    <item id="id27" href="Images/S3_09-p4.jpg" media-type="image/jpeg"/>
+    <item id="id28" href="Images/S3_09-p5.jpg" media-type="image/jpeg"/>
+    <item id="id29" href="Images/S3_09-p6.jpg" media-type="image/jpeg"/>
+    <item id="id30" href="Images/S3_09-p7.jpg" media-type="image/jpeg"/>
+    <item id="id31" href="Images/S3_09-p8.jpg" media-type="image/jpeg"/>
   </manifest>
   <spine toc="ncx">
     <itemref idref="id5"/>

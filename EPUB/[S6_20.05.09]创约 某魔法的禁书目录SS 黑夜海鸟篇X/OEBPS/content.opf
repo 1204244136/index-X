@@ -141,8 +141,8 @@
     <item id="nav" href="../nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
     <item id="toc" href="../toc.ncx" media-type="application/x-dtbncx+xml"/>
     <item href="Styles/style.css" id="id5" media-type="text/css"/>
-    <item id="GT_vol_1.jpg" href="Images/Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
-    <item id="id" href="Images/p1.jpg" media-type="image/jpeg"/>
+    <item id="GT_vol_1.jpg" href="Images/S6_20.05.09-Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
+    <item id="id" href="Images/S6_20.05.09-p1.jpg" media-type="image/jpeg"/>
     <item id="id-3" href="Text/S6_20.05.09-Note.xhtml" media-type="application/xhtml+xml"/>
   </manifest>
   <spine toc="toc">

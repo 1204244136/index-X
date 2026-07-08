@@ -19,7 +19,7 @@
     <meta refines="#id" property="file-as">[S1_14]某魔法的禁书目录 SS1X</meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
-    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2026-03-09T13:16:33Z</meta>
+    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2026-07-08T06:25:58Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
@@ -158,20 +158,20 @@
     <item id="toc" href="../toc.ncx" media-type="application/x-dtbncx+xml"/>
     <item href="Styles/style.css" id="id5" media-type="text/css"/>
     <item id="id12" href="Images/S1_14-Back_cover.jpg" media-type="image/jpeg"/>
-    <item href="Images/Contents.jpg" id="id21" media-type="image/jpeg"/>
-    <item id="GT_vol_1.jpg" href="Images/Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
-    <item href="Images/Deputy_cover.jpg" id="id20" media-type="image/jpeg"/>
-    <item href="Images/Illustrations1.jpg" id="id19" media-type="image/jpeg"/>
-    <item href="Images/Illustrations2.jpg" id="id18" media-type="image/jpeg"/>
-    <item href="Images/Illustrations3.jpg" id="id22" media-type="image/jpeg"/>
-    <item href="Images/p1.jpg" id="id30" media-type="image/jpeg"/>
-    <item href="Images/p2.jpg" id="id24" media-type="image/jpeg"/>
-    <item href="Images/p3.jpg" id="id25" media-type="image/jpeg"/>
-    <item href="Images/p4.jpg" id="id28" media-type="image/jpeg"/>
-    <item href="Images/p5.jpg" id="id26" media-type="image/jpeg"/>
-    <item href="Images/p6.jpg" id="id29" media-type="image/jpeg"/>
-    <item href="Images/p7.jpg" id="id27" media-type="image/jpeg"/>
-    <item href="Images/p8.jpg" id="id23" media-type="image/jpeg"/>
+    <item href="Images/S1_14-Contents.jpg" id="id21" media-type="image/jpeg"/>
+    <item id="GT_vol_1.jpg" href="Images/S1_14-Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
+    <item href="Images/S1_14-Deputy_cover.jpg" id="id20" media-type="image/jpeg"/>
+    <item href="Images/S1_14-Illustrations1.jpg" id="id19" media-type="image/jpeg"/>
+    <item href="Images/S1_14-Illustrations2.jpg" id="id18" media-type="image/jpeg"/>
+    <item href="Images/S1_14-Illustrations3.jpg" id="id22" media-type="image/jpeg"/>
+    <item href="Images/S1_14-p1.jpg" id="id30" media-type="image/jpeg"/>
+    <item href="Images/S1_14-p2.jpg" id="id24" media-type="image/jpeg"/>
+    <item href="Images/S1_14-p3.jpg" id="id25" media-type="image/jpeg"/>
+    <item href="Images/S1_14-p4.jpg" id="id28" media-type="image/jpeg"/>
+    <item href="Images/S1_14-p5.jpg" id="id26" media-type="image/jpeg"/>
+    <item href="Images/S1_14-p6.jpg" id="id29" media-type="image/jpeg"/>
+    <item href="Images/S1_14-p7.jpg" id="id27" media-type="image/jpeg"/>
+    <item href="Images/S1_14-p8.jpg" id="id23" media-type="image/jpeg"/>
   </manifest>
   <spine toc="toc">
     <itemref idref="S1_14-Cover.xhtml"/>

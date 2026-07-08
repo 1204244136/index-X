@@ -162,26 +162,26 @@
     <item id="toc" href="../toc.ncx" media-type="application/x-dtbncx+xml"/>
     <item href="Styles/style.css" id="id5" media-type="text/css"/>
     <item id="id37" href="Images/S1_03-Back_cover.jpg" media-type="image/jpeg"/>
-    <item href="Images/Contents.jpg" id="id13" media-type="image/jpeg"/>
-    <item id="GT_vol_1.jpg" href="Images/Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
-    <item href="Images/Deputy_cover.jpg" id="id15" media-type="image/jpeg"/>
-    <item href="Images/Illustrations1.jpg" id="id11" media-type="image/jpeg"/>
-    <item href="Images/Illustrations2.jpg" id="id9" media-type="image/jpeg"/>
-    <item href="Images/Illustrations3.jpg" id="id14" media-type="image/jpeg"/>
-    <item href="Images/Illustrations4.jpg" id="id12" media-type="image/jpeg"/>
-    <item href="Images/Illustrations5.jpg" id="id10" media-type="image/jpeg"/>
-    <item href="Images/Illustrations6.jpg" id="id8" media-type="image/jpeg"/>
-    <item href="Images/p1.jpg" id="id19" media-type="image/jpeg"/>
-    <item href="Images/p10.jpg" id="id16" media-type="image/jpeg"/>
-    <item href="Images/p11.jpg" id="id18" media-type="image/jpeg"/>
-    <item href="Images/p2.jpg" id="id20" media-type="image/jpeg"/>
-    <item href="Images/p3.jpg" id="id23" media-type="image/jpeg"/>
-    <item href="Images/p4.jpg" id="id22" media-type="image/jpeg"/>
-    <item href="Images/p5.jpg" id="id21" media-type="image/jpeg"/>
-    <item href="Images/p6.jpg" id="id17" media-type="image/jpeg"/>
-    <item href="Images/p7.jpg" id="id4" media-type="image/jpeg"/>
-    <item href="Images/p8.jpg" id="id24" media-type="image/jpeg"/>
-    <item href="Images/p9.jpg" id="id25" media-type="image/jpeg"/>
+    <item href="Images/S1_03-Contents.jpg" id="id13" media-type="image/jpeg"/>
+    <item id="GT_vol_1.jpg" href="Images/S1_03-Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
+    <item href="Images/S1_03-Deputy_cover.jpg" id="id15" media-type="image/jpeg"/>
+    <item href="Images/S1_03-Illustrations1.jpg" id="id11" media-type="image/jpeg"/>
+    <item href="Images/S1_03-Illustrations2.jpg" id="id9" media-type="image/jpeg"/>
+    <item href="Images/S1_03-Illustrations3.jpg" id="id14" media-type="image/jpeg"/>
+    <item href="Images/S1_03-Illustrations4.jpg" id="id12" media-type="image/jpeg"/>
+    <item href="Images/S1_03-Illustrations5.jpg" id="id10" media-type="image/jpeg"/>
+    <item href="Images/S1_03-Illustrations6.jpg" id="id8" media-type="image/jpeg"/>
+    <item href="Images/S1_03-p1.jpg" id="id19" media-type="image/jpeg"/>
+    <item href="Images/S1_03-p10.jpg" id="id16" media-type="image/jpeg"/>
+    <item href="Images/S1_03-p11.jpg" id="id18" media-type="image/jpeg"/>
+    <item href="Images/S1_03-p2.jpg" id="id20" media-type="image/jpeg"/>
+    <item href="Images/S1_03-p3.jpg" id="id23" media-type="image/jpeg"/>
+    <item href="Images/S1_03-p4.jpg" id="id22" media-type="image/jpeg"/>
+    <item href="Images/S1_03-p5.jpg" id="id21" media-type="image/jpeg"/>
+    <item href="Images/S1_03-p6.jpg" id="id17" media-type="image/jpeg"/>
+    <item href="Images/S1_03-p7.jpg" id="id4" media-type="image/jpeg"/>
+    <item href="Images/S1_03-p8.jpg" id="id24" media-type="image/jpeg"/>
+    <item href="Images/S1_03-p9.jpg" id="id25" media-type="image/jpeg"/>
   </manifest>
   <spine toc="toc">
     <itemref idref="S1_03-Cover.xhtml"/>

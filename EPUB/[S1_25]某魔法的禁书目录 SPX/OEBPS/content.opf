@@ -161,33 +161,33 @@
     <item id="nav" href="../nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
     <item id="toc" href="../toc.ncx" media-type="application/x-dtbncx+xml"/>
     <item href="Styles/style.css" id="id5" media-type="text/css"/>
-    <item href="Images/Contents.jpg" id="id25" media-type="image/jpeg"/>
-    <item id="GT_vol_1.jpg" href="Images/Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
-    <item href="Images/Deputy_cover.jpg" id="id18" media-type="image/jpeg"/>
-    <item href="Images/Kamijou_Touma.jpg" id="id21" media-type="image/jpeg"/>
-    <item href="Images/Manga01.jpg" id="id26" media-type="image/jpeg"/>
-    <item href="Images/Manga02.jpg" id="id27" media-type="image/jpeg"/>
-    <item href="Images/Manga03.jpg" id="id28" media-type="image/jpeg"/>
-    <item href="Images/Manga04.jpg" id="id29" media-type="image/jpeg"/>
-    <item href="Images/Manga05.jpg" id="id30" media-type="image/jpeg"/>
-    <item href="Images/Manga06.jpg" id="id31" media-type="image/jpeg"/>
-    <item href="Images/Manga07.jpg" id="id32" media-type="image/jpeg"/>
-    <item href="Images/Manga08.jpg" id="id33" media-type="image/jpeg"/>
-    <item href="Images/Manga09.jpg" id="id34" media-type="image/jpeg"/>
-    <item href="Images/Manga10.jpg" id="id35" media-type="image/jpeg"/>
-    <item href="Images/Manga11.jpg" id="id36" media-type="image/jpeg"/>
-    <item href="Images/Manga12.jpg" id="id37" media-type="image/jpeg"/>
-    <item href="Images/Manga13.jpg" id="id38" media-type="image/jpeg"/>
-    <item href="Images/Manga14.jpg" id="id39" media-type="image/jpeg"/>
-    <item href="Images/Manga15.jpg" id="id40" media-type="image/jpeg"/>
-    <item href="Images/Manga16.jpg" id="id41" media-type="image/jpeg"/>
-    <item href="Images/Manga17.jpg" id="id42" media-type="image/jpeg"/>
-    <item href="Images/Manga18.jpg" id="id43" media-type="image/jpeg"/>
-    <item href="Images/Mark_Space.jpg" id="id20" media-type="image/jpeg"/>
-    <item href="Images/p1.jpg" id="id23" media-type="image/jpeg"/>
-    <item href="Images/p2.jpg" id="id24" media-type="image/jpeg"/>
-    <item href="Images/Stiyl_Magnus.jpg" id="id19" media-type="image/jpeg"/>
-    <item href="Images/Uiharu_Kazari.jpg" id="id22" media-type="image/jpeg"/>
+    <item href="Images/S1_25-Contents.jpg" id="id25" media-type="image/jpeg"/>
+    <item id="GT_vol_1.jpg" href="Images/S1_25-Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
+    <item href="Images/S1_25-Deputy_cover.jpg" id="id18" media-type="image/jpeg"/>
+    <item href="Images/S1_25-Kamijou_Touma.jpg" id="id21" media-type="image/jpeg"/>
+    <item href="Images/S1_25-Manga01.jpg" id="id26" media-type="image/jpeg"/>
+    <item href="Images/S1_25-Manga02.jpg" id="id27" media-type="image/jpeg"/>
+    <item href="Images/S1_25-Manga03.jpg" id="id28" media-type="image/jpeg"/>
+    <item href="Images/S1_25-Manga04.jpg" id="id29" media-type="image/jpeg"/>
+    <item href="Images/S1_25-Manga05.jpg" id="id30" media-type="image/jpeg"/>
+    <item href="Images/S1_25-Manga06.jpg" id="id31" media-type="image/jpeg"/>
+    <item href="Images/S1_25-Manga07.jpg" id="id32" media-type="image/jpeg"/>
+    <item href="Images/S1_25-Manga08.jpg" id="id33" media-type="image/jpeg"/>
+    <item href="Images/S1_25-Manga09.jpg" id="id34" media-type="image/jpeg"/>
+    <item href="Images/S1_25-Manga10.jpg" id="id35" media-type="image/jpeg"/>
+    <item href="Images/S1_25-Manga11.jpg" id="id36" media-type="image/jpeg"/>
+    <item href="Images/S1_25-Manga12.jpg" id="id37" media-type="image/jpeg"/>
+    <item href="Images/S1_25-Manga13.jpg" id="id38" media-type="image/jpeg"/>
+    <item href="Images/S1_25-Manga14.jpg" id="id39" media-type="image/jpeg"/>
+    <item href="Images/S1_25-Manga15.jpg" id="id40" media-type="image/jpeg"/>
+    <item href="Images/S1_25-Manga16.jpg" id="id41" media-type="image/jpeg"/>
+    <item href="Images/S1_25-Manga17.jpg" id="id42" media-type="image/jpeg"/>
+    <item href="Images/S1_25-Manga18.jpg" id="id43" media-type="image/jpeg"/>
+    <item href="Images/S1_25-Mark_Space.jpg" id="id20" media-type="image/jpeg"/>
+    <item href="Images/S1_25-p1.jpg" id="id23" media-type="image/jpeg"/>
+    <item href="Images/S1_25-p2.jpg" id="id24" media-type="image/jpeg"/>
+    <item href="Images/S1_25-Stiyl_Magnus.jpg" id="id19" media-type="image/jpeg"/>
+    <item href="Images/S1_25-Uiharu_Kazari.jpg" id="id22" media-type="image/jpeg"/>
   </manifest>
   <spine toc="toc">
     <itemref idref="S1_25-Cover.xhtml"/>

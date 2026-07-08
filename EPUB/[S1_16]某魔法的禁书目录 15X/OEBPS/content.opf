@@ -168,23 +168,23 @@
     <item id="toc" href="../toc.ncx" media-type="application/x-dtbncx+xml"/>
     <item href="Styles/style.css" id="id5" media-type="text/css"/>
     <item id="id35" href="Images/S1_16-Back_cover.jpg" media-type="image/jpeg"/>
-    <item href="Images/Contents.jpg" id="id22" media-type="image/jpeg"/>
-    <item id="GT_vol_1.jpg" href="Images/Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
-    <item href="Images/Deputy_cover.jpg" id="id21" media-type="image/jpeg"/>
-    <item href="Images/Illustrations1.jpg" id="id19" media-type="image/jpeg"/>
-    <item href="Images/Illustrations2.jpg" id="id20" media-type="image/jpeg"/>
-    <item href="Images/p1.jpg" id="id32" media-type="image/jpeg"/>
-    <item href="Images/p2.jpg" id="id23" media-type="image/jpeg"/>
-    <item href="Images/p3.jpg" id="id33" media-type="image/jpeg"/>
-    <item href="Images/p4.jpg" id="id18" media-type="image/jpeg"/>
-    <item href="Images/p5.jpg" id="id30" media-type="image/jpeg"/>
-    <item href="Images/p6.jpg" id="id31" media-type="image/jpeg"/>
-    <item href="Images/p7.jpg" id="id24" media-type="image/jpeg"/>
-    <item href="Images/Phase1.jpg" id="id25" media-type="image/jpeg"/>
-    <item href="Images/Phase2.jpg" id="id26" media-type="image/jpeg"/>
-    <item href="Images/Phase3.jpg" id="id27" media-type="image/jpeg"/>
-    <item href="Images/Phase4.jpg" id="id28" media-type="image/jpeg"/>
-    <item href="Images/Phase5.jpg" id="id29" media-type="image/jpeg"/>
+    <item href="Images/S1_16-Contents.jpg" id="id22" media-type="image/jpeg"/>
+    <item id="GT_vol_1.jpg" href="Images/S1_16-Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
+    <item href="Images/S1_16-Deputy_cover.jpg" id="id21" media-type="image/jpeg"/>
+    <item href="Images/S1_16-Illustrations1.jpg" id="id19" media-type="image/jpeg"/>
+    <item href="Images/S1_16-Illustrations2.jpg" id="id20" media-type="image/jpeg"/>
+    <item href="Images/S1_16-p1.jpg" id="id32" media-type="image/jpeg"/>
+    <item href="Images/S1_16-p2.jpg" id="id23" media-type="image/jpeg"/>
+    <item href="Images/S1_16-p3.jpg" id="id33" media-type="image/jpeg"/>
+    <item href="Images/S1_16-p4.jpg" id="id18" media-type="image/jpeg"/>
+    <item href="Images/S1_16-p5.jpg" id="id30" media-type="image/jpeg"/>
+    <item href="Images/S1_16-p6.jpg" id="id31" media-type="image/jpeg"/>
+    <item href="Images/S1_16-p7.jpg" id="id24" media-type="image/jpeg"/>
+    <item href="Images/S1_16-Phase1.jpg" id="id25" media-type="image/jpeg"/>
+    <item href="Images/S1_16-Phase2.jpg" id="id26" media-type="image/jpeg"/>
+    <item href="Images/S1_16-Phase3.jpg" id="id27" media-type="image/jpeg"/>
+    <item href="Images/S1_16-Phase4.jpg" id="id28" media-type="image/jpeg"/>
+    <item href="Images/S1_16-Phase5.jpg" id="id29" media-type="image/jpeg"/>
   </manifest>
   <spine toc="toc">
     <itemref idref="S1_16-Cover.xhtml"/>

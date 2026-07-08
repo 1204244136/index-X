@@ -158,15 +158,15 @@
     <item id="nav" href="../nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
     <item href="../toc.ncx" id="ncx" media-type="application/x-dtbncx+xml"/>
     <item id="id" href="Styles/style.css" media-type="text/css"/>
-    <item href="Images/GT11_Cover.jpg" id="cover" media-type="image/jpeg" properties="cover-image"/>
-    <item id="id-3" href="Images/i-021.jpg" media-type="image/jpeg"/>
-    <item id="id-4" href="Images/i-067.jpg" media-type="image/jpeg"/>
-    <item id="id-5" href="Images/i-093.jpg" media-type="image/jpeg"/>
-    <item id="id-6" href="Images/i-137.jpg" media-type="image/jpeg"/>
-    <item id="id-7" href="Images/i-138.jpg" media-type="image/jpeg"/>
-    <item id="id-8" href="Images/i-139.jpg" media-type="image/jpeg"/>
-    <item id="id-9" href="Images/i-185.jpg" media-type="image/jpeg"/>
-    <item id="id-10" href="Images/i-220-221.jpg" media-type="image/jpeg"/>
+    <item href="Images/S3_11-Cover.jpg" id="cover" media-type="image/jpeg" properties="cover-image"/>
+    <item id="id-3" href="Images/S3_11-i-021.jpg" media-type="image/jpeg"/>
+    <item id="id-4" href="Images/S3_11-i-067.jpg" media-type="image/jpeg"/>
+    <item id="id-5" href="Images/S3_11-i-093.jpg" media-type="image/jpeg"/>
+    <item id="id-6" href="Images/S3_11-i-137.jpg" media-type="image/jpeg"/>
+    <item id="id-7" href="Images/S3_11-i-138.jpg" media-type="image/jpeg"/>
+    <item id="id-8" href="Images/S3_11-i-139.jpg" media-type="image/jpeg"/>
+    <item id="id-9" href="Images/S3_11-i-185.jpg" media-type="image/jpeg"/>
+    <item id="id-10" href="Images/S3_11-i-220-221.jpg" media-type="image/jpeg"/>
     <item id="id-25" href="Images/S3_11-Back_cover.jpg" media-type="image/jpeg"/>
     <item id="id-11" href="Images/S3_11-Contents.jpg" media-type="image/jpeg"/>
     <item id="id-12" href="Images/S3_11-Deputy_cover.jpg" media-type="image/jpeg"/>

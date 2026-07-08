@@ -165,19 +165,19 @@
     <item id="nav" href="../nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
     <item id="toc" href="../toc.ncx" media-type="application/x-dtbncx+xml"/>
     <item href="Styles/style.css" id="id5" media-type="text/css"/>
-    <item id="id27" href="Images/Back_cover.jpg" media-type="image/jpeg"/>
-    <item id="id24" href="Images/Contents.jpg" media-type="image/jpeg"/>
-    <item id="GT_vol_1.jpg" href="Images/Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
-    <item id="id23" href="Images/Deputy_cover.jpg" media-type="image/jpeg"/>
-    <item id="id26" href="Images/Illustrations1.jpg" media-type="image/jpeg"/>
-    <item id="id22" href="Images/Illustrations2.jpg" media-type="image/jpeg"/>
-    <item id="id" href="Images/p1.jpg" media-type="image/jpeg"/>
-    <item id="id7" href="Images/p2.jpg" media-type="image/jpeg"/>
-    <item id="id13" href="Images/p3.jpg" media-type="image/jpeg"/>
-    <item id="id14" href="Images/p4.jpg" media-type="image/jpeg"/>
-    <item id="id18" href="Images/p5.jpg" media-type="image/jpeg"/>
-    <item id="id19" href="Images/p6.jpg" media-type="image/jpeg"/>
-    <item id="id20" href="Images/p7.jpg" media-type="image/jpeg"/>
+    <item id="id27" href="Images/S2_18-Back_cover.jpg" media-type="image/jpeg"/>
+    <item id="id24" href="Images/S2_18-Contents.jpg" media-type="image/jpeg"/>
+    <item id="GT_vol_1.jpg" href="Images/S2_18-Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
+    <item id="id23" href="Images/S2_18-Deputy_cover.jpg" media-type="image/jpeg"/>
+    <item id="id26" href="Images/S2_18-Illustrations1.jpg" media-type="image/jpeg"/>
+    <item id="id22" href="Images/S2_18-Illustrations2.jpg" media-type="image/jpeg"/>
+    <item id="id" href="Images/S2_18-p1.jpg" media-type="image/jpeg"/>
+    <item id="id7" href="Images/S2_18-p2.jpg" media-type="image/jpeg"/>
+    <item id="id13" href="Images/S2_18-p3.jpg" media-type="image/jpeg"/>
+    <item id="id14" href="Images/S2_18-p4.jpg" media-type="image/jpeg"/>
+    <item id="id18" href="Images/S2_18-p5.jpg" media-type="image/jpeg"/>
+    <item id="id19" href="Images/S2_18-p6.jpg" media-type="image/jpeg"/>
+    <item id="id20" href="Images/S2_18-p7.jpg" media-type="image/jpeg"/>
     <item id="id-3" href="Text/S2_18-Special.xhtml" media-type="application/xhtml+xml"/>
   </manifest>
   <spine toc="toc">

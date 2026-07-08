@@ -157,20 +157,20 @@
     <item id="nav" href="../nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
     <item href="../toc.ncx" id="ncx" media-type="application/x-dtbncx+xml"/>
     <item id="id" href="Styles/style.css" media-type="text/css"/>
-    <item id="id32" href="Images/Back_cover.jpg" media-type="image/jpeg"/>
-    <item id="id7" href="Images/Contents.jpg" media-type="image/jpeg"/>
-    <item id="id9" href="Images/Deputy_cover.jpg" media-type="image/jpeg"/>
-    <item id="id8" href="Images/GT06_Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
-    <item id="id6" href="Images/Illustrations1.jpg" media-type="image/jpeg"/>
-    <item id="id10" href="Images/Illustrations2.jpg" media-type="image/jpeg"/>
-    <item id="id11" href="Images/p1.jpg" media-type="image/jpeg"/>
-    <item id="id12" href="Images/p2.jpg" media-type="image/jpeg"/>
-    <item id="id13" href="Images/p3.jpg" media-type="image/jpeg"/>
-    <item id="id14" href="Images/p4.jpg" media-type="image/jpeg"/>
-    <item id="id15" href="Images/p5.jpg" media-type="image/jpeg"/>
-    <item id="id16" href="Images/p6.jpg" media-type="image/jpeg"/>
-    <item id="id17" href="Images/p7.jpg" media-type="image/jpeg"/>
-    <item id="id18" href="Images/p8.jpg" media-type="image/jpeg"/>
+    <item id="id32" href="Images/S3_06-Back_cover.jpg" media-type="image/jpeg"/>
+    <item id="id7" href="Images/S3_06-Contents.jpg" media-type="image/jpeg"/>
+    <item id="id9" href="Images/S3_06-Deputy_cover.jpg" media-type="image/jpeg"/>
+    <item id="id8" href="Images/S3_06-Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
+    <item id="id6" href="Images/S3_06-Illustrations1.jpg" media-type="image/jpeg"/>
+    <item id="id10" href="Images/S3_06-Illustrations2.jpg" media-type="image/jpeg"/>
+    <item id="id11" href="Images/S3_06-p1.jpg" media-type="image/jpeg"/>
+    <item id="id12" href="Images/S3_06-p2.jpg" media-type="image/jpeg"/>
+    <item id="id13" href="Images/S3_06-p3.jpg" media-type="image/jpeg"/>
+    <item id="id14" href="Images/S3_06-p4.jpg" media-type="image/jpeg"/>
+    <item id="id15" href="Images/S3_06-p5.jpg" media-type="image/jpeg"/>
+    <item id="id16" href="Images/S3_06-p6.jpg" media-type="image/jpeg"/>
+    <item id="id17" href="Images/S3_06-p7.jpg" media-type="image/jpeg"/>
+    <item id="id18" href="Images/S3_06-p8.jpg" media-type="image/jpeg"/>
   </manifest>
   <spine toc="ncx">
     <itemref idref="id5"/>

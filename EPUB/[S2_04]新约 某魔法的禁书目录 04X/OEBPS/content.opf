@@ -191,29 +191,29 @@
     <item id="nav" href="../nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
     <item id="toc" href="../toc.ncx" media-type="application/x-dtbncx+xml"/>
     <item href="Styles/style.css" id="id5" media-type="text/css"/>
-    <item id="id9" href="Images/Back_cover.jpg" media-type="image/jpeg"/>
-    <item href="Images/Contents.jpg" id="id20" media-type="image/jpeg"/>
-    <item id="GT_vol_1.jpg" href="Images/Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
-    <item href="Images/Deputy_cover.jpg" id="id23" media-type="image/jpeg"/>
-    <item href="Images/Illustrations1.jpg" id="id18" media-type="image/jpeg"/>
-    <item href="Images/Illustrations2.jpg" id="id19" media-type="image/jpeg"/>
-    <item href="Images/NATURAL_SELECTOR.jpg" id="id26" media-type="image/jpeg"/>
-    <item href="Images/p1.jpg" id="id21" media-type="image/jpeg"/>
-    <item href="Images/p2.jpg" id="id27" media-type="image/jpeg"/>
-    <item href="Images/p3.jpg" id="id22" media-type="image/jpeg"/>
-    <item href="Images/p4.jpg" id="id28" media-type="image/jpeg"/>
-    <item href="Images/p5.jpg" id="id24" media-type="image/jpeg"/>
-    <item href="Images/p6.jpg" id="id25" media-type="image/jpeg"/>
-    <item href="Images/Phase1.jpg" id="id29" media-type="image/jpeg"/>
+    <item id="id9" href="Images/S2_04-Back_cover.jpg" media-type="image/jpeg"/>
+    <item href="Images/S2_04-Contents.jpg" id="id20" media-type="image/jpeg"/>
+    <item id="GT_vol_1.jpg" href="Images/S2_04-Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
+    <item href="Images/S2_04-Deputy_cover.jpg" id="id23" media-type="image/jpeg"/>
+    <item href="Images/S2_04-Illustrations1.jpg" id="id18" media-type="image/jpeg"/>
+    <item href="Images/S2_04-Illustrations2.jpg" id="id19" media-type="image/jpeg"/>
+    <item href="Images/S2_04-NATURAL_SELECTOR.jpg" id="id26" media-type="image/jpeg"/>
+    <item href="Images/S2_04-p1.jpg" id="id21" media-type="image/jpeg"/>
+    <item href="Images/S2_04-p2.jpg" id="id27" media-type="image/jpeg"/>
+    <item href="Images/S2_04-p3.jpg" id="id22" media-type="image/jpeg"/>
+    <item href="Images/S2_04-p4.jpg" id="id28" media-type="image/jpeg"/>
+    <item href="Images/S2_04-p5.jpg" id="id24" media-type="image/jpeg"/>
+    <item href="Images/S2_04-p6.jpg" id="id25" media-type="image/jpeg"/>
+    <item href="Images/S2_04-Phase1.jpg" id="id29" media-type="image/jpeg"/>
     <item href="Images/S2_04-Phase10.jpg" id="id38" media-type="image/jpeg"/>
     <item href="Images/S2_04-Phase11.jpg" id="id39" media-type="image/jpeg"/>
     <item href="Images/S2_04-Phase12.jpg" id="id40" media-type="image/jpeg"/>
     <item href="Images/S2_04-Phase13.jpg" id="id41" media-type="image/jpeg"/>
     <item href="Images/S2_04-Phase14.jpg" id="id42" media-type="image/jpeg"/>
     <item href="Images/S2_04-Phase15.jpg" id="id43" media-type="image/jpeg"/>
-    <item href="Images/Phase2.jpg" id="id30" media-type="image/jpeg"/>
-    <item href="Images/Phase3.jpg" id="id31" media-type="image/jpeg"/>
-    <item href="Images/Phase4.jpg" id="id32" media-type="image/jpeg"/>
+    <item href="Images/S2_04-Phase2.jpg" id="id30" media-type="image/jpeg"/>
+    <item href="Images/S2_04-Phase3.jpg" id="id31" media-type="image/jpeg"/>
+    <item href="Images/S2_04-Phase4.jpg" id="id32" media-type="image/jpeg"/>
     <item href="Images/S2_04-Phase5.jpg" id="id33" media-type="image/jpeg"/>
     <item href="Images/S2_04-Phase6.jpg" id="id34" media-type="image/jpeg"/>
     <item href="Images/S2_04-Phase7.jpg" id="id35" media-type="image/jpeg"/>

@@ -140,10 +140,10 @@
     <item id="nav" href="../nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
     <item href="../toc.ncx" id="ncx" media-type="application/x-dtbncx+xml"/>
     <item id="id" href="Styles/style.css" media-type="text/css"/>
-    <item href="Images/cover.jpg" id="cover" media-type="image/jpeg" properties="cover-image"/>
-    <item id="id-3" href="Images/p1.jpg" media-type="image/jpeg"/>
-    <item id="id-4" href="Images/p2.jpg" media-type="image/jpeg"/>
-    <item id="id-5" href="Images/p3.jpg" media-type="image/jpeg"/>
+    <item href="Images/S6_24.01.10-cover.jpg" id="cover" media-type="image/jpeg" properties="cover-image"/>
+    <item id="id-3" href="Images/S6_24.01.10-p1.jpg" media-type="image/jpeg"/>
+    <item id="id-4" href="Images/S6_24.01.10-p2.jpg" media-type="image/jpeg"/>
+    <item id="id-5" href="Images/S6_24.01.10-p3.jpg" media-type="image/jpeg"/>
   </manifest>
   <spine toc="ncx">
     <itemref idref="id5"/>

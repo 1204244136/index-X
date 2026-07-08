@@ -1,3 +1,4 @@
+<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
     <dc:title id="id-1">[S6_14.09.10]新约 某魔法的禁书目录SSX</dc:title>
@@ -8,11 +9,11 @@
     <dc:language>zh-CN</dc:language>
     <dc:contributor id="id-4">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
     <dc:subject>重小说</dc:subject>
-    <opf:meta refines="#id-1" property="title-type">main</opf:meta>
-    <opf:meta refines="#id-1" property="file-as">[S6_14.09.10]新约 某魔法的禁书目录SSX</opf:meta>
+    <meta refines="#id-1" property="title-type">main</meta>
+    <meta refines="#id-1" property="file-as">[S6_14.09.10]新约 某魔法的禁书目录SSX</meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
-    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-02-09T08:17:49Z</meta>
+    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2026-07-08T06:26:16Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
@@ -128,10 +129,10 @@
     "table": "custom_column_4"
   }
 }</meta>
-    <opf:meta refines="#id-4" property="role" scheme="marc:relators">bkp</opf:meta>
-    <opf:meta refines="#id-2" property="role" scheme="marc:relators">aut</opf:meta>
-    <opf:meta refines="#id-2" property="file-as">镰池和马</opf:meta>
-    <opf:meta property="calibre:rating">10</opf:meta>
+    <meta refines="#id-4" property="role" scheme="marc:relators">bkp</meta>
+    <meta refines="#id-2" property="role" scheme="marc:relators">aut</meta>
+    <meta refines="#id-2" property="file-as">镰池和马</meta>
+    <meta property="calibre:rating">10</meta>
   </metadata>
   <manifest>
     <item id="S6_14.09.10-Cover.xhtml" href="Text/S6_14.09.10-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
@@ -140,8 +141,8 @@
     <item id="nav" href="../nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
     <item id="toc" href="../toc.ncx" media-type="application/x-dtbncx+xml"/>
     <item href="Styles/style.css" id="id5" media-type="text/css"/>
-    <item id="GT_vol_1.jpg" href="Images/Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
-    <item id="id" href="Images/p1.jpg" media-type="image/jpeg"/>
+    <item id="GT_vol_1.jpg" href="Images/S6_14.09.10-Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
+    <item id="id" href="Images/S6_14.09.10-p1.jpg" media-type="image/jpeg"/>
   </manifest>
   <spine toc="toc">
     <itemref idref="S6_14.09.10-Cover.xhtml"/>
