@@ -1,3 +1,4 @@
+<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" unique-identifier="BookId" version="3.0" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
     <dc:title id="id-1">[S4_02]某暗部的少女共栖 2X</dc:title>
@@ -14,10 +15,10 @@
 &lt;p&gt;就在她们接受委托时，ITEM的据点突然遭到了敌袭！尽管成功抵挡了首波攻击，但敌方的进攻并未停止。有种像是被敌人诱导的违和感侵袭着麦野她们。&lt;/p&gt;
 &lt;p&gt;接下来，出现在被逼入绝境的ITEM面前的是，因在「暗部」中过于异端，而被研究机构驱逐的前「原子崩坏」主任研究员——&lt;/p&gt;&lt;/div&gt;</dc:description>
     <dc:subject>重小说</dc:subject>
-    <opf:meta refines="#id-1" property="title-type">main</opf:meta>
-    <opf:meta refines="#id-1" property="file-as">[S4_02]某暗部的少女共栖 2X</opf:meta>
+    <meta refines="#id-1" property="title-type">main</meta>
+    <meta refines="#id-1" property="file-as">[S4_02]某暗部的少女共栖 2X</meta>
     <meta property="calibre:timestamp" scheme="dcterms:W3CDTF">2022-09-09T06:17:52Z</meta>
-    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2026-01-04T03:45:01Z</meta>
+    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2026-07-21T08:47:28Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
@@ -133,10 +134,10 @@
     "table": "custom_column_4"
   }
 }</meta>
-    <opf:meta refines="#id-27" property="role" scheme="marc:relators">bkp</opf:meta>
-    <opf:meta refines="#id-2" property="role" scheme="marc:relators">aut</opf:meta>
-    <opf:meta refines="#id-2" property="file-as">镰池和马</opf:meta>
-    <opf:meta property="calibre:rating">10</opf:meta>
+    <meta refines="#id-27" property="role" scheme="marc:relators">bkp</meta>
+    <meta refines="#id-2" property="role" scheme="marc:relators">aut</meta>
+    <meta refines="#id-2" property="file-as">镰池和马</meta>
+    <meta property="calibre:rating">10</meta>
   </metadata>
   <manifest>
     <item id="id5" href="Text/S4_02-Cover.xhtml" media-type="application/xhtml+xml"/>
