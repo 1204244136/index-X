@@ -23,6 +23,14 @@ python tools/package_cache_epubs.py
 
 默认读取 `.cache/epub-audit/japanese-text/` 和 `chinese-text/`，输出到 `.cache/epub-audit/packed-epubs/` 下对应的语言目录。生成的 EPUB 会将根目录 `mimetype` 作为第一个未压缩条目，并压缩其余内容。可使用 `--side japanese` 或 `--side chinese` 只打包一侧，使用 `--pattern "*S3_11*"` 筛选书名，使用 `--dry-run` 仅预览输出。
 
+GitHub Release 从版本化的 `EPUB/` 目录直接打包时，使用显式源目录和输出目录：
+
+```powershell
+python tools/package_cache_epubs.py --source EPUB --output output/epubs
+```
+
+直接源目录模式会把每个书籍目录打包到同一个输出目录，并沿用相同的 EPUB 结构校验与 `mimetype` 首项规则。`--source` 必须与 `--output` 一起使用，且不能与 `--side` 组合。
+
 缓存规范化：
 
 ```powershell

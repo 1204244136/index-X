@@ -70,9 +70,14 @@ def package_book(book: Path, destination: Path) -> int:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Package extracted EPUB directories from .cache/epub-audit.",
+        description="Package extracted EPUB book directories.",
     )
     parser.add_argument("--cache", type=Path, default=DEFAULT_CACHE, help="audit cache root")
+    parser.add_argument(
+        "--source",
+        type=Path,
+        help="direct root containing extracted EPUB book directories",
+    )
     parser.add_argument(
         "--output",
         type=Path,
@@ -90,17 +95,30 @@ def parse_args() -> argparse.Namespace:
         help="case-insensitive glob matched against each book directory name",
     )
     parser.add_argument("--dry-run", action="store_true", help="list outputs without writing files")
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.source is not None and args.output is None:
+        parser.error("--output is required when --source is used")
+    if args.source is not None and args.side != "all":
+        parser.error("--side cannot be combined with --source")
+    return args
 
 
 def main() -> int:
     args = parse_args()
     cache = args.cache.resolve()
-    output = (args.output or cache / "packed-epubs").resolve()
-    selected = SOURCE_DIRECTORIES if args.side == "all" else {args.side: SOURCE_DIRECTORIES[args.side]}
+    if args.source is not None:
+        output = args.output.resolve()
+        selected: list[tuple[str | None, Path]] = [(None, args.source.resolve())]
+    else:
+        output = (args.output or cache / "packed-epubs").resolve()
+        directories = (
+            SOURCE_DIRECTORIES
+            if args.side == "all"
+            else {args.side: SOURCE_DIRECTORIES[args.side]}
+        )
+        selected = [(directory, cache / directory) for directory in directories.values()]
 
-    for directory in selected.values():
-        source = cache / directory
+    for _, source in selected:
         if is_within(output, source):
             print(f"error: output directory cannot be inside {source}", file=sys.stderr)
             return 2
@@ -110,14 +128,13 @@ def main() -> int:
     total_bytes = 0
     pattern = args.pattern.casefold()
 
-    for _, directory in selected.items():
-        source = cache / directory
+    for output_directory, source in selected:
         if not source.is_dir():
-            print(f"error: cache source not found: {source}", file=sys.stderr)
+            print(f"error: source not found: {source}", file=sys.stderr)
             failed += 1
             continue
 
-        destination_root = output / directory
+        destination_root = output if output_directory is None else output / output_directory
         books = sorted(
             (
                 path

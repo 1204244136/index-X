@@ -8,6 +8,13 @@ on:
       - 'EPUB/**'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
+concurrency:
+  group: epub-release-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   release-epubs:
     runs-on: ubuntu-latest
@@ -16,25 +23,24 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Clean old output
-        run: rm -rf output/
+      - name: Prepare release metadata
+        run: |
+          set -euo pipefail
+          RELEASE_DATE=$(TZ=Asia/Shanghai date +'%Y.%m.%d')
+          echo "RELEASE_DATE=${RELEASE_DATE}" >> "$GITHUB_ENV"
+          echo "RELEASE_TAG=${RELEASE_DATE}" >> "$GITHUB_ENV"
 
       - name: Create EPUB files
         run: |
-          mkdir -p output/epubs
-
-          shopt -s nullglob
-          for dir in EPUB/*/ ; do
-            name=$(basename "$dir")
-            (
-              cd "$dir" && zip -r "../../output/epubs/${name}.epub" ./*
-            )
-          done
+          set -euo pipefail
+          rm -rf output/
+          python tools/package_cache_epubs.py --source EPUB --output output/epubs
 
       - name: Create merged ZIPs
         run: |
-          DATE=$(date +'%Y.%m.%d')
+          set -euo pipefail
           cd output/epubs
+          shopt -s nullglob
 
           Collections=(
             "All:["
@@ -48,41 +54,45 @@ jobs:
             ARCHIVE_NAME="${entry%%:*}"
             PREFIXES="${entry#*:}"
 
-            FILES=""
+            FILES=()
             for PREFIX in ${PREFIXES}; do
-              FILES+=" ${PREFIX}*.epub"
+              for FILE in "${PREFIX}"*.epub; do
+                FILES+=("${FILE}")
+              done
             done
 
-            zip -r ../${ARCHIVE_NAME}.${DATE}.zip ${FILES}
+            if (( ${#FILES[@]} == 0 )); then
+              echo "No EPUB files found for collection: ${ARCHIVE_NAME}" >&2
+              exit 1
+            fi
+
+            zip -r "../${ARCHIVE_NAME}.${RELEASE_DATE}.zip" "${FILES[@]}"
           done
 
-          cd -
-
       - name: Generate Release Notes and Rename EPUB files
-        id: release_notes
         run: |
-          DATE=$(date +'%Y.%m.%d')
-          BASE_URL="https://github.com/${{ github.repository }}/releases/download/auto/"
+          set -euo pipefail
+          BASE_URL="https://github.com/${{ github.repository }}/releases/download/${RELEASE_TAG}/"
           shopt -s nullglob
 
           NOTE="## 合集\n\n"
           Collections=(
-            "All:合集(${DATE})"
-            "A_Certain_Magical_Index:某魔法的禁书目录 旧约(${DATE})"
-            "A_Certain_Magical_Index_New_Testament:某魔法的禁书目录 新约(${DATE})"
-            "A_Certain_Magical_Index_Genesis_Testament:某魔法的禁书目录 创约(${DATE})"
-            "A_Certain_Dark_Side_Item:某暗部的少女共栖(${DATE})"
-            "A_Certain_Magical_Index_SP:某魔法的禁书目录 番外(${DATE})"
+            "All:合集(${RELEASE_DATE})"
+            "A_Certain_Magical_Index:某魔法的禁书目录 旧约(${RELEASE_DATE})"
+            "A_Certain_Magical_Index_New_Testament:某魔法的禁书目录 新约(${RELEASE_DATE})"
+            "A_Certain_Magical_Index_Genesis_Testament:某魔法的禁书目录 创约(${RELEASE_DATE})"
+            "A_Certain_Dark_Side_Item:某暗部的少女共栖(${RELEASE_DATE})"
+            "A_Certain_Magical_Index_SP:某魔法的禁书目录 番外(${RELEASE_DATE})"
           )
           for entry in "${Collections[@]}"; do
             ARCHIVE_NAME="${entry%%:*}"
             NAME="${entry#*:}"
-            NOTE="${NOTE}- [${NAME}](${BASE_URL}${ARCHIVE_NAME}.${DATE}.zip)\n"
+            NOTE="${NOTE}- [${NAME}](${BASE_URL}${ARCHIVE_NAME}.${RELEASE_DATE}.zip)\n"
           done
-          
 
           NOTE="${NOTE}\n## 单行本\n"
           SERIES_GROUPS=(
+            "说明:[S0_"
             "某魔法的禁书目录 旧约:[S1_"
             "某魔法的禁书目录 新约:[S2_"
             "某魔法的禁书目录 创约:[S3_"
@@ -96,8 +106,13 @@ jobs:
             for PREFIX in ${PREFIXES}; do
               for file in output/epubs/${PREFIX}*.epub; do
                 filename=$(basename "$file")
-                short_name=$(echo "$filename" | grep -oP '\[.*?\]' | tr -d '[]').epub
-                mv "output/epubs/${filename}" "output/epubs/${short_name}"
+                if [[ "${filename}" != \[*\]* ]]; then
+                  echo "Unexpected EPUB directory name: ${filename}" >&2
+                  exit 1
+                fi
+                short_name="${filename%%]*}"
+                short_name="${short_name:1}.epub"
+                mv "${file}" "output/epubs/${short_name}"
                 name=$(basename "$filename" .epub)
                 NOTE="${NOTE}- [${name}](${BASE_URL}${short_name})\n"
               done
@@ -106,12 +121,20 @@ jobs:
 
           echo -e "${NOTE}" > output/release_notes.md
 
+      - name: Update daily release tag
+        run: |
+          set -euo pipefail
+          git tag --force "${RELEASE_TAG}" "${GITHUB_SHA}"
+          git push origin "refs/tags/${RELEASE_TAG}" --force
+
       - name: Upload to Release
         uses: ncipollo/release-action@v1
         with:
-          tag: auto
+          tag: ${{ env.RELEASE_TAG }}
+          name: ${{ env.RELEASE_DATE }}
           allowUpdates: true
           removeArtifacts: true
+          artifactErrorsFailBuild: true
           makeLatest: true
           bodyFile: output/release_notes.md
           artifacts: |
