@@ -1,12 +1,13 @@
 [CmdletBinding()]
 param(
-    [string]$SourceDirectory = 'C:\Users\12042\OneDrive\某系列\X系列\EPUB',
+    [Parameter(Mandatory)]
+    [string]$SourceDirectory,
     [switch]$WhatIf
 )
 
 $ErrorActionPreference = 'Stop'
 
-$destinationRoot = Join-Path $PSScriptRoot 'EPUB'
+$destinationRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\EPUB'))
 
 if (-not (Test-Path -LiteralPath $SourceDirectory -PathType Container)) {
     throw "未找到线上 EPUB 目录: $SourceDirectory"
