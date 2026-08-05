@@ -157,7 +157,7 @@
     <item href="Text/S2_08-08_Chapter4.xhtml" id="id12" media-type="application/xhtml+xml"/>
     <item href="Text/S2_08-09_Epilogue.xhtml" id="id13" media-type="application/xhtml+xml"/>
     <item href="Text/S2_08-10_Afterwords.xhtml" id="id17" media-type="application/xhtml+xml"/>
-    <item id="id30" href="Text/S2_08-Back_cover.xhtml" media-type="application/xhtml+xml"/>
+    <item id="back-cover" href="Text/S2_08-Back_cover.xhtml" media-type="application/xhtml+xml"/>
     <item id="id14" href="Text/S2_08-Note.xhtml" media-type="application/xhtml+xml"/>
     <item id="nav" href="../nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
     <item id="toc" href="../toc.ncx" media-type="application/x-dtbncx+xml"/>
@@ -176,6 +176,7 @@
     <item href="Images/S2_08-p6.jpg" id="id29" media-type="image/jpeg"/>
     <item href="Images/S2_08-p7.jpg" id="id24" media-type="image/jpeg"/>
     <item href="Images/S2_08-p8.jpg" id="id26" media-type="image/jpeg"/>
+    <item href="Images/S2_08-p9.jpg" id="id30" media-type="image/jpeg"/>
   </manifest>
   <spine toc="toc">
     <itemref idref="S2_08-Cover.xhtml"/>
@@ -192,7 +193,7 @@
     <itemref idref="id12"/>
     <itemref idref="id13"/>
     <itemref idref="id17"/>
-    <itemref idref="id30"/>
+    <itemref idref="back-cover"/>
     <itemref idref="id14"/>
   </spine>
 </package>
