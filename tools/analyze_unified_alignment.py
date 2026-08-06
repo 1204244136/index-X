@@ -8,7 +8,7 @@ import re
 from collections import Counter
 from pathlib import Path
 
-ID_RE = re.compile(r"(S\d+_\d+-\d+)", re.I)
+ID_RE = re.compile(r"(S\d+_\d+(?:_\d+)?-\d+)", re.I)
 IMAGE_RE = re.compile(r"<(?:img|svg)\b|data-image-continuation=", re.I)
 SRC_RE = re.compile(r"(?:src|href|data-image-continuation)=['\"]([^'\"]+)['\"]", re.I)
 TEXTUAL_IMAGE_EXCLUSIONS = {"S2_14-04", "S2_14-07", "S2_14-10", "S2_14-13"}
@@ -89,7 +89,7 @@ def classify(line_delta: int, header: str, jr: list[tuple[int, str]], cr: list[t
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--cache", type=Path, default=Path(".cache/epub-audit"))
+    parser.add_argument("--cache", type=Path, default=Path(".cache/epub-work"))
     args = parser.parse_args()
     jp, cn = index(args.cache / "japanese-text"), index(args.cache / "chinese-text")
     rows = []

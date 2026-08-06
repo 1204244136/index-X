@@ -8,7 +8,7 @@ import re
 from collections import Counter
 from pathlib import Path
 
-ID_RE = re.compile(r"(S\d+_\d+-\d+)", re.I)
+ID_RE = re.compile(r"(S\d+_\d+(?:_\d+)?-\d+)", re.I)
 SECTION_NUMBER_RE = re.compile(r"^<p>\s*[０-９0-9]+\s*</p>$")
 
 
@@ -36,7 +36,7 @@ def kind(line: str) -> str:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--cache", type=Path, default=Path(".cache/epub-audit"))
+    parser.add_argument("--cache", type=Path, default=Path(".cache/epub-work"))
     args = parser.parse_args()
     jp, cn = index(args.cache / "japanese-text"), index(args.cache / "chinese-text")
     rows, totals = [], Counter()

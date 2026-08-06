@@ -12,7 +12,7 @@ from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_CACHE = REPO_ROOT / ".cache" / "epub-audit"
+DEFAULT_CACHE = REPO_ROOT / ".cache" / "epub-work"
 SOURCE_DIRECTORIES = {
     "japanese": "japanese-text",
     "chinese": "chinese-text",
@@ -139,7 +139,7 @@ def main() -> int:
             (
                 path
                 for path in source.iterdir()
-                if path.is_dir() and fnmatch.fnmatch(path.name.casefold(), pattern)
+                if path.is_dir() and not path.name.startswith(".extract-") and fnmatch.fnmatch(path.name.casefold(), pattern)
             ),
             key=lambda path: path.name.casefold(),
         )

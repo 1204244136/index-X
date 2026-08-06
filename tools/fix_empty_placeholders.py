@@ -64,7 +64,7 @@ def apply_candidate(path: Path) -> list[tuple[Path, Path]]:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--cache", type=Path, default=Path(".cache/epub-audit/japanese-text"))
+    parser.add_argument("--cache", type=Path, default=Path(".cache/epub-work/japanese-text"))
     parser.add_argument("--apply", action="store_true")
     args = parser.parse_args()
     found = candidates(args.cache)

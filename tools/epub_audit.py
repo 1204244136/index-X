@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Extract and compare Japanese/Chinese EPUB terminology locally.
 
-All generated files live below .cache/epub-audit and are intentionally ignored.
+All generated files live below .cache/epub-work and are intentionally ignored.
 """
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from collections import defaultdict
 from pathlib import Path
 
 CN_LOCAL = Path(__file__).resolve().parents[1] / "EPUB"
-CACHE = Path(__file__).resolve().parents[1] / ".cache" / "epub-audit"
+CACHE = Path(__file__).resolve().parents[1] / ".cache" / "epub-work"
 
 JP_TERM = "風力発電"
 CN_TERM = "风力发电"
@@ -110,7 +110,7 @@ def main() -> int:
     args = p.parse_args()
     extracted = CACHE / "japanese-text"
     if not extracted.exists():
-        raise SystemExit("日文缓存不存在；请先手动准备 .cache/epub-audit/japanese-text")
+        raise SystemExit("日文缓存不存在；请先手动准备 .cache/epub-work/japanese-text")
     jp, jp_fail = read_cached_japanese(extracted)
     cn, cn_fail = read_chinese(args.cn)
     report = build_report(jp, cn, jp_fail + cn_fail)

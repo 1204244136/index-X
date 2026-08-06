@@ -8,7 +8,7 @@ import os
 import re
 from pathlib import Path
 
-ID_RE = re.compile(r"(S\d+_\d+-\d+)", re.I)
+ID_RE = re.compile(r"(S\d+_\d+(?:_\d+)?-\d+)", re.I)
 
 
 def markdown_link(path: Path, label: str, report_dir: Path) -> str:
@@ -27,7 +27,7 @@ def index(root: Path) -> dict[str, Path]:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--cache", type=Path, default=Path(".cache/epub-audit"))
+    parser.add_argument("--cache", type=Path, default=Path(".cache/epub-work"))
     args = parser.parse_args()
     args.cache.mkdir(parents=True, exist_ok=True)
     japanese = index(args.cache / "japanese-text")

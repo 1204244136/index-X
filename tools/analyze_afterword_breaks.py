@@ -6,7 +6,7 @@ import argparse
 import re
 from pathlib import Path
 
-ID_RE = re.compile(r"(S\d+_\d+-\d+)", re.I)
+ID_RE = re.compile(r"(S\d+_\d+(?:_\d+)?-\d+)", re.I)
 
 
 def index(root: Path) -> dict[str, Path]:
@@ -27,7 +27,7 @@ def signature_index(lines: list[str]) -> int | None:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--cache", type=Path, default=Path(".cache/epub-audit"))
+    parser.add_argument("--cache", type=Path, default=Path(".cache/epub-work"))
     args = parser.parse_args()
     jp, cn = index(args.cache / "japanese-text"), index(args.cache / "chinese-text")
     candidates = []

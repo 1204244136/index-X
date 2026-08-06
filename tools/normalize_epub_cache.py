@@ -6,7 +6,7 @@ import argparse
 import re
 from pathlib import Path
 
-ID_RE = re.compile(r"(S\d+_\d+-\d+)", re.I)
+ID_RE = re.compile(r"(S\d+_\d+(?:_\d+)?-\d+)", re.I)
 SECTION_NUMBER_RE = re.compile(r"^<p>\s*[０-９0-9]+\s*</p>$")
 
 
@@ -52,7 +52,7 @@ def merge_split_div_paragraphs(lines: list[str]) -> list[str]:
 
 
 def collapse_wrapped_h2(lines: list[str]) -> list[str]:
-    """Remove redundant start-5em wrappers around standalone section headings."""
+    """Remove redundant start-3em/start-5em wrappers around standalone section headings."""
     out: list[str] = []
     i = 0
     while i < len(lines):
@@ -65,7 +65,7 @@ def collapse_wrapped_h2(lines: list[str]) -> list[str]:
             i += 3
             continue
         numeric = re.fullmatch(
-            r'<div class="start-5em"><p>\s*([0-9０-９]+)\s*</p></div>',
+            r'(?:<br/>)*<div class="start-[35]em"><p>(?:<h1>)?\s*([0-9０-９]+)\s*(?:</h1>)?(?:<h1>\s*</h1>)?</p></div>',
             current,
             re.I,
         )
@@ -138,6 +138,82 @@ def join_body_main(lines: list[str]) -> list[str]:
         i += 1
     return out
 
+
+
+
+def fold_standalone_divs(lines: list[str]) -> list[str]:
+    """Fold standalone opening <div> tags into the next line and standalone
+    </div> close tags into the previous line (or next if next is </body>).
+
+    Reduces unnecessary line breaks from structural div tags while preserving
+    the DOM structure.  Divs already handled by other functions (main,
+    h-indent-1em) are skipped.
+    """
+    SKIP_OPEN = {'<div class="main">', '<div class="h-indent-1em">'}
+
+    # First pass: merge standalone opening <div...> with next line
+    merged: list[str] = []
+    i = 0
+    while i < len(lines):
+        stripped = lines[i].strip()
+        if (re.fullmatch(r'<div\b[^>]*>', stripped, re.I)
+                and stripped not in SKIP_OPEN
+                and i + 1 < len(lines)):
+            merged.append(lines[i].rstrip() + lines[i + 1].lstrip())
+            i += 2
+        else:
+            merged.append(lines[i])
+            i += 1
+
+    # Second pass: merge standalone </div>
+    result: list[str] = []
+    i = 0
+    while i < len(merged):
+        stripped = merged[i].strip()
+        if stripped == '</div>' and result:
+            nxt = merged[i + 1].strip() if i + 1 < len(merged) else ''
+            if nxt.startswith('</body>'):
+                result.append(merged[i].rstrip() + merged[i + 1].lstrip())
+                i += 2
+            else:
+                result[-1] = result[-1].rstrip() + '</div>'
+                i += 1
+        else:
+            result.append(merged[i])
+            i += 1
+
+    return result
+
+
+def remove_redundant_bare_div_wrappers(lines: list[str]) -> list[str]:
+    """Remove empty or single-block bare div wrappers after line folding.
+
+    Classed containers such as ``main`` and ``start-3em`` are handled by
+    dedicated rules and remain untouched.  Bare wrappers around headings,
+    breaks, or one paragraph are layout-only and should not survive as
+    inline/standalone structural noise.
+    """
+    out: list[str] = []
+    for line in lines:
+        stripped = line.strip()
+        if stripped == "<div></div>":
+            continue
+        if stripped == "<div>":
+            continue
+        if stripped == "</div>":
+            continue
+
+        if stripped.startswith("<html"):
+            line = re.sub(r"<div>(?=\s*$)", "", line)
+        elif stripped.startswith("<h1") or stripped.startswith("<h2"):
+            line = re.sub(r"</div>(?=\s*$)", "", line)
+        elif stripped.startswith("<p"):
+            line = re.sub(r"</div>(?=\s*$)", "", line)
+            line = re.sub(r"^\s*<div>(?=<br/>)", "", line)
+
+        if line.strip():
+            out.append(line)
+    return out
 
 def normalize_file(path: Path) -> bool:
     raw = path.read_text(encoding="utf-8", errors="ignore").replace("\r\n", "\n")
@@ -316,6 +392,8 @@ def normalize_file(path: Path) -> bool:
             if "</p>" in tail:
                 author, endings = tail.split("</p>", 1)
                 lines = lines[:signature] + [author + "</p>", endings]
+    lines = fold_standalone_divs(lines)
+    lines = remove_redundant_bare_div_wrappers(lines)
     new = "\n".join(lines) + "\n"
     if new != raw:
         path.write_text(new, encoding="utf-8", newline="")
@@ -615,14 +693,66 @@ def balance_heading_adjacent_breaks(cache: Path) -> int:
             ]
 
         jc, cc = candidates(jl), candidates(cl)
-        if delta > 0 and len(jc) - len(cc) == delta:
+        if delta > 0 and len(jc) - len(cc) >= delta:
             target, path = jl, jp[header]
-        elif delta < 0 and len(cc) - len(jc) == -delta:
+        elif delta < 0 and len(cc) - len(jc) >= -delta:
             target, path = cl, cn[header]
         else:
             continue
         remove = abs(delta)
         for i in reversed(candidates(target)):
+            del target[i]
+            remove -= 1
+            if remove == 0:
+                path.write_text("\n".join(target) + "\n", encoding="utf-8", newline="")
+                changed += 1
+                break
+    return changed
+
+
+
+def align_h2_heading_breaks(cache: Path) -> int:
+    """Remove h2-adjacent breaks from the side with more when they explain the delta.
+
+    Unlike balance_heading_adjacent_breaks, this only considers breaks
+    adjacent to <h2> headings.  This avoids false negatives when
+    h1-adjacent breaks exist but are compensated by other differences.
+    """
+    def find(root: Path) -> dict[str, Path]:
+        result = {}
+        for path in root.rglob("*.xhtml"):
+            match = ID_RE.search(path.name)
+            if match:
+                result.setdefault(match.group(1).upper(), path)
+        return result
+
+    jp, cn = find(cache / "japanese-text"), find(cache / "chinese-text")
+    changed = 0
+    for header in set(jp) & set(cn):
+        jl = jp[header].read_text(encoding="utf-8", errors="ignore").splitlines()
+        cl = cn[header].read_text(encoding="utf-8", errors="ignore").splitlines()
+        delta = len(jl) - len(cl)
+
+        def is_h2(line: str) -> bool:
+            return bool(re.search(r"<h2\b", line.strip(), re.I))
+
+        def h2_br_candidates(lines: list[str]) -> list[int]:
+            return [
+                i for i, line in enumerate(lines)
+                if line.strip() == "<br/>"
+                and ((i > 0 and is_h2(lines[i - 1]))
+                     or (i + 1 < len(lines) and is_h2(lines[i + 1])))
+            ]
+
+        jc, cc = h2_br_candidates(jl), h2_br_candidates(cl)
+        if delta > 0 and len(jc) - len(cc) >= delta:
+            target, path = jl, jp[header]
+        elif delta < 0 and len(cc) - len(jc) >= -delta:
+            target, path = cl, cn[header]
+        else:
+            continue
+        remove = abs(delta)
+        for i in reversed(h2_br_candidates(target)):
             del target[i]
             remove -= 1
             if remove == 0:
@@ -677,12 +807,13 @@ def balance_body_break_runs(cache: Path) -> int:
 
 
 def align_main_footer_structure(cache: Path) -> int:
-    """Match deterministic main-container/footer structure from Japanese.
+    """Merge Japanese main-container wrapper into adjacent lines for alignment.
 
-    Some Chinese cache files omit the ``main`` wrapper and collapse
-    ``</body></html>`` onto one line.  When the Japanese counterpart clearly
-    uses the wrapper, add it without changing content ordering and split the
-    closing tags so the logical line count matches.
+    When the Japanese cache uses a ``<div class="main">`` wrapper on its own
+    line (or the closing ``</div>`` on its own line before ``</body>``),
+    merge those tags into the preceding or following line so the Japanese
+    line count drops to match the Chinese counterpart.  This avoids adding
+    structural divs to Chinese files that did not originally have them.
     """
     def find(root: Path) -> dict[str, Path]:
         result = {}
@@ -701,40 +832,41 @@ def align_main_footer_structure(cache: Path) -> int:
         cl = cn[header].read_text(encoding="utf-8", errors="ignore").splitlines()
         if not any('<div class="main">' in line for line in jl):
             continue
-        # Only apply to pairs where the remaining mismatch is attributable to
-        # the known footer/container shape.
         if len(jl) <= len(cl) or len(jl) - len(cl) > 4:
             continue
-        body_idx = next((i for i, line in enumerate(cl) if "<body" in line.lower()), None)
-        if body_idx is None:
-            continue
         local_changed = False
-        has_chinese_wrapper = any(
-            re.search(r"<body\b[^>]*>.*<div(?:\s[^>]*)?>", line, re.I)
-            for line in cl
-        )
-        if not has_chinese_wrapper:
-            # The Chinese stylesheets do not define the Japanese ``main``
-            # class. Keep only the structural wrapper needed for alignment.
-            cl[body_idx] = cl[body_idx].rstrip() + '<div>'
-            local_changed = True
-        close_idx = next((i for i, line in enumerate(cl) if line.strip() == "</body></html>"), None)
-        if close_idx is not None:
-            # Attach the missing wrapper close to the preceding logical line;
-            # this adds no extra content line, then split the body/html tags.
-            if close_idx > 0 and "</div>" not in cl[close_idx - 1]:
-                cl[close_idx - 1] = cl[close_idx - 1].rstrip() + "</div>"
+
+        jp_body_idx = next((i for i, line in enumerate(jl) if "<body" in line.lower()), None)
+        if jp_body_idx is not None:
+            next_line = jl[jp_body_idx + 1].strip() if jp_body_idx + 1 < len(jl) else ""
+            if next_line == '<div class="main">':
+                jl[jp_body_idx] = jl[jp_body_idx].rstrip() + '<div class="main">'
+                del jl[jp_body_idx + 1]
                 local_changed = True
-            cl[close_idx:close_idx + 1] = ["</body>", "</html>"]
-            local_changed = True
+
+        jp_body_close_idx = next((i for i, line in enumerate(jl) if line.strip() == "</body>"), None)
+        if jp_body_close_idx is not None and jp_body_close_idx > 0:
+            prev_line = jl[jp_body_close_idx - 1].strip()
+            if prev_line == "</div>":
+                jl[jp_body_close_idx - 1] = "</div></body>"
+                del jl[jp_body_close_idx]
+                local_changed = True
+
         if local_changed:
-            cn[header].write_text("\n".join(cl) + "\n", encoding="utf-8", newline="")
+            jp[header].write_text("\n".join(jl) + "\n", encoding="utf-8", newline="")
             changed += 1
     return changed
 
 
+
 def align_footer_close_line(cache: Path) -> int:
-    """Match whether the main-container close occupies its own line."""
+    """Merge Japanese close-div into the preceding line for alignment.
+
+    When the Japanese cache has ``</div>`` on its own line before ``</body>``
+    but the Chinese counterpart has it inline with the preceding line, merge
+    the Japanese ``</div>`` with its preceding line instead of splitting the
+    Chinese ``</div>`` onto its own line.
+    """
     def find(root: Path) -> dict[str, Path]:
         result = {}
         for path in root.rglob("*.xhtml"):
@@ -752,16 +884,18 @@ def align_footer_close_line(cache: Path) -> int:
         cl = cn[header].read_text(encoding="utf-8", errors="ignore").splitlines()
         ji = next((i for i, x in enumerate(jl) if x.strip() == "</body>"), None)
         ci = next((i for i, x in enumerate(cl) if x.strip() == "</body>"), None)
-        if ji is None or ci is None or ji >= 2 and cl == jl:
+        if ji is None or ci is None:
             continue
-        jp_own = ji > 0 and jl[ji - 1].strip() == "</div>"
-        cn_prev = cl[ci - 1] if ci > 0 else ""
-        cn_inline = "</div>" in cn_prev and cn_prev.strip() != "</div>"
-        if jp_own and cn_inline:
-            left, right = cn_prev.rsplit("</div>", 1)
-            cl[ci - 1:ci] = [left, "</div>"]
-            cn[header].write_text("\n".join(cl) + "\n", encoding="utf-8", newline="")
-            changed += 1
+        if len(jl) <= len(cl):
+            continue
+        if (ji > 0 and jl[ji - 1].strip() == "</div>"):
+            cn_prev = cl[ci - 1] if ci > 0 else ""
+            cn_has_inline = "</div>" in cn_prev and cn_prev.strip() != "</div>"
+            if cn_has_inline:
+                jl[ji - 1] = jl[ji - 1].rstrip() + "</div>"
+                del jl[ji]
+                jp[header].write_text("\n".join(jl) + "\n", encoding="utf-8", newline="")
+                changed += 1
     return changed
 
 
@@ -832,9 +966,109 @@ def restore_after_the_afterword_break(cache: Path) -> int:
     return 1
 
 
+
+def align_section_close_breaks(cache: Path) -> int:
+    """Remove breaks following section-closing </p></div> tags when they explain the delta.
+
+    Some Japanese cache files wrap ``<h2>`` headings in ``<div><p>...</p></div>``
+    and place a standalone ``<br/>`` after the closing ``</p></div>``.  The Chinese
+    counterpart closes with just ``</div>`` and has no trailing break.  Removing
+    the excess Japanese breaks (rather than adding them to Chinese) keeps the
+    pair aligned without introducing structural elements.
+    """
+    def find(root: Path) -> dict[str, Path]:
+        result = {}
+        for path in root.rglob("*.xhtml"):
+            match = ID_RE.search(path.name)
+            if match:
+                result.setdefault(match.group(1).upper(), path)
+        return result
+
+    jp, cn = find(cache / "japanese-text"), find(cache / "chinese-text")
+    changed = 0
+    for header in set(jp) & set(cn):
+        jl = jp[header].read_text(encoding="utf-8", errors="ignore").splitlines()
+        cl = cn[header].read_text(encoding="utf-8", errors="ignore").splitlines()
+        delta = len(jl) - len(cl)
+        if delta <= 0:
+            continue
+
+        def close_br_indices(lines: list[str]) -> list[int]:
+            return [
+                i for i, line in enumerate(lines)
+                if line.strip() == "<br/>"
+                and i > 0
+                and lines[i - 1].strip() == "</p></div>"
+            ]
+
+        jc = close_br_indices(jl)
+        cc = close_br_indices(cl)
+        if len(jc) - len(cc) >= delta and len(jc) > 0:
+            for i in reversed(jc[:delta]):
+                del jl[i]
+            jp[header].write_text("\n".join(jl) + "\n", encoding="utf-8", newline="")
+            changed += 1
+    return changed
+
+
+def align_afterword_title(cache: Path) -> int:
+    """Merge a Japanese afterword title into the HTML line for alignment.
+
+    When the Japanese afterword has a short ``<p>title</p>`` (e.g.
+    ``<p>\u3042\u3068\u304c\u304d</p>``) that the Chinese counterpart lacks,
+    append the title to the preceding HTML/head/body line and remove the
+    title line (plus a trailing ``<br/>`` if present).  Merging into the
+    HTML line (rather than into a ``<br/>``) survives ``split_inline_breaks``
+    on subsequent normalise runs.
+    """
+    def find(root: Path) -> dict[str, Path]:
+        result = {}
+        for path in root.rglob("*.xhtml"):
+            match = ID_RE.search(path.name)
+            if match:
+                result.setdefault(match.group(1).upper(), path)
+        return result
+
+    jp, cn = find(cache / "japanese-text"), find(cache / "chinese-text")
+    changed = 0
+    for header in set(jp) & set(cn):
+        if "after_the_afterword" in jp[header].name.lower():
+            continue
+        if "afterword" not in jp[header].name.lower() and "\u3042\u3068\u304c\u304d" not in jp[header].read_text(encoding="utf-8", errors="ignore")[:1200]:
+            continue
+        jl = jp[header].read_text(encoding="utf-8", errors="ignore").splitlines()
+        cl = cn[header].read_text(encoding="utf-8", errors="ignore").splitlines()
+        delta = len(jl) - len(cl)
+        if delta < 1:
+            continue
+        cn_lines_set = {line.strip() for line in cl}
+        for i, line in enumerate(jl):
+            s = line.strip()
+            m = re.fullmatch(r"<p>([^<]{1,20})</p>", s)
+            if not m or s in cn_lines_set:
+                continue
+            html_idx = None
+            for j in range(i - 1, -1, -1):
+                if jl[j].strip() == "<br/>":
+                    continue
+                if "<html" in jl[j].lower() or "<body" in jl[j].lower():
+                    html_idx = j
+                break
+            if html_idx is None:
+                continue
+            jl[html_idx] = jl[html_idx].rstrip() + s
+            del jl[i]
+            if i < len(jl) and jl[i].strip() == "<br/>":
+                del jl[i]
+            jp[header].write_text("\n".join(jl) + "\n", encoding="utf-8", newline="")
+            changed += 1
+            break
+    return changed
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--cache", type=Path, default=Path(".cache/epub-audit"))
+    parser.add_argument("--cache", type=Path, default=Path(".cache/epub-work"))
     args = parser.parse_args()
     inline_before: dict[str, dict[str, int]] = {}
     for lang in ("japanese-text", "chinese-text"):
@@ -855,7 +1089,10 @@ def main() -> int:
     print(f"gaiji 段落后换行补齐：{apply_gaiji_breaks(args.cache)} 个文件")
     print(f"图片位置直接重排修复：{apply_direct_image_reorders(args.cache)} 个文件")
     print(f"拆分换行造成的不平衡回补：{balance_split_breaks(args.cache, inline_before)} 个文件")
+    print(f"h2 标题前后换行对齐：{align_h2_heading_breaks(args.cache)} 个文件")
     print(f"h1/h2 前后换行不平衡回补：{balance_heading_adjacent_breaks(args.cache)} 个文件")
+    print(f"节末闭合标签后换行对齐：{align_section_close_breaks(args.cache)} 个文件")
+    print(f"后记标题行合并对齐：{align_afterword_title(args.cache)} 个文件")
     print(f"正文三连换行差异回补：{balance_body_break_runs(args.cache)} 个文件")
     print(f"main 容器与页尾结构对齐：{align_main_footer_structure(args.cache)} 个文件")
     print(f"页尾闭合标签行形态对齐：{align_footer_close_line(args.cache)} 个文件")
