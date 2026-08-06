@@ -12,6 +12,8 @@
 
 [⏬ 下载](#下载)——如何获取电子书
 
+[📦 EPUB 打包工具](#epub-打包工具)——从解压目录生成 EPUB 文件
+
 [👨‍👨‍👦 反馈](#反馈)——让 X 系列变得更好
 
 [❓ 各种问题及回复](#各种问题及回复)
@@ -61,6 +63,28 @@ X 系列以台版为本体，在其基础上与网译版进行校对，部分卷
 - 在[OneDrive](https://1drv.ms/f/s!AgBE0rnzCCTdlS_M00Fk6FJBQ3J1?e=fFfgPz)获取最新版
 - 在[X 系列专属反馈群](https://qm.qq.com/cgi-bin/qm/qr?k=TtTcct3Iz8Y7CewT5QA2RlLrR0p5-WN2&jump_from=webapi)（953679671）获取定时发布的整合版
 - 在 github 获取定时发布的整合版
+
+## EPUB 打包工具
+
+仓库提供 `tools/package_cache_epubs.py`，用于将 `EPUB/` 下的书籍目录重新打包为 `.epub` 文件。工具会检查根目录 `mimetype` 和 `META-INF/container.xml`，并确保 `mimetype` 是压缩包中的第一个未压缩条目。
+
+在仓库根目录运行：
+
+```powershell
+python tools/package_cache_epubs.py --source EPUB --output output/epubs
+```
+
+生成的文件位于 `output/epubs/`。可按书籍目录名筛选，或仅预览将要生成的文件：
+
+```powershell
+# 只打包目录名中包含 S3_11 的书籍
+python tools/package_cache_epubs.py --source EPUB --output output/epubs --pattern "*S3_11*"
+
+# 仅预览输入和输出，不生成文件
+python tools/package_cache_epubs.py --source EPUB --output output/epubs --dry-run
+```
+
+生成文件属于构建产物，不应复制回或提交到 `EPUB/`。
 
 ## 反馈
 
