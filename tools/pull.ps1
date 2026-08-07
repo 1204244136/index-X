@@ -81,8 +81,8 @@ Add-Type -AssemblyName System.IO.Compression.FileSystem
 $cacheRoot = Get-FullPath $CacheDirectory
 
 # Clean up orphaned .extract-* directories from previous interrupted runs
-foreach ($side in @('chinese-text', 'japanese-text')) {
-    $sideRoot = Join-Path $cacheRoot $side
+foreach ($sideFolder in @('chinese-text', 'japanese-text')) {
+    $sideRoot = Join-Path $cacheRoot $sideFolder
     if (Test-Path -LiteralPath $sideRoot) {
         Get-ChildItem -LiteralPath $sideRoot -Directory -Filter '.extract-*' -ErrorAction SilentlyContinue |
             ForEach-Object { Remove-Item -LiteralPath $_.FullName -Recurse -Force -ErrorAction SilentlyContinue }
