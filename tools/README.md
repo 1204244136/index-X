@@ -22,28 +22,54 @@ python tools/epub_audit.py
 - 缓存中的改动必须经 `publish.py` 才会同步到 `EPUB/` 和 OneDrive。发布后中文缓存与 `EPUB/` 逐字节一致属预期行为。
 - `.cache/` 可丢弃：删除后运行 `./tools/pull.ps1` 即可完整重建。
 
+### 两种常用工作流（均增量处理，不做全量写入）
+
+**流程 A：只改了 OneDrive 里的文件 → 拉回缓存并写进 `EPUB/`**
+
+```powershell
+./tools/pull.ps1 -SyncToEpub
+```
+
+只解压 OneDrive 中发生变化（修改时间/大小变化）的 `.epub`，与 `manifest.json` 对比后，仅把真正变化、新增或删除的文件写入 `EPUB/`，并更新这些书的清单基线。OneDrive 已是最终内容，本流程不会打包上传。可用 `-Side chinese` / `-Side japanese` / `-Pattern` 限定范围，`-WhatIf` 预览。
+
+**流程 B：只改了缓存里的文件 → 打包上传 OneDrive 并写进 `EPUB/`**
+
+```powershell
+python tools/publish.py --dry-run   # 预览
+python tools/publish.py             # 执行
+```
+
+对比 `manifest.json` 只处理发生变化的书：先打包，再只把变化文件写入 `EPUB/`（缓存中删除的文件也会从 `EPUB/` 删除），最后上传到 OneDrive（每本一个 `.epub`），上传后同步更新拉取状态避免下次重复解压。
+
 ### 1. 拉取（OneDrive -> 缓存）
 
 ```powershell
 ./tools/pull.ps1
 ```
 
-将 OneDrive 中的中文和日文 EPUB 解压到审计缓存，并生成哈希清单用于后续增量发布。
+将 OneDrive 中的中文和日文 EPUB 解压到审计缓存。脚本用 `.cache/epub-work/pull-state.tsv` 记录每个 EPUB 的修改时间与大小，只解压发生变化的书籍；首次运行会全部解压一次以建立状态，之后仅处理变化的书。解压后只为被解压的书籍增量更新 `manifest.json`，未变化的书籍保持原基线。
 
 默认读取：
 
 - `C:\Users\<用户名>\OneDrive\某系列\X系列\EPUB` -> `.cache/epub-work/chinese-text/`
 - `C:\Users\<用户名>\OneDrive\某系列\日文原文` -> `.cache/epub-work/japanese-text/`
 
-脚本会逐本先解压到缓存内临时目录（`.extract-` 前缀），校验 `mimetype` 和 `META-INF/container.xml` 后再替换对应书目录，因此重复运行不会保留旧文件。启动时会自动清理上次中断遗留的 `.extract-*` 临时目录。可用 `-ChineseSourceDirectory`、`-JapaneseSourceDirectory`、`-CacheDirectory` 覆盖路径，或用 `-Side chinese` / `-Side japanese` 只处理一侧；用 `-Pattern '*S2_14*'` 可筛选书名；`-WhatIf` 只预览，不写入缓存。
+脚本会逐本先解压到缓存内临时目录（`.extract-` 前缀），校验 `mimetype` 和 `META-INF/container.xml` 后再替换对应书目录。启动时会自动清理上次中断遗留的 `.extract-*` 临时目录。
 
-解压完成后自动调用 `python tools/manifest.py` 生成 `.cache/epub-work/manifest.json`，记录每个缓存文件的 SHA-256 哈希，作为增量发布的基线。
+参数：
+
+- `-Force`：忽略状态记录，全部重新解压
+- `-SyncToEpub`：解压后调用 `publish.py --sync-only`，把变化文件增量同步到 `EPUB/`（流程 A）
+- `-WhatIf`：只预览将解压/跳过的书，不写入
+- `-Side chinese` / `-Side japanese`：只处理一侧
+- `-Pattern '*S2_14*'`：按书名筛选
+- `-ChineseSourceDirectory` / `-JapaneseSourceDirectory` / `-CacheDirectory` / `-EpubDirectory`：覆盖路径
 
 ### 2. 修改缓存（Agent 或手动）
 
 使用 agent 或手动修改 `.cache/epub-work/` 中的文件。可先运行 `python tools/normalize_epub_cache.py` 规范化缓存，再进行内容校对。
 
-### 3. 发布（缓存 -> EPUB/ + 打包 + OneDrive）
+### 3. 发布（缓存 -> 打包 + OneDrive + EPUB/）
 
 ```powershell
 python tools/publish.py --dry-run    # 预览变更
@@ -52,16 +78,18 @@ python tools/publish.py              # 执行发布
 
 对比 `manifest.json` 检测自上次拉取以来哪些文件被修改、新增或删除，只处理受影响的书籍：
 
-1. **中文变更**镜像同步到 `EPUB/` 目录（包含缓存中已删除文件的删除，不影响未修改的书籍）
-2. **重新打包**受影响的书籍为 `.epub`（输出到 `.cache/epub-work/packed-epubs/`）
-3. **上传**到 OneDrive 对应目录（中文 -> `某系列\X系列\EPUB`，日文 -> `某系列\日文原文`）
+1. **重新打包**受影响的书籍为 `.epub`（输出到 `.cache/epub-work/packed-epubs/`）；打包失败不会改动 `EPUB/`
+2. **中文变更**只把发生变化的文件写入 `EPUB/`（包含缓存中已删除文件的删除；`--force` 时才整本全量重建）
+3. **上传**到 OneDrive 对应目录（中文 -> `某系列\X系列\EPUB`，日文 -> `某系列\日文原文`），并同步更新 `pull-state.tsv`
 4. **更新清单**，记录已成功发布的书籍状态
 
 可用参数：
 
 - `--side chinese` / `--side japanese`：只处理一侧
 - `--pattern "*S1_01*"`：按书名筛选
-- `--force`：忽略清单，处理所有文件（首次发布或全量重传）
+- `--sync-only`：只同步 `EPUB/` 并更新清单，不打包不上传（流程 A 内部使用）
+- `--only-books "chinese-text/[S1_01]...,japanese-text/..."`：只处理列出的书（逗号分隔）
+- `--force`：忽略清单，处理所有文件（首次发布或全量重建）
 - `--no-upload`：跳过 OneDrive 上传，仅同步 EPUB/ 并打包
 - `--dry-run`：仅预览，不执行任何操作
 
@@ -72,11 +100,12 @@ python tools/publish.py              # 执行发布
 ### 哈希清单工具
 
 ```powershell
-python tools/manifest.py              # 重新生成清单
-python tools/manifest.py --cache path # 指定缓存目录
+python tools/manifest.py                             # 重新生成清单（全量）
+python tools/manifest.py --update-books chinese-text/[S1_01]...   # 只刷新指定书籍
+python tools/manifest.py --cache path                # 指定缓存目录
 ```
 
-`manifest.py` 扫描 `chinese-text/` 和 `japanese-text/` 下所有文件，计算 SHA-256 哈希并写入 `manifest.json`。`pull.ps1` 在解压后自动调用此工具；也可手动运行以重置基线。
+`manifest.py` 扫描 `chinese-text/` 和 `japanese-text/` 下所有文件，计算 SHA-256 哈希并写入 `manifest.json`。`pull.ps1` 在解压后只对解压的书籍增量刷新清单；`--update-books` 保留其余书籍的基线不变，避免吞掉缓存中尚未发布的修改。
 
 ### 初始设置或全量重建 EPUB/
 
@@ -85,7 +114,7 @@ python tools/manifest.py --cache path # 指定缓存目录
 python tools/publish.py --force --no-upload
 ```
 
-`pull.ps1` 把 OneDrive 的 EPUB 解包到缓存并生成清单；`publish.py --force --no-upload` 忽略清单把全部中文书籍从缓存同步到 `EPUB/` 并打包，跳过 OneDrive 上传。不要直接解包 OneDrive 的 `.epub` 到 `EPUB/`，那会绕过清单与规范化流程。
+`pull.ps1` 把 OneDrive 的 EPUB 解包到缓存并建立清单；`publish.py --force --no-upload` 忽略清单把全部中文书籍从缓存全量重建到 `EPUB/` 并打包，跳过 OneDrive 上传。不要直接解包 OneDrive 的 `.epub` 到 `EPUB/`，那会绕过清单与规范化流程。
 
 ### 打包工具（CI 和手动使用）
 
