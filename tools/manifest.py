@@ -71,15 +71,61 @@ def load_manifest(cache_root: Path) -> dict[str, str] | None:
     return data.get("files", {})
 
 
+def update_manifest_books(
+    cache_root: Path, book_keys: list[str], files: dict[str, str]
+) -> None:
+    """Re-hash only the given 'side/book' directories in place.
+
+    Entries of those books are removed and rescanned; every other entry is
+    left untouched so that unpublished cache edits keep their old baseline.
+    """
+    for key in book_keys:
+        prefix = key.rstrip("/") + "/"
+        for path in list(files):
+            if path.startswith(prefix):
+                del files[path]
+        book_dir = cache_root / key
+        if not book_dir.is_dir():
+            continue
+        for path in book_dir.rglob("*"):
+            if not path.is_file():
+                continue
+            if ".extract-" in path.name:
+                continue
+            rel = path.relative_to(cache_root).as_posix()
+            files[rel] = compute_hash(path)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Generate EPUB cache manifest.")
     parser.add_argument("--cache", type=Path, default=DEFAULT_CACHE)
+    parser.add_argument(
+        "--update-books",
+        nargs="*",
+        metavar="SIDE/BOOK",
+        help="only re-hash these book directories (e.g. chinese-text/[S1_01]...), "
+        "preserving all other manifest entries",
+    )
     args = parser.parse_args()
     cache = args.cache.resolve()
     if not cache.is_dir():
         print(f"error: cache not found: {cache}", file=argparse.sys.stderr)
         return 1
-    count, path = save_manifest(cache)
+
+    if args.update_books:
+        files = load_manifest(cache)
+        if files is None:
+            print(
+                "warning: manifest not found, generating a full manifest instead",
+                file=argparse.sys.stderr,
+            )
+            files = scan_cache(cache)
+        else:
+            update_manifest_books(cache, args.update_books, files)
+            print(f"updated {len(args.update_books)} book(s) in existing manifest")
+        count, path = save_manifest(cache, files)
+    else:
+        count, path = save_manifest(cache)
     print(f"manifest: {path} ({count} files)")
     return 0
 
