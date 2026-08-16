@@ -21,7 +21,7 @@
       <navLabel>
         <text>正文</text>
       </navLabel>
-      <content src="OEBPS/Text/S6_24.12.10-Introduction.xhtml"/>
+      <content src="OEBPS/Text/S6_24.12.10-Main.xhtml"/>
     </navPoint>
   </navMap>
 </ncx>

@@ -135,7 +135,7 @@
   <manifest>
     <item id="id5" href="Text/S6_24.12.10-Cover.xhtml" media-type="application/xhtml+xml"/>
     <item id="id1" href="Text/S6_24.12.10-Information.xhtml" media-type="application/xhtml+xml"/>
-    <item id="id2" href="Text/S6_24.12.10-Introduction.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id2" href="Text/S6_24.12.10-Main.xhtml" media-type="application/xhtml+xml"/>
     <item id="nav" href="../nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
     <item href="../toc.ncx" id="ncx" media-type="application/x-dtbncx+xml"/>
     <item id="id" href="Styles/style.css" media-type="text/css"/>
