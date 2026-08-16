@@ -1,0 +1,238 @@
+#!/usr/bin/env python3
+"""检查中日缓存 XHTML 是否符合统一固定行模板并保持对齐（只读）。
+
+模板（AGENTS.md「中日正文行结构」）：
+    1  <?xml …?>
+    2  <!DOCTYPE html>
+    3  <html …><head>…</head><body…>   ← 可并入篇首图片
+    4  <h1>…</h1>                      ← 独占行；无 h1 则空行
+    5  <h2>…</h2>                      ← 独占行；无 h2 则空行
+    6  <p>正文首行</p>                 ← 永远在第 6 行
+
+检查项：
+- 逐文件：L1/L2/L3 头部结构、L4=h1 独占或空、L5=h2 独占或空、L6=正文；
+- 配对文件：总行数一致、h2 位置一致、图片行一致（gaiji/height-2em 字形不计；
+  S2_14-04/07/10/13 为已确认的文本化图片例外）；
+- 纯图片页/无正文页不适用；仅单侧存在的 EPUB、日文独有包装页不参与检查。
+
+用法：
+    python tools/check_alignment.py
+    python tools/check_alignment.py --cache 路径
+输出：控制台汇总 + `.cache/epub-work/alignment-check.tsv`
+"""
+from __future__ import annotations
+
+import csv
+import re
+from pathlib import Path
+
+PACKAGING_SUFFIX = ("cover", "back_cover", "illustrations", "information",
+                    "introduction", "note", "special")
+BOOK_EXCLUSIONS = {"S6_24.12.10"}
+JUDGE_PAIRS = {"S1_25-STIYL_MAGNUS"}   # 内容级特例，人工处理中
+JP_WRAPPER_RE = re.compile(
+    r"^(p-|navigation-documents|Anotherworld|S\d+_\d+-(?:p-|navigation))", re.I)
+TEXTUAL_IMAGE_EXCLUSIONS = {"S2_14-04", "S2_14-07", "S2_14-10", "S2_14-13"}
+
+TAG_RE = re.compile(r"<[^>]*>")
+H_OPEN_RE = re.compile(r"<(h1|h2)\b", re.I)
+BODY_RE = re.compile(r"<body\b", re.I)
+IMG_RE = re.compile(r"<(?:img|svg)\b|data-image-continuation=", re.I)
+
+HEADER_PATTERNS = [
+    re.compile(r"(S\d+_\d+(?:_\d+)?-\d+)", re.I),
+    re.compile(r"(S\d+_\d+_\d+-[A-Za-z][A-Za-z0-9_]*)", re.I),
+    re.compile(r"(S\d+_\d+-[A-Za-z][A-Za-z0-9_]*)", re.I),
+    re.compile(r"(S6_\d+\.\d+\.\d+-(?:\d+|[A-Za-z][A-Za-z0-9_]*))", re.I),
+    re.compile(r"(S6_\d+\.\d+\.\d+)", re.I),
+]
+BOOK_RE = re.compile(r"\[(S\d+_\d+(?:_\d+)?|S6_\d+\.\d+\.\d+)\]")
+
+
+def header_of(name: str) -> str | None:
+    for pat in HEADER_PATTERNS:
+        m = pat.search(name)
+        if m:
+            h = m.group(1)
+            if h.rsplit("-", 1)[-1].lower().endswith("_p"):
+                h = h[: -2]
+            return h.upper()
+    return None
+
+
+def book_id(name: str) -> str | None:
+    m = BOOK_RE.match(name)
+    return m.group(1) if m else None
+
+
+def jp_book_id(cn_id: str) -> str:
+    if cn_id.startswith("S5_"):
+        parts = cn_id.split("_")
+        if len(parts) == 3:
+            return f"S5_{parts[1]}"
+    return cn_id
+
+
+def read_lines(path: Path) -> list[str]:
+    return path.read_text(encoding="utf-8", errors="ignore").splitlines()
+
+
+def has_body(lines: list[str]) -> bool:
+    head_end = next((i for i, l in enumerate(lines, 1) if BODY_RE.search(l)), 0)
+    return any(TAG_RE.sub("", l).strip()
+               for i, l in enumerate(lines, 1) if i > head_end and not H_OPEN_RE.search(l))
+
+
+def check_file(lines: list[str]) -> list[str]:
+    """模板逐文件检查，返回问题列表。"""
+    errs: list[str] = []
+    if not has_body(lines):
+        return errs  # 纯图片页/无正文页：不适用
+    if len(lines) < 6:
+        errs.append("行数<6")
+        return errs
+    if "<?xml" not in lines[0]:
+        errs.append("L1 非 XML 声明")
+    if "<!DOCTYPE" not in lines[1]:
+        errs.append("L2 非 DOCTYPE")
+    if "<html" not in lines[2] or "<body" not in lines[2]:
+        errs.append("L3 非头部合并行")
+    l4, l5, l6 = lines[3], lines[4], lines[5]
+    if l4.strip():
+        if not re.match(r"^\s*<h1\b", l4) or not re.search(r"</h1>\s*$", l4):
+            errs.append("L4 非 h1 独占行")
+        if re.search(r"<(?:img|svg)\b", l4, re.I) and "gaiji" not in l4.lower():
+            errs.append("L4 含图片")
+    if l5.strip():
+        if not re.match(r"^\s*<h2\b", l5) or not re.search(r"</h2>\s*$", l5):
+            errs.append("L5 非 h2 独占行")
+    if not l6.strip():
+        errs.append("L6 为空")
+    for idx, l in ((4, l4), (5, l5)):
+        if l.strip() and not re.match(r"^\s*<h[12]\b", l):
+            errs.append(f"L{idx} 非标题行却有内容")
+    return errs
+
+
+def img_lines(lines: list[str]) -> list[int]:
+    return [i + 1 for i, l in enumerate(lines)
+            if IMG_RE.search(l) and "gaiji" not in l.lower() and "height-2em" not in l.lower()]
+
+
+def h2_lines(lines: list[str]) -> list[int]:
+    return [i + 1 for i, l in enumerate(lines) if re.search(r"<h2\b", l)]
+
+
+def main() -> int:
+    import argparse
+    ap = argparse.ArgumentParser(description="检查中日缓存统一固定行模板与对齐")
+    ap.add_argument("--cache", type=Path, default=Path(".cache/epub-work"))
+    args = ap.parse_args()
+    cache = args.cache
+
+    cn_books = {book_id(d.name): d for d in (cache / "chinese-text").iterdir() if d.is_dir()}
+    jp_books = {book_id(d.name): d for d in (cache / "japanese-text").iterdir() if d.is_dir()}
+    pairs = []
+    for cn_id, cn_dir in sorted(cn_books.items()):
+        if cn_id is None or cn_id in BOOK_EXCLUSIONS:
+            continue
+        jp_id = jp_book_id(cn_id)
+        if jp_id in jp_books:
+            pairs.append((cn_id, jp_id, cn_dir, jp_books[jp_id]))
+
+    rows: list[list[str]] = []
+    bad: list[list[str]] = []
+    checked = 0
+    seen: set[Path] = set()
+
+    def add(side, book, rel, header, paired, problems, extra=""):
+        row = [side, book, rel, header or "-", "是" if paired else "否",
+               "; ".join(problems), extra]
+        rows.append(row)
+        if problems:
+            bad.append(row)
+
+    for cn_id, jp_id, cn_dir, jp_dir in pairs:
+        cn_all = [p for p in cn_dir.rglob("*.xhtml") if p.name.lower() != "nav.xhtml"]
+        jp_all = [p for p in jp_dir.rglob("*.xhtml") if p.name.lower() != "nav.xhtml"]
+        cn_by, jp_by = {}, {}
+        for p in cn_all:
+            h = header_of(p.name)
+            if h:
+                cn_by.setdefault(h, p)
+        for p in jp_all:
+            h = header_of(p.name)
+            if h:
+                jp_by.setdefault(h, p)
+        for h in sorted(set(jp_by) & set(cn_by)):
+            if h in JUDGE_PAIRS:
+                add("对", cn_id, "", h, True, [], "特例待判断（人工处理中）")
+                continue
+            jp_p, cn_p = jp_by[h], cn_by[h]
+            jl, cl = read_lines(jp_p), read_lines(cn_p)
+            if not has_body(jl) or not has_body(cl):
+                continue  # 纯图片页/无正文页
+            checked += 1
+            for p_, side_, lines_ in ((jp_p, "日", jl), (cn_p, "中", cl)):
+                if p_ in seen:
+                    continue
+                seen.add(p_)
+                add(side_, jp_id if side_ == "日" else cn_id,
+                    str(p_.relative_to(cache)), h, True, check_file(lines_))
+            # 配对检查
+            pair_probs = []
+            if len(jl) != len(cl):
+                pair_probs.append(f"行数 {len(jl)} vs {len(cl)}")
+            jh, ch = h2_lines(jl), h2_lines(cl)
+            if jh != ch:
+                pair_probs.append(f"h2 位置 JP{jh} vs CN{ch}")
+            ji, ci = img_lines(jl), img_lines(cl)
+            if ji != ci and h not in TEXTUAL_IMAGE_EXCLUSIONS:
+                pair_probs.append(f"图片行 JP{ji} vs CN{ci}")
+            if pair_probs:
+                add("对", cn_id, "", h, True, [], "配对：" + "；".join(pair_probs))
+        # 未配对 CN 正文/包装
+        for p in cn_all:
+            h = header_of(p.name)
+            if h is None or JP_WRAPPER_RE.match(p.name):
+                continue
+            if h in cn_by and h in jp_by:
+                continue
+            if p in seen:
+                continue
+            lines = read_lines(p)
+            if not has_body(lines):
+                continue
+            seen.add(p)
+            checked += 1
+            add("中", cn_id, str(p.relative_to(cache)), h, False, check_file(lines))
+        # 未配对 JP 正文（如 S6 单文件作品）
+        for p in jp_all:
+            h = header_of(p.name)
+            if h is None or JP_WRAPPER_RE.match(p.name):
+                continue
+            if h in cn_by and h in jp_by:
+                continue
+            if p in seen:
+                continue
+            lines = read_lines(p)
+            if not has_body(lines):
+                continue
+            seen.add(p)
+            checked += 1
+            add("日", jp_id, str(p.relative_to(cache)), h, False, check_file(lines))
+
+    tsv = cache / "alignment-check.tsv"
+    with tsv.open("w", encoding="utf-8-sig", newline="") as f:
+        w = csv.writer(f, delimiter="\t")
+        w.writerow(["侧", "书", "文件", "表头", "配对", "问题", "备注"])
+        w.writerows(rows)
+    print(f"已验证正文文件：{checked}；问题记录：{len(bad)}")
+    print(f"报告：{tsv}")
+    for r in bad:
+        print(f"  [{r[0]}] {r[1]} | {r[2].split(chr(92))[-1]} | {r[5]}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
