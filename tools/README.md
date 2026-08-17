@@ -168,6 +168,33 @@ python tools/check_alignment.py
 
 逐文件检查模板符合性（L1-L3 头部结构、L4=h1 独占或空、L5=h2 独占或空、L6=正文），并对中日配对文件检查总行数一致、h2 位置一致、图片行一致（`gaiji`/`height-2em` 内嵌字形不计；`S2_14-04/07/10/13` 为已确认的文本化图片例外）。报告写入 `.cache/epub-work/alignment-check.tsv`。纯图片页/无正文页不适用；仅单侧存在的 EPUB、日文独有包装页不参与。
 
+### 中日图片内容对应检查（只读）
+
+```powershell
+python tools/compare_epub_images.py
+python tools/compare_epub_images.py --pattern "*S1_01*"
+```
+
+扫描 `.cache/epub-work/chinese-text/` 和 `japanese-text/` 中按作品号配对的 EPUB，读取 XHTML 图片引用并检查全部图片资源。报告写入 `.cache/epub-work/image-comparison/report.json` 和 `report.md`；`--output` 可指定其他目录。
+
+判定分层如下：
+
+- `name_rule_same_content`：文件名族和稳定位置规则同时成立，例如 `Cover ↔ cover`、`Back_cover ↔ hyou4`、`Contents ↔ toc-*`、`Deputy_cover ↔ kuchie-001`、`IllustrationsN ↔ kuchie-(N+1)`。正文图片还会识别 `i-NNN`、`i-NNN-NNN`、`pNNN-pNNN` 及旧日文 `p000-00-XX-1` 格式；两侧正文编号相同且图片宽高比类别相同（单页/双页）时，直接按编号视为对应，不要求 XHTML 图片槽位相同。中文双页范围（如 `i-232-233`）也会和日文两张连续单页（`i-232` + `i-233`）合并记录。其余旧 `pN` 与 `p000-00-XX-1` 仍使用共同表头/槽位规则，避免把源页码误当成中文序号；
+- `exact_bytes_*`：SHA-256 完全相同，可能只是文件名不同；
+- `decoded_pixels_*`：缩放后像素和感知哈希高度一致，通常是重新编码/缩放后的同图；
+- `possible_same_content`：结构相似但颜色/灰度渲染差异较大，需人工确认；
+- `possible_same_content_text_or_font_changed`：整体结构和颜色相似，可能只替换了文字或字体，必须人工查看原图；
+- `layout_mismatches`：两侧正文文件名编号相同，但宽高比分别判为单页和双页。此类图片不会自动计入匹配，优先人工检查是否发生插图换序；报告同时输出像素尺寸和文件路径。
+- 未匹配清单：一侧存在而另一侧没有算法对应项的图片，包含未被 XHTML 引用的资源。
+
+脚本需要 Pillow 的缩略图指标；在同时安装 [`ImageHash`](https://github.com/JohannesBuchner/imagehash) 时还会启用 pHash、dHash、wHash 和 colorhash，未安装 ImageHash 时自动使用 Pillow 回退：
+
+```powershell
+python -m pip install Pillow ImageHash
+```
+
+感知匹配只输出候选，不替代视觉确认；报告同时保留图片尺寸、SHA-256、引用 XHTML、表头和规则位置键。文件名规则只在同一作品内生效，不会跨书猜测。
+
 ### 空占位页清理
 
 ```powershell
