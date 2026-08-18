@@ -163,13 +163,13 @@
     <item href="Images/S1_19-Deputy_cover.jpg" id="id21" media-type="image/jpeg"/>
     <item href="Images/S1_19-Illustrations1.jpg" id="id24" media-type="image/jpeg"/>
     <item href="Images/S1_19-Illustrations2.jpg" id="id26" media-type="image/jpeg"/>
-    <item href="Images/S1_19-p1.jpg" id="id23" media-type="image/jpeg"/>
-    <item href="Images/S1_19-p2.jpg" id="id19" media-type="image/jpeg"/>
-    <item href="Images/S1_19-p3.jpg" id="id27" media-type="image/jpeg"/>
+    <item href="Images/S1_19-i-011.jpg" id="id23" media-type="image/jpeg"/>
+    <item href="Images/S1_19-i-022.jpg" id="id19" media-type="image/jpeg"/>
+    <item href="Images/S1_19-i-043.jpg" id="id27" media-type="image/jpeg"/>
     <item href="Images/S1_19-p4.jpg" id="id18" media-type="image/jpeg"/>
-    <item href="Images/S1_19-p5.jpg" id="id22" media-type="image/jpeg"/>
-    <item href="Images/S1_19-p6.jpg" id="id25" media-type="image/jpeg"/>
-    <item href="Images/S1_19-p7.jpg" id="id28" media-type="image/jpeg"/>
+    <item href="Images/S1_19-i-073.jpg" id="id22" media-type="image/jpeg"/>
+    <item href="Images/S1_19-i-063.jpg" id="id25" media-type="image/jpeg"/>
+    <item href="Images/S1_19-i-110.jpg" id="id28" media-type="image/jpeg"/>
   </manifest>
   <spine toc="toc">
     <itemref idref="S1_19-Cover.xhtml"/>

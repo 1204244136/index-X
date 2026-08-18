@@ -163,14 +163,14 @@
     <item href="Images/S1_21-Deputy_cover.jpg" id="id21" media-type="image/jpeg"/>
     <item href="Images/S1_21-Illustrations1.jpg" id="id23" media-type="image/jpeg"/>
     <item href="Images/S1_21-Illustrations2.jpg" id="id20" media-type="image/jpeg"/>
-    <item href="Images/S1_21-p1.jpg" id="id26" media-type="image/jpeg"/>
-    <item href="Images/S1_21-p2.jpg" id="id28" media-type="image/jpeg"/>
-    <item href="Images/S1_21-p3.jpg" id="id19" media-type="image/jpeg"/>
-    <item href="Images/S1_21-p4.jpg" id="id24" media-type="image/jpeg"/>
-    <item href="Images/S1_21-p5.jpg" id="id25" media-type="image/jpeg"/>
-    <item href="Images/S1_21-p6.jpg" id="id29" media-type="image/jpeg"/>
-    <item href="Images/S1_21-p7.jpg" id="id27" media-type="image/jpeg"/>
-    <item href="Images/S1_21-p8.jpg" id="id18" media-type="image/jpeg"/>
+    <item href="Images/S1_21-i-018.jpg" id="id26" media-type="image/jpeg"/>
+    <item href="Images/S1_21-i-024.jpg" id="id28" media-type="image/jpeg"/>
+    <item href="Images/S1_21-i-046.jpg" id="id19" media-type="image/jpeg"/>
+    <item href="Images/S1_21-i-054.jpg" id="id24" media-type="image/jpeg"/>
+    <item href="Images/S1_21-i-077.jpg" id="id25" media-type="image/jpeg"/>
+    <item href="Images/S1_21-i-084.jpg" id="id29" media-type="image/jpeg"/>
+    <item href="Images/S1_21-i-090.jpg" id="id27" media-type="image/jpeg"/>
+    <item href="Images/S1_21-i-104.jpg" id="id18" media-type="image/jpeg"/>
   </manifest>
   <spine toc="toc">
     <itemref idref="S1_21-Cover.xhtml"/>

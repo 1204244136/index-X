@@ -152,10 +152,10 @@
     <item href="Images/S5_01_03-Contents.jpg" id="id23" media-type="image/jpeg"/>
     <item id="GT_vol_1.jpg" href="Images/S5_01_03-Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
     <item href="Images/S5_01_03-Deputy_cover.jpg" id="id18" media-type="image/jpeg"/>
-    <item id="id7" href="Images/S5_01_03-p1.jpg" media-type="image/jpeg"/>
-    <item id="id10" href="Images/S5_01_03-p2.jpg" media-type="image/jpeg"/>
-    <item id="id11" href="Images/S5_01_03-p3.jpg" media-type="image/jpeg"/>
-    <item id="id12" href="Images/S5_01_03-p4.jpg" media-type="image/jpeg"/>
+    <item id="id7" href="Images/S5_01_03-i-787.jpg" media-type="image/jpeg"/>
+    <item id="id10" href="Images/S5_01_03-i-850.jpg" media-type="image/jpeg"/>
+    <item id="id11" href="Images/S5_01_03-i-880.jpg" media-type="image/jpeg"/>
+    <item id="id12" href="Images/S5_01_03-i-954-955.jpg" media-type="image/jpeg"/>
   </manifest>
   <spine toc="toc">
     <itemref idref="S5_01_03-Cover.xhtml"/>

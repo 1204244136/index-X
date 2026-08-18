@@ -165,15 +165,15 @@
     <item id="id7" href="Images/S3_07-Contents.jpg" media-type="image/jpeg"/>
     <item id="id9" href="Images/S3_07-Illustrations1.jpg" media-type="image/jpeg"/>
     <item id="id10" href="Images/S3_07-Illustrations2.jpg" media-type="image/jpeg"/>
-    <item id="id11" href="Images/S3_07-p1.jpg" media-type="image/jpeg"/>
-    <item id="id12" href="Images/S3_07-p2.jpg" media-type="image/jpeg"/>
-    <item id="id13" href="Images/S3_07-p3.jpg" media-type="image/jpeg"/>
-    <item id="id14" href="Images/S3_07-p4.jpg" media-type="image/jpeg"/>
-    <item id="id15" href="Images/S3_07-p5.jpg" media-type="image/jpeg"/>
-    <item id="id16" href="Images/S3_07-p6.jpg" media-type="image/jpeg"/>
-    <item id="id17" href="Images/S3_07-p7.jpg" media-type="image/jpeg"/>
-    <item id="id18" href="Images/S3_07-p8.jpg" media-type="image/jpeg"/>
-    <item href="OEBPS/GT07_Cover.jpg" id="cover" media-type="image/jpeg" properties="cover-image"/>
+    <item id="id11" href="Images/S3_07-i-056.jpg" media-type="image/jpeg"/>
+    <item id="id12" href="Images/S3_07-i-113.jpg" media-type="image/jpeg"/>
+    <item id="id13" href="Images/S3_07-i-147.jpg" media-type="image/jpeg"/>
+    <item id="id14" href="Images/S3_07-i-231.jpg" media-type="image/jpeg"/>
+    <item id="id15" href="Images/S3_07-i-260.jpg" media-type="image/jpeg"/>
+    <item id="id16" href="Images/S3_07-i-298-299.jpg" media-type="image/jpeg"/>
+    <item id="id17" href="Images/S3_07-i-307.jpg" media-type="image/jpeg"/>
+    <item id="id18" href="Images/S3_07-i-337.jpg" media-type="image/jpeg"/>
+    <item href="Images/S3_07-Cover.jpg" id="cover" media-type="image/jpeg" properties="cover-image"/>
   </manifest>
   <spine toc="ncx">
     <itemref idref="id5"/>

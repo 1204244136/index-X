@@ -166,14 +166,14 @@
     <item id="id-15" href="Images/S3_10-Deputy_cover.jpg" media-type="image/jpeg"/>
     <item id="id-16" href="Images/S3_10-Illustrations1.jpg" media-type="image/jpeg"/>
     <item id="id-17" href="Images/S3_10-Illustrations2.jpg" media-type="image/jpeg"/>
-    <item id="id-4" href="Images/S3_10-p1.jpg" media-type="image/jpeg"/>
-    <item id="id-5" href="Images/S3_10-p2.jpg" media-type="image/jpeg"/>
-    <item id="id-6" href="Images/S3_10-p3.jpg" media-type="image/jpeg"/>
-    <item id="id-7" href="Images/S3_10-p4.jpg" media-type="image/jpeg"/>
-    <item id="id-8" href="Images/S3_10-p5.jpg" media-type="image/jpeg"/>
-    <item id="id-9" href="Images/S3_10-p6.jpg" media-type="image/jpeg"/>
-    <item id="id-10" href="Images/S3_10-p7.jpg" media-type="image/jpeg"/>
-    <item id="id-11" href="Images/S3_10-p8.jpg" media-type="image/jpeg"/>
+    <item id="id-4" href="Images/S3_10-i-045.jpg" media-type="image/jpeg"/>
+    <item id="id-5" href="Images/S3_10-i-094.jpg" media-type="image/jpeg"/>
+    <item id="id-6" href="Images/S3_10-i-140.jpg" media-type="image/jpeg"/>
+    <item id="id-7" href="Images/S3_10-i-171.jpg" media-type="image/jpeg"/>
+    <item id="id-8" href="Images/S3_10-i-232-233.jpg" media-type="image/jpeg"/>
+    <item id="id-9" href="Images/S3_10-i-280.jpg" media-type="image/jpeg"/>
+    <item id="id-10" href="Images/S3_10-i-317.jpg" media-type="image/jpeg"/>
+    <item id="id-11" href="Images/S3_10-i-343.jpg" media-type="image/jpeg"/>
   </manifest>
   <spine toc="ncx">
     <itemref idref="id5"/>

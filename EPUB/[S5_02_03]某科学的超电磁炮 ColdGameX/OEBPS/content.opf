@@ -146,8 +146,8 @@
     <item href="Styles/style.css" id="id5" media-type="text/css"/>
     <item id="id4" href="Images/S5_02_03-Back_cover.jpg" media-type="image/jpeg"/>
     <item id="GT_vol_1.jpg" href="Images/S5_02_03-Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
-    <item id="id2" href="Images/S5_02_03-p1.jpg" media-type="image/jpeg"/>
-    <item id="id3" href="Images/S5_02_03-p2.jpg" media-type="image/jpeg"/>
+    <item id="id2" href="Images/S5_02_03-i-703.jpg" media-type="image/jpeg"/>
+    <item id="id3" href="Images/S5_02_03-i-762.jpg" media-type="image/jpeg"/>
   </manifest>
   <spine toc="toc">
     <itemref idref="S5_02_03-Cover.xhtml"/>

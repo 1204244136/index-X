@@ -162,14 +162,14 @@
     <item id="GT_vol_1.jpg" href="Images/S1_20-Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
     <item href="Images/S1_20-Illustrations1.jpg" id="id21" media-type="image/jpeg"/>
     <item href="Images/S1_20-Illustrations2.jpg" id="id20" media-type="image/jpeg"/>
-    <item href="Images/S1_20-p1.jpg" id="id29" media-type="image/jpeg"/>
-    <item href="Images/S1_20-p2.jpg" id="id28" media-type="image/jpeg"/>
-    <item href="Images/S1_20-p3.jpg" id="id24" media-type="image/jpeg"/>
-    <item href="Images/S1_20-p4.jpg" id="id26" media-type="image/jpeg"/>
-    <item href="Images/S1_20-p5.jpg" id="id22" media-type="image/jpeg"/>
-    <item href="Images/S1_20-p6.jpg" id="id27" media-type="image/jpeg"/>
-    <item href="Images/S1_20-p7.jpg" id="id23" media-type="image/jpeg"/>
-    <item href="Images/S1_20-p8.jpg" id="id25" media-type="image/jpeg"/>
+    <item href="Images/S1_20-i-021.jpg" id="id29" media-type="image/jpeg"/>
+    <item href="Images/S1_20-i-031.jpg" id="id28" media-type="image/jpeg"/>
+    <item href="Images/S1_20-i-065.jpg" id="id24" media-type="image/jpeg"/>
+    <item href="Images/S1_20-i-083.jpg" id="id26" media-type="image/jpeg"/>
+    <item href="Images/S1_20-i-096.jpg" id="id22" media-type="image/jpeg"/>
+    <item href="Images/S1_20-i-103.jpg" id="id27" media-type="image/jpeg"/>
+    <item href="Images/S1_20-i-113.jpg" id="id23" media-type="image/jpeg"/>
+    <item href="Images/S1_20-i-125.jpg" id="id25" media-type="image/jpeg"/>
     <item href="Images/S1_20-Deputy_cover.jpg" id="id18" media-type="image/jpeg"/>
   </manifest>
   <spine toc="toc">

@@ -167,15 +167,15 @@
     <item href="Images/S1_23-Illustrations2.jpg" id="id24" media-type="image/jpeg"/>
     <item href="Images/S1_23-Illustrations3.jpg" id="id19" media-type="image/jpeg"/>
     <item href="Images/S1_23-Illustrations4.jpg" id="id23" media-type="image/jpeg"/>
-    <item href="Images/S1_23-p1.jpg" id="id27" media-type="image/jpeg"/>
-    <item href="Images/S1_23-p2.jpg" id="id26" media-type="image/jpeg"/>
-    <item href="Images/S1_23-p3.jpg" id="id18" media-type="image/jpeg"/>
-    <item href="Images/S1_23-p4.jpg" id="id28" media-type="image/jpeg"/>
-    <item href="Images/S1_23-p5.jpg" id="id30" media-type="image/jpeg"/>
-    <item href="Images/S1_23-p6.jpg" id="id25" media-type="image/jpeg"/>
-    <item href="Images/S1_23-p7.jpg" id="id31" media-type="image/jpeg"/>
-    <item href="Images/S1_23-p8.jpg" id="id29" media-type="image/jpeg"/>
-    <item href="Images/S1_23-p9.jpg" id="id32" media-type="image/jpeg"/>
+    <item href="Images/S1_23-i-014.jpg" id="id27" media-type="image/jpeg"/>
+    <item href="Images/S1_23-i-031.jpg" id="id26" media-type="image/jpeg"/>
+    <item href="Images/S1_23-i-042.jpg" id="id18" media-type="image/jpeg"/>
+    <item href="Images/S1_23-i-061.jpg" id="id28" media-type="image/jpeg"/>
+    <item href="Images/S1_23-i-069.jpg" id="id30" media-type="image/jpeg"/>
+    <item href="Images/S1_23-i-076.jpg" id="id25" media-type="image/jpeg"/>
+    <item href="Images/S1_23-i-084.jpg" id="id31" media-type="image/jpeg"/>
+    <item href="Images/S1_23-i-090.jpg" id="id29" media-type="image/jpeg"/>
+    <item href="Images/S1_23-i-102.jpg" id="id32" media-type="image/jpeg"/>
   </manifest>
   <spine toc="toc">
     <itemref idref="S1_23-Cover.xhtml"/>

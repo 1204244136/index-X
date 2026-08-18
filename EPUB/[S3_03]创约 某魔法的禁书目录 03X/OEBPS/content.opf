@@ -165,12 +165,12 @@
     <item id="GT_vol_1.jpg" href="Images/S3_03-Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
     <item id="id19" href="Images/S3_03-Illustrations1.jpg" media-type="image/jpeg"/>
     <item id="id20" href="Images/S3_03-Illustrations2.jpg" media-type="image/jpeg"/>
-    <item id="id28" href="Images/S3_03-p1.jpg" media-type="image/jpeg"/>
-    <item id="id29" href="Images/S3_03-p2.jpg" media-type="image/jpeg"/>
-    <item id="id30" href="Images/S3_03-p3.jpg" media-type="image/jpeg"/>
-    <item id="id31" href="Images/S3_03-p4.jpg" media-type="image/jpeg"/>
-    <item id="id32" href="Images/S3_03-p5.jpg" media-type="image/jpeg"/>
-    <item id="id33" href="Images/S3_03-p6.jpg" media-type="image/jpeg"/>
+    <item id="id28" href="Images/S3_03-i-063.jpg" media-type="image/jpeg"/>
+    <item id="id29" href="Images/S3_03-i-094.jpg" media-type="image/jpeg"/>
+    <item id="id30" href="Images/S3_03-i-168.jpg" media-type="image/jpeg"/>
+    <item id="id31" href="Images/S3_03-i-179.jpg" media-type="image/jpeg"/>
+    <item id="id32" href="Images/S3_03-i-324-325.jpg" media-type="image/jpeg"/>
+    <item id="id33" href="Images/S3_03-i-459.jpg" media-type="image/jpeg"/>
     <item id="id22" href="Images/S3_03-Phase1.jpg" media-type="image/jpeg"/>
     <item id="id23" href="Images/S3_03-Phase2.jpg" media-type="image/jpeg"/>
     <item id="id24" href="Images/S3_03-Phase3.jpg" media-type="image/jpeg"/>

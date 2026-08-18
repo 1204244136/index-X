@@ -165,13 +165,13 @@
     <item href="Images/S4_02-Cover.jpg" id="cover" media-type="image/jpeg" properties="cover-image"/>
     <item id="id-4" href="Images/S4_02-Illustrations1.jpg" media-type="image/jpeg"/>
     <item id="id-5" href="Images/S4_02-Illustrations2.jpg" media-type="image/jpeg"/>
-    <item id="id-20" href="Images/S4_02-p1.jpg" media-type="image/jpeg"/>
-    <item id="id-21" href="Images/S4_02-p2.jpg" media-type="image/jpeg"/>
-    <item id="id-22" href="Images/S4_02-p3.jpg" media-type="image/jpeg"/>
-    <item id="id-23" href="Images/S4_02-p4.jpg" media-type="image/jpeg"/>
-    <item id="id-24" href="Images/S4_02-p5.jpg" media-type="image/jpeg"/>
-    <item id="id-25" href="Images/S4_02-p6.jpg" media-type="image/jpeg"/>
-    <item id="id-26" href="Images/S4_02-p7.jpg" media-type="image/jpeg"/>
+    <item id="id-20" href="Images/S4_02-i-065.jpg" media-type="image/jpeg"/>
+    <item id="id-21" href="Images/S4_02-i-085.jpg" media-type="image/jpeg"/>
+    <item id="id-22" href="Images/S4_02-i-167.jpg" media-type="image/jpeg"/>
+    <item id="id-23" href="Images/S4_02-i-186.jpg" media-type="image/jpeg"/>
+    <item id="id-24" href="Images/S4_02-i-262.jpg" media-type="image/jpeg"/>
+    <item id="id-25" href="Images/S4_02-i-321.jpg" media-type="image/jpeg"/>
+    <item id="id-26" href="Images/S4_02-i-347.jpg" media-type="image/jpeg"/>
   </manifest>
   <spine toc="ncx">
     <itemref idref="id5"/>

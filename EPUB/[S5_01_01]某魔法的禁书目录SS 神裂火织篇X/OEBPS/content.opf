@@ -153,14 +153,14 @@
     <item href="Styles/style.css" id="id5" media-type="text/css"/>
     <item id="id6" href="Images/S5_01_01-Back_cover.jpg" media-type="image/jpeg"/>
     <item id="GT_vol_1.jpg" href="Images/S5_01_01-Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
-    <item id="id13" href="Images/S5_01_01-p1.jpg" media-type="image/jpeg"/>
-    <item id="id14" href="Images/S5_01_01-p2.jpg" media-type="image/jpeg"/>
-    <item id="id15" href="Images/S5_01_01-p3.jpg" media-type="image/jpeg"/>
-    <item id="id17" href="Images/S5_01_01-p4.jpg" media-type="image/jpeg"/>
-    <item id="id18" href="Images/S5_01_01-p5.jpg" media-type="image/jpeg"/>
-    <item id="id19" href="Images/S5_01_01-p6.jpg" media-type="image/jpeg"/>
-    <item id="id20" href="Images/S5_01_01-p7.jpg" media-type="image/jpeg"/>
-    <item id="id21" href="Images/S5_01_01-p8.jpg" media-type="image/jpeg"/>
+    <item id="id13" href="Images/S5_01_01-i-061.jpg" media-type="image/jpeg"/>
+    <item id="id14" href="Images/S5_01_01-i-075.jpg" media-type="image/jpeg"/>
+    <item id="id15" href="Images/S5_01_01-i-134.jpg" media-type="image/jpeg"/>
+    <item id="id17" href="Images/S5_01_01-i-173.jpg" media-type="image/jpeg"/>
+    <item id="id18" href="Images/S5_01_01-i-257.jpg" media-type="image/jpeg"/>
+    <item id="id19" href="Images/S5_01_01-i-277.jpg" media-type="image/jpeg"/>
+    <item id="id20" href="Images/S5_01_01-i-310.jpg" media-type="image/jpeg"/>
+    <item id="id21" href="Images/S5_01_01-i-364.jpg" media-type="image/jpeg"/>
   </manifest>
   <spine toc="toc">
     <itemref idref="S5_01_01-Cover.xhtml"/>

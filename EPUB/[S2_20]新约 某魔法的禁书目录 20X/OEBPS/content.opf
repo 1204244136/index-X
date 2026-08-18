@@ -166,13 +166,13 @@
     <item id="id" href="Images/S2_20-Deputy_cover.jpg" media-type="image/jpeg"/>
     <item id="id19" href="Images/S2_20-Illustrations1.jpg" media-type="image/jpeg"/>
     <item id="id20" href="Images/S2_20-Illustrations2.jpg" media-type="image/jpeg"/>
-    <item id="id22" href="Images/S2_20-p1.jpg" media-type="image/jpeg"/>
-    <item id="id23" href="Images/S2_20-p2.jpg" media-type="image/jpeg"/>
-    <item id="id24" href="Images/S2_20-p3.jpg" media-type="image/jpeg"/>
-    <item id="id25" href="Images/S2_20-p4.jpg" media-type="image/jpeg"/>
-    <item id="id26" href="Images/S2_20-p5.jpg" media-type="image/jpeg"/>
-    <item id="id27" href="Images/S2_20-p6.jpg" media-type="image/jpeg"/>
-    <item id="id28" href="Images/S2_20-p7.jpg" media-type="image/jpeg"/>
+    <item id="id22" href="Images/S2_20-i-110.jpg" media-type="image/jpeg"/>
+    <item id="id23" href="Images/S2_20-i-132.jpg" media-type="image/jpeg"/>
+    <item id="id24" href="Images/S2_20-i-234.jpg" media-type="image/jpeg"/>
+    <item id="id25" href="Images/S2_20-i-281.jpg" media-type="image/jpeg"/>
+    <item id="id26" href="Images/S2_20-i-345.jpg" media-type="image/jpeg"/>
+    <item id="id27" href="Images/S2_20-i-414.jpg" media-type="image/jpeg"/>
+    <item id="id28" href="Images/S2_20-i-430.jpg" media-type="image/jpeg"/>
     <item id="id-3" href="Text/S2_20-Special.xhtml" media-type="application/xhtml+xml"/>
   </manifest>
   <spine toc="toc">

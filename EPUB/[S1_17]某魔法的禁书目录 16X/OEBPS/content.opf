@@ -167,14 +167,14 @@
     <item href="Images/S1_17-Illustrations2.jpg" id="id20" media-type="image/jpeg"/>
     <item href="Images/S1_17-Illustrations3.jpg" id="id22" media-type="image/jpeg"/>
     <item href="Images/S1_17-Illustrations4.jpg" id="id19" media-type="image/jpeg"/>
-    <item href="Images/S1_17-p1.jpg" id="id31" media-type="image/jpeg"/>
-    <item href="Images/S1_17-p2.jpg" id="id29" media-type="image/jpeg"/>
-    <item href="Images/S1_17-p3.jpg" id="id24" media-type="image/jpeg"/>
-    <item href="Images/S1_17-p4.jpg" id="id28" media-type="image/jpeg"/>
-    <item href="Images/S1_17-p5.jpg" id="id18" media-type="image/jpeg"/>
-    <item href="Images/S1_17-p6.jpg" id="id25" media-type="image/jpeg"/>
-    <item href="Images/S1_17-p7.jpg" id="id26" media-type="image/jpeg"/>
-    <item href="Images/S1_17-p8.jpg" id="id30" media-type="image/jpeg"/>
+    <item href="Images/S1_17-i-021.jpg" id="id31" media-type="image/jpeg"/>
+    <item href="Images/S1_17-i-035.jpg" id="id29" media-type="image/jpeg"/>
+    <item href="Images/S1_17-i-051.jpg" id="id24" media-type="image/jpeg"/>
+    <item href="Images/S1_17-i-062.jpg" id="id28" media-type="image/jpeg"/>
+    <item href="Images/S1_17-i-071.jpg" id="id18" media-type="image/jpeg"/>
+    <item href="Images/S1_17-i-074.jpg" id="id25" media-type="image/jpeg"/>
+    <item href="Images/S1_17-i-084.jpg" id="id26" media-type="image/jpeg"/>
+    <item href="Images/S1_17-i-089.jpg" id="id30" media-type="image/jpeg"/>
   </manifest>
   <spine toc="toc">
     <itemref idref="S1_17-Cover.xhtml"/>

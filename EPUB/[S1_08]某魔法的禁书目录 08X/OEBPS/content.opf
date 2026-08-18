@@ -171,16 +171,16 @@
     <item href="Images/S1_08-Illustrations4.jpg" id="id20" media-type="image/jpeg"/>
     <item href="Images/S1_08-Illustrations5.jpg" id="id23" media-type="image/jpeg"/>
     <item href="Images/S1_08-Illustrations6.jpg" id="id21" media-type="image/jpeg"/>
-    <item href="Images/S1_08-p1.jpg" id="id25" media-type="image/jpeg"/>
-    <item href="Images/S1_08-p10.jpg" id="id34" media-type="image/jpeg"/>
-    <item href="Images/S1_08-p2.jpg" id="id32" media-type="image/jpeg"/>
-    <item href="Images/S1_08-p3.jpg" id="id33" media-type="image/jpeg"/>
-    <item href="Images/S1_08-p4.jpg" id="id29" media-type="image/jpeg"/>
-    <item href="Images/S1_08-p5.jpg" id="id27" media-type="image/jpeg"/>
-    <item href="Images/S1_08-p6.jpg" id="id35" media-type="image/jpeg"/>
-    <item href="Images/S1_08-p7.jpg" id="id24" media-type="image/jpeg"/>
-    <item href="Images/S1_08-p8.jpg" id="id28" media-type="image/jpeg"/>
-    <item href="Images/S1_08-p9.jpg" id="id30" media-type="image/jpeg"/>
+    <item href="Images/S1_08-i-017.jpg" id="id25" media-type="image/jpeg"/>
+    <item href="Images/S1_08-i-075.jpg" id="id34" media-type="image/jpeg"/>
+    <item href="Images/S1_08-i-021.jpg" id="id32" media-type="image/jpeg"/>
+    <item href="Images/S1_08-i-024.jpg" id="id33" media-type="image/jpeg"/>
+    <item href="Images/S1_08-i-028.jpg" id="id29" media-type="image/jpeg"/>
+    <item href="Images/S1_08-i-033.jpg" id="id27" media-type="image/jpeg"/>
+    <item href="Images/S1_08-i-043.jpg" id="id35" media-type="image/jpeg"/>
+    <item href="Images/S1_08-i-047.jpg" id="id24" media-type="image/jpeg"/>
+    <item href="Images/S1_08-i-057.jpg" id="id28" media-type="image/jpeg"/>
+    <item href="Images/S1_08-i-069.jpg" id="id30" media-type="image/jpeg"/>
   </manifest>
   <spine toc="toc">
     <itemref idref="S1_08-Cover.xhtml"/>

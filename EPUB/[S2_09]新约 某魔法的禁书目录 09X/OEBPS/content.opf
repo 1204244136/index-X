@@ -172,11 +172,11 @@
     <item href="Images/S2_09-Deputy_cover.jpg" id="id19" media-type="image/jpeg"/>
     <item href="Images/S2_09-Illustrations1.jpg" id="id21" media-type="image/jpeg"/>
     <item href="Images/S2_09-Illustrations2.jpg" id="id22" media-type="image/jpeg"/>
-    <item href="Images/S2_09-p1.jpg" id="id23" media-type="image/jpeg"/>
-    <item href="Images/S2_09-p2.jpg" id="id25" media-type="image/jpeg"/>
-    <item href="Images/S2_09-p3.jpg" id="id18" media-type="image/jpeg"/>
-    <item href="Images/S2_09-p4.jpg" id="id24" media-type="image/jpeg"/>
-    <item href="Images/S2_09-p5.jpg" id="id26" media-type="image/jpeg"/>
+    <item href="Images/S2_09-p016-p017.jpg" id="id23" media-type="image/jpeg"/>
+    <item href="Images/S2_09-i-182-183.jpg" id="id25" media-type="image/jpeg"/>
+    <item href="Images/S2_09-i-210-211.jpg" id="id18" media-type="image/jpeg"/>
+    <item href="Images/S2_09-i-228-229.jpg" id="id24" media-type="image/jpeg"/>
+    <item href="Images/S2_09-i-322-323.jpg" id="id26" media-type="image/jpeg"/>
   </manifest>
   <spine toc="toc">
     <itemref idref="S2_09-Cover.xhtml"/>

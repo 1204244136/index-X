@@ -165,14 +165,14 @@
     <item id="id7" href="Images/S3_08-Deputy_cover.jpg" media-type="image/jpeg"/>
     <item id="id8" href="Images/S3_08-Illustrations1.jpg" media-type="image/jpeg"/>
     <item id="id9" href="Images/S3_08-Illustrations2.jpg" media-type="image/jpeg"/>
-    <item id="id28" href="Images/S3_08-p1.jpg" media-type="image/jpeg"/>
-    <item id="id29" href="Images/S3_08-p2.jpg" media-type="image/jpeg"/>
-    <item id="id30" href="Images/S3_08-p3.jpg" media-type="image/jpeg"/>
-    <item id="id31" href="Images/S3_08-p4.jpg" media-type="image/jpeg"/>
-    <item id="id32" href="Images/S3_08-p5.jpg" media-type="image/jpeg"/>
-    <item id="id33" href="Images/S3_08-p6.jpg" media-type="image/jpeg"/>
-    <item id="id34" href="Images/S3_08-p7.jpg" media-type="image/jpeg"/>
-    <item id="id35" href="Images/S3_08-p8.jpg" media-type="image/jpeg"/>
+    <item id="id28" href="Images/S3_08-i-064.jpg" media-type="image/jpeg"/>
+    <item id="id29" href="Images/S3_08-i-143.jpg" media-type="image/jpeg"/>
+    <item id="id30" href="Images/S3_08-i-164.jpg" media-type="image/jpeg"/>
+    <item id="id31" href="Images/S3_08-i-180.jpg" media-type="image/jpeg"/>
+    <item id="id32" href="Images/S3_08-i-226.jpg" media-type="image/jpeg"/>
+    <item id="id33" href="Images/S3_08-i-251.jpg" media-type="image/jpeg"/>
+    <item id="id34" href="Images/S3_08-i-308-309.jpg" media-type="image/jpeg"/>
+    <item id="id35" href="Images/S3_08-i-326.jpg" media-type="image/jpeg"/>
   </manifest>
   <spine toc="ncx">
     <itemref idref="id5"/>

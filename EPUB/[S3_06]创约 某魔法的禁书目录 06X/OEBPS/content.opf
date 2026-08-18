@@ -163,14 +163,14 @@
     <item id="id8" href="Images/S3_06-Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
     <item id="id6" href="Images/S3_06-Illustrations1.jpg" media-type="image/jpeg"/>
     <item id="id10" href="Images/S3_06-Illustrations2.jpg" media-type="image/jpeg"/>
-    <item id="id11" href="Images/S3_06-p1.jpg" media-type="image/jpeg"/>
-    <item id="id12" href="Images/S3_06-p2.jpg" media-type="image/jpeg"/>
-    <item id="id13" href="Images/S3_06-p3.jpg" media-type="image/jpeg"/>
-    <item id="id14" href="Images/S3_06-p4.jpg" media-type="image/jpeg"/>
-    <item id="id15" href="Images/S3_06-p5.jpg" media-type="image/jpeg"/>
-    <item id="id16" href="Images/S3_06-p6.jpg" media-type="image/jpeg"/>
-    <item id="id17" href="Images/S3_06-p7.jpg" media-type="image/jpeg"/>
-    <item id="id18" href="Images/S3_06-p8.jpg" media-type="image/jpeg"/>
+    <item id="id11" href="Images/S3_06-i-045.jpg" media-type="image/jpeg"/>
+    <item id="id12" href="Images/S3_06-i-073.jpg" media-type="image/jpeg"/>
+    <item id="id13" href="Images/S3_06-i-149.jpg" media-type="image/jpeg"/>
+    <item id="id14" href="Images/S3_06-i-161.jpg" media-type="image/jpeg"/>
+    <item id="id15" href="Images/S3_06-i-198-199.jpg" media-type="image/jpeg"/>
+    <item id="id16" href="Images/S3_06-i-217.jpg" media-type="image/jpeg"/>
+    <item id="id17" href="Images/S3_06-i-259.jpg" media-type="image/jpeg"/>
+    <item id="id18" href="Images/S3_06-i-269.jpg" media-type="image/jpeg"/>
   </manifest>
   <spine toc="ncx">
     <itemref idref="id5"/>

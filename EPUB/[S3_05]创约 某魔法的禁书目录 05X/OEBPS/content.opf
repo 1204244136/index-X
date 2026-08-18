@@ -166,14 +166,14 @@
     <item id="id18" href="Images/S3_05-Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
     <item id="id20" href="Images/S3_05-Illustrations1.jpg" media-type="image/jpeg"/>
     <item id="id21" href="Images/S3_05-Illustrations2.jpg" media-type="image/jpeg"/>
-    <item id="id22" href="Images/S3_05-p1.jpg" media-type="image/jpeg"/>
-    <item id="id23" href="Images/S3_05-p2.jpg" media-type="image/jpeg"/>
-    <item id="id24" href="Images/S3_05-p3.jpg" media-type="image/jpeg"/>
-    <item id="id25" href="Images/S3_05-p4.jpg" media-type="image/jpeg"/>
-    <item id="id26" href="Images/S3_05-p5.jpg" media-type="image/jpeg"/>
-    <item id="id27" href="Images/S3_05-p6.jpg" media-type="image/jpeg"/>
-    <item id="id28" href="Images/S3_05-p7.jpg" media-type="image/jpeg"/>
-    <item id="id29" href="Images/S3_05-p8.jpg" media-type="image/jpeg"/>
+    <item id="id22" href="Images/S3_05-i-060.jpg" media-type="image/jpeg"/>
+    <item id="id23" href="Images/S3_05-i-120.jpg" media-type="image/jpeg"/>
+    <item id="id24" href="Images/S3_05-i-201.jpg" media-type="image/jpeg"/>
+    <item id="id25" href="Images/S3_05-i-220-221.jpg" media-type="image/jpeg"/>
+    <item id="id26" href="Images/S3_05-i-240.jpg" media-type="image/jpeg"/>
+    <item id="id27" href="Images/S3_05-i-260.jpg" media-type="image/jpeg"/>
+    <item id="id28" href="Images/S3_05-i-421.jpg" media-type="image/jpeg"/>
+    <item id="id29" href="Images/S3_05-i-467.jpg" media-type="image/jpeg"/>
     <item id="id30" href="Images/S3_05-w1.jpg" media-type="image/jpeg"/>
     <item id="id33" href="Images/S3_05-w2.jpg" media-type="image/jpeg"/>
   </manifest>

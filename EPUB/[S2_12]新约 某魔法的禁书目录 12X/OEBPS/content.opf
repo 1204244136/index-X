@@ -167,14 +167,14 @@
     <item href="Images/S2_12-Deputy_cover.jpg" id="id23" media-type="image/jpeg"/>
     <item href="Images/S2_12-Illustrations1.jpg" id="id27" media-type="image/jpeg"/>
     <item href="Images/S2_12-Illustrations2.jpg" id="id28" media-type="image/jpeg"/>
-    <item href="Images/S2_12-p1.jpg" id="id18" media-type="image/jpeg"/>
-    <item href="Images/S2_12-p2.jpg" id="id24" media-type="image/jpeg"/>
-    <item href="Images/S2_12-p3.jpg" id="id26" media-type="image/jpeg"/>
-    <item href="Images/S2_12-p4.jpg" id="id20" media-type="image/jpeg"/>
-    <item href="Images/S2_12-p5.jpg" id="id25" media-type="image/jpeg"/>
-    <item href="Images/S2_12-p6.jpg" id="id22" media-type="image/jpeg"/>
-    <item href="Images/S2_12-p7.jpg" id="id21" media-type="image/jpeg"/>
-    <item href="Images/S2_12-p8.jpg" id="id29" media-type="image/jpeg"/>
+    <item href="Images/S2_12-i-037.jpg" id="id18" media-type="image/jpeg"/>
+    <item href="Images/S2_12-i-088.jpg" id="id24" media-type="image/jpeg"/>
+    <item href="Images/S2_12-i-135.jpg" id="id26" media-type="image/jpeg"/>
+    <item href="Images/S2_12-i-175.jpg" id="id20" media-type="image/jpeg"/>
+    <item href="Images/S2_12-i-249.jpg" id="id25" media-type="image/jpeg"/>
+    <item href="Images/S2_12-i-291.jpg" id="id22" media-type="image/jpeg"/>
+    <item href="Images/S2_12-i-360-361.jpg" id="id21" media-type="image/jpeg"/>
+    <item href="Images/S2_12-i-407.jpg" id="id29" media-type="image/jpeg"/>
   </manifest>
   <spine toc="toc">
     <itemref idref="S2_12-Cover.xhtml"/>

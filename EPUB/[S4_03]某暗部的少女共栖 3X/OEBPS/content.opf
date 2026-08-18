@@ -164,9 +164,8 @@
     <item id="id-8" href="Images/S4_03-i-277.jpg" media-type="image/jpeg"/>
     <item id="id-9" href="Images/S4_03-i-305.jpg" media-type="image/jpeg"/>
     <item id="id-10" href="Images/S4_03-i-347.jpg" media-type="image/jpeg"/>
-    <item href="OEBPS/cover.jpg" id="cover" media-type="image/jpeg" properties="cover-image"/>
+    <item href="Images/S4_03-Cover.jpg" id="cover" media-type="image/jpeg" properties="cover-image"/>
     <item id="id-11" href="Images/S4_03-Contents.jpg" media-type="image/jpeg"/>
-    <item id="id-12" href="Images/S4_03-Cover.jpg" media-type="image/jpeg"/>
     <item id="id-13" href="Images/S4_03-Illustrations1.jpg" media-type="image/jpeg"/>
     <item id="id-27" href="Images/S4_03-Illustrations2.jpg" media-type="image/jpeg"/>
   </manifest>
