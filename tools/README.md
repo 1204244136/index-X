@@ -206,6 +206,33 @@ python tools/fix_empty_placeholders.py --apply
 
 仅把“位于两个编号文件之间、正文无文本且无图片/SVG”的 XHTML 视为空占位页；应用后会删除该页，并将同目录后续文件的表头序号及数字页码后缀依次前移。默认只扫描，不修改缓存。注意与模板中的“空行占位”区分：本工具处理的是空占位**页**（整个文件无内容），模板空行是正文文件内部的第 4/5 行占位。
 
+### Note 注释顺序检查（只读）
+
+```powershell
+python tools/check_note_order.py
+python tools/check_note_order.py --pattern "*S1_01*"   # 按书名筛选
+```
+
+检查中文缓存 `*.Note.xhtml`（译注页）中的 `<li id="noteN">` 条目顺序与编号是否和正文 `epub:type="noteref"` 首次引用顺序一致。正文文件按表头内容序排序后逐行扫描，取每个注释 id 的首次引用位置作为“书中出现顺序”；包装页（Cover/Information 等）不参与。
+
+报告以下问题：Note 列表顺序 != 正文首次出现顺序、正文引用但 Note 未定义、Note 已定义但正文未引用（孤儿注释）、id 数值顺序乱序（含 `note2.1` 这类补充编号）。报告写入 `.cache/epub-work/note-order-check.md` 与 `note-order-check.json`。只读，不修改缓存。
+
+可用参数：`--cache` 指定中文缓存根目录（默认 `.cache/epub-work/chinese-text`）、`--output` 指定报告输出目录、`--pattern` 按书名子串筛选（支持 `*` 通配）。
+
+### Note 注释顺序重排（写缓存，自动备份）
+
+```powershell
+python tools/reorder_notes.py --dry-run          # 预览
+python tools/reorder_notes.py                    # 执行
+python tools/reorder_notes.py --pattern "*S2_07*" # 按书名筛选
+```
+
+按正文 `epub:type="noteref"` 首次出现顺序重排 `*.Note.xhtml` 的 `<li>` 条目并重编号为 `note1..noteN`，同时单遍映射更新正文所有引用。写盘前会把涉及文件备份到 `.cache/reorder-backup/`；`--dry-run` 只打印旧顺序/新顺序/映射，不写盘。
+
+自动跳过两类情况（需人工处理）：Note 文件含非注释 `<li>`（如 S0_00 的说明条目）、定义集合与引用集合不一致（孤儿/悬空引用）。可与 `tools/check_note_order.py` 配合：先用检查工具确认问题，再用本工具重排。
+
+可用参数：`--cache` 指定中文缓存根目录、`--backup` 指定备份目录、`--pattern` 按书名子串筛选（支持 `*` 通配）。
+
 ### 术语审计
 
 ```powershell
