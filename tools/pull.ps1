@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
     [string]$ChineseSourceDirectory = (Join-Path $env:USERPROFILE 'OneDrive\某系列\X系列\EPUB'),
     [string]$JapaneseSourceDirectory = (Join-Path $env:USERPROFILE 'OneDrive\某系列\日文原文'),
