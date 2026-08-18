@@ -38,6 +38,7 @@ TAG_RE = re.compile(r"<[^>]*>")
 H_OPEN_RE = re.compile(r"<(h1|h2)\b", re.I)
 BODY_RE = re.compile(r"<body\b", re.I)
 IMG_RE = re.compile(r"<(?:img|svg)\b|data-image-continuation=", re.I)
+LIST_WRAP_RE = re.compile(r"^\s*<(ul|ol)\b[^>]*>\s*$", re.I)
 
 HEADER_PATTERNS = [
     re.compile(r"(S\d+_\d+(?:_\d+)?-\d+)", re.I),
@@ -58,6 +59,10 @@ def header_of(name: str) -> str | None:
                 h = h[: -2]
             return h.upper()
     return None
+
+
+def is_packaging(h: str | None) -> bool:
+    return bool(h) and h.rsplit("-", 1)[-1].lower() in PACKAGING_SUFFIX
 
 
 def book_id(name: str) -> str | None:
@@ -83,8 +88,11 @@ def has_body(lines: list[str]) -> bool:
                for i, l in enumerate(lines, 1) if i > head_end and not H_OPEN_RE.search(l))
 
 
-def check_file(lines: list[str]) -> list[str]:
-    """模板逐文件检查，返回问题列表。"""
+def check_file(lines: list[str], allow_list_wrap_slot: bool = False) -> list[str]:
+    """模板逐文件检查，返回问题列表。
+
+    allow_list_wrap_slot=True 时允许第 5 行用 <ul>/<ol> 列表包装占位（中文 Note 等包装页）。
+    """
     errs: list[str] = []
     if not has_body(lines):
         return errs  # 纯图片页/无正文页：不适用
@@ -104,12 +112,16 @@ def check_file(lines: list[str]) -> list[str]:
         if re.search(r"<(?:img|svg)\b", l4, re.I) and "gaiji" not in l4.lower():
             errs.append("L4 含图片")
     if l5.strip():
-        if not re.match(r"^\s*<h2\b", l5) or not re.search(r"</h2>\s*$", l5):
-            errs.append("L5 非 h2 独占行")
+        is_h2 = re.match(r"^\s*<h2\b", l5) and re.search(r"</h2>\s*$", l5)
+        is_list_wrap = allow_list_wrap_slot and bool(LIST_WRAP_RE.match(l5))
+        if not is_h2 and not is_list_wrap:
+            errs.append("L5 非 h2/列表包装独占行")
     if not l6.strip():
         errs.append("L6 为空")
     for idx, l in ((4, l4), (5, l5)):
         if l.strip() and not re.match(r"^\s*<h[12]\b", l):
+            if idx == 5 and allow_list_wrap_slot and LIST_WRAP_RE.match(l):
+                continue
             errs.append(f"L{idx} 非标题行却有内容")
     return errs
 
@@ -177,8 +189,9 @@ def main() -> int:
                 if p_ in seen:
                     continue
                 seen.add(p_)
+                allow_list = side_ == "中" and is_packaging(h)
                 add(side_, jp_id if side_ == "日" else cn_id,
-                    str(p_.relative_to(cache)), h, True, check_file(lines_))
+                    str(p_.relative_to(cache)), h, True, check_file(lines_, allow_list))
             # 配对检查
             pair_probs = []
             if len(jl) != len(cl):
@@ -205,7 +218,7 @@ def main() -> int:
                 continue
             seen.add(p)
             checked += 1
-            add("中", cn_id, str(p.relative_to(cache)), h, False, check_file(lines))
+            add("中", cn_id, str(p.relative_to(cache)), h, False, check_file(lines, is_packaging(h)))
         # 未配对 JP 正文（如 S6 单文件作品）
         for p in jp_all:
             h = header_of(p.name)

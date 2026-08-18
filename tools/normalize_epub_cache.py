@@ -62,6 +62,8 @@ DIV_P_TITLE_RE = re.compile(
 PLAIN_TITLE_RE = re.compile(
     r'^\s*<p\b[^>]*>\s*[　\s]*(?:あとがき|序章|序|プロローグ|エピローグ|目次|译注)[　\s]*</p>\s*$', re.I)
 NUM_P_RE = re.compile(r'^\s*<p\b[^>]*>\s*[　\s]*[0-9０-９]+\s*</p>\s*$')
+LIST_WRAP_RE = re.compile(r'^\s*<(ul|ol)\b[^>]*>\s*$', re.I)
+P_LI_WRAP_RE = re.compile(r'^\s*<p\b[^>]*>\s*(<li\b.*?</li>)\s*</p>\s*$', re.I | re.S)
 EMBED_RE = re.compile(
     r'<p\b([^>]*)>(.*?)<h1\b([^>]*)>(.*?)</h1>(.*?)</p>', re.I | re.S)
 
@@ -88,6 +90,13 @@ def header_of(name: str) -> str | None:
 
 def is_packaging(h: str | None) -> bool:
     return bool(h) and h.rsplit("-", 1)[-1].lower() in PACKAGING_SUFFIX
+
+
+def is_chinese_packaging(path: Path) -> bool:
+    if "chinese-text" not in path.parts:
+        return False
+    h = header_of(path.name)
+    return is_packaging(h)
 
 
 def book_id(name: str) -> str | None:
@@ -278,6 +287,9 @@ def rebuild(path: Path, jp_h1: str | None = None):
             if TAG_RE.sub("", l).strip():
                 return None, f"第{i+1}行图片行有文字"
             continue
+        if LIST_WRAP_RE.match(l) and h2_slot is None and is_chinese_packaging(path):
+            h2_slot = l
+            continue
         if strip(l):
             fb = i
             break
@@ -298,7 +310,10 @@ def rebuild(path: Path, jp_h1: str | None = None):
         new[2] += im
     new.append(h1_slot or "")
     new.append(h2_slot or "")
-    new.extend(lines[fb:])
+    body = lines[fb:]
+    if is_chinese_packaging(path):
+        body = [P_LI_WRAP_RE.sub(r"\1", l) for l in body]
+    new.extend(body)
     return new, f"{n}→{len(new)}行"
 
 
