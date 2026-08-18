@@ -29,11 +29,12 @@
 编辑边界：
 
 - 只在 `.cache/epub-work/` 中编辑。直接修改 `EPUB/` 不会同步回 OneDrive，因为 `publish.py` 只读取缓存。
+- 若确实直接改了 `EPUB/`，可用 `publish_epub.py`（流程 C）把改动打包上传 OneDrive 并增量覆盖回缓存；这是唯一把 `EPUB/` 改动回流到 OneDrive 与缓存的正规路径。运行前务必 `--dry-run` 预览。
 - 不得直接修改 OneDrive 中的 `.epub`。若已修改，切勿在发布前运行 `pull.ps1`，否则 OneDrive 的改动会被当作新基线拉入缓存，覆盖缓存中的编辑。
 - 缓存中的改动必须经 `publish.py` 才会同步到 `EPUB/` 和 OneDrive。发布后中文缓存与 `EPUB/` 逐字节一致属预期行为。
 - `.cache/` 可丢弃：删除后运行 `./tools/pull.ps1` 即可完整重建。
 
-### 两种常用工作流（均增量处理，不做全量写入）
+### 三种常用工作流（均增量处理，不做全量写入）
 
 **流程 A：只改了 OneDrive 里的文件 → 拉回缓存并写进 `EPUB/`**
 
@@ -51,6 +52,15 @@ python tools/publish.py             # 执行
 ```
 
 对比 `manifest.json` 只处理发生变化的书：先打包，再只把变化文件写入 `EPUB/`（缓存中删除的文件也会从 `EPUB/` 删除），最后上传到 OneDrive（每本一个 `.epub`），上传后同步更新拉取状态避免下次重复解压。
+
+**流程 C：只改了 `EPUB/` 里的文件 → 打包上传 OneDrive → 增量覆盖回缓存**
+
+```powershell
+python tools/publish_epub.py --dry-run   # 预览
+python tools/publish_epub.py             # 执行
+```
+
+对比 `manifest.json` 只处理发生变化的书：对每本受影响的（中文）书，先从 `EPUB/` 书籍目录打包 `.epub`，上传到 OneDrive 并同步更新拉取状态，再把变化文件增量覆盖进缓存（缓存中删除的文件也会从缓存删除）。未变化的书和文件完全不碰。`EPUB/` 只镜像中文书，因此本流程只处理中文侧。
 
 ### 1. 拉取（OneDrive -> 缓存）
 
@@ -109,6 +119,33 @@ python tools/publish.py              # 执行发布
 发布失败的书籍不会更新清单，下次运行时会自动重试。
 
 若需要让全部中文缓存与项目 `EPUB/`、以及两侧 OneDrive 打包文件重新建立一致，使用 `python tools/publish.py --force`；该命令会重建并覆盖全部书籍的 EPUB，执行前应先确认缓存就是预期发布源。
+
+### 4. 反向发布（`EPUB/` -> OneDrive + 缓存，流程 C）
+
+```powershell
+python tools/publish_epub.py --dry-run    # 预览变更
+python tools/publish_epub.py              # 执行反向发布
+```
+
+与 `publish.py` 方向相反：检测 `EPUB/` 相对 `manifest.json` 的变化（新增/修改/删除），只处理受影响的中文书，逐本：
+
+1. **打包** `EPUB/` 书籍目录为 `.epub`（输出到 `.cache/epub-work/packed-epubs/`）；打包失败不会改动缓存与 OneDrive
+2. **上传**到 OneDrive（`某系列\X系列\EPUB`），并同步更新 `pull-state.tsv`，避免下次 `pull.ps1` 把旧的 OneDrive 文件拉回覆盖缓存
+3. **增量覆盖**变化文件进缓存 `.cache/epub-work/chinese-text/`（缓存中已删除的文件也会删除），未变化的文件不碰
+4. **更新清单**，记录已成功反向发布的书籍状态
+
+可用参数：
+
+- `--pattern "*S1_01*"`：按书名筛选
+- `--only-books "chinese-text/[S1_01]..."`：只处理列出的书（逗号分隔）
+- `--force`：忽略清单，把 `EPUB/` 全部视为变更，按整本全量重建缓存
+- `--no-upload`：跳过 OneDrive 上传，仅增量覆盖缓存并更新清单（OneDrive 未变，下次拉取可能回拉旧内容）
+- `--overwrite-cache`：允许覆盖缓存中「尚未发布」的修改（默认会跳过并报告冲突）
+- `--dry-run`：仅预览，不执行任何操作
+
+**冲突保护**：默认情况下，若某个文件在缓存中的副本与清单基线不一致（即缓存里还有未发布的修改），反向覆盖会丢失这些修改，本工具会列出冲突并跳过该书，不打包、不上传、不更新清单；确认要覆盖时用 `--overwrite-cache`，或先用 `publish.py` 把缓存修改发布掉。
+
+> 注意：`manifest.json` 以缓存为基线且按字节哈希比较，`EPUB/` 与缓存/基线的换行符差异（如 LF vs CRLF）也会被当作变更。反向发布前请先 `--dry-run` 确认变更范围符合预期。
 
 ### 哈希清单工具
 
