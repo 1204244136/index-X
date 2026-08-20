@@ -1,3 +1,4 @@
+<?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
     <dc:title id="id">[S1_25]某魔法的禁书目录 SPX</dc:title>
@@ -7,7 +8,7 @@
     <dc:identifier id="BookId">uuid:40bbc587-6713-4e10-ba3a-49fc2c0f7ad8</dc:identifier>
     <dc:language>zh-CN</dc:language>
     <dc:contributor id="id-3">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
-    <dc:description>&lt;p style=&quot;font-weight: bold&quot;&gt;补充本篇的短篇小说！&lt;/p&gt;
+    <dc:description>&lt;p style="font-weight: bold"&gt;补充本篇的短篇小说！&lt;/p&gt;
 &lt;p&gt;《电击文库MAGAZINE》本刊及附录中刊登的《史提尔·马格努斯》篇、《马克·史佩斯》篇。电击文库MAGAZINE增刊《龙与虎！VS禁书目录》中刊登的《上条当麻》篇。漫画电击大王2008年10月号附录中刊登的《初春饰利》篇……至今为止只能在杂志上看到的《禁书目录》，一次性收录！&lt;/p&gt;
 &lt;br/&gt;
 &lt;p&gt;——「史提尔·马格努斯」——&lt;/p&gt;
@@ -22,11 +23,11 @@
 &lt;p&gt;——「初春饰利」——&lt;/p&gt;
 &lt;p&gt;学园都市发生了车辆劫案。「风纪委员」初春饰利也为了解决事件投入协助。劫车案的最终目的，与对学园都市发动的大规模恐怖活动有关。为了阻止以时速120km狂飙中的大型特殊车辆，初春与「警备员」黄泉川爱穗共同在现场奋斗，然而——&lt;/p&gt;</dc:description>
     <dc:subject>重小说</dc:subject>
-    <opf:meta refines="#id" property="title-type">main</opf:meta>
-    <opf:meta refines="#id" property="file-as">[S1_25]某魔法的禁书目录 SPX</opf:meta>
+    <meta refines="#id" property="title-type">main</meta>
+    <meta refines="#id" property="file-as">[S1_25]某魔法的禁书目录 SPX</meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
-    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-04-08T10:01:42Z</meta>
+    <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2026-08-20T06:18:37Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>
     <meta property="calibre:user_metadata">{
   "#ace_report": {
@@ -142,10 +143,10 @@
     "table": "custom_column_4"
   }
 }</meta>
-    <opf:meta refines="#id-3" property="role" scheme="marc:relators">bkp</opf:meta>
-    <opf:meta refines="#id-1" property="role" scheme="marc:relators">aut</opf:meta>
-    <opf:meta refines="#id-1" property="file-as">镰池和马</opf:meta>
-    <opf:meta property="calibre:rating">10</opf:meta>
+    <meta refines="#id-3" property="role" scheme="marc:relators">bkp</meta>
+    <meta refines="#id-1" property="role" scheme="marc:relators">aut</meta>
+    <meta refines="#id-1" property="file-as">镰池和马</meta>
+    <meta property="calibre:rating">10</meta>
   </metadata>
   <manifest>
     <item id="S1_25-Cover.xhtml" href="Text/S1_25-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
