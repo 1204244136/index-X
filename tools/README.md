@@ -248,6 +248,52 @@ python tools/epub2docx.py --keep-src-epub 某书.epub          # 保留中间 .r
 - 依赖：本机安装 calibre（自动探测 `ebook-convert`，可用 `--ebook-convert` 覆盖）；
   额外转换参数用 `--extra` 透传（如 `--extra --docx-page-size=A4`）。
 
+### DOCX → EPUB（交稿稿 -> X 版特色成品）
+
+```powershell
+python tools/docx2epub.py 某稿.docx
+python tools/docx2epub.py --out 输出目录/ 书1.docx 书2.docx
+python tools/docx2epub.py 交稿目录/ --pattern "*S1_01*"      # 批量（按文件名 glob 筛选）
+python tools/docx2epub.py --series S4 --volume 06 未带编号.docx  # 文件名不含 [S..] 表头时
+python tools/docx2epub.py --title 书名 --author 作者 --language zh-CN 稿.docx
+python tools/docx2epub.py --images-from 日文原版.epub --cover 封面.jpg 稿.docx
+python tools/docx2epub.py --unpacked 解包目录/ 稿.docx       # 同时输出解包目录
+python tools/docx2epub.py --dry-run 稿.docx                  # 只统计，不生成
+```
+
+`epub2docx.py` 的反向：把交稿 .docx 转成 X 版特色成品 EPUB。正文中的
+`|基文[注音]` 交稿记号还原为 `<ruby>基文<rt>注音</rt></ruby>`，正文文件套用
+统一固定行模板（L1-L6，LF 无 BOM），并按 X 版命名规范生成
+`<表头>-<内容序>_<语义后缀>.xhtml` 与 mimetype / container.xml / content.opf /
+nav.xhtml / toc.ncx / style.css 全套骨架。
+
+- 表头默认取自文件名 `[S4_06]某书(6).docx`（支持 S5 外典三段式与 S6 日期
+  `[S6_22.06.10]xxx.docx`），否则用 `--series/--volume` 指定；书名/作者/语言可
+  分别用 `--title/--author/--language` 覆盖。输出文件名与解包目录名统一为
+  `[表头]书名`。
+- 章节拆分：`Heading` 段落中非纯数字者为章标题（序章/第N章/行間/終章/あとがき，
+  中日简繁均可，样式 id 兼容 `Heading 1`/`Heading1`/`normal` 大小写差异），每个
+  章标题生成一个文件（Prologue/ChapterN/Between_the_LinesN/Epilogue/Afterwords，
+  无法识别用 SectionN）；纯数字者为小节，生成 `<h2 id="toc_N">`。
+- 正文中 docx 直接写出的可信行内 HTML 标签（`<b>`/`<i>`/`<small>`/`<sup>` 等）原样
+  保留为标签，其余尖括号内容一律转义。
+- 第一章之前的引言并入第一章文件；docx 内嵌图片按字节去重提取。
+- **插图占位符**：正文中的 `【插图-N】` 占位符可用 `--images-from 日文原版.epub`
+  自动替换为图片行（按 spine 中正文内容页的图片出现顺序对应），无对应图时保留
+  占位符原样便于人工补图。
+- **注释另起文件**：正文中的行内译注 `【*译注：...】` / `（*译注：...）` 自动提取为
+  `<表头>-Note.xhtml` 译注页（`<li id="noteN">`），正文原位替换为
+  `<a epub:type="noteref" href="...Note.xhtml#noteN"><sup>㊟</sup></a>` 引用，
+  并在 OPF/nav/ncx 中登记，符合 X 版「译注页」成品规范。
+- **封面/彩页**：`--cover 图.jpg` 指定封面（覆盖源封面）；`--illustrations-before`
+  与 `--illustrations-after`（可多次）在源彩页前后追加图，例如
+  `--images-from 日文.epub --cover 中文封面.jpg --illustrations-before 中文副封面.jpg
+  --illustrations-after 中文目录页.jpg`。仅用中文彩页时可不带源彩页。
+- 卷首目录/注意事项与卷末奥付等非正文样式段落自动丢弃并在输出中报告（含其中的
+  ruby 记号，属预期）；正文字样（含 Para 02 等）完整保留。
+- 输出 `.epub` 在 `--out` 目录（默认输入同目录）；`--unpacked` 额外写解包目录，
+  `--no-pack` 只写解包目录。内置精简 style.css，可用 `--css FILE` 换成成品同款。
+
 ### 对齐检查（只读）
 
 ```powershell
