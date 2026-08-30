@@ -226,6 +226,28 @@ python tools/bw_preprocess.py --check 某本bw提取.epub     # 校验模式，�
 > 2. 规则「bw提取预处理-ruby修正」标记 `"iterative": true`：脚本对其循环应用到稳定，把 4 段以上多段 ruby（如 `<ruby>学<rt>がく</rt>園<rt>えん</rt>…`）一次合并为单段 `<ruby>学園…<rt>…</rt></ruby>`。原规则每遍只合并相邻一对，重复运行会继续改写（非幂等）。
 > 3. 辅助格式规则重排：`em-sesame`→`<b>`、`tcy` 解包移到外层 `line-break-loose word-break-break-all` wrapper 解包**之前**。原顺序下 wrapper 的惰性 `.*?` 会把外层开标签与内层 span 的闭标签错误配对，产生非平衡嵌套 span 且残留不幂等。
 
+### EPUB → DOCX（交稿格式，ruby 还原为 |基文[注音]）
+
+```powershell
+python tools/epub2docx.py 某书.epub
+python tools/epub2docx.py 解包的书目录/                      # 目录会先打包再转换
+python tools/epub2docx.py --out 输出目录/ 书1.epub 书2.epub
+python tools/epub2docx.py --pattern "*S1_01*" EPUB/          # 批量（按书名 glob 筛选）
+python tools/epub2docx.py --dry-run 某书.epub                # 只统计 ruby 改写，不生成 docx
+python tools/epub2docx.py --keep-src-epub 某书.epub          # 保留中间 .ruby.epub
+```
+
+调用本机 calibre 的 `ebook-convert` 完成 EPUB→DOCX 转换；转换前先把成品 EPUB 中的
+`<ruby>基文<rt>注音</rt></ruby>` 反向还原为《翻译与修嵌规范》交稿层面的注音记号
+`|基文[注音]`（成品里已由该记号转为 `<ruby>`，本工具做反向还原，便于取回交稿稿）。
+
+- 只改写含 `<ruby>` 的 XHTML：块内 `<rt>` 拼接为注音、`<rp>` 丢弃、无 `<rt>` 时只留基文；
+  块外字节原样保留（含 BOM、CRLF、条目顺序与压缩方式），支持嵌套 ruby。
+- 输入 `.epub` 直接处理；输入解包书目录先按 `package_cache_epubs` 同款规则打包。
+- docx 默认输出在输入同目录（用 `--out` 指定）；中间 `.ruby.epub` 默认用后即删。
+- 依赖：本机安装 calibre（自动探测 `ebook-convert`，可用 `--ebook-convert` 覆盖）；
+  额外转换参数用 `--extra` 透传（如 `--extra --docx-page-size=A4`）。
+
 ### 对齐检查（只读）
 
 ```powershell
