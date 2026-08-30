@@ -153,8 +153,7 @@
     <item href="Text/S1_24-08_Chapter12.xhtml" id="id12" media-type="application/xhtml+xml"/>
     <item href="Text/S1_24-09_Epilogue.xhtml" id="id13" media-type="application/xhtml+xml"/>
     <item href="Text/S1_24-10_After_the_Epilogue.xhtml" id="id14" media-type="application/xhtml+xml"/>
-    <item id="id32" href="Text/S1_24-11_After_after_the_Epilogue.xhtml" media-type="application/xhtml+xml"/>
-    <item href="Text/S1_24-12_Afterwords.xhtml" id="id17" media-type="application/xhtml+xml"/>
+    <item href="Text/S1_24-11_Afterwords.xhtml" id="id17" media-type="application/xhtml+xml"/>
     <item id="id31" href="Text/S1_24-Back_cover.xhtml" media-type="application/xhtml+xml"/>
     <item id="id15" href="Text/S1_24-Note.xhtml" media-type="application/xhtml+xml"/>
     <item id="nav" href="../nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
@@ -190,7 +189,6 @@
     <itemref idref="id12"/>
     <itemref idref="id13"/>
     <itemref idref="id14"/>
-    <itemref idref="id32"/>
     <itemref idref="id17"/>
     <itemref idref="id31"/>
     <itemref idref="id15"/>
