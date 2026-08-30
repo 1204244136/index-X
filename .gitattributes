@@ -1,0 +1,61 @@
+# index-X 仓库行尾（CRLF/LF）规范
+#
+# 设计要点：
+# 1. 全部文本统一 LF 存储与检出（索引 LF、检出 LF），跨机器/跨
+#    core.autocrlf 配置行为确定，消除 CRLF/LF 混排与假改动。
+#    - 入库（clean）一律 CRLF→LF；检出（smudge）一律 LF。
+#    - OneDrive 回流（CRLF 源）覆盖工作区后，git 状态依然干净：
+#      clean 转换后与索引 LF 一致，行尾差异不进入 diff。
+# 2. 二进制文件与 EPUB 关键文件（mimetype）显式禁止任何转换，
+#    防止行尾处理损坏图片或 EPUB 打包必需的无尾随换行文件。
+# 3. 本仓库文本全部为 UTF-8（tools/pull.ps1 带 BOM），无 UTF-16，
+#    文本转换安全。
+
+# 默认：按内容启发式判定文本/二进制（含 NUL 字节的文件保持二进制）
+* text=auto
+
+# ---------- 文本文件：统一 LF ----------
+# EPUB 档案内容（XHTML/XML/OPF/NCX/CSS/SVG）
+*.xhtml text eol=lf
+*.html  text eol=lf
+*.xml   text eol=lf
+*.opf   text eol=lf
+*.ncx   text eol=lf
+*.css   text eol=lf
+*.svg   text eol=lf
+# 维护脚本
+*.py    text eol=lf
+*.ps1   text eol=lf
+*.sh    text eol=lf
+*.bat   text eol=lf
+# 配置与文档
+*.md    text eol=lf
+*.txt   text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.json  text eol=lf
+*.toml  text eol=lf
+*.mdc   text eol=lf
+*.tsv   text eol=lf
+.gitignore text eol=lf
+.gitattributes text eol=lf
+
+# ---------- 二进制保护：禁止任何转换 ----------
+# EPUB mimetype 必须保持无尾随换行、逐字节原样
+mimetype binary
+# 图片与字体
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.gif binary
+*.webp binary
+*.bmp binary
+*.avif binary
+*.ico binary
+*.otf binary
+*.ttf binary
+*.woff binary
+*.woff2 binary
+# 打包产物
+*.zip binary
+*.epub binary
