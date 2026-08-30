@@ -21,7 +21,7 @@
 ### 正文文件结构（引子与尾声）
 
 - 序章（`Prologue`）之前的内容，无论页数多少，只写为一个文件「引子」，语义后缀用 `Before_the_Prologue`；不得按量拆分或并入 `Prologue` 文件。
-- 后记（`Afterwords`）之后的内容，无论页数多少，只写为一个文件「尾声」，语义后缀用 `After_the_Epilogue`；连续出现第二个尾声时用 `After_after_the_Epilogue`。
+- 后记（`Afterwords`）之后的内容，无论页数多少，只写为一个文件「尾声」，语义后缀用 `After_the_Epilogue`。
 - 判定以表头内容序为准：引子位于第一个 `Prologue` 之前，尾声位于第一个 `Afterwords` 之后。该位置规则与 `epub_char_count` 的成分名规范化（第一个「序章」前的成分 → 引子、第一个「后记」后的成分 → 尾声）一致。
 - `docx2epub` 目前把首章标题前的无标题引言并入首个章节文件；若引言位于序章之前且内容独立，应按本节规约人工拆为引子文件。
 

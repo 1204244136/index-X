@@ -41,8 +41,8 @@
 - 带数字内容序的正文或正文附属文件使用 `<表头>_<语义后缀>.xhtml`。例如 `S1_01-02_Chapter1.xhtml`的表头是 `S1_01-02`，`Chapter1` 只说明中文章节语义。
 - 内容序是文件在该作品中的对齐顺序，语义后缀中的章节数是展示语义，两者不要求相等。例如 `-02_Chapter1` 表示第 2 个对齐单元是第 1 章。配对和排序必须使用表头中的内容序，不得使用 `ChapterN` 反推顺序。
 - `-00` 是有效内容序，常用于需要参与中日对齐的导言或序页，例如 `S5_01_01-00_Introduction.xhtml`；不得将其当作无编号包装页或过滤掉。
-- 常见的编号内容语义后缀包括 `Before_the_Prologue`、`Prologue`、`ChapterN`、`Between_the_LinesN`、`Epilogue`、`After_the_Epilogue`、`After_after_the_Epilogue` 和 `Afterwords`。它们只描述内容类型；同一作品中的实际顺序仍由表头内容序决定。
-- 「引子」与「尾声」是聚合文件，不得按量拆分或并入相邻章节文件：序章（`Prologue`）之前的内容无论多少只写为一个文件「引子」，语义后缀用 `Before_the_Prologue`；后记（`Afterwords`）之后的内容无论多少只写为一个文件「尾声」，语义后缀用 `After_the_Epilogue`（连续出现第二个尾声时用 `After_after_the_Epilogue`）。判定以表头内容序为准：引子位于第一个 `Prologue` 之前，尾声位于第一个 `Afterwords` 之后。
+- 常见的编号内容语义后缀包括 `Before_the_Prologue`、`Prologue`、`ChapterN`、`Between_the_LinesN`、`Epilogue`、`After_the_Epilogue` 和 `Afterwords`。它们只描述内容类型；同一作品中的实际顺序仍由表头内容序决定。
+- 「引子」与「尾声」是聚合文件，不得按量拆分或并入相邻章节文件：序章（`Prologue`）之前的内容无论多少只写为一个文件「引子」，语义后缀用 `Before_the_Prologue`；后记（`Afterwords`）之后的内容无论多少只写为一个文件「尾声」，语义后缀用 `After_the_Epilogue`。判定以表头内容序为准：引子位于第一个 `Prologue` 之前，尾声位于第一个 `Afterwords` 之后。
 - 某些作品使用与正文标题对应的专用语义后缀，例如 `Sub.02`、`Period.07`、`Ingredients1`、`Bike_stunt1` 或 `A_Cardinal_Error.34`。这些后缀应按作品原有命名保留，不得为套用通用模板而改成 `ChapterN`。
 - 无数字内容序的作品级文件使用 `<作品号>-<包装后缀>.xhtml`。常见包装后缀为 `Cover`、`Back_cover`、`Illustrations`、`Information`、`Introduction`、`Note` 和 `Special`。例如 `S1_01-Cover.xhtml` 与 `S1_01-Information.xhtml`。
 - `nav.xhtml` 是 EPUB 导航文件，不使用作品号包装，不属于表头配对范围。
