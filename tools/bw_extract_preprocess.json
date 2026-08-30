@@ -1,0 +1,118 @@
+{
+  "searches": [
+    {
+      "case_sensitive": false,
+      "dot_all": false,
+      "find": "<ruby>(.*?)([^<]+)<rt>([^<]+)</rt>([^<]+)<rt>([^<]+)</rt>(.*?)</ruby>",
+      "mode": "regex",
+      "name": "bw提取预处理-ruby修正",
+      "iterative": true,
+      "replace": "<ruby>\\1\\2\\4<rt>\\3\\5</rt>\\6</ruby>"
+    },
+    {
+      "case_sensitive": false,
+      "dot_all": false,
+      "find": "<p><br/></p>",
+      "mode": "regex",
+      "name": "<br/>展平",
+      "replace": "<br/>"
+    },
+    {
+      "case_sensitive": false,
+      "dot_all": true,
+      "find": "(<\\?xml[^>]*\\?>)\\s+<!DOCTYPE html>\\s+<html\\s+xmlns=\"http://www.w3.org/1999/xhtml\"\\s+xmlns:epub=\"http://www.idpf.org/2007/ops\"\\s+xml:lang=\"ja\"\\s+class=\"vrtl\"\\s*>\\s+<head>\\s+<meta charset=\"UTF-8\"/>\\s+<title>(.*?)</title>\\s+<link rel=\"stylesheet\" type=\"text/css\" href=\"../style/book-style.css\"/>\\s+</head>\\s+<body class=\"p-text\">\\s+<div class=\"main\">\\s*(?:<br/>\\s*)*",
+      "mode": "regex",
+      "name": "头部整体合并为L3单行+main后两空行占位",
+      "replace": "\\1\n<!DOCTYPE html>\n<html xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:epub=\"http://www.idpf.org/2007/ops\" xml:lang=\"ja\" class=\"vrtl\"><head><meta charset=\"UTF-8\"/><title>\\2</title><link rel=\"stylesheet\" type=\"text/css\" href=\"../style/book-style.css\"/></head><body class=\"p-text\"><div class=\"main\">\n\n\n"
+    },
+    {
+      "case_sensitive": false,
+      "dot_all": true,
+      "find": "(<div class=\"main\">)\\s*<div class=\"start-3em\">\\s*<p([^>]*)>(.*?)</p>\\s*</div>",
+      "mode": "regex",
+      "name": "章节容器折叠为h1独占行(L4)",
+      "replace": "\\1\n<h1\\2>\\3</h1>\n\n"
+    },
+    {
+      "case_sensitive": false,
+      "dot_all": true,
+      "find": "(<h1[^>]*>.*?</h1>)\\s*(?:<br/>\\s*)*<div class=\"start-5em\">\\s*<p([^>]*)>(.*?)</p>\\s*</div>\\s*(?:<br/>\\s*)*",
+      "mode": "regex",
+      "name": "首小节容器折叠为h2独占行(L5,h1后)",
+      "replace": "\\1\n<h2\\2>\\3</h2>\n"
+    },
+    {
+      "case_sensitive": false,
+      "dot_all": true,
+      "find": "(<div class=\"main\">)\\s*(?:<br/>\\s*)*<div class=\"start-5em\">\\s*<p([^>]*)>(.*?)</p>\\s*</div>\\s*(?:<br/>\\s*)*",
+      "mode": "regex",
+      "name": "首小节容器折叠为h2独占行(L5,无h1)",
+      "replace": "\\1\n\n<h2\\2>\\3</h2>\n"
+    },
+    {
+      "case_sensitive": false,
+      "dot_all": true,
+      "find": "<div class=\"start-5em\">\\s*<p([^>]*)>(.*?)</p>\\s*</div>",
+      "mode": "regex",
+      "name": "正文中部小节容器折叠为h2行",
+      "replace": "<h2\\1>\\2</h2>"
+    },
+    {
+      "case_sensitive": false,
+      "dot_all": true,
+      "find": "(<h1[^>]*>.*?</h1>)\\s*(?:<br/>\\s*)*(<p\\b)",
+      "mode": "regex",
+      "name": "h1后填充br清理+空行占位",
+      "replace": "\\1\n\n\\2"
+    },
+    {
+      "case_sensitive": false,
+      "dot_all": false,
+      "find": "^<p>([0-9０-９]+)</p>$",
+      "mode": "regex",
+      "name": "裸数字小节转为h2",
+      "replace": "<h2>\\1</h2>"
+    },
+    {
+      "case_sensitive": false,
+      "dot_all": false,
+      "find": "<span class=\"font-1em50\">(.*?)</span>",
+      "mode": "regex",
+      "name": "标题span解包",
+      "replace": "\\1"
+    },
+    {
+      "case_sensitive": false,
+      "dot_all": false,
+      "find": "<p class=\"line-break-loose\">(.*?)</p>",
+      "mode": "regex",
+      "name": "辅助格式删除1",
+      "replace": "<p>\\1</p>"
+    },
+    {
+      "case_sensitive": false,
+      "dot_all": false,
+      "find": "<span class=\"em-sesame\">(.*?)</span>",
+      "mode": "regex",
+      "name": "辅助格式删除2",
+      "replace": "<b>\\1</b>"
+    },
+    {
+      "case_sensitive": false,
+      "dot_all": false,
+      "find": "<span class=\"tcy\">(.*?)</span>",
+      "mode": "regex",
+      "name": "辅助格式删除4",
+      "replace": "\\1"
+    },
+    {
+      "case_sensitive": false,
+      "dot_all": false,
+      "find": "<span class=\"line-break-loose word-break-break-all\">(.*?)</span>",
+      "mode": "regex",
+      "name": "辅助格式删除3",
+      "replace": "\\1"
+    }
+  ],
+  "version": 1
+}

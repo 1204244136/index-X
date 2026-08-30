@@ -202,6 +202,30 @@ python tools/normalize_epub_cache.py --dry-run  # 只预览，不写文件
 
 已知跳过项（内容级特例，需人工处理）：`S1_25-Stiyl_Magnus`（已手工完成模板对齐并修复原文件缺 `<body>` 的 XML 缺陷，跳过以免重建破坏手工对齐）。
 
+### bw 提取预处理（BookWalker 原始 EPUB -> 模板友好形态）
+
+```powershell
+python tools/bw_preprocess.py 某本bw提取.epub            # 输出 某本bw提取.preprocessed.epub
+python tools/bw_preprocess.py --dry-run 某本bw提取.epub   # 只预览
+python tools/bw_preprocess.py --out 输出目录/ 某本bw提取.epub
+python tools/bw_preprocess.py 已解包的目录/               # 就地改写目录下全部 .xhtml/.html/.htm
+python tools/bw_preprocess.py --rules 自定义.rules.json 某本bw提取.epub
+python tools/bw_preprocess.py --check 某本bw提取.epub     # 校验模式，不写盘
+```
+
+对 BookWalker 解包后的原始 XHTML 应用查找/替换规则集，是 `normalize_epub_cache.py` 之前的预处理步骤：合并双 ruby、`<p><br/></p>` 展平、头部折叠为 L3 单行、`start-3em/start-5em` 容器折叠为 h1/h2 独占行、裸数字小节转 `<h2>`、解包 `font-1em50`/`line-break-loose`/`em-sesame`/`tcy` 等排版包装。
+
+- 规则文件：`tools/bw_extract_preprocess.json`（与原始 `bw提取预处理.json` 同格式，可编辑；脚本以此为准，缺失时报错提示用 `--rules`）。
+- 输入 `.epub` 时解包改写后重新打包为 `<原名>.preprocessed.epub`，保留原文件、条目顺序、压缩方式与 `mimetype` 首项；输入目录时**就地**改写。
+- 保留原文件的 BOM 与换行风格（LF/CRLF），并把孤立 `\r`、`\r\r\n` 等脏换行归一化后再应用规则；规则按 JSON 顺序逐条执行，整体幂等（重复运行不再改写）。
+- `--check` 校验模式：内存中应用规则后检查内容文件（`<body class="p-text">`）的 L1-L6 固定行模板符合度，报告不符合清单；不写盘。常规模式也会统计内容/非内容文件数，便于发现漏处理。
+
+> 相对原始规则集的三处修正（均由真实数据验证得出）：
+>
+> 1. 规则「头部整体合并为L3单行」中结构标签间的 `\s*` 收紧为 `\s+`，只命中原始多行头部、不命中已折叠单行头部，避免重复运行时向 `main>` 后追加空行。
+> 2. 规则「bw提取预处理-ruby修正」标记 `"iterative": true`：脚本对其循环应用到稳定，把 4 段以上多段 ruby（如 `<ruby>学<rt>がく</rt>園<rt>えん</rt>…`）一次合并为单段 `<ruby>学園…<rt>…</rt></ruby>`。原规则每遍只合并相邻一对，重复运行会继续改写（非幂等）。
+> 3. 辅助格式规则重排：`em-sesame`→`<b>`、`tcy` 解包移到外层 `line-break-loose word-break-break-all` wrapper 解包**之前**。原顺序下 wrapper 的惰性 `.*?` 会把外层开标签与内层 span 的闭标签错误配对，产生非平衡嵌套 span 且残留不幂等。
+
 ### 对齐检查（只读）
 
 ```powershell
