@@ -42,6 +42,7 @@
 - 内容序是文件在该作品中的对齐顺序，语义后缀中的章节数是展示语义，两者不要求相等。例如 `-02_Chapter1` 表示第 2 个对齐单元是第 1 章。配对和排序必须使用表头中的内容序，不得使用 `ChapterN` 反推顺序。
 - `-00` 是有效内容序，常用于需要参与中日对齐的导言或序页，例如 `S5_01_01-00_Introduction.xhtml`；不得将其当作无编号包装页或过滤掉。
 - 常见的编号内容语义后缀包括 `Before_the_Prologue`、`Prologue`、`ChapterN`、`Between_the_LinesN`、`Epilogue`、`After_the_Epilogue`、`After_after_the_Epilogue` 和 `Afterwords`。它们只描述内容类型；同一作品中的实际顺序仍由表头内容序决定。
+- 「引子」与「尾声」是聚合文件，不得按量拆分或并入相邻章节文件：序章（`Prologue`）之前的内容无论多少只写为一个文件「引子」，语义后缀用 `Before_the_Prologue`；后记（`Afterwords`）之后的内容无论多少只写为一个文件「尾声」，语义后缀用 `After_the_Epilogue`（连续出现第二个尾声时用 `After_after_the_Epilogue`）。判定以表头内容序为准：引子位于第一个 `Prologue` 之前，尾声位于第一个 `Afterwords` 之后。
 - 某些作品使用与正文标题对应的专用语义后缀，例如 `Sub.02`、`Period.07`、`Ingredients1`、`Bike_stunt1` 或 `A_Cardinal_Error.34`。这些后缀应按作品原有命名保留，不得为套用通用模板而改成 `ChapterN`。
 - 无数字内容序的作品级文件使用 `<作品号>-<包装后缀>.xhtml`。常见包装后缀为 `Cover`、`Back_cover`、`Illustrations`、`Information`、`Introduction`、`Note` 和 `Special`。例如 `S1_01-Cover.xhtml` 与 `S1_01-Information.xhtml`。
 - `nav.xhtml` 是 EPUB 导航文件，不使用作品号包装，不属于表头配对范围。
@@ -103,6 +104,7 @@
 - 篇首插图并入第 3 行头部行（body 开头，图片在标题前）；正文中的图片正常占正文行，两侧图片行必须一一对应（`gaiji`/`height-2em` 内嵌字形不计；`S2_14-04/07/10/13` 为已确认的文本化图片例外）。SP 等稳定名称篇目（S1_25-*）日文侧补 `<h1>`（标题取自日文原版目录）；日文缺失的 h2 小节补在对应空行位置。
 - S6 单文件作品：中文 Main/Chapter 含「正文」类 h1 时应删除；无标题文件 L4/L5 为空行、正文固定第 6 行；正文尾部的附赠文本归入 Information 页；中文侧插图应补入日文侧（复制图片、OPF 声明、占位行替换为图片行）。
 - 中文包装页（Information/Note/Introduction 等作品级文件）头部行内的 h1 提取到第 4 行，按同一模板处理。日文独有包装页（p-fmatter 等原样快照）不参与中日对齐检查。
+- 换页衔接处理：分页源（BookWalker 等）合并为章节文件时，正文段落按行续接直接拼接，不得在跨页衔接处插入空行或 `<br/>`；被分页切断的半句/半段按原文语义拼接为完整段落。页首/页尾的填充 `<br/>` 属排版噪声，合并时删除。整页无文本且无图/SVG 的空占位页用 `tools/fix_empty_placeholders.py` 删除并前移后续序号。全页插图页（SVG、`body.p-image`）保留为图片行，随归属章节合并，两侧图片行一一对应。
 - 处理外部目录时使用显式路径，并避免把 OneDrive、临时目录或个人环境信息写入仓库文件。
 
 ## 变更说明
