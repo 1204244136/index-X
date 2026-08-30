@@ -1,0 +1,55 @@
+<?xml version='1.0' encoding='utf-8'?>
+<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId">
+  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <dc:title id="id">某科学的超电磁炮 SS</dc:title>
+    <dc:creator id="id-1">镰池和马</dc:creator>
+    <dc:identifier id="BookId">uuid:b2789f07-47e1-4619-abc1-d87417d9f467</dc:identifier>
+    <dc:language>zh-CN</dc:language>
+    <meta refines="#id" property="title-type">main</meta>
+    <meta name="cover" content="id11"/>
+  </metadata>
+  <manifest>
+    <item id="id1" href="Text/S6_22.06.10-Cover.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id2" href="Text/S6_22.06.10-Illustrations.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id3" href="Text/S6_22.06.10-01_Prologue.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id4" href="Text/S6_22.06.10-02_Chapter1.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id5" href="Text/S6_22.06.10-03_Chapter2.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id6" href="Text/S6_22.06.10-04_Chapter3.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id7" href="Text/S6_22.06.10-05_Chapter4.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id8" href="Text/S6_22.06.10-06_Epilogue.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id9" href="Text/S6_22.06.10-07_Afterwords.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id10" href="Images/S6_22.06.10-Contents.jpg" media-type="image/jpeg"/>
+    <item id="id11" href="Images/S6_22.06.10-Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
+    <item id="id12" href="Images/S6_22.06.10-Deputy_cover.jpg" media-type="image/jpeg"/>
+    <item id="id13" href="Images/S6_22.06.10-i-045.jpg" media-type="image/jpeg"/>
+    <item id="id14" href="Images/S6_22.06.10-i-063.jpg" media-type="image/jpeg"/>
+    <item id="id15" href="Images/S6_22.06.10-i-130.jpg" media-type="image/jpeg"/>
+    <item id="id16" href="Images/S6_22.06.10-i-209.jpg" media-type="image/jpeg"/>
+    <item id="id17" href="Images/S6_22.06.10-i-229.jpg" media-type="image/jpeg"/>
+    <item id="id18" href="Images/S6_22.06.10-i-252.jpg" media-type="image/jpeg"/>
+    <item id="id19" href="Images/S6_22.06.10-i-304-305.jpg" media-type="image/jpeg"/>
+    <item id="id20" href="Images/S6_22.06.10-i-317.jpg" media-type="image/jpeg"/>
+    <item id="id24" href="Images/S6_22.06.10-Illustrations1.jpg" media-type="image/jpeg"/>
+    <item id="id25" href="Images/S6_22.06.10-Illustrations2.jpg" media-type="image/jpeg"/>
+    <item id="id26" href="Images/S6_22.06.10-Illustrations3.jpg" media-type="image/jpeg"/>
+    <item id="id27" href="Images/S6_22.06.10-Illustrations4.jpg" media-type="image/jpeg"/>
+    <item id="id28" href="Images/S6_22.06.10-Illustrations5.jpg" media-type="image/jpeg"/>
+    <item id="id29" href="Images/S6_22.06.10-Illustrations6.jpg" media-type="image/jpeg"/>
+    <item id="id30" href="Text/S6_22.06.10-Note.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id21" href="Styles/style.css" media-type="text/css"/>
+    <item id="id22" href="../nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
+    <item id="id23" href="../toc.ncx" media-type="application/x-dtbncx+xml"/>
+  </manifest>
+  <spine toc="id23">
+    <itemref idref="id1"/>
+    <itemref idref="id2"/>
+    <itemref idref="id3"/>
+    <itemref idref="id4"/>
+    <itemref idref="id5"/>
+    <itemref idref="id6"/>
+    <itemref idref="id7"/>
+    <itemref idref="id8"/>
+    <itemref idref="id9"/>
+        <itemref idref="id30"/>
+</spine>
+</package>

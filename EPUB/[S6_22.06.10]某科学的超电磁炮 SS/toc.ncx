@@ -1,0 +1,292 @@
+<?xml version='1.0' encoding='utf-8'?>
+<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1" xml:lang="zh">
+  <head>
+    <meta name="dtb:uid" content="b2789f07-47e1-4619-abc1-d87417d9f467"/>
+    <meta name="dtb:depth" content="3"/>
+  </head>
+  <docTitle>
+    <text>某科学的超电磁炮 SS</text>
+  </docTitle>
+  <navMap>
+    <navPoint id="num_1" playOrder="1">
+      <navLabel>
+        <text>封面</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_22.06.10-Cover.xhtml"/>
+    </navPoint>
+    <navPoint id="num_2" playOrder="2">
+      <navLabel>
+        <text>彩页</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_22.06.10-Illustrations.xhtml"/>
+    </navPoint>
+    <navPoint id="num_3" playOrder="3">
+      <navLabel>
+        <text>序章 四位少女</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_22.06.10-01_Prologue.xhtml"/>
+    </navPoint>
+    <navPoint id="num_4" playOrder="4">
+      <navLabel>
+        <text>第一章 白井黑子不会犹豫</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_22.06.10-02_Chapter1.xhtml"/>
+    <navPoint id="num_5" playOrder="5">
+      <navLabel>
+        <text>1</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_22.06.10-02_Chapter1.xhtml#toc_1"/>
+    </navPoint>
+    <navPoint id="num_6" playOrder="6">
+      <navLabel>
+        <text>2</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_22.06.10-02_Chapter1.xhtml#toc_2"/>
+    </navPoint>
+    <navPoint id="num_7" playOrder="7">
+      <navLabel>
+        <text>3</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_22.06.10-02_Chapter1.xhtml#toc_3"/>
+    </navPoint>
+    <navPoint id="num_8" playOrder="8">
+      <navLabel>
+        <text>4</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_22.06.10-02_Chapter1.xhtml#toc_4"/>
+    </navPoint>
+    <navPoint id="num_9" playOrder="9">
+      <navLabel>
+        <text>5</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_22.06.10-02_Chapter1.xhtml#toc_5"/>
+    </navPoint>
+    <navPoint id="num_10" playOrder="10">
+      <navLabel>
+        <text>6</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_22.06.10-02_Chapter1.xhtml#toc_6"/>
+    </navPoint>
+    </navPoint>
+    <navPoint id="num_11" playOrder="11">
+      <navLabel>
+        <text>第二章 佐天泪子的黏糊糊血祭天堂☆</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_22.06.10-03_Chapter2.xhtml"/>
+    <navPoint id="num_12" playOrder="12">
+      <navLabel>
+        <text>1</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_22.06.10-03_Chapter2.xhtml#toc_1"/>
+    </navPoint>
+    <navPoint id="num_13" playOrder="13">
+      <navLabel>
+        <text>2</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_22.06.10-03_Chapter2.xhtml#toc_2"/>
+    </navPoint>
+    <navPoint id="num_14" playOrder="14">
+      <navLabel>
+        <text>3</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_22.06.10-03_Chapter2.xhtml#toc_3"/>
+    </navPoint>
+    <navPoint id="num_15" playOrder="15">
+      <navLabel>
+        <text>4</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_22.06.10-03_Chapter2.xhtml#toc_4"/>
+    </navPoint>
+    </navPoint>
+    <navPoint id="num_16" playOrder="16">
+      <navLabel>
+        <text>第三章 初春饰利也在认真工作</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_22.06.10-04_Chapter3.xhtml"/>
+    <navPoint id="num_17" playOrder="17">
+      <navLabel>
+        <text>1</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_22.06.10-04_Chapter3.xhtml#toc_1"/>
+    </navPoint>
+    <navPoint id="num_18" playOrder="18">
+      <navLabel>
+        <text>2</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_22.06.10-04_Chapter3.xhtml#toc_2"/>
+    </navPoint>
+    <navPoint id="num_19" playOrder="19">
+      <navLabel>
+        <text>3</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_22.06.10-04_Chapter3.xhtml#toc_3"/>
+    </navPoint>
+    <navPoint id="num_20" playOrder="20">
+      <navLabel>
+        <text>4</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_22.06.10-04_Chapter3.xhtml#toc_4"/>
+    </navPoint>
+    <navPoint id="num_21" playOrder="21">
+      <navLabel>
+        <text>5</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_22.06.10-04_Chapter3.xhtml#toc_5"/>
+    </navPoint>
+    <navPoint id="num_22" playOrder="22">
+      <navLabel>
+        <text>6</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_22.06.10-04_Chapter3.xhtml#toc_6"/>
+    </navPoint>
+    <navPoint id="num_23" playOrder="23">
+      <navLabel>
+        <text>7</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_22.06.10-04_Chapter3.xhtml#toc_7"/>
+    </navPoint>
+    </navPoint>
+    <navPoint id="num_24" playOrder="24">
+      <navLabel>
+        <text>第四章 御坂美琴与大小姐的终结</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_22.06.10-05_Chapter4.xhtml"/>
+    <navPoint id="num_25" playOrder="25">
+      <navLabel>
+        <text>1</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_22.06.10-05_Chapter4.xhtml#toc_1"/>
+    </navPoint>
+    <navPoint id="num_26" playOrder="26">
+      <navLabel>
+        <text>2</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_22.06.10-05_Chapter4.xhtml#toc_2"/>
+    </navPoint>
+    <navPoint id="num_27" playOrder="27">
+      <navLabel>
+        <text>3</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_22.06.10-05_Chapter4.xhtml#toc_3"/>
+    </navPoint>
+    <navPoint id="num_28" playOrder="28">
+      <navLabel>
+        <text>4</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_22.06.10-05_Chapter4.xhtml#toc_4"/>
+    </navPoint>
+    <navPoint id="num_29" playOrder="29">
+      <navLabel>
+        <text>5</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_22.06.10-05_Chapter4.xhtml#toc_5"/>
+    </navPoint>
+    <navPoint id="num_30" playOrder="30">
+      <navLabel>
+        <text>6</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_22.06.10-05_Chapter4.xhtml#toc_6"/>
+    </navPoint>
+    <navPoint id="num_31" playOrder="31">
+      <navLabel>
+        <text>7</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_22.06.10-05_Chapter4.xhtml#toc_7"/>
+    </navPoint>
+    <navPoint id="num_32" playOrder="32">
+      <navLabel>
+        <text>8</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_22.06.10-05_Chapter4.xhtml#toc_8"/>
+    </navPoint>
+    <navPoint id="num_33" playOrder="33">
+      <navLabel>
+        <text>9</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_22.06.10-05_Chapter4.xhtml#toc_9"/>
+    </navPoint>
+    <navPoint id="num_34" playOrder="34">
+      <navLabel>
+        <text>10</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_22.06.10-05_Chapter4.xhtml#toc_10"/>
+    </navPoint>
+    <navPoint id="num_35" playOrder="35">
+      <navLabel>
+        <text>11</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_22.06.10-05_Chapter4.xhtml#toc_11"/>
+    </navPoint>
+    <navPoint id="num_36" playOrder="36">
+      <navLabel>
+        <text>12</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_22.06.10-05_Chapter4.xhtml#toc_12"/>
+    </navPoint>
+    <navPoint id="num_37" playOrder="37">
+      <navLabel>
+        <text>13</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_22.06.10-05_Chapter4.xhtml#toc_13"/>
+    </navPoint>
+    <navPoint id="num_38" playOrder="38">
+      <navLabel>
+        <text>14</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_22.06.10-05_Chapter4.xhtml#toc_14"/>
+    </navPoint>
+    <navPoint id="num_39" playOrder="39">
+      <navLabel>
+        <text>15</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_22.06.10-05_Chapter4.xhtml#toc_15"/>
+    </navPoint>
+    <navPoint id="num_40" playOrder="40">
+      <navLabel>
+        <text>16</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_22.06.10-05_Chapter4.xhtml#toc_16"/>
+    </navPoint>
+    <navPoint id="num_41" playOrder="41">
+      <navLabel>
+        <text>17</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_22.06.10-05_Chapter4.xhtml#toc_17"/>
+    </navPoint>
+    <navPoint id="num_42" playOrder="42">
+      <navLabel>
+        <text>18</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_22.06.10-05_Chapter4.xhtml#toc_18"/>
+    </navPoint>
+    <navPoint id="num_43" playOrder="43">
+      <navLabel>
+        <text>19</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_22.06.10-05_Chapter4.xhtml#toc_19"/>
+    </navPoint>
+    <navPoint id="num_44" playOrder="44">
+      <navLabel>
+        <text>20</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_22.06.10-05_Chapter4.xhtml#toc_20"/>
+    </navPoint>
+    </navPoint>
+    <navPoint id="num_45" playOrder="45">
+      <navLabel>
+        <text>终章 四位少女+α</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_22.06.10-06_Epilogue.xhtml"/>
+    </navPoint>
+    <navPoint id="num_46" playOrder="46">
+      <navLabel>
+        <text>后记</text>
+      </navLabel>
+      <content src="OEBPS/Text/S6_22.06.10-07_Afterwords.xhtml"/>
+    </navPoint>
+    <navPoint id="num_47" playOrder="47">
+      <navLabel><text>译注</text></navLabel>
+      <content src="OEBPS/Text/S6_22.06.10-Note.xhtml"/>
+    </navPoint>
+  </navMap>
+</ncx>

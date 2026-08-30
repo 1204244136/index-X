@@ -1,0 +1,99 @@
+body {
+  padding: 0%;
+  margin-top: 0%;
+  margin-bottom: 0%;
+  margin-left: 1%;
+  margin-right: 1%;
+  line-height: 120%;
+  text-align: justify;
+}
+p {
+  text-indent: 2em;
+  display: block;
+  line-height: 1.6em;
+  margin: 0em;
+  word-wrap: break-word;
+}
+div {
+  margin: 0;
+  padding: 0;
+  line-height: 120%;
+  text-align: justify;
+}
+h1 {
+  font-size: 1.6em;
+  line-height: 1.2em;
+  margin-top: 1em;
+  margin-bottom: 1.8em;
+  font-weight: bold;
+  text-align: center;
+}
+h2 {
+  font-size: 1.4em;
+  line-height: 1.1em;
+  margin-top: 1.8em;
+  margin-bottom: 1em;
+  font-weight: bold;
+  text-align: center;
+}
+rt {
+  font-size: 0.5em;
+}
+ruby {
+  ruby-align: center;
+}
+.cover {
+  margin: 0;
+  padding: 0;
+  text-indent: 0;
+  text-align: center;
+}
+.fit {
+  display: inline-block;
+  page-break-inside: avoid;
+  max-height: 100%;
+  max-width: 100%;
+}
+.center {
+  text-indent: 0;
+  text-align: center;
+}
+.right {
+  text-indent: 0;
+  text-align: right;
+}
+.bold {
+  font-weight: bold;
+}
+.italic {
+  font-style: italic;
+}
+.nodeco {
+  text-decoration: none;
+  color: #879AC5;
+}
+.po {
+  font-size: 0.9em;
+  text-indent: -0.8em;
+  padding: 0 0.1em 0.1em 1em;
+  color: #960014;
+}
+.box2 {
+  border-style: solid;
+  border-color: #9d9b9c;
+  border-radius: 8px;
+  padding: 12px 6px;
+  margin: 26px 1px;
+  border-width: 2px;
+}
+.font06 { font-size: 0.6em; }
+.font07 { font-size: 0.7em; }
+.font08 { font-size: 0.8em; }
+.font09 { font-size: 0.9em; }
+.font10 { font-size: 1em; }
+.font11 { font-size: 1.1em; }
+.font12 { font-size: 1.2em; }
+.font13 { font-size: 1.3em; }
+.font14 { font-size: 1.4em; }
+.font15 { font-size: 1.5em; }
+.font16 { font-size: 1.6em; }
