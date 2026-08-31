@@ -11,12 +11,12 @@
   <manifest>
     <item id="id1" href="Text/S6_22.06.10-Cover.xhtml" media-type="application/xhtml+xml"/>
     <item id="id2" href="Text/S6_22.06.10-Illustrations.xhtml" media-type="application/xhtml+xml"/>
-    <item id="id3" href="Text/S6_22.06.10-01_Prologue.xhtml" media-type="application/xhtml+xml"/>
-    <item id="id4" href="Text/S6_22.06.10-02_Chapter1.xhtml" media-type="application/xhtml+xml"/>
-    <item id="id5" href="Text/S6_22.06.10-03_Chapter2.xhtml" media-type="application/xhtml+xml"/>
-    <item id="id6" href="Text/S6_22.06.10-04_Chapter3.xhtml" media-type="application/xhtml+xml"/>
-    <item id="id7" href="Text/S6_22.06.10-05_Chapter4.xhtml" media-type="application/xhtml+xml"/>
-    <item id="id8" href="Text/S6_22.06.10-06_Epilogue.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id3" href="Text/S6_22.06.10-01_Prologue.xhtml" media-type="application/xhtml+xml" properties="svg"/>
+    <item id="id4" href="Text/S6_22.06.10-02_Chapter1.xhtml" media-type="application/xhtml+xml" properties="svg"/>
+    <item id="id5" href="Text/S6_22.06.10-03_Chapter2.xhtml" media-type="application/xhtml+xml" properties="svg"/>
+    <item id="id6" href="Text/S6_22.06.10-04_Chapter3.xhtml" media-type="application/xhtml+xml" properties="svg"/>
+    <item id="id7" href="Text/S6_22.06.10-05_Chapter4.xhtml" media-type="application/xhtml+xml" properties="svg"/>
+    <item id="id8" href="Text/S6_22.06.10-06_Epilogue.xhtml" media-type="application/xhtml+xml" properties="svg"/>
     <item id="id9" href="Text/S6_22.06.10-07_Afterwords.xhtml" media-type="application/xhtml+xml"/>
     <item id="id10" href="Images/S6_22.06.10-Contents.jpg" media-type="image/jpeg"/>
     <item id="id11" href="Images/S6_22.06.10-Cover.jpg" media-type="image/jpeg" properties="cover-image"/>
@@ -29,6 +29,12 @@
     <item id="id18" href="Images/S6_22.06.10-i-252.jpg" media-type="image/jpeg"/>
     <item id="id19" href="Images/S6_22.06.10-i-304-305.jpg" media-type="image/jpeg"/>
     <item id="id20" href="Images/S6_22.06.10-i-317.jpg" media-type="image/jpeg"/>
+    <item id="id31" href="Images/S6_22.06.10-m-001.jpg" media-type="image/jpeg"/>
+    <item id="id32" href="Images/S6_22.06.10-m-002.jpg" media-type="image/jpeg"/>
+    <item id="id33" href="Images/S6_22.06.10-m-003.jpg" media-type="image/jpeg"/>
+    <item id="id34" href="Images/S6_22.06.10-m-004.jpg" media-type="image/jpeg"/>
+    <item id="id35" href="Images/S6_22.06.10-m-005.jpg" media-type="image/jpeg"/>
+    <item id="id36" href="Images/S6_22.06.10-m-006.jpg" media-type="image/jpeg"/>
     <item id="id24" href="Images/S6_22.06.10-Illustrations1.jpg" media-type="image/jpeg"/>
     <item id="id25" href="Images/S6_22.06.10-Illustrations2.jpg" media-type="image/jpeg"/>
     <item id="id26" href="Images/S6_22.06.10-Illustrations3.jpg" media-type="image/jpeg"/>
