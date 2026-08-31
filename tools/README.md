@@ -1,5 +1,159 @@
 # EPUB 维护工具
 
+本文只说明工具入口、参数、数据流和可验证行为。作品编号、文件命名、固定行模板及 Agent 操作边界以仓库根目录 `AGENTS.md` 为唯一规范来源；下文出现的规则摘要用于解释命令效果，不另立一套规则。
+
+## 工作流程图（按处理阶段）
+
+本工具集按照明确的职责分工处理 EPUB 文件，每个工具负责一个独立的处理阶段：
+
+### 阶段 0：拉取与编辑准备
+```
+OneDrive EPUB → pull.ps1（增量解压）→ .cache/epub-work/（工作缓存）
+```
+- **工具**：`pull.ps1`
+- **职责**：从 OneDrive 增量拉取变化的 EPUB 到本地缓存
+- **输出**：`.cache/epub-work/chinese-text/` 和 `japanese-text/` 解包目录
+
+### 阶段 1：BookWalker 源文件预处理（仅限新书导入）
+```
+bw 原始 EPUB → bw_preprocess.py（清理排版噪声）→ 预处理后分页目录
+```
+- **工具**：`bw_preprocess.py`
+- **职责**：清理 BookWalker 特有排版噪声（ruby 合并、span 解包、页首/页尾填充 `<br/>` 删除）
+- **输入**：BookWalker 解包的原始分页 EPUB
+- **输出**：`<原名>.preprocessed.epub` 或就地改写的目录
+- **不做**：头部折叠、容器解包、标题提取等模板操作
+
+### 阶段 2：分页合并为章节文件（仅限新书导入）
+```
+预处理后分页 → merge_bw_pages.py（按 h1 合并 + 跨页衔接）→ 规范化章节文件 ✅
+```
+- **工具**：`merge_bw_pages.py`
+- **职责**：按章节标题合并分页，处理跨页间隔（文本+文本插 3 行 `<br/>`、跨图无缝）
+- **输入**：`bw_preprocess` 处理后的分页目录
+- **输出**：`<book>-NN.xhtml` 规范化章节文件（已套用 L1-L6 模板）✨
+- **检测**：页首/页尾残留 `<br/>`（若有则报告警告）
+- **说明**：v2 版本已增强，直接输出符合固定行模板的文件，可选使用 `normalize_single.py` 进行精细化处理
+
+### 阶段 3：模板规范化
+
+```
+临时文件/缓存文件 → normalize_single.py（单文件规范化）→ 规范化缓存
+                   → normalize_paired.py（配对批量处理）→ 规范化缓存
+```
+
+#### normalize_single.py - 定向单文件/目录规范化
+
+**用途**：独立规范化单个或批量文件，**不依赖中日配对**
+
+```powershell
+# 单文件处理
+python tools/normalize_single.py 文件.xhtml
+
+# 批量处理目录
+python tools/normalize_single.py --dir .cache/epub-work/japanese-text/某书/OEBPS/Text/
+python tools/normalize_single.py --dir 目录/ --pattern "*.xhtml" --dry-run
+
+```
+
+- **职责**：统一套用固定行模板（头部折叠、标题提取、h1/h2 重建）
+- **输入**：任何 XHTML 文件（日文或中文，单独或批量）
+- **输出**：符合 L1-L6 模板的规范化文件（就地改写）
+- **优点**：
+  - ✅ 不需要中日配对即可处理
+  - ✅ 适用于新导入日文书、修复手动编辑、历史文件处理
+  - ✅ 可用于 `merge_bw_pages` 输出的兜底规范化
+
+#### normalize_paired.py - 中日配对批量规范化（缓存主入口）
+
+**用途**：中日配对批量规范化，依赖配对关系
+
+```powershell
+python tools/normalize_paired.py --dry-run
+python tools/normalize_paired.py
+```
+
+- **职责**：遍历 `.cache/epub-work/` 下的中日配对书籍，批量规范化
+- **约束**：
+  - ⚠️ 只处理有中日配对的文件
+  - ⚠️ 单独导入的日文书会被跳过
+- **说明**：配对文件只有在两侧均可重建且重建后行数相同时才写入；`normalize_epub_cache.py` 是本入口的兼容别名。
+
+---
+
+**工作流位置（新架构）**：
+```
+阶段 1：bw EPUB → bw_preprocess（清理噪声）→ 预处理分页
+阶段 2：预处理分页 → merge_bw_pages（合并章节）→ 接近规范的文件
+阶段 3a：已配对缓存 → normalize_paired.py → 成对规范化并保持行数约束
+阶段 3b：明确指定的单文件/目录 → normalize_single.py → 独立规范化
+阶段 4：规范化文件 → check_alignment.py（质检）
+```
+
+两个入口共享 `xhtml_template.py` 的同一套模板重建规则；差别只在编排策略，避免规则漂移。
+
+### 阶段 4：中日对齐与重命名（人工）
+```
+规范化缓存 → 人工对齐 + 重命名（临时序号 → 最终表头）→ 对齐后缓存
+```
+- **操作**：人工核对中日文件对应关系
+- **任务**：
+  1. 将临时序号文件 `<book>-NN.xhtml` 重命名为 `<表头>-<内容序>_<语义后缀>.xhtml`
+  2. 确保中日两侧同位置文件的视觉间隔数量一致
+  3. 更新 OPF/NCX/nav 元数据中的文件引用
+
+### 阶段 5：质量检查
+```
+对齐后缓存 → check_alignment.py（模板与对齐检查）→ 报告
+            → check_translation_spec.py（翻译规范检查）→ 报告
+            → check_note_order.py（注释顺序检查）→ 报告
+```
+- **工具**：`check_alignment.py`、`check_translation_spec.py`、`check_note_order.py` 等
+- **职责**：只读检查，不修改文件
+- **输出**：`.cache/epub-work/` 下的检查报告（TSV/JSON/Markdown）
+
+### 阶段 6：发布
+```
+缓存改动 → publish.py（增量同步 + 打包 + 上传）→ EPUB/ + OneDrive
+```
+- **工具**：`publish.py`
+- **职责**：检测缓存变更，只处理变化的书籍和文件
+- **流程**：
+  1. 对比 `manifest.json` 检测变更
+  2. 中文变更增量写入 `EPUB/`（含删除传播）
+  3. 打包为 `.epub`（输出到 `.cache/epub-work/packed-epubs/`）
+  4. 上传到 OneDrive 并更新 `pull-state.tsv`
+- **反向流程**：若直接修改了 `EPUB/`，用 `publish_epub.py` 回流到 OneDrive 和缓存
+
+### 特殊流程：交稿文件处理
+```
+docx 交稿 → docx2epub.py（|基文[注音] → <ruby>）→ X版 EPUB
+X版 EPUB → epub2docx.py（<ruby> → |基文[注音]）→ 交稿 docx
+```
+- **工具**：`docx2epub.py`（正向）、`epub2docx.py`（反向）
+- **职责**：交稿格式与成品格式互转
+- **注意**：这两个工具独立于主工作流，用于交稿管理
+
+---
+
+## 共享规则模块与测试
+
+以下文件是供命令行工具复用的内部模块，不是独立工作流入口：
+
+- `epub_ids.py`：作品号、表头、内容序和包装页角色解析；历史异常只接受明确别名，不做模糊配对。
+- `alignment_rules.py`：人工确认的非配对作品、手工对齐表头、文本化图片和 SP 标题例外。
+- `xhtml_template.py`：固定行模板的纯重建规则；由两个 normalize 入口共同调用。
+- `notes_core.py`：Note 条目解析、正文引用收集和阅读顺序。
+- `sync_core.py`：清单差异、文件增量镜像和 `pull-state.tsv` 更新。
+
+修改上述共享规则或其调用方后运行：
+
+```powershell
+python -m unittest discover -s tools/tests -p "test_*.py" -v
+```
+
+---
+
 ## 正文行结构规范（统一固定行模板）
 
 中日两侧带正文的 XHTML 使用统一固定行模板：
@@ -9,12 +163,14 @@
 2  <!DOCTYPE html>
 3  <html …><head>…</head><body…>   ← 可并入篇首图片（body 开头）
 4  <h1>…</h1>                      ← 独占行；无 h1 则空行
-5  <h2>…</h2>                      ← 独占行；无 h2 则空行
+5  <h2>…</h2>                      ← 独占行；无 h2 则空行（中文列表型包装页可为 <ul>/<ol>）
 6  <p>正文首行</p>                 ← 永远在第 6 行
 ```
 
-- h1、h2 必须独占一行；缺元素用空行占位（不得用 `<br/>` 占位）。
-- 中文 Note 等列表型包装页：若没有 h2，`<ul>`/`<ol>` 可放在第 5 行占位，第一条列表项从第 6 行开始。
+- **L4（h1 槽位）**：`<h1>` 独占行（开标签+内容+闭标签同行），或空行占位（不得用 `<br/>` 占位）。
+- **L5（h2 槽位）**：`<h2>` 独占行（开标签+内容+闭标签同行），或空行占位。
+  - **列表型包装页例外**（中文 Note、Introduction 等）：若该文件没有 h2，允许 `<ul>`/`<ol>` 列表包装开标签独占 L5，语义上等价于"结构占位"（不是标题行），第一条列表项 `<li>` 从第 6 行开始。
+  - 日文包装页不适用列表占位规则（保持原样快照）。
 - 同一文件中日两侧的 h1/h2/空行位置一一对应；总行数一致。
 - 纯图片页、无正文页、日文独有包装页（原样快照）不适用。
 
@@ -23,7 +179,7 @@
 - 序章（`Prologue`）之前的内容，无论页数多少，只写为一个文件「引子」，语义后缀用 `Before_the_Prologue`；不得按量拆分或并入 `Prologue` 文件。
 - 后记（`Afterwords`）之后的内容，无论页数多少，只写为一个文件「尾声」，语义后缀用 `After_the_Epilogue`。
 - 判定以表头内容序为准：引子位于第一个 `Prologue` 之前，尾声位于第一个 `Afterwords` 之后。该位置规则与 `epub_char_count` 的成分名规范化（第一个「序章」前的成分 → 引子、第一个「后记」后的成分 → 尾声）一致。
-- `docx2epub` 目前把首章标题前的无标题引言并入首个章节文件；若引言位于序章之前且内容独立，应按本节规约人工拆为引子文件。
+- `docx2epub` 在首章为 `Prologue` 时会把此前无标题正文自动生成为 `-00_Before_the_Prologue.xhtml`；其他首章前文本仍并入首章。
 
 ### 换页衔接处理（跨页文件合并）
 
@@ -56,8 +212,8 @@
 三处中文文件副本各有固定角色，不得互相替代：
 
 - `.cache/epub-work/`（解包工作区，不提交）：唯一编辑点。`pull.ps1` 从 OneDrive 解包生成，可随时删除重建。
-- `EPUB/`（解包归档，提交到 git）：版本控制真源，diff 友好；仅由 `publish.py` 从缓存同步覆盖。
-- OneDrive（打包 `.epub`，外部）：分发与阅读副本；既是 `pull.ps1` 的输入，也是 `publish.py` 的上传目标。
+- `EPUB/`（解包归档，提交到 git）：版本化归档基线，diff 友好；通常由 `publish.py` 从缓存同步，也可通过 `publish_epub.py` 反向回流。它不是日常编辑点。
+- OneDrive（打包 `.epub`，外部）：分发与阅读副本；是 `pull.ps1` 的输入，也是 `publish.py` / `publish_epub.py` 的上传目标。
 
 编辑边界：
 
@@ -69,7 +225,7 @@
 
 ### 三种常用工作流（均增量处理，不做全量写入）
 
-**流程 A：只改了 OneDrive 里的文件 → 拉回缓存并写进 `EPUB/`**
+**流程 A：OneDrive 已有外部变更 → 拉回缓存并写进 `EPUB/`**
 
 ```powershell
 ./tools/pull.ps1 -SyncToEpub
@@ -101,7 +257,7 @@ python tools/publish_epub.py             # 执行
 ./tools/pull.ps1
 ```
 
-将 OneDrive 中的中文和日文 EPUB 解压到审计缓存。脚本用 `.cache/epub-work/pull-state.tsv` 记录每个 EPUB 的修改时间与大小，只解压发生变化的书籍；首次运行会全部解压一次以建立状态，之后仅处理变化的书。解压后只为被解压的书籍增量更新 `manifest.json`，未变化的书籍保持原基线。
+将 OneDrive 中的中文和日文 EPUB 解压到审计缓存。脚本用 `.cache/epub-work/pull-state.tsv` 记录每个 EPUB 的修改时间与大小，只解压发生变化的书籍；首次运行会全部解压一次以建立状态，之后仅处理变化的书。解压后只为被解压的书籍增量更新 `manifest.json`，未变化的书籍保持原基线。只有清单更新或 `-SyncToEpub` 同步成功后才推进 `pull-state.tsv`；下游失败会返回非零并保留重试条件。
 
 默认读取：
 
@@ -123,7 +279,7 @@ python tools/publish_epub.py             # 执行
 
 ### 2. 修改缓存（Agent 或手动）
 
-使用 agent 或手动修改 `.cache/epub-work/` 中的文件。可先运行 `python tools/normalize_epub_cache.py` 按统一固定行模板规范化缓存，再用 `python tools/check_alignment.py` 检查模板与中日对齐。
+使用 agent 或手动修改 `.cache/epub-work/` 中的文件。中日配对缓存使用 `python tools/normalize_paired.py`；只处理明确指定文件时使用 `python tools/normalize_single.py`。随后用 `python tools/check_alignment.py` 检查模板与中日对齐。
 
 ### 3. 发布（缓存 -> 打包 + OneDrive + EPUB/）
 
@@ -150,6 +306,8 @@ python tools/publish.py              # 执行发布
 - `--dry-run`：仅预览，不执行任何操作
 
 发布失败的书籍不会更新清单，下次运行时会自动重试。
+
+默认发布要求对应 OneDrive 目录已经存在；目录缺失会在打包、镜像前失败，不会再被当成“跳过上传但发布成功”。只需本地操作时必须显式使用 `--no-upload` 或 `--sync-only`。
 
 若需要让全部中文缓存与项目 `EPUB/`、以及两侧 OneDrive 打包文件重新建立一致，使用 `python tools/publish.py --force`；该命令会重建并覆盖全部书籍的 EPUB，执行前应先确认缓存就是预期发布源。
 
@@ -218,11 +376,14 @@ python tools/package_cache_epubs.py --source EPUB --output output/epubs
 ### 缓存规范化（统一固定行模板）
 
 ```powershell
-python tools/normalize_epub_cache.py            # 应用规范化
-python tools/normalize_epub_cache.py --dry-run  # 只预览，不写文件
+python tools/normalize_paired.py --dry-run       # 中日成对预览（缓存主入口）
+python tools/normalize_paired.py                 # 中日成对应用
+python tools/normalize_single.py 文件.xhtml      # 定向处理单文件
 ```
 
-只处理 `.cache/epub-work/`，不修改 `EPUB/` 源文件。按统一固定行模板（见文首）重建文件头部：
+两个入口共享 `xhtml_template.py` 的重建实现。`normalize_paired.py` 只处理 `.cache/epub-work/` 中可确认的配对/单侧中文正文，并在成对写入前验证行数相等；`normalize_single.py` 只处理命令行明确指定的文件或目录，不保证中日对齐。两者都不修改 `EPUB/`。旧命令 `normalize_epub_cache.py` 保留为 `normalize_paired.py` 的兼容入口。
+
+统一规则如下：
 
 - 头部标签跨行折叠为一行；填充 `<br/>` 删除；跨行 h1/h2 折叠为单行；
 - 日文 p 型标题（`font-1em10/30`、裸 `<p>あとがき/译注` 等）转为 `<h1>`；
@@ -230,12 +391,13 @@ python tools/normalize_epub_cache.py --dry-run  # 只预览，不写文件
 - 中文包装页（Information/Note/Introduction 等）头部行内的 h1 提取到第 4 行；
 - 中文 Note 等列表型包装页的 `<ul>`/`<ol>` 包装行不视为正文，放入第 5 行（h2 空位），使第一条注释从第 6 行开始；
 - 中文 Note 等列表型包装页中 `<p>` 包裹 `<li>` 的写法会剥离 `<p>`，让 `<li>` 直接作为列表项；
+- 带 class 的 body 语义包装会保留；若其 `</div>` 原本独占尾行，则折叠到 `</body>` 行以保持模板行数。只有中文侧成对出现的裸 `<div>` / `</div>` 排版包装才会一起移除，不会单独删除可能属于 class 容器的闭标签；
 - 篇首图片并入第 3 行头部行；SP 篇目日文侧补 `<h1>`（标题取自日文原版目录）；
 - 中日配对文件两侧行数必须一致：任一侧无法套用模板或会造成行数不对称时，该对跳过并报告。
 
 已知跳过项（内容级特例，需人工处理）：`S1_25-Stiyl_Magnus`（已手工完成模板对齐并修复原文件缺 `<body>` 的 XML 缺陷，跳过以免重建破坏手工对齐）。
 
-### bw 提取预处理（BookWalker 原始 EPUB -> 模板友好形态）
+### bw 提取预处理（BookWalker 原始 EPUB -> 清理排版噪声）
 
 ```powershell
 python tools/bw_preprocess.py 某本bw提取.epub            # 输出 某本bw提取.preprocessed.epub
@@ -246,18 +408,73 @@ python tools/bw_preprocess.py --rules 自定义.rules.json 某本bw提取.epub
 python tools/bw_preprocess.py --check 某本bw提取.epub     # 校验模式，不写盘
 ```
 
-对 BookWalker 解包后的原始 XHTML 应用查找/替换规则集，是 `normalize_epub_cache.py` 之前的预处理步骤：合并双 ruby、`<p><br/></p>` 展平、头部折叠为 L3 单行、`start-3em/start-5em` 容器折叠为 h1/h2 独占行、裸数字小节转 `<h2>`、解包 `font-1em50`/`line-break-loose`/`em-sesame`/`tcy` 等排版包装。
+对 BookWalker 解包后的原始 XHTML 应用查找/替换规则集，**只清理 BookWalker 特有的排版噪声**，为后续处理做准备。
 
-- 规则文件：`tools/bw_extract_preprocess.json`（与原始 `bw提取预处理.json` 同格式，可编辑；脚本以此为准，缺失时报错提示用 `--rules`）。
+**本工具职责**（v2 职责边界调整）：
+- ✅ 合并多段 ruby 为单段（`<ruby>学<rt>がく</rt>園<rt>えん</rt>` → `<ruby>学園<rt>がくえん</rt>`）
+- ✅ `<p><br/></p>` 展平为 `<br/>`
+- ✅ 页首/页尾填充 `<br/>` 删除（`<div class="main">` 后与 `</div>` 前）
+- ✅ 解包排版 span（`font-1em50`、`em-sesame`→`<b>`、`tcy`、`line-break-loose` 等）
+- ❌ **不做**头部折叠、容器解包（`start-3em`/`start-5em`）、标题提取（p 型标题→h1、数字小节→h2）等“套用固定行模板”操作 → 这些由共享规范化核心统一处理
+
+**工作流位置**：
+```
+bw 原始 EPUB → bw_preprocess（清理噪声）→ merge_bw_pages（合并分页）→ normalize（套用模板）
+```
+
+- 规则文件：`tools/bw_extract_preprocess.json`（v2，已移除头部折叠/容器解包规则）。
 - 输入 `.epub` 时解包改写后重新打包为 `<原名>.preprocessed.epub`，保留原文件、条目顺序、压缩方式与 `mimetype` 首项；输入目录时**就地**改写。
 - 保留原文件的 BOM 与换行风格（LF/CRLF），并把孤立 `\r`、`\r\r\n` 等脏换行归一化后再应用规则；规则按 JSON 顺序逐条执行，整体幂等（重复运行不再改写）。
-- `--check` 校验模式：内存中应用规则后检查内容文件（`<body class="p-text">`）的 L1-L6 固定行模板符合度，报告不符合清单；不写盘。常规模式也会统计内容/非内容文件数，便于发现漏处理。
+- `--check` 校验模式：内存中应用规则后检查内容文件（`<body class="p-text">`）的基本结构（L1-L3），报告问题清单；不写盘。不再检查完整 L1-L6 模板符合度（由 `normalize` 负责）。
+- 页首/页尾填充清理：规则「页首填充br删除(main后)」删除 `<div class="main">` 之后的填充 `<br/>`，规则「页尾填充br删除」删除 `</div>` 前的填充空段/`<br/>`。处理后的分页文件页首/页尾应无残留填充 `<br/>`；若 `merge_bw_pages` 检测到残留，会报告警告（说明本工具规则需增强）。
 
-> 相对原始规则集的三处修正（均由真实数据验证得出）：
->
-> 1. 规则「头部整体合并为L3单行」中结构标签间的 `\s*` 收紧为 `\s+`，只命中原始多行头部、不命中已折叠单行头部，避免重复运行时向 `main>` 后追加空行。
-> 2. 规则「bw提取预处理-ruby修正」标记 `"iterative": true`：脚本对其循环应用到稳定，把 4 段以上多段 ruby（如 `<ruby>学<rt>がく</rt>園<rt>えん</rt>…`）一次合并为单段 `<ruby>学園…<rt>…</rt></ruby>`。原规则每遍只合并相邻一对，重复运行会继续改写（非幂等）。
-> 3. 辅助格式规则重排：`em-sesame`→`<b>`、`tcy` 解包移到外层 `line-break-loose word-break-break-all` wrapper 解包**之前**。原顺序下 wrapper 的惰性 `.*?` 会把外层开标签与内层 span 的闭标签错误配对，产生非平衡嵌套 span 且残留不幂等。
+### 分页源合并为章节文件（跨页衔接处理）
+
+```powershell
+python tools/merge_bw_pages.py 分页目录 --book S4_05            # 输出 <book>-NN.xhtml
+python tools/merge_bw_pages.py 分页目录 --book S4_05 --dry-run   # 只预览
+python tools/merge_bw_pages.py 分页目录 --book S4_05 --out 输出目录/
+```
+
+把 `bw_preprocess.py` 处理后的分页目录（`p-NNN.xhtml`）按章节标题（`<h1>`）合并为章节文件，落实 AGENTS.md「换页衔接处理」：
+
+- **页边界按衔接处两侧页型定间距**：文本+文本（连续两页正文）插入 3 行视觉间隔（每行一个独占一行的 `<br/>`）；跨整页插图（页边界行含 img/image/svg）无缝衔接、前后不插 `<br/>`。
+- **全页插图页**（`body.p-image` / SVG）保留为图片行，并入其前一章节单元末尾（无缝）；SVG 折叠为单行。
+- **引子**：第一个 `<h1>` 之前的无标题页合并为独立「引子」单元（L4/L5 空行占位）。
+- **空占位页**（无文本无图）跳过并报告。
+- **页首/页尾 `<br/>` 残留检测**：合并时检测页首/页尾是否有残留填充 `<br/>`（应由 `bw_preprocess` 清理），若发现则报告警告并删除，避免跨页间隔被残留 `<br/>` 叠加成 4 行以上；小节/章节标题（`<h1>/<h2>`）边界的页边界不套 3 行间隔（标题自带分隔），并输出「标题边界」待核对。
+- 输出**待人工确认清单**：文本+文本页边界是否同一段落断续（须按语义拼回、勿套 3 行间隔）、标题边界、全页插图归属是否应调整、预处理残留的 `<br/>`。
+
+`process_split_pages.py` 是保留用于复现旧产物的兼容入口，会在运行时打印警告；新导入不得与本流程混用。
+
+#### 输出文件命名与后续处理
+
+`merge_bw_pages.py` 输出的 `<book>-NN.xhtml` 是**临时序号文件**，NN 为章节单元的顺序号（01、02、...）。这些临时文件需在**中日对齐时重命名**为最终表头格式 `<表头>-<内容序>_<语义后缀>.xhtml`。
+
+**重命名规则表**（以 S4_05 为例）：
+
+| 临时文件 | 单元类型 | 最终表头文件名示例 | 说明 |
+|---------|---------|------------------|------|
+| S4_05-01.xhtml | 引子（无 h1 标题） | S4_05-00_Before_the_Prologue.xhtml | 内容序从 00 开始 |
+| S4_05-02.xhtml | 序章（h1=序章） | S4_05-01_Prologue.xhtml | 序章占内容序 01 |
+| S4_05-03.xhtml | 第一章 | S4_05-02_Chapter1.xhtml | 第一章占内容序 02 |
+| S4_05-04.xhtml | 第二章 | S4_05-03_Chapter2.xhtml | 依此类推 |
+| ... | ... | ... | ... |
+| S4_05-15.xhtml | 后记 | S4_05-14_Afterwords.xhtml | 后记占内容序 14 |
+| S4_05-16.xhtml | 尾声（后记之后） | S4_05-15_After_the_Epilogue.xhtml | 尾声占最后内容序 |
+
+**重命名要点**：
+1. **临时序号 ≠ 最终内容序**：引子占临时序号 01 但内容序为 00，导致后续所有内容序比临时序号小 1。
+2. **语义后缀规则**：
+   - 引子（第一个 Prologue 之前）→ `Before_the_Prologue`
+   - 序章 → `Prologue`
+   - 普通章节 → `Chapter1`, `Chapter2`, ...
+   - 行间 → `Between_the_Lines1`, `Between_the_Lines2`, ...
+   - 终章 → `Epilogue`
+   - 后记 → `Afterwords`
+   - 尾声（第一个 Afterwords 之后）→ `After_the_Epilogue`
+3. **中日对齐**：按日文侧临时文件的内容和位置，匹配中文侧对应文件，确定最终内容序后统一重命名。中日两侧同一位置的视觉间隔数量须一致（本工具只合并日文分页，中文侧对齐时按日文间隔数对齐）。
+4. **OPF/NCX/nav 更新**：重命名后需同步更新 EPUB 元数据文件中的文件引用。
 
 ### EPUB → DOCX（交稿格式，ruby 还原为 |基文[注音]）
 
@@ -310,7 +527,7 @@ nav.xhtml / toc.ncx / style.css 全套骨架。
   无法识别用 SectionN）；纯数字者为小节，生成 `<h2 id="toc_N">`。
 - 正文中 docx 直接写出的可信行内 HTML 标签（`<b>`/`<i>`/`<small>`/`<sup>` 等）原样
   保留为标签，其余尖括号内容一律转义。
-- 第一章之前的引言并入第一章文件（序章之前的独立内容按「正文文件结构」规约拆为引子文件）；docx 内嵌图片按字节去重提取。
+- 首章为序章时，其前的无标题正文自动生成为内容序 `00` 的 `Before_the_Prologue` 文件；其他首章前文本并入首章。docx 内嵌图片按字节去重提取。
 - **插图占位符**：正文中的 `【插图-N】` 占位符可用 `--images-from 日文原版.epub`
   自动替换为图片行（按 spine 中正文内容页的图片出现顺序对应），无对应图时保留
   占位符原样便于人工补图。
@@ -369,7 +586,7 @@ python tools/fix_empty_placeholders.py
 python tools/fix_empty_placeholders.py --apply
 ```
 
-仅把“位于两个编号文件之间、正文无文本且无图片/SVG”的 XHTML 视为空占位页；应用后会删除该页，并将同目录后续文件的表头序号及数字页码后缀依次前移。默认只扫描，不修改缓存。注意与模板中的“空行占位”区分：本工具处理的是空占位**页**（整个文件无内容），模板空行是正文文件内部的第 4/5 行占位。
+仅把“位于两个编号文件之间、正文无文本且无图片/SVG”的 XHTML 视为空占位页；应用后会删除该页，将同目录后续文件的表头序号及数字页码后缀依次前移，并同步更新 OPF/NCX/nav/其他 XHTML 中的文件引用。支持普通系列、S5 三段作品号和 S6 日期作品号。默认只扫描，不修改缓存。注意与模板中的“空行占位”区分：本工具处理的是空占位**页**（整个文件无内容），模板空行是正文文件内部的第 4/5 行占位。
 
 ### Note 注释顺序检查（只读）
 
@@ -378,7 +595,7 @@ python tools/check_note_order.py
 python tools/check_note_order.py --pattern "*S1_01*"   # 按书名筛选
 ```
 
-检查中文缓存 `*.Note.xhtml`（译注页）中的 `<li id="noteN">` 条目顺序与编号是否和正文 `epub:type="noteref"` 首次引用顺序一致。正文文件按表头内容序排序后逐行扫描，取每个注释 id 的首次引用位置作为“书中出现顺序”；包装页（Cover/Information 等）不参与。
+检查中文缓存 `*-Note.xhtml`（译注页）中的 `<li id="noteN">` 条目顺序与编号是否和正文 `epub:type="noteref"` 首次引用顺序一致。正文文件按表头内容序排序后逐行扫描，取每个注释 id 的首次引用位置作为“书中出现顺序”；无内容序的包装页排在编号正文之后。
 
 报告以下问题：Note 列表顺序 != 正文首次出现顺序、正文引用但 Note 未定义、Note 已定义但正文未引用（孤儿注释）、id 数值顺序乱序（含 `note2.1` 这类补充编号）。报告写入 `.cache/epub-work/note-order-check.md` 与 `note-order-check.json`。只读，不修改缓存。
 
@@ -392,7 +609,7 @@ python tools/reorder_notes.py                    # 执行
 python tools/reorder_notes.py --pattern "*S2_07*" # 按书名筛选
 ```
 
-按正文 `epub:type="noteref"` 首次出现顺序重排 `*.Note.xhtml` 的 `<li>` 条目并重编号为 `note1..noteN`，同时单遍映射更新正文所有引用。写盘前会把涉及文件备份到 `.cache/reorder-backup/`；`--dry-run` 只打印旧顺序/新顺序/映射，不写盘。
+按正文 `epub:type="noteref"` 首次出现顺序重排 `*-Note.xhtml` 的 `<li>` 条目并重编号为 `note1..noteN`，同时单遍映射更新正文所有引用。写盘前会把涉及文件备份到 `.cache/reorder-backup/`；`--dry-run` 只打印旧顺序/新顺序/映射，不写盘。
 
 自动跳过两类情况（需人工处理）：Note 文件含非注释 `<li>`（如 S0_00 的说明条目）、定义集合与引用集合不一致（孤儿/悬空引用）。可与 `tools/check_note_order.py` 配合：先用检查工具确认问题，再用本工具重排。
 
@@ -431,9 +648,9 @@ python tools/check_translation_spec.py --pattern "*S3_10*"   # 按书名筛选
 python tools/epub_audit.py
 ```
 
-读取日文缓存与项目内中文 EPUB，对比中日译法差异，报告写入 `.cache/epub-work/report.json` 与 `report.md`。只读，不提供重建或覆盖缓存的功能。
+读取中日工作缓存，对比中日译法差异，报告写入 `.cache/epub-work/report.json` 与 `report.md`。只读，不提供重建或覆盖缓存的功能。
 
-默认读取 `.cache/epub-work/japanese-text/` 和项目内 `EPUB/`；其中日文缓存只有在刚运行 `pull.ps1` 后才是原样解压快照，规范化或校对后以工作源状态为准。如需保留原样快照，请先拉取到临时缓存；如需读取其他中文目录，使用 `--cn`。
+默认读取 `.cache/epub-work/japanese-text/` 和 `.cache/epub-work/chinese-text/`；其中日文缓存只有在刚运行 `pull.ps1` 后才是原样解压快照，规范化或校对后以工作源状态为准。如需保留原样快照，请先拉取到临时缓存；如需读取其他中文目录，使用 `--cn`。
 
 生成内容位于 `.cache/epub-work/`：
 

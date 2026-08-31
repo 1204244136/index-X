@@ -53,7 +53,7 @@
 ## 维护流程
 
 1. **拉取**：运行 `./tools/pull.ps1` 将 OneDrive 中的中文和日文 EPUB 解压到缓存。脚本用 `.cache/epub-work/pull-state.tsv` 记录每个 EPUB 的修改时间与大小，只解压发生变化的书籍；首次运行会全部解压一次以建立状态。`-Force` 全量重新解压，`-WhatIf` 预览，`-Side chinese/japanese` 只处理一侧，`-SyncToEpub` 解压后把变更文件增量同步到 `EPUB/`（OneDrive 侧改动回流仓库的流程）。解压后只为被解压的书籍更新哈希清单 `manifest.json`，未变化书籍的清单基线保持不变。
-2. **修改**：使用 agent 或手动修改缓存中的文件；可先运行 `python tools/normalize_epub_cache.py` 按统一固定行模板规范化缓存，再用 `python tools/check_alignment.py` 检查模板符合性与中日对齐，最后运行 `python tools/epub_audit.py` 审计。
+2. **修改**：使用 agent 或手动修改缓存中的文件；中日成对批量处理运行 `python tools/normalize_paired.py`，只处理明确指定的单文件/目录运行 `python tools/normalize_single.py`。随后用 `python tools/check_alignment.py` 检查模板符合性与中日对齐，最后运行 `python tools/epub_audit.py` 审计。`normalize_epub_cache.py` 仅为 `normalize_paired.py` 的兼容入口。
 3. **发布**：运行 `python tools/publish.py --dry-run` 预览变更，确认后运行 `python tools/publish.py`。脚本会对比 `manifest.json` 只处理被改动的书籍：中文变更只把发生变更的文件写入 `EPUB/`（含删除传播），中日两侧分别打包并上传到 OneDrive（每本一个 `.epub`），上传后同步更新 `pull-state.tsv` 避免下次拉取重复解压。发布成功后自动更新清单。`--sync-only` 只同步 `EPUB/` 不打包上传。
 4. **反向发布**（仅当直接改了 `EPUB/` 时）：运行 `python tools/publish_epub.py --dry-run` 预览，确认后运行 `python tools/publish_epub.py`。对比 `manifest.json` 只处理 `EPUB/` 中变化的（中文）书：从 `EPUB/` 打包 `.epub` 上传到 OneDrive，并把变化文件增量覆盖回缓存（含删除传播），成功后更新清单与 `pull-state.tsv`。默认会跳过缓存中仍有未发布修改的冲突书籍（用 `--overwrite-cache` 强制覆盖）。运行前务必 `--dry-run` 确认变更范围（按字节哈希比较，换行差异也会算变更）。
 5. 检查 `git status`、变更文件数、`git diff --stat`，并抽查文本 diff。
@@ -64,7 +64,7 @@
 三处中文文件副本各有固定角色，不得互相替代：
 
 - `.cache/`（解包工作区，不提交）：唯一编辑点。`pull.ps1` 从 OneDrive 解包生成，可随时删除重建。
-- `EPUB/`（解包归档，提交到 git）：版本控制真源，diff 友好；由 `publish.py` 从 `.cache/` 同步覆盖，或经 `publish_epub.py` 反向发布（`EPUB/` -> OneDrive + 缓存）。
+- `EPUB/`（解包归档，提交到 git）：版本化归档基线，diff 友好；由 `publish.py` 从 `.cache/` 同步覆盖，或经 `publish_epub.py` 反向发布（`EPUB/` -> OneDrive + 缓存）。它不是日常编辑点。
 - OneDrive（打包 `.epub`，外部）：分发与阅读副本；既是 `pull.ps1` 的输入，也是 `publish.py` / `publish_epub.py` 的上传目标。
 
 编辑回流规则：
@@ -88,16 +88,21 @@
 - 默认只修改工作区，不自动 commit、push、创建 release 或删除档案。
 - 不回滚用户已有修改；发现同步覆盖或大批量变化时先报告统计和代表性 diff。
 - 修改同步、审计或发布工具后，至少运行一次对应命令验证；失败项必须在结果中明确列出。
-- `pull.ps1` 刚生成的日文缓存是 EPUB 原样解压快照；运行 `normalize_epub_cache.py` 或人工校对后，`.cache/epub-work` 是可发布工作源，允许按本规约折叠日文排版包装。需要查看未规范化原文时，应重新从 OneDrive 拉取到临时缓存，不得把规范化后的工作源误称为原样快照。
+- `pull.ps1` 刚生成的日文缓存是 EPUB 原样解压快照；运行 `normalize_paired.py`、`normalize_single.py` 或人工校对后，`.cache/epub-work` 是可发布工作源，允许按本规约折叠日文排版包装。需要查看未规范化原文时，应重新从 OneDrive 拉取到临时缓存，不得把规范化后的工作源误称为原样快照。
 - 缓存区内相对应的中文与日文 XHTML 应保持行数对齐，以便按行定位内容；检查发现不对齐时，必须明确报告涉及文件及其行数差异。可用 `python tools/check_alignment.py` 检查。
 - 中日两侧带正文的 XHTML 使用统一固定行模板（绝对行号，不随内容有无偏移）：
   1. `<?xml …?>`
   2. `<!DOCTYPE html>`
   3. `<html …><head>…</head><body…>`（可并入篇首图片，图片位于 body 开头）
   4. `<h1>…</h1>` 独占一行；无 h1 则空行占位
-  5. `<h2>…</h2>` 独占一行；无 h2 则空行占位
+  5. `<h2>…</h2>` 独占一行；无 h2 则空行占位（中文列表型包装页可为 `<ul>`/`<ol>`）
   6. 正文首行 `<p>…</p>`，永远在第 6 行
-  中文 Note 等列表型包装页无 h2 时，`<ul>`/`<ol>` 可占第 5 行，第一条列表项从第 6 行开始。
+
+  **L5 槽位规则**：
+  - 标准正文页：`<h2>` 独占行（开标签+内容+闭标签同行）或空行占位。
+  - 中文列表型包装页（Note、Introduction 等）：若该文件没有 h2，允许 `<ul>`/`<ol>` 列表包装开标签独占 L5，语义上等价于"结构占位"（不是标题行），第一条列表项 `<li>` 从第 6 行开始。
+  - 日文包装页不适用列表占位规则（保持原样快照）。
+
   「空行」指无任何内容的空白物理行，不得用 `<br/>` 或空格占位。纯图片页和无正文页不适用此模板。
 - h1、h2 必须独占一行，不得与图片、`<br/>`、文字或其他标签同行。同一配对文件两侧的 h1/h2/空行位置一一对应，总行数一致；缺元素的一侧用空行补齐。行数对齐时不得向任一侧添加原始不存在的结构标签（如 `<div>`、`<br/>` 等）或换行符；若一侧有多余的结构标签行或换行，应折叠或删除该侧来减小行数差。日文 h2 前后多余的 `<br/>` 只删除等于行数差的数量。
 - 日文侧规范化：头部标签跨行折叠为一行；填充 `<br/>` 删除；跨行 h1/h2 折叠为单行；`<div class="start-3em/start-5em">` 容器内嵌标题按语义重建为独立 `<h1>`；p 型标题（`font-1em10/30`、裸 `<p>あとがき`、`<p>译注` 等）转为 `<h1>`；数字小节 `<p>N</p>` 转为 `<h2>`。中文侧裸 `<div>` 仅作为单块排版包装时清除标签，保留带 class 的语义容器；相邻裸开闭标签形成 `<div></div>` 时删除该空行。中文 Note 等列表型包装页中 `<p>` 包裹 `<li>` 时剥离 `<p>`，保留 `<li>`。
