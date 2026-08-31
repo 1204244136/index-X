@@ -27,6 +27,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterable
 
+from alignment_rules import NON_PAIR_WORK_IDS, pairing_header_of
+from epub_ids import book_id, japanese_book_id
+
 try:
     from PIL import Image, ImageFilter, ImageOps, UnidentifiedImageError
 except ImportError as exc:  # pragma: no cover - exercised only on missing dependency
@@ -41,45 +44,7 @@ except ImportError:  # Optional: the Pillow metrics below remain usable.
 IMAGE_EXTENSIONS = {
     ".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".tif", ".tiff", ".svg"
 }
-BOOK_RE = re.compile(r"\[(S\d+_\d+(?:_\d+)?|S6_\d+\.\d+\.\d+)\]", re.I)
-HEADER_PATTERNS = [
-    re.compile(r"(S\d+_\d+(?:_\d+)?-\d+)", re.I),
-    re.compile(r"(S\d+_\d+_\d+-[A-Za-z][A-Za-z0-9_]*)", re.I),
-    re.compile(r"(S\d+_\d+-[A-Za-z][A-Za-z0-9_]*)", re.I),
-    re.compile(r"(S6_\d+\.\d+\.\d+-(?:\d+|[A-Za-z][A-Za-z0-9_]*))", re.I),
-    re.compile(r"(S6_\d+\.\d+\.\d+)", re.I),
-]
 XHTML_EXTENSIONS = {".xhtml", ".html"}
-
-# The existing normalizer/alignment checker intentionally excludes this pair:
-# the cache contains a画集 on the Japanese side and a short story on the Chinese side.
-KNOWN_NONPAIRS = {"S6_24.12.10"}
-
-
-def book_id(name: str) -> str | None:
-    match = BOOK_RE.search(name)
-    return match.group(1).upper() if match else None
-
-
-def japanese_book_id(chinese_id: str) -> str:
-    # One Japanese 外典书库 contains several independent Chinese works.
-    if chinese_id.startswith("S5_"):
-        parts = chinese_id.split("_")
-        if len(parts) == 3:
-            return f"S5_{parts[1]}"
-    return chinese_id
-
-
-def header_of(name: str) -> str | None:
-    for pattern in HEADER_PATTERNS:
-        match = pattern.search(name)
-        if match:
-            value = match.group(1)
-            if value.rsplit("-", 1)[-1].lower().endswith("_p"):
-                value = value[:-2]
-            return value.upper()
-    return None
-
 
 def image_files(book: Path) -> list[Path]:
     return sorted(
@@ -560,7 +525,7 @@ def collect_book(book: Path) -> list[Asset]:
         except OSError:
             continue
         page_relative = page.relative_to(book).as_posix()
-        page_header = header_of(page.name)
+        page_header = pairing_header_of(page.name)
         page_kind = page_role(page.name)
         for slot, reference in enumerate(reference_re.findall(text)):
             resolved = _resolve_reference(book, page, reference)
@@ -827,7 +792,7 @@ def scan(cache: Path, pattern: str) -> dict:
     unpaired: list[dict] = []
     for cn_id, cn_dir in sorted(cn_dirs.items()):
         jp_id = japanese_book_id(cn_id)
-        if cn_id in KNOWN_NONPAIRS:
+        if cn_id in NON_PAIR_WORK_IDS:
             unpaired.append({"side": "pair", "book": cn_id, "reason": "项目已知非同一作品（画集/短篇），默认跳过"})
             continue
         jp_dir = jp_dirs.get(jp_id)

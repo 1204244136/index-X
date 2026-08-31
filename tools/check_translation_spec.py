@@ -34,6 +34,8 @@ import argparse
 import html
 from collections import OrderedDict, Counter
 
+from epub_ids import content_sequence
+
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_CACHE = os.path.join(REPO_ROOT, ".cache", "epub-work", "chinese-text")
 DEFAULT_OUTPUT = os.path.join(REPO_ROOT, ".cache", "epub-work")
@@ -62,9 +64,6 @@ KANA = r"\u3041-\u3096\u30a1-\u30fa\u30fc"
 AFTER_RE = re.compile(r"_Afterwords")
 NOTE_RE = re.compile(r"-Note\.xhtml$")
 INFO_RE = re.compile(r"-Information\.xhtml$")
-CONTENTSEQ_RE = re.compile(r"-(\d+)([_.]|$)")
-
-
 def classify(fn):
     if AFTER_RE.search(fn):
         return "after"
@@ -72,7 +71,7 @@ def classify(fn):
         return "note"
     if INFO_RE.search(fn):
         return "info"
-    if CONTENTSEQ_RE.search(fn):
+    if content_sequence(fn) is not None:
         return "content"
     return "other"
 

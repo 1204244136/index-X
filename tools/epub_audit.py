@@ -12,12 +12,13 @@ import re
 from collections import defaultdict
 from pathlib import Path
 
-CN_LOCAL = Path(__file__).resolve().parents[1] / "EPUB"
+from epub_ids import work_id
+
 CACHE = Path(__file__).resolve().parents[1] / ".cache" / "epub-work"
+CN_LOCAL = CACHE / "chinese-text"
 
 JP_TERM = "風力発電"
 CN_TERM = "风力发电"
-VOL_RE = re.compile(r"S\d+_\d+", re.I)
 CN_VARIANTS = (
     "风力发电螺旋叶片", "风力发电螺旋桨", "风力发电叶片", "风力发电机组",
     "风力发电机", "风力发电柱", "风力发电系统", "风力发电",
@@ -25,8 +26,7 @@ CN_VARIANTS = (
 
 
 def volume_id(name: str) -> str:
-    m = VOL_RE.search(name)
-    return m.group(0).upper() if m else name
+    return work_id(name) or name
 
 
 def text_of(data: bytes) -> str:
@@ -75,9 +75,12 @@ def categories(context: str) -> list[str]:
 
 
 def build_report(jp: list[dict], cn: list[dict], failures: list[str]) -> dict:
-    jp_by = defaultdict(list); cn_by = defaultdict(list)
-    for r in jp: jp_by[r["volume"]].append(r)
-    for r in cn: cn_by[r["volume"]].append(r)
+    jp_by = defaultdict(list)
+    cn_by = defaultdict(list)
+    for record in jp:
+        jp_by[record["volume"]].append(record)
+    for record in cn:
+        cn_by[record["volume"]].append(record)
     mixed = []
     for vol in sorted(set(jp_by) | set(cn_by)):
         c = cn_by[vol]
@@ -111,6 +114,8 @@ def main() -> int:
     extracted = CACHE / "japanese-text"
     if not extracted.exists():
         raise SystemExit("日文缓存不存在；请先手动准备 .cache/epub-work/japanese-text")
+    if not args.cn.is_dir():
+        raise SystemExit(f"中文源目录不存在: {args.cn}")
     jp, jp_fail = read_cached_japanese(extracted)
     cn, cn_fail = read_chinese(args.cn)
     report = build_report(jp, cn, jp_fail + cn_fail)
