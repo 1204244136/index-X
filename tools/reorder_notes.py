@@ -12,23 +12,22 @@ import re
 import sys
 import shutil
 import argparse
-from collections import OrderedDict
+
+from notes_core import (
+    LI_FULL_RE,
+    LI_ID_RE,
+    NOTEFILE_RE,
+    gather_refs,
+    parse_note_entries,
+    read_text,
+)
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_CACHE = os.path.join(REPO_ROOT, ".cache", "epub-work", "chinese-text")
 DEFAULT_BACKUP = os.path.join(REPO_ROOT, ".cache", "reorder-backup")
 
-NOTEFILE_RE = re.compile(r"^(.*)-Note\.xhtml$")
-LI_FULL_RE = re.compile(r"<li\b[^>]*>.*?</li>", re.S)
-LI_ID_RE = re.compile(r'(<li\b[^>]*?\bid=")(note[^"]+)(")')
-ANCHOR_RE = re.compile(r"<a\b[^>]*>", re.I)
-HREF_NOTE_RE = re.compile(r'href="([^"]*#(note[^"]+))"', re.I)
-CONTENTSEQ_RE = re.compile(r"-(\d+)(?:_|[A-Za-z])")
-
-
 def read(path):
-    with open(path, encoding="utf-8-sig") as f:
-        return f.read()
+    return read_text(path)
 
 
 def write(path, text):
@@ -43,56 +42,6 @@ def backup_file(path, backup_dir, rel):
     os.makedirs(os.path.dirname(bpath), exist_ok=True)
     if not os.path.exists(bpath):
         shutil.copy2(path, bpath)
-
-
-def parse_note_entries(content):
-    """返回 [(old_id, full_li_html), ...] 按 Note 文件当前顺序，仅含带 id 的注释条目。"""
-    out = []
-    for m in LI_FULL_RE.finditer(content):
-        li = m.group(0)
-        im = LI_ID_RE.search(li)
-        if im is None:
-            continue
-        out.append((im.group(2), li))
-    return out
-
-
-def book_order_key(filename, note_basename):
-    if filename == note_basename:
-        return (2, 0, filename)
-    m = CONTENTSEQ_RE.search(filename)
-    if m:
-        return (0, int(m.group(1)), filename)
-    return (1, 0, filename)
-
-
-def gather_refs(text_dir, note_basename):
-    """返回 (appearance, all_refs)。"""
-    files = [f for f in os.listdir(text_dir) if f.endswith(".xhtml")]
-    files.sort(key=lambda f: book_order_key(f, note_basename))
-    appearance = OrderedDict()
-    all_refs = OrderedDict()
-    for order_idx, fn in enumerate(files):
-        if fn == note_basename:
-            continue
-        path = os.path.join(text_dir, fn)
-        try:
-            lines = read(path).splitlines()
-        except Exception:
-            continue
-        for ln, line in enumerate(lines, 1):
-            for am in ANCHOR_RE.finditer(line):
-                tag = am.group(0)
-                if 'epub:type="noteref"' not in tag.lower():
-                    continue
-                hm = HREF_NOTE_RE.search(tag)
-                if not hm:
-                    continue
-                note_id = hm.group(2)
-                all_refs.setdefault(note_id, []).append((fn, ln))
-                if note_id not in appearance:
-                    appearance[note_id] = (fn, ln, order_idx)
-    return appearance, all_refs
 
 
 def process_book(book, text_dir, nf, dry_run, backup_dir):

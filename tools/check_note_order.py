@@ -16,72 +16,25 @@ import re
 import sys
 import json
 import argparse
-from collections import OrderedDict
+
+from notes_core import (
+    NOTEFILE_RE,
+    gather_refs,
+    parse_note_ids,
+    read_text,
+)
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_CACHE = os.path.join(REPO_ROOT, ".cache", "epub-work", "chinese-text")
 DEFAULT_OUTPUT = os.path.join(REPO_ROOT, ".cache", "epub-work")
 
-NOTEFILE_RE = re.compile(r"^(.*)-Note\.xhtml$")
-LI_RE = re.compile(r'<li\b[^>]*\bid="(note[^"]+)"', re.S)
-ANCHOR_RE = re.compile(r"<a\b[^>]*>", re.I)
-HREF_NOTE_RE = re.compile(r'href="([^"]*#(note[^"]+))"', re.I)
-CONTENTSEQ_RE = re.compile(r"-(\d+)(?:_|[A-Za-z])")
-
-
 def read(path):
-    with open(path, "r", encoding="utf-8-sig") as f:
-        return f.read()
+    return read_text(path)
 
 
 def parse_note_file(path):
     """返回 Note 文件中的定义列表 (id 顺序)。"""
-    content = read(path)
-    return [m.group(1) for m in LI_RE.finditer(content)]
-
-
-def book_order_key(filename, note_basename):
-    """排序键：有内容序的按 (0, seq, name)，无内容序的按 (1, 0, name)。"""
-    if filename == note_basename:
-        return (2, 0, filename)
-    m = CONTENTSEQ_RE.search(filename)
-    if m:
-        return (0, int(m.group(1)), filename)
-    return (1, 0, filename)
-
-
-def gather_refs(text_dir, note_basename):
-    """在阅读顺序下收集每个 note id 的首次引用位置。
-
-    返回 (appearance, all_refs)：
-    - appearance: OrderedDict {note_id: (file, line, order_index)}
-    - all_refs:   OrderedDict {note_id: [(file, line), ...]}
-    """
-    files = [f for f in os.listdir(text_dir) if f.endswith(".xhtml")]
-    files.sort(key=lambda f: book_order_key(f, note_basename))
-    appearance = OrderedDict()
-    all_refs = OrderedDict()
-    for order_idx, fn in enumerate(files):
-        if fn == note_basename:
-            continue
-        path = os.path.join(text_dir, fn)
-        try:
-            lines = read(path).splitlines()
-        except Exception:
-            continue
-        for ln, line in enumerate(lines, 1):
-            for am in ANCHOR_RE.finditer(line):
-                tag = am.group(0)
-                if 'epub:type="noteref"' not in tag.lower():
-                    continue
-                hm = HREF_NOTE_RE.search(tag)
-                if not hm:
-                    continue
-                note_id = hm.group(2)
-                all_refs.setdefault(note_id, []).append((fn, ln))
-                if note_id not in appearance:
-                    appearance[note_id] = (fn, ln, order_idx)
-    return appearance, all_refs
+    return parse_note_ids(read(path))
 
 
 def parse_order_index(note_id):

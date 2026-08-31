@@ -34,13 +34,14 @@ from pathlib import Path
 
 TOOLS_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(TOOLS_DIR))
-from manifest import compute_hash, load_manifest, save_manifest
-from package_cache_epubs import package_book, PackageError
-from publish import (
+from manifest import compute_hash, load_manifest, save_manifest  # noqa: E402
+from package_cache_epubs import package_book, PackageError  # noqa: E402
+from sync_core import (  # noqa: E402
     ONEDRIVE_DEFAULTS,
     STATUS_LABELS,
     UNIX_TO_DOTNET_TICKS_OFFSET,
     detect_changes,
+    sync_file_changes,
     update_manifest_for_book,
     update_pull_state_record,
 )
@@ -66,65 +67,6 @@ def scan_epub(epub_root: Path) -> dict[str, str]:
             rel = path.relative_to(epub_root).as_posix()
             files[f"chinese-text/{rel}"] = compute_hash(path)
     return files
-
-
-def sync_changes_into_cache(
-    book_key: str,
-    file_changes: dict[str, str],
-    epub_root: Path,
-    cache_root: Path,
-    full_mirror: bool = False,
-) -> tuple[int, int]:
-    """Incrementally overwrite one book's changed files from EPUB/ into cache.
-
-    Only the files listed in file_changes are touched: added/modified are
-    copied from EPUB/, deleted are removed from the cache, emptied directories
-    are pruned. Full mirror mode (--force) rebuilds the whole cache book from
-    EPUB/. Returns (files_copied, files_deleted).
-    """
-    side, book = book_key.split("/", 1)
-    epub_book_dir = epub_root / book
-    cache_book_dir = cache_root / book_key
-
-    if full_mirror:
-        if cache_book_dir.is_dir():
-            shutil.rmtree(cache_book_dir)
-        copied = 0
-        for src in epub_book_dir.rglob("*"):
-            if not src.is_file() or ".extract-" in src.name:
-                continue
-            rel = src.relative_to(epub_book_dir)
-            dest = cache_book_dir / rel
-            dest.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(src, dest)
-            copied += 1
-        return copied, 0
-
-    copied = 0
-    deleted = 0
-    for file_in_book, status in file_changes.items():
-        rel = Path(file_in_book)
-        dest = cache_book_dir / rel
-        if status == "deleted":
-            if dest.is_file():
-                dest.unlink()
-                deleted += 1
-            parent = dest.parent
-            while (
-                parent != cache_book_dir
-                and parent.is_dir()
-                and not any(parent.iterdir())
-            ):
-                parent.rmdir()
-                parent = parent.parent
-            continue
-        src = epub_book_dir / rel
-        if not src.is_file():
-            continue
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(src, dest)
-        copied += 1
-    return copied, deleted
 
 
 def find_conflicts(
@@ -164,6 +106,12 @@ def publish_book_reverse(
     epub_book_dir = epub_root / book
     packed_epub = cache_root / "packed-epubs" / side / f"{book}.epub"
 
+    if not no_upload:
+        if onedrive_dir is None:
+            return False, "未配置 OneDrive 目录；若只需回写缓存请显式使用 --no-upload"
+        if not onedrive_dir.is_dir():
+            return False, f"OneDrive 目录不存在: {onedrive_dir}"
+
     # 1. Package first, so a packaging error cannot touch the cache/upload.
     if not epub_book_dir.is_dir():
         if all(status == "deleted" for status in file_changes.values()):
@@ -181,7 +129,7 @@ def publish_book_reverse(
     # 2. Upload to OneDrive, then keep pull-state in sync so the next
     #    pull.ps1 does not re-extract the old OneDrive file over the cache.
     if not no_upload:
-        if onedrive_dir and onedrive_dir.is_dir():
+        if onedrive_dir:
             dest = onedrive_dir / f"{book}.epub"
             try:
                 shutil.copy2(packed_epub, dest)
@@ -195,15 +143,17 @@ def publish_book_reverse(
                 st.st_size,
             )
             print(f"  [上传] -> {dest}")
-        elif onedrive_dir:
-            print(f"  [跳过上传] OneDrive 目录不存在: {onedrive_dir}")
-        else:
-            print("  [跳过上传] 未配置 OneDrive 目录")
 
     # 3. Overwrite the changed files into the cache (EPUB/ -> cache).
-    copied, deleted = sync_changes_into_cache(
-        book_key, file_changes, epub_root, cache_root, full_mirror
-    )
+    try:
+        copied, deleted = sync_file_changes(
+            epub_book_dir,
+            cache_root / book_key,
+            file_changes,
+            full_mirror=full_mirror,
+        )
+    except OSError as exc:
+        return False, f"同步缓存失败 {book_key}: {exc}"
     if full_mirror:
         print(f"  [缓存] {book}: 已全量重建 {copied} 个文件")
     elif copied or deleted:

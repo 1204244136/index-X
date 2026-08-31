@@ -194,7 +194,7 @@ else {
     Write-Host "缓存解压完成：$total 个 EPUB，$skipped 个未变化，$failed 个失败。"
 
     if ($extractedBooks.Count -gt 0) {
-        Write-PullState $statePath $pullState
+        $downstreamSucceeded = $false
 
         if ($SyncToEpub) {
             # Sync only the changed files of the extracted books into EPUB/
@@ -218,7 +218,11 @@ else {
             Write-Host "`n同步变更到 EPUB/ ..."
             & python @pyArgs
             if ($LASTEXITCODE -ne 0) {
-                Write-Warning "EPUB/ 同步失败（publish.py 退出码 $LASTEXITCODE）。缓存已更新，可重跑本命令或 publish.py --sync-only 重试。"
+                $failed++
+                Write-Warning "EPUB/ 同步失败（publish.py 退出码 $LASTEXITCODE）。未推进 pull-state；重跑本命令会重新解压并重试。"
+            }
+            else {
+                $downstreamSucceeded = $true
             }
         }
         else {
@@ -233,8 +237,18 @@ else {
                 & python $manifestScript --cache $cacheRoot
             }
             if ($LASTEXITCODE -ne 0) {
+                $failed++
                 Write-Warning "清单更新失败，publish 时将无法正确检测增量变更。"
             }
+            else {
+                $downstreamSucceeded = $true
+            }
+        }
+
+        if ($downstreamSucceeded) {
+            # Commit the extraction state only after the corresponding
+            # manifest/EPUB baseline has advanced successfully.
+            Write-PullState $statePath $pullState
         }
     }
     else {
