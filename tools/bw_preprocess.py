@@ -1,5 +1,14 @@
 #!/usr/bin/env python3
-"""BookWalker（bw）提取预处理：按规则集改写原始 bw EPUB / 解包目录中的 XHTML。
+"""BookWalker（bw）提取预处理：按规则集清理 bw 原始 EPUB 的排版噪声。
+
+本工具职责：只清理 BookWalker 原始 EPUB 中的排版噪声，包括：
+  - 多段 ruby 合并为单段
+  - font-1em50 / em-sesame / tcy / line-break-loose 等排版 span 解包
+  - 页首/页尾填充 <br/> 删除
+  - <p><br/></p> 展平为 <br/>
+
+不做「套用固定行模板」操作（头部折叠、容器解包、标题提取等），这些由
+normalize_paired.py / normalize_single.py 共用的规范化核心处理。
 
 规则集来源（逐条按 JSON 中顺序应用，与原始「查找/替换」列表行为一致）：
     tools/bw_extract_preprocess.json   ← 默认规则文件（可编辑，以此为准）
@@ -87,41 +96,44 @@ def apply_rules(text: str, rules: list[dict]) -> str:
 
 
 def is_content(text: str) -> bool:
-    """是否为正文内容文件（body 使用 p-text 类，套用固定行模板）。"""
+    """是否为正文内容文件（body 使用 p-text 类）。
+
+    注意：bw_preprocess 不再负责套用固定行模板，因此不再检查 L1-L6 模板符合度。
+    模板套用由共享规范化核心负责。
+    """
     return '<body class="p-text">' in text
 
 
-def template_issues(lines: list[str]) -> list[str]:
-    """固定行模板 L1-L6 校验。返回问题列表；空列表 = 符合。
+def basic_structure_issues(lines: list[str]) -> list[str]:
+    """预处理输入的 L1-L3 基本结构校验（仅供 --check 使用）。
 
-    L1 <?xml …?>  L2 <!DOCTYPE html>  L3 <html …><div class="main">
-    L4 <h1>…</h1> 或空行  L5 <h2>…</h2> 或空行（中文包装页可为 <ul>/<ol>）
-    L6 <p>正文首行</p>
+    注意：bw_preprocess 不负责套用模板，只做噪声清理。本函数仅在 --check 模式下
+    用于检查预处理后的文件是否"接近"模板形式（用于诊断规则集效果），实际模板
+    套用由共享规范化核心负责。
+
+    返回问题列表；空列表 = 基本结构可供后续合并/规范化处理。
     """
     issues: list[str] = []
-    if len(lines) < 6:
-        return [f"行数 {len(lines)} < 6，无法满足 L1-L6 模板"]
+    if len(lines) < 3:
+        return [f"行数 {len(lines)} < 3，缺少 XML/DOCTYPE/HTML 基本结构"]
     if not lines[0].startswith("<?xml"):
         issues.append(f"L1 非 XML 声明：{lines[0][:40]}")
     if not lines[1].startswith("<!DOCTYPE"):
         issues.append(f"L2 非 DOCTYPE：{lines[1][:40]}")
-    if not (lines[2].startswith("<html") and '<div class="main">' in lines[2]):
-        issues.append("L3 未折叠为单行头部（需含 <div class=\"main\">）")
-    l4, l5, l6 = lines[3], lines[4], lines[5]
-    if l4 and not l4.startswith("<h1"):
-        issues.append(f"L4 应为 <h1> 或空行：{l4[:40]}")
-    if l5 and not (l5.startswith("<h2") or l5.startswith("<ul") or l5.startswith("<ol")):
-        issues.append(f"L5 应为 <h2> 或空行：{l5[:40]}")
-    if not re.match(r"^\s*<p\b", l6):
-        issues.append(f"L6 应为正文 <p>：{l6[:40]}")
+    # L3 不再要求完全折叠（normalize 负责），只检查是否有 <html 和 main
+    if not (lines[2].startswith("<html") and 'class="main"' in lines[2]):
+        issues.append("L3 缺少 <html> 或 main 容器")
     return issues
 
 
 def verify_text(text: str) -> list[str]:
-    """内容文件的模板校验；非内容（图片页/包装页）返回空列表。"""
+    """内容文件的粗略结构校验（仅供 --check 使用）；非内容（图片页/包装页）返回空列表。
+
+    注意：bw_preprocess 不负责完整模板校验，只检查基本结构是否合理。
+    """
     if not is_content(text):
         return []
-    return template_issues(text.splitlines())
+    return basic_structure_issues(text.splitlines())
 
 
 def transform_bytes(data: bytes, rules: list[dict]) -> tuple[bytes, bool]:
@@ -203,7 +215,7 @@ def process_dir(dir_path: Path, rules: list[dict], dry_run: bool) -> dict:
 
 
 def check_dir(dir_path: Path, rules: list[dict]) -> dict:
-    """--check：内存中应用规则并校验模板，不写盘。"""
+    """--check：内存中应用规则并校验 L1-L3 基本结构，不写盘。"""
     files = sorted(p for p in dir_path.rglob("*")
                    if p.is_file() and p.suffix.lower() in XHTML_SUFFIXES)
     stats = {"total": 0, "content": 0, "issues": []}
@@ -213,7 +225,7 @@ def check_dir(dir_path: Path, rules: list[dict]) -> dict:
             p.read_bytes().decode("utf-8-sig", errors="replace"), rules)
         if is_content(text):
             stats["content"] += 1
-            for it in template_issues(text.splitlines()):
+            for it in basic_structure_issues(text.splitlines()):
                 stats["issues"].append((p.name, it))
     return stats
 
@@ -231,7 +243,7 @@ def check_epub(epub_path: Path, rules: list[dict]) -> dict:
                 rules)
             if is_content(text):
                 stats["content"] += 1
-                for it in template_issues(text.splitlines()):
+                for it in basic_structure_issues(text.splitlines()):
                     stats["issues"].append((info.filename, it))
         return stats
 
@@ -266,7 +278,7 @@ def main() -> int:
                     help="epub 模式输出目录（默认写在源文件同目录）")
     ap.add_argument("--dry-run", action="store_true", help="只预览，不写文件")
     ap.add_argument("--check", action="store_true",
-                    help="校验模式：内存中应用规则并检查内容文件 L1-L6 模板符合度，不写盘")
+                    help="校验模式：内存中应用规则并检查内容文件 L1-L3 基本结构，不写盘")
     args = ap.parse_args()
 
     rules = load_rules(args.rules)

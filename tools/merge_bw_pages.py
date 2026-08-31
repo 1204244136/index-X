@@ -1,0 +1,340 @@
+#!/usr/bin/env python3
+"""分页源合并为章节文件：按 AGENTS.md「换页衔接处理」规则合并。
+
+输入 bw_preprocess 处理后的分页目录（p-NNN.xhtml），按章节标题（<h1>）分组，
+把分页合并为章节文件。页边界按衔接处两侧的页型定间距：
+  - 文本 + 文本（连续两页正文）→ 插入 3 行视觉间隔（每行一个独占一行的 <br/>）
+  - 跨整页插图（文本 + 图片 + 文本）→ 无缝衔接，图片行直接夹在两段文本之间
+  - 若前一页末段与后一页首段是同一段落的断续，须按语义拼回完整段落（工具无法
+    自动判断，输出「待确认清单」供人工核对，不再套用 3 行间隔）
+
+- 全页插图页（`body.p-image` 或 SVG）保留为图片行，并入其前一章节单元末尾；
+- 无标题引子页（第一个 <h1> 之前的内容）合并为独立「引子」单元；
+- 整页无文本且无图/SVG 的空占位页跳过并报告；
+- 每个 <h1> 起一个章节单元，其后无 <h1> 的页续入当前单元。
+
+用法：
+    python tools/merge_bw_pages.py 分页目录 --book S4_05 [--out 输出目录]
+    python tools/merge_bw_pages.py 分页目录 --book S4_05 --dry-run   # 只预览
+    python tools/merge_bw_pages.py 分页目录 --book S4_05 --out .cache/epub-work/
+
+输出文件名 `<book>-<NN>.xhtml`，NN 为章节单元临时序号（引子/序章/各章/后记依次
+递增），最终内容序表头（S<系列>_<卷序>-<内容序>）需在对齐时按中文侧人工确认。
+"""
+from __future__ import annotations
+
+import argparse
+import re
+from pathlib import Path
+
+# 只处理形如 p-001.xhtml 的正文/插图分页，跳过 p-fmatter/p-toc/p-cover 等包装页
+PAGE_RE = re.compile(r"^p-(\d{3})\.xhtml$", re.I)
+H1_RE = re.compile(r"^\s*<h1\b", re.I)
+H1_INNER_RE = re.compile(r"<h1\b[^>]*>(.*?)</h1>", re.I | re.S)
+H2_RE = re.compile(r"^\s*<h2\b", re.I)
+H2_INNER_RE = re.compile(r"<h2\b[^>]*>(.*?)</h2>", re.I | re.S)
+IMG_TAG_RE = re.compile(r"<(?:img|image)\b", re.I)
+SVG_RE = re.compile(r"<svg\b|</svg>", re.I)
+P_TAG_RE = re.compile(r"<p\b", re.I)
+BODY_CLASS_RE = re.compile(r"<body\b([^>]*)>", re.I)
+BODY_RE = re.compile(r"<body\b", re.I)
+HTML_BODY_RE = re.compile(r"(<html\b.*?<body\b[^>]*>)", re.I | re.S)
+MAIN_DIV_RE = re.compile(r'<div\b[^>]*class="[^"]*main[^"]*"', re.I)
+CLOSE_DIV_RE = re.compile(r"</div>")
+# 数字小节：单独一行的 <p>N</p>（N 为数字）
+NUM_P_RE = re.compile(r"^\s*<p\b[^>]*>\s*\d+\s*</p>\s*$", re.I)
+TAG_RE = re.compile(r"<[^>]*>")
+
+
+def read_lines(path: Path):
+    raw = path.read_bytes()
+    bom = raw.startswith(b"\xef\xbb\xbf")
+    text = raw.decode("utf-8-sig", errors="replace")
+    return text.splitlines(), bom, "\r\n" in text
+
+
+def is_image_line(line: str) -> bool:
+    """行是否为图片行（img/image/svg 图片行，无正文文字）。"""
+    if not (IMG_TAG_RE.search(line) or SVG_RE.search(line)):
+        return False
+    inner = re.sub(r"</?p\b[^>]*>", "", line)                   # 剥 <p> 包装
+    cleaned = re.sub(r"<(?:img|image)\b[^>]*/?>", "", inner, flags=re.I)
+    cleaned = re.sub(r"<svg\b.*?</svg>", "", cleaned, flags=re.I | re.S)
+    return not re.sub(r"<[^>]*>", "", cleaned).strip()
+
+
+def parse_page(path: Path) -> dict | None:
+    """解析单个分页：p-text 页取 L4/L5 表头 + L6 起正文；插图页(SVG/p-image)取整块为图片行。"""
+    lines, bom, crlf = read_lines(path)
+    main_idx = next(
+        (i for i, line in enumerate(lines) if MAIN_DIV_RE.search(line)), None
+    )
+    if main_idx is None:
+        return None
+    # main 容器的闭合 </div> 是文件末尾/最后一个（正文页可能有 align-end 等嵌套 div）
+    div_idx = next((i for i in range(len(lines) - 1, main_idx, -1)
+                    if CLOSE_DIV_RE.search(lines[i])), None)
+    if div_idx is None:
+        return None
+    body_class = ""
+    for line in lines:
+        m = BODY_CLASS_RE.search(line)
+        if m:
+            body_class = m.group(1)
+            break
+    is_p_text = 'class="p-text"' in body_class
+    if is_p_text:
+        header = lines[main_idx + 1: main_idx + 3]          # L4/L5（h1/h2 或空行）
+        body = [
+            line for line in lines[main_idx + 3: div_idx] if line.strip()
+        ]  # 排除 main 闭合标签
+    else:
+        header = []
+        body = [
+            line for line in lines[main_idx + 1: div_idx] if line.strip()
+        ]  # 排除 main 闭合标签
+
+    joined = "\n".join(body)
+    is_svg = bool(SVG_RE.search(joined) and not P_TAG_RE.search(joined))
+    is_image_page = ('class="p-image"' in body_class) or is_svg or bool(
+        body and all(is_image_line(line) for line in body))
+    if is_svg:
+        # 全页 SVG 插图折叠为单行图片行
+        body = [" ".join(line.strip() for line in body)]
+    h1 = None
+    if is_p_text and header and H1_RE.match(header[0]):
+        m = H1_INNER_RE.search(header[0])
+        h1 = m.group(1).strip() if m else header[0].strip()
+    head_source = "".join(lines[2:main_idx + 1])
+    head_match = HTML_BODY_RE.search(head_source)
+    if not head_match:
+        return None
+    head3 = re.sub(r">\s+<", "><", head_match.group(1)).strip()
+    return {
+        "name": path.name,
+        "lines": lines,
+        "header": header,
+        "body": body,
+        "body_class": body_class,
+        "is_p_text": is_p_text,
+        "is_image_page": is_image_page,
+        "is_empty": not body,
+        "has_h1": h1 is not None,
+        "h1": h1,
+        "head3": head3,
+        "bom": bom,
+        "crlf": crlf,
+    }
+
+
+def collect_pages(dir_path: Path) -> list[dict]:
+    """递归收集并排序分页 p-NNN.xhtml（兼容 epub 解包顶层的 item/xhtml 子目录）。"""
+    found = []
+    for p in dir_path.rglob("*.xhtml"):
+        m = PAGE_RE.match(p.name)
+        if m:
+            found.append((int(m.group(1)), p))
+    out = []
+    for _, p in sorted(found):
+        pg = parse_page(p)
+        if pg is not None:
+            out.append(pg)
+    return out
+
+
+def group_units(pages: list[dict], notes: list[str]) -> list[dict]:
+    """按 <h1> 分组为章节单元；无标题引子单独成单元。"""
+    units: list[dict] = []
+    cur: dict | None = None
+    for pg in pages:
+        if pg["is_empty"]:
+            notes.append(f"[空占位页] {pg['name']} 无文本无图，已跳过（规范：删除并前移后续序号）")
+            continue
+        if pg["has_h1"]:
+            if cur:
+                units.append(cur)
+            h2 = pg["header"][1].strip() if len(pg["header"]) > 1 else ""
+            cur = {"title": pg["h1"], "h1": pg["h1"],
+                   "h2": h2, "pages": [pg], "image_pages": 0}
+            continue
+        if pg["is_image_page"]:
+            if cur:
+                cur["pages"].append(pg)
+                cur["image_pages"] += 1
+                notes.append(f"[插图归属] {pg['name']}（全页插图）并入「{cur['title'] or '引子'}」末尾，请核对")
+            else:
+                cur = {"title": None, "h1": None, "h2": None,
+                       "pages": [pg], "image_pages": 1}
+                notes.append(f"[插图归属] {pg['name']} 位于首章前，归入引子单元，请核对")
+            continue
+        if cur:
+            cur["pages"].append(pg)
+        else:
+            # 最前面的无标题页 → 引子单元
+            if not units or units[-1].get("title") is not None:
+                cur = {"title": None, "h1": None, "h2": None,
+                       "pages": [pg], "image_pages": 0}
+            else:
+                units[-1]["pages"].append(pg)
+    if cur:
+        units.append(cur)
+    return units
+
+
+BR_LINE_RE = re.compile(r"^\s*<br\s*/?>\s*$", re.I)
+HEADING_RE = re.compile(r"^\s*<(h1|h2)\b", re.I)
+
+
+def check_edge_br(body: list[str], page_name: str, notes: list[str]) -> list[str]:
+    """检查页首/页尾是否有残留填充 <br/>，若有则报告警告并去除。
+
+    语义：页首/页尾的填充 <br/> 属排版噪声（AGENTS.md「换页衔接处理」），
+    应由 bw_preprocess 清理。本函数检测残留，报告警告但仍予以删除，
+    避免跨页间隔被残留 <br/> 叠加为 4+ 行。
+    """
+    if not body:
+        return body
+    start = 0
+    while start < len(body) and BR_LINE_RE.match(body[start]):
+        start += 1
+    end = len(body)
+    while end > start and BR_LINE_RE.match(body[end - 1]):
+        end -= 1
+
+    if start > 0 or end < len(body):
+        notes.append(
+            f"[预处理残留] {page_name} 页首/页尾有 {start + (len(body) - end)} 个填充 <br/>，"
+            f"已删除（应由 bw_preprocess 清理）")
+
+    return body[start:end]
+
+
+def semantic_edge(body: list[str]) -> tuple[str | None, str | None]:
+    """返回页首/页尾的语义内容行（跳过 <br/> 填充，不报告警告）。"""
+    start = 0
+    while start < len(body) and BR_LINE_RE.match(body[start]):
+        start += 1
+    end = len(body)
+    while end > start and BR_LINE_RE.match(body[end - 1]):
+        end -= 1
+    b = body[start:end]
+    return (b[0] if b else None, b[-1] if b else None)
+
+
+def gap_for(prev_last: str | None, next_first: str | None) -> list[str]:
+    """按衔接处两侧页型定间距：含图片行无缝；标题边界不插 3 行；否则文本+文本 3 行 <br/>。"""
+    if prev_last is None or next_first is None:
+        return []
+    if is_image_line(prev_last) or is_image_line(next_first):
+        return []                     # 跨整页插图：无缝衔接，前后不插 <br/>
+    if HEADING_RE.match(prev_last) or HEADING_RE.match(next_first):
+        return []                     # 小节/章节标题自带分隔，不套正文 3 行间隔
+    return ["<br/>", "<br/>", "<br/>"]
+
+
+def merge_unit(unit: dict, notes: list[str]) -> list[str] | None:
+    """合并一个章节单元，返回输出行；无法合并返回 None。"""
+    pages = unit["pages"]
+    if not pages:
+        return None
+    # 固定模板 L1-L3；main 仅是分页源排版包装，不进入输出。
+    lines = pages[0]["lines"]
+    head = [lines[0], lines[1], pages[0]["head3"]]
+
+    # 准备 h1 标题（提取 id 属性）
+    h1_text = unit["h1"] or ""
+    h1_id = ""
+    if h1_text:
+        # 从原始 h1 提取 id；标题可能已经由预处理器重建，不再依赖旧 class。
+        for pg in pages:
+            source_h1 = pg["header"][0] if pg["header"] else ""
+            if H1_RE.match(source_h1):
+                id_match = re.search(r'\bid="([^"]+)"', source_h1, re.I)
+                if id_match:
+                    h1_id = f' id="{id_match.group(1)}"'
+            if h1_id:
+                break
+        l4 = f'<h1{h1_id}>{h1_text}</h1>' if h1_text else ''
+    else:
+        l4 = ''
+
+    l5 = unit["h2"] if unit["h1"] else ""
+    out = list(head) + [l4, l5]
+
+    cleaned_bodies = [check_edge_br(pg["body"], pg["name"], notes) for pg in pages]
+    for i, (pg, body) in enumerate(zip(pages, cleaned_bodies)):
+        if i > 0:
+            prev_body = cleaned_bodies[i - 1]
+            prev_last = prev_body[-1] if prev_body else None
+            next_first = body[0] if body else None
+            out.extend(gap_for(prev_last, next_first))
+            if next_first and prev_last and not (
+                    is_image_line(prev_last) or is_image_line(next_first)) and not (
+                    HEADING_RE.match(prev_last) or HEADING_RE.match(next_first)):
+                notes.append(
+                    f"[同段核对] {pages[i-1]['name']} → {pg['name']} 边界为文本+文本，"
+                    f"已插 3 行 <br/>；若为同一段落断续请按语义拼回（勿套 3 行间隔）")
+            elif next_first and prev_last and (
+                    HEADING_RE.match(prev_last) or HEADING_RE.match(next_first)):
+                notes.append(
+                    f"[标题边界] {pages[i-1]['name']} → {pg['name']} 边界含小节/章节标题，"
+                    f"未插 3 行间隔，请核对")
+        out.extend(body)
+    out.append("</body></html>")
+    return out
+
+
+def write_output(out_path: Path, lines: list[str], bom: bool, crlf: bool) -> None:
+    sep = "\r\n" if crlf else "\n"
+    data = (sep.join(lines) + sep).encode("utf-8")
+    if bom:
+        data = b"\xef\xbb\xbf" + data
+    out_path.write_bytes(data)
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(
+        description="按换页衔接处理规则合并 bw_preprocess 处理后的分页为章节文件")
+    ap.add_argument("dir", type=Path, help="分页目录（bw_preprocess 处理后）")
+    ap.add_argument("--book", default="BOOK", help="作品号前缀，用于输出文件名（如 S4_05）")
+    ap.add_argument("--out", type=Path, default=None,
+                    help="输出目录（默认 = 输入目录同级 merge-out/）")
+    ap.add_argument("--dry-run", action="store_true", help="只预览，不写文件")
+    args = ap.parse_args()
+
+    pages = collect_pages(args.dir)
+    if not pages:
+        print(f"[跳过] 目录中没有 p-NNN.xhtml 分页：{args.dir}")
+        return 1
+    notes: list[str] = []
+    units = group_units(pages, notes)
+    out_dir = args.out or (args.dir.parent / "merge-out")
+    written = 0
+    for idx, unit in enumerate(units, 1):
+        lines = merge_unit(unit, notes)
+        if lines is None:
+            continue
+        name = f"{args.book}-{idx:02d}.xhtml"
+        body_paras = sum(1 for line in lines if re.match(r"^\s*<p\b", line))
+        img_rows = sum(1 for line in lines if is_image_line(line))
+        print(f"[单元 {idx:02d}] {unit['title'] or '引子'}：页 {len(unit['pages'])}，"
+              f"插图页 {unit['image_pages']}，正文段 {body_paras}，图片行 {img_rows} → {name}")
+        if args.dry_run:
+            continue
+        out_dir.mkdir(parents=True, exist_ok=True)
+        bom = unit["pages"][0]["bom"]
+        crlf = unit["pages"][0]["crlf"]
+        write_output(out_dir / name, lines, bom, crlf)
+        written += 1
+
+    print(f"分页 {len(pages)} 个 → 章节单元 {len(units)} 个"
+          + ("（预览，未写盘）" if args.dry_run else f"（输出：{out_dir}，已写 {written}）"))
+    if notes:
+        print("=== 待人工确认清单 ===")
+        for n in notes:
+            print(f"  ! {n}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

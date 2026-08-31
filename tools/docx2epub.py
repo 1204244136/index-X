@@ -44,6 +44,8 @@ import zipfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
+from epub_ids import book_id
+
 _W = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
 _A = "{http://schemas.openxmlformats.org/drawingml/2006/main}"
 _R = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}"
@@ -364,7 +366,7 @@ def build_chapters(paragraphs: list[dict]) -> tuple[list[dict], list[list[str]],
     - chapters: [{title, blocks, suffix}]，blocks 元素为
       ("p", text) / ("h2", text) / ("image", [rid, ...])
     - front_images: 第一章之前的图片段落 rid 列表（首张作封面，其余作彩页）
-    - front_text: 第一章之前的正文文本（引言，并入第一章）
+    - front_text: 第一章之前的正文文本（用于统计；若首章为序章则独立成引子）
     - dropped: 被丢弃的 TOC / 卷末奥付 / 注意事项文本
     """
     chapters: list[dict] = []
@@ -438,7 +440,16 @@ def build_chapters(paragraphs: list[dict]) -> tuple[list[dict], list[list[str]],
             front_text.append(text)
 
     if front_text and chapters:
-        chapters[0]["blocks"] = [("p", t) for t in front_text] + chapters[0]["blocks"]
+        front_blocks = [("p", text) for text in front_text]
+        if chapters[0]["suffix"] == "Prologue":
+            chapters.insert(0, {
+                "title": "",
+                "nav_title": "引子",
+                "blocks": front_blocks,
+                "suffix": "Before_the_Prologue",
+            })
+        else:
+            chapters[0]["blocks"] = front_blocks + chapters[0]["blocks"]
     return chapters, front_images, front_text, dropped
 
 
@@ -630,7 +641,7 @@ def render_content(ch: dict, names: dict, body_illus: dict | None = None) -> str
         "<?xml version='1.0' encoding='utf-8'?>",
         "<!DOCTYPE html>",
         HEAD3,
-        f"<h1>{esc_ruby(title)}</h1>",
+        f"<h1>{esc_ruby(title)}</h1>" if title else "",
     ]
     h2_idx = 0
     first_is_h2 = bool(blocks) and blocks[0][0] == "h2"
@@ -827,7 +838,7 @@ def render_opf(meta: dict, text_files: list[str], image_names: list[str],
     lines = [
         "<?xml version='1.0' encoding='utf-8'?>",
         '<package xmlns="http://www.idpf.org/2007/opf" version="3.0" '
-        f'unique-identifier="BookId">',
+        'unique-identifier="BookId">',
         '  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">',
         f'    <dc:title id="id">{esc(title)}</dc:title>',
     ]
@@ -914,10 +925,10 @@ def process_one(docx_path: Path, args: argparse.Namespace) -> int:
 
     # 表头与书名：文件名 [S4_06]某书(6).docx -> header=S4_06, title=某书(6)
     # 支持 S6 日期表头 [S6_22.06.10]xxx.docx -> header=S6_22.06.10
-    m = re.match(r"^\[(S\d+_\d+(?:(?:\.\d+)|(?:_\d+))?)\](.*)$", stem)
-    if m:
-        header = m.group(1)
-        title = (m.group(2) or stem).strip()
+    parsed_header = book_id(stem)
+    if parsed_header:
+        header = parsed_header
+        title = (re.sub(r"^\[[^\]]+\]", "", stem, count=1) or stem).strip()
     else:
         if not (args.series and args.volume):
             print(f"[跳过] {label}：文件名不含 [S..] 表头，请用 --series/--volume 指定",
@@ -996,16 +1007,19 @@ def process_one(docx_path: Path, args: argparse.Namespace) -> int:
     text_files: dict[str, str] = {}
     notes: list[str] = []  # 行内译注 -> Note 页
     for ch in chapters:
-        seq += 1
         suffix = ch["suffix"]
+        is_intro = suffix == "Before_the_Prologue"
+        if not is_intro:
+            seq += 1
+        content_seq = 0 if is_intro else seq
         if suffix == "Between_the_Lines":
             bt += 1
             suffix = f"Between_the_Lines{bt}"
         elif suffix is None:
-            suffix = f"Section{seq}"
-        fname = f"{header}-{seq:02d}_{suffix}.xhtml"
+            suffix = f"Section{content_seq}"
+        fname = f"{header}-{content_seq:02d}_{suffix}.xhtml"
         h2s = [p[1] for p in ch["blocks"] if p[0] == "h2"]
-        entries.append((fname, ch["title"], h2s))
+        entries.append((fname, ch.get("nav_title", ch["title"]), h2s))
         rendered = render_content(ch, names, body_illus)
         text_files[fname] = extract_notes(rendered, notes, header)
 
