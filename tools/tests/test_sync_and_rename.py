@@ -4,17 +4,24 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 
 from fix_empty_placeholders import apply_candidate  # noqa: E402
-from publish import publish_book  # noqa: E402
+from publish import alignment_preflight, publish_book  # noqa: E402
 from publish_epub import publish_book_reverse  # noqa: E402
 from sync_core import detect_changes, sync_file_changes  # noqa: E402
 
 
 class SyncCoreTests(unittest.TestCase):
+    def test_alignment_preflight_uses_strict_mode(self):
+        with patch("publish.subprocess.run") as run:
+            run.return_value.returncode = 1
+            self.assertFalse(alignment_preflight(Path("cache")))
+            self.assertIn("--strict", run.call_args.args[0])
+
     def test_detect_and_apply_delta(self):
         current = {"chinese-text/book/a.txt": "new", "chinese-text/book/b.txt": "b"}
         baseline = {"chinese-text/book/a.txt": "old", "chinese-text/book/c.txt": "c"}

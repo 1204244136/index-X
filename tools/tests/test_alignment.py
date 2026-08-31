@@ -26,6 +26,23 @@ def xhtml(body_lines: list[str]) -> str:
 
 
 class AlignmentTests(unittest.TestCase):
+    def test_body_lines_must_be_atomic(self):
+        adjacent = xhtml(["<p>一</p><p>二</p>"]).splitlines()
+        footer = xhtml(["<p>一</p><hr/>"]).splitlines()
+        content_close = xhtml(["<p>一</p></body></html>"]).splitlines()
+        self.assertIn(
+            "L6 同一物理行包含多个正文块",
+            check_alignment.check_file(adjacent),
+        )
+        self.assertIn(
+            "L6 同一物理行包含多个正文块",
+            check_alignment.check_file(footer),
+        )
+        self.assertIn(
+            "L6 正文与 body 闭标签同行",
+            check_alignment.check_file(content_close),
+        )
+
     def test_pair_difference_is_a_problem_record(self):
         with tempfile.TemporaryDirectory() as tmp:
             cache = Path(tmp)
@@ -44,6 +61,12 @@ class AlignmentTests(unittest.TestCase):
             report = (cache / "alignment-check.tsv").read_text(encoding="utf-8-sig")
             self.assertIn("配对差异", report)
             self.assertIn("行数", report)
+            with patch.object(
+                sys,
+                "argv",
+                ["check_alignment.py", "--cache", str(cache), "--strict"],
+            ):
+                self.assertEqual(check_alignment.main(), 1)
 
 
 if __name__ == "__main__":

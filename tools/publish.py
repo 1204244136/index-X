@@ -25,6 +25,7 @@ from __future__ import annotations
 import argparse
 import fnmatch
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -50,6 +51,21 @@ SIDE_MAP = {
     "chinese": "chinese-text",
     "japanese": "japanese-text",
 }
+
+
+def alignment_preflight(cache_root: Path) -> bool:
+    """Run the strict alignment audit before mutating EPUB/ or OneDrive."""
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(TOOLS_DIR / "check_alignment.py"),
+            "--cache",
+            str(cache_root),
+            "--strict",
+        ],
+        check=False,
+    )
+    return result.returncode == 0
 
 
 def sync_book_changes(
@@ -278,6 +294,14 @@ def main() -> int:
     if args.dry_run:
         print("\n[dry-run] 未执行任何操作。")
         return 0
+
+    print("\n== 发布前严格对齐检查 ==")
+    if not alignment_preflight(cache):
+        print(
+            "错误: 对齐检查未通过，已停止发布；请修复 alignment-check.tsv 中的问题。",
+            file=sys.stderr,
+        )
+        return 1
 
     # Publish each changed book
     print("\n== 发布 ==")

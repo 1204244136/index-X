@@ -11,12 +11,14 @@
 
 检查项：
 - 逐文件：L1/L2/L3 头部结构、L4=h1 独占或空、L5=h2 独占或空、L6=正文；
+- 正文行原子性：每条物理行只允许一个同级正文块，正文不得与 body/html 闭标签同行；
 - 配对文件：总行数一致、h2 位置一致、图片行一致（gaiji/height-2em 字形不计；
   S2_14-04/07/10/13 为已确认的文本化图片例外）；
 - 纯图片页/无正文页不适用；仅单侧存在的 EPUB、日文独有包装页不参与检查。
 
 用法：
     python tools/check_alignment.py
+    python tools/check_alignment.py --strict
     python tools/check_alignment.py --cache 路径
 输出：控制台汇总 + `.cache/epub-work/alignment-check.tsv`
 """
@@ -40,6 +42,17 @@ H_OPEN_RE = re.compile(r"<(h1|h2)\b", re.I)
 BODY_RE = re.compile(r"<body\b", re.I)
 IMG_RE = re.compile(r"<(?:img|svg)\b|data-image-continuation=", re.I)
 LIST_WRAP_RE = re.compile(r"^\s*<(ul|ol)\b[^>]*>\s*$", re.I)
+FLOW_SIBLING_RE = re.compile(
+    r"(?:</(?:p|h[12]|li|ul|ol|blockquote|table|tr|td)>|"
+    r"<(?:br|hr)\b[^>]*?/?>)\s*"
+    r"<(?:p|h[12]|li|ul|ol|blockquote|table|tr|td|br|hr)\b",
+    re.I,
+)
+CONTENT_BODY_CLOSE_RE = re.compile(
+    r"</(?:p|h[12]|li|ul|ol|blockquote|table|tr|td)>\s*"
+    r"(?:</div>\s*)*</body>",
+    re.I,
+)
 
 def read_lines(path: Path) -> list[str]:
     return path.read_text(encoding="utf-8", errors="ignore").splitlines()
@@ -91,6 +104,11 @@ def check_file(lines: list[str], allow_list_wrap_slot: bool = False) -> list[str
             if idx == 5 and allow_list_wrap_slot and LIST_WRAP_RE.match(line):
                 continue
             errs.append(f"L{idx} 非标题行却有内容")
+    for lineno, line in enumerate(lines[5:], 6):
+        if FLOW_SIBLING_RE.search(line):
+            errs.append(f"L{lineno} 同一物理行包含多个正文块")
+        if CONTENT_BODY_CLOSE_RE.search(line):
+            errs.append(f"L{lineno} 正文与 body 闭标签同行")
     return errs
 
 
@@ -112,6 +130,11 @@ def main() -> int:
     import argparse
     ap = argparse.ArgumentParser(description="检查中日缓存统一固定行模板与对齐")
     ap.add_argument("--cache", type=Path, default=Path(".cache/epub-work"))
+    ap.add_argument(
+        "--strict",
+        action="store_true",
+        help="发现任何问题时返回非零状态，供发布前质量门禁使用",
+    )
     args = ap.parse_args()
     cache = args.cache
 
@@ -235,7 +258,7 @@ def main() -> int:
     print(f"报告：{tsv}")
     for r in bad:
         print(f"  [{r[0]}] {r[1]} | {r[2].split(chr(92))[-1]} | {r[5]}")
-    return 0
+    return 1 if args.strict and bad else 0
 
 
 if __name__ == "__main__":
