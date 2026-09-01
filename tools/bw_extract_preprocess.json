@@ -20,18 +20,66 @@
     {
       "case_sensitive": false,
       "dot_all": true,
-      "find": "\\s*(?:(?:<p><br\\s*/?></p>|<br\\s*/?>)\\s*)+(?=</div>)",
+      "find": "(<\\?xml[^>]*\\?>)\\s+<!DOCTYPE html>\\s+<html\\s+xmlns=\"http://www.w3.org/1999/xhtml\"\\s+xmlns:epub=\"http://www.idpf.org/2007/ops\"\\s+xml:lang=\"ja\"\\s+class=\"vrtl\"\\s*>\\s+<head>\\s+<meta charset=\"UTF-8\"/>\\s+<title>(.*?)</title>\\s+<link rel=\"stylesheet\" type=\"text/css\" href=\"../style/book-style.css\"/>\\s+</head>\\s+<body class=\"p-text\">\\s+<div class=\"main\">\\s*(?:<br/>\\s*)*",
       "mode": "regex",
-      "name": "页尾填充br删除",
-      "replace": "\n"
+      "name": "头部整体合并为L3单行+main后两空行占位",
+      "replace": "\\1\n<!DOCTYPE html>\n<html xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:epub=\"http://www.idpf.org/2007/ops\" xml:lang=\"ja\" class=\"vrtl\"><head><meta charset=\"UTF-8\"/><title>\\2</title><link rel=\"stylesheet\" type=\"text/css\" href=\"../style/book-style.css\"/></head><body class=\"p-text\"><div class=\"main\">\n\n\n"
     },
     {
       "case_sensitive": false,
       "dot_all": true,
-      "find": "(<div class=\"main\">)\\s*(?:<br\\s*/?>[\\r\\n]*)*",
+      "find": "(<div class=\"main\">)\\s*<div class=\"start-3em\">\\s*<p([^>]*)>(.*?)</p>\\s*</div>",
       "mode": "regex",
-      "name": "页首填充br删除(main后)",
-      "replace": "\\1\n"
+      "name": "章节容器折叠为h1独占行(L4)",
+      "replace": "\\1\n<h1\\2>\\3</h1>\n\n"
+    },
+    {
+      "case_sensitive": false,
+      "dot_all": true,
+      "find": "(<h1[^>]*>.*?</h1>)\\s*(?:<br/>\\s*)*<div class=\"start-5em\">\\s*<p([^>]*)>(.*?)</p>\\s*</div>\\s*(?:<br/>\\s*)*",
+      "mode": "regex",
+      "name": "首小节容器折叠为h2独占行(L5,h1后)",
+      "replace": "\\1\n<h2\\2>\\3</h2>\n"
+    },
+    {
+      "case_sensitive": false,
+      "dot_all": true,
+      "find": "(<div class=\"main\">)\\s*(?:<br/>\\s*)*<div class=\"start-5em\">\\s*<p([^>]*)>(.*?)</p>\\s*</div>\\s*(?:<br/>\\s*)*",
+      "mode": "regex",
+      "name": "首小节容器折叠为h2独占行(L5,无h1)",
+      "replace": "\\1\n\n<h2\\2>\\3</h2>\n"
+    },
+    {
+      "case_sensitive": false,
+      "dot_all": true,
+      "find": "<div class=\"start-5em\">\\s*<p([^>]*)>(.*?)</p>\\s*</div>",
+      "mode": "regex",
+      "name": "正文中部小节容器折叠为h2行",
+      "replace": "<h2\\1>\\2</h2>"
+    },
+    {
+      "case_sensitive": false,
+      "dot_all": true,
+      "find": "(<h1[^>]*>.*?</h1>)\\s*(?:<br/>\\s*)*(<p\\b)",
+      "mode": "regex",
+      "name": "h1后填充br清理+空行占位",
+      "replace": "\\1\n\n\\2"
+    },
+    {
+      "case_sensitive": false,
+      "dot_all": false,
+      "find": "^<p>([0-9０-９]+)</p>$",
+      "mode": "regex",
+      "name": "裸数字小节转为h2",
+      "replace": "<h2>\\1</h2>"
+    },
+    {
+      "case_sensitive": false,
+      "dot_all": true,
+      "find": "\\s*(?:(?:<p><br\\s*/?></p>|<br\\s*/?>)\\s*)+(?=</div>)",
+      "mode": "regex",
+      "name": "页尾填充br删除",
+      "replace": "\n"
     },
     {
       "case_sensitive": false,
@@ -74,6 +122,6 @@
       "replace": "\\1"
     }
   ],
-  "version": 2,
-  "_comment": "职责边界调整（v2）：本规则集只清理 BookWalker 排版噪声（ruby 合并、font/span 解包、页首/页尾填充 br）。头部折叠、容器解包（start-3em/start-5em）、p 型标题转 h1、数字小节转 h2 等「套用固定行模板」操作已移除，由 normalize_paired.py / normalize_single.py 共用的规范化核心处理。"
+  "version": 3,
+  "_comment": "恢复分页合并所需的固定行模板契约：正文页折叠 L1-L3，章节标题转 h1，数字小节转 h2，无标题页保留 L4/L5 空槽；同时清理 BookWalker 排版噪声。"
 }

@@ -8,7 +8,7 @@ from pathlib import Path
 TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 
-from merge_bw_pages import collect_pages, group_units, merge_unit  # noqa: E402
+from merge_bw_pages import PAGE_RE, collect_pages, group_units, merge_unit  # noqa: E402
 from xhtml_template import rebuild  # noqa: E402
 
 
@@ -35,6 +35,14 @@ class XhtmlTemplateTests(unittest.TestCase):
             self.assertTrue(lines[3].startswith("<h1"))
             self.assertEqual(lines[4], "<h2>１</h2>")
             self.assertEqual(lines[5], "<p>正文</p>")
+
+    def test_headered_bookwalker_page_name_is_recognized(self):
+        match = PAGE_RE.match("S4_05-06_p-008.xhtml")
+        self.assertIsNotNone(match)
+        assert match is not None
+        self.assertEqual(match.group("book"), "S4_05")
+        self.assertEqual(match.group("sequence"), "06")
+        self.assertEqual(match.group("page"), "008")
 
     def test_chinese_note_list_uses_l5_slot(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -98,10 +106,39 @@ class MergeBwTests(unittest.TestCase):
             self.assertIn("<body", merged[2])
             self.assertEqual(merged[3], '<h1 id="chapter">第一章</h1>')
             self.assertEqual(merged[4], "")
-            self.assertEqual(merged[5], "<p>A</p>")
-            self.assertEqual(merged.count("<br/>"), 3)
-            self.assertNotIn("<div", "\n".join(merged))
+            self.assertEqual(merged[5], '<p class="pb">A</p>')
+            self.assertEqual(merged[6], "<p>B</p>")
+            self.assertEqual(merged.count("<div"), 0)
+            self.assertEqual(merged.count("<hr/>"), 0)
+            self.assertEqual(merged.count("<br/>"), 0)
             self.assertNotIn("<h1><h1", "\n".join(merged))
+
+    def test_headered_pages_preserve_one_based_content_sequence(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "S4_05-01_p-001.xhtml").write_text(
+                self.page("", "<p>引子</p>"), encoding="utf-8"
+            )
+            (root / "S4_05-02_p-002.xhtml").write_text(
+                self.page("<h1>序章</h1>", "<p>正文</p>"), encoding="utf-8"
+            )
+            notes: list[str] = []
+            units = group_units(collect_pages(root), notes)
+            self.assertEqual([unit["sequence"] for unit in units], [1, 2])
+
+    def test_header_sequence_starts_untitled_tail_unit(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "S4_05-09_p-011.xhtml").write_text(
+                self.page("<h1>あとがき</h1>", "<p>作者署名</p>"), encoding="utf-8"
+            )
+            (root / "S4_05-10_p-012.xhtml").write_text(
+                self.page("", "<p>尾声</p>"), encoding="utf-8"
+            )
+            notes: list[str] = []
+            units = group_units(collect_pages(root), notes)
+            self.assertEqual([unit["sequence"] for unit in units], [9, 10])
+            self.assertIsNone(units[1]["title"])
 
 
 if __name__ == "__main__":

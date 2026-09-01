@@ -3,13 +3,13 @@
 
 输入 bw_preprocess 处理后的分页目录（p-NNN.xhtml），按章节标题（<h1>）分组，
 把分页合并为章节文件。页边界按衔接处两侧的页型定间距：
-  - 文本 + 文本（连续两页正文）→ 插入 3 行视觉间隔（每行一个独占一行的 <br/>）
+  - 文本 + 文本（连续两页正文）→ 插入 1 行换页标记（独占一行的 <hr/>）
   - 跨整页插图（文本 + 图片 + 文本）→ 无缝衔接，图片行直接夹在两段文本之间
   - 若前一页末段与后一页首段是同一段落的断续，须按语义拼回完整段落（工具无法
-    自动判断，输出「待确认清单」供人工核对，不再套用 3 行间隔）
+    自动判断，输出「待确认清单」供人工核对，不再套用换页标记）
 
 - 全页插图页（`body.p-image` 或 SVG）保留为图片行，并入其前一章节单元末尾；
-- 无标题引子页（第一个 <h1> 之前的内容）合并为独立「引子」单元；
+- 无标题引子页（第一个 <h1> 之前的内容）合并为从 01 开始的独立「引子」单元；
 - 整页无文本且无图/SVG 的空占位页跳过并报告；
 - 每个 <h1> 起一个章节单元，其后无 <h1> 的页续入当前单元。
 
@@ -27,8 +27,13 @@ import argparse
 import re
 from pathlib import Path
 
-# 只处理形如 p-001.xhtml 的正文/插图分页，跳过 p-fmatter/p-toc/p-cover 等包装页
-PAGE_RE = re.compile(r"^p-(\d{3})\.xhtml$", re.I)
+# 处理 p-001.xhtml 及 S4_05-01_p-001.xhtml / 历史的 -p-001 形式，
+# 跳过 p-fmatter/p-toc/p-cover 等包装页。
+PAGE_RE = re.compile(
+    r"^(?:(?P<book>S\d+_(?:\d+(?:_\d+)?|\d{2}(?:\.\d{2}){2}))-"
+    r"(?P<sequence>\d+)[-_])?p-(?P<page>\d{3})\.xhtml$",
+    re.I,
+)
 H1_RE = re.compile(r"^\s*<h1\b", re.I)
 H1_INNER_RE = re.compile(r"<h1\b[^>]*>(.*?)</h1>", re.I | re.S)
 H2_RE = re.compile(r"^\s*<h2\b", re.I)
@@ -63,9 +68,12 @@ def is_image_line(line: str) -> bool:
     return not re.sub(r"<[^>]*>", "", cleaned).strip()
 
 
-def parse_page(path: Path) -> dict | None:
-    """解析单个分页：p-text 页取 L4/L5 表头 + L6 起正文；插图页(SVG/p-image)取整块为图片行。"""
-    lines, bom, crlf = read_lines(path)
+def parse_page_content(name: str, text: str, bom: bool = False, crlf: bool = False) -> dict | None:
+    """解析单个分页内容：p-text 页取 L4/L5 表头 + L6 起正文；插图页(SVG/p-image)取整块为图片行。"""
+    name_match = PAGE_RE.match(name)
+    if name_match is None:
+        return None
+    lines = text.splitlines()
     main_idx = next(
         (i for i, line in enumerate(lines) if MAIN_DIV_RE.search(line)), None
     )
@@ -111,7 +119,10 @@ def parse_page(path: Path) -> dict | None:
         return None
     head3 = re.sub(r">\s+<", "><", head_match.group(1)).strip()
     return {
-        "name": path.name,
+        "name": name,
+        "book_id": name_match.group("book"),
+        "sequence": (int(name_match.group("sequence"))
+                     if name_match.group("sequence") is not None else None),
         "lines": lines,
         "header": header,
         "body": body,
@@ -127,13 +138,21 @@ def parse_page(path: Path) -> dict | None:
     }
 
 
+def parse_page(path: Path) -> dict | None:
+    """解析单个分页文件。"""
+    raw = path.read_bytes()
+    bom = raw.startswith(b"\xef\xbb\xbf")
+    text = raw.decode("utf-8-sig", errors="replace")
+    return parse_page_content(path.name, text, bom, "\r\n" in text)
+
+
 def collect_pages(dir_path: Path) -> list[dict]:
     """递归收集并排序分页 p-NNN.xhtml（兼容 epub 解包顶层的 item/xhtml 子目录）。"""
     found = []
     for p in dir_path.rglob("*.xhtml"):
         m = PAGE_RE.match(p.name)
         if m:
-            found.append((int(m.group(1)), p))
+            found.append((int(m.group("page")), p))
     out = []
     for _, p in sorted(found):
         pg = parse_page(p)
@@ -146,36 +165,62 @@ def group_units(pages: list[dict], notes: list[str]) -> list[dict]:
     """按 <h1> 分组为章节单元；无标题引子单独成单元。"""
     units: list[dict] = []
     cur: dict | None = None
+
+    def append_to_current(pg: dict) -> None:
+        assert cur is not None
+        current_sequence = cur["sequence"]
+        page_sequence = pg["sequence"]
+        if (current_sequence is not None and page_sequence is not None
+                and current_sequence != page_sequence):
+            raise ValueError(
+                f"同一合并单元出现冲突表头：{cur['pages'][0]['name']} 为 "
+                f"-{current_sequence:02d}，{pg['name']} 为 -{page_sequence:02d}")
+        cur["pages"].append(pg)
+
     for pg in pages:
         if pg["is_empty"]:
             notes.append(f"[空占位页] {pg['name']} 无文本无图，已跳过（规范：删除并前移后续序号）")
             continue
+        if (cur and cur["sequence"] is not None and pg["sequence"] is not None
+                and cur["sequence"] != pg["sequence"]):
+            # 带表头输入以稳定内容序为最高优先级；允许无 h1 的尾声等显式单元。
+            units.append(cur)
+            cur = None
         if pg["has_h1"]:
             if cur:
                 units.append(cur)
             h2 = pg["header"][1].strip() if len(pg["header"]) > 1 else ""
             cur = {"title": pg["h1"], "h1": pg["h1"],
-                   "h2": h2, "pages": [pg], "image_pages": 0}
+                   "h2": h2, "pages": [pg], "image_pages": 0,
+                   "sequence": pg["sequence"]}
             continue
         if pg["is_image_page"]:
             if cur:
-                cur["pages"].append(pg)
+                append_to_current(pg)
                 cur["image_pages"] += 1
                 notes.append(f"[插图归属] {pg['name']}（全页插图）并入「{cur['title'] or '引子'}」末尾，请核对")
             else:
                 cur = {"title": None, "h1": None, "h2": None,
-                       "pages": [pg], "image_pages": 1}
+                       "pages": [pg], "image_pages": 1,
+                       "sequence": pg["sequence"]}
                 notes.append(f"[插图归属] {pg['name']} 位于首章前，归入引子单元，请核对")
             continue
         if cur:
-            cur["pages"].append(pg)
+            append_to_current(pg)
         else:
             # 最前面的无标题页 → 引子单元
             if not units or units[-1].get("title") is not None:
                 cur = {"title": None, "h1": None, "h2": None,
-                       "pages": [pg], "image_pages": 0}
+                       "pages": [pg], "image_pages": 0,
+                       "sequence": pg["sequence"]}
             else:
-                units[-1]["pages"].append(pg)
+                previous = units[-1]
+                if (previous["sequence"] is not None and pg["sequence"] is not None
+                        and previous["sequence"] != pg["sequence"]):
+                    raise ValueError(
+                        f"同一引子单元出现冲突表头：{previous['pages'][0]['name']} 与 "
+                        f"{pg['name']}")
+                previous["pages"].append(pg)
     if cur:
         units.append(cur)
     return units
@@ -221,15 +266,29 @@ def semantic_edge(body: list[str]) -> tuple[str | None, str | None]:
     return (b[0] if b else None, b[-1] if b else None)
 
 
+def add_class_pb(line: str) -> str:
+    """在段落标签上追加 class="pb" 用于跨文件分页。"""
+    if re.search(r'\bclass\s*=\s*"([^"]*)"', line):
+        return re.sub(
+            r'\bclass\s*=\s*"([^"]*)"',
+            lambda m: f'class="{m.group(1)} pb"' if "pb" not in m.group(1).split() else m.group(0),
+            line,
+            count=1,
+        )
+    elif re.search(r"\bclass\s*=\s*'([^']*)'", line):
+        return re.sub(
+            r"\bclass\s*=\s*'([^']*)'",
+            lambda m: f"class='{m.group(1)} pb'" if "pb" not in m.group(1).split() else m.group(0),
+            line,
+            count=1,
+        )
+    else:
+        return re.sub(r"<p\b", '<p class="pb"', line, count=1, flags=re.I)
+
+
 def gap_for(prev_last: str | None, next_first: str | None) -> list[str]:
-    """按衔接处两侧页型定间距：含图片行无缝；标题边界不插 3 行；否则文本+文本 3 行 <br/>。"""
-    if prev_last is None or next_first is None:
-        return []
-    if is_image_line(prev_last) or is_image_line(next_first):
-        return []                     # 跨整页插图：无缝衔接，前后不插 <br/>
-    if HEADING_RE.match(prev_last) or HEADING_RE.match(next_first):
-        return []                     # 小节/章节标题自带分隔，不套正文 3 行间隔
-    return ["<br/>", "<br/>", "<br/>"]
+    """按衔接处两侧页型定间距：换页直接在末段上标记 class="pb"，不再插入独立空白行。"""
+    return []
 
 
 def merge_unit(unit: dict, notes: list[str]) -> list[str] | None:
@@ -252,8 +311,8 @@ def merge_unit(unit: dict, notes: list[str]) -> list[str] | None:
                 id_match = re.search(r'\bid="([^"]+)"', source_h1, re.I)
                 if id_match:
                     h1_id = f' id="{id_match.group(1)}"'
-            if h1_id:
-                break
+                if h1_id:
+                    break
         l4 = f'<h1{h1_id}>{h1_text}</h1>' if h1_text else ''
     else:
         l4 = ''
@@ -262,23 +321,26 @@ def merge_unit(unit: dict, notes: list[str]) -> list[str] | None:
     out = list(head) + [l4, l5]
 
     cleaned_bodies = [check_edge_br(pg["body"], pg["name"], notes) for pg in pages]
-    for i, (pg, body) in enumerate(zip(pages, cleaned_bodies)):
-        if i > 0:
-            prev_body = cleaned_bodies[i - 1]
-            prev_last = prev_body[-1] if prev_body else None
-            next_first = body[0] if body else None
-            out.extend(gap_for(prev_last, next_first))
-            if next_first and prev_last and not (
-                    is_image_line(prev_last) or is_image_line(next_first)) and not (
-                    HEADING_RE.match(prev_last) or HEADING_RE.match(next_first)):
-                notes.append(
-                    f"[同段核对] {pages[i-1]['name']} → {pg['name']} 边界为文本+文本，"
-                    f"已插 3 行 <br/>；若为同一段落断续请按语义拼回（勿套 3 行间隔）")
-            elif next_first and prev_last and (
-                    HEADING_RE.match(prev_last) or HEADING_RE.match(next_first)):
-                notes.append(
-                    f"[标题边界] {pages[i-1]['name']} → {pg['name']} 边界含小节/章节标题，"
-                    f"未插 3 行间隔，请核对")
+    for i in range(1, len(pages)):
+        prev_body = cleaned_bodies[i - 1]
+        body = cleaned_bodies[i]
+        prev_last = prev_body[-1] if prev_body else None
+        next_first = body[0] if body else None
+        if next_first and prev_last and not (
+                is_image_line(prev_last) or is_image_line(next_first)) and not (
+                HEADING_RE.match(prev_last) or HEADING_RE.match(next_first)):
+            prev_body[-1] = add_class_pb(prev_last)
+            notes.append(
+                f"[同段核对] {pages[i-1]['name']} → {pages[i]['name']} 边界为文本+文本，"
+                f"已在末段追加 class=\"pb\"；若为同一段落断续请按语义拼回（勿套换页标记）")
+        elif next_first and prev_last and (
+                HEADING_RE.match(prev_last) or HEADING_RE.match(next_first)):
+            notes.append(
+                f"[标题边界] {pages[i-1]['name']} → {pages[i]['name']} 边界含小节/章节标题，"
+                f"未追加 class=\"pb\"，请核对")
+
+    out = list(head) + [l4, l5]
+    for body in cleaned_bodies:
         out.extend(body)
     out.append("</body></html>")
     return out
@@ -307,17 +369,50 @@ def main() -> int:
         print(f"[跳过] 目录中没有 p-NNN.xhtml 分页：{args.dir}")
         return 1
     notes: list[str] = []
-    units = group_units(pages, notes)
+    page_books = {pg["book_id"].upper() if pg["book_id"] else None for pg in pages}
+    if len(page_books) > 1:
+        print("[错误] 分页同时包含有表头与无表头文件，或包含多个作品号；拒绝猜测合并")
+        return 1
+    detected_book = next(iter(page_books))
+    invalid_zero_pages = [
+        pg["name"] for pg in pages if pg["sequence"] == 0
+    ]
+    if invalid_zero_pages:
+        print(
+            "[错误] 分页含非法内容序 -00；数字内容序必须从 -01 开始："
+            + "、".join(invalid_zero_pages)
+        )
+        return 1
+    output_book = args.book
+    if detected_book is not None:
+        if args.book == "BOOK":
+            output_book = detected_book
+        elif args.book.upper() != detected_book:
+            print(f"[错误] --book {args.book} 与分页表头作品号 {detected_book} 不一致")
+            return 1
+        output_book = detected_book
+    try:
+        units = group_units(pages, notes)
+    except ValueError as exc:
+        print(f"[错误] {exc}")
+        return 1
+    header_sequences = [unit["sequence"] for unit in units
+                        if unit["sequence"] is not None]
+    if len(header_sequences) != len(set(header_sequences)):
+        print("[错误] 多个合并单元使用了相同内容序；拒绝覆盖输出")
+        return 1
     out_dir = args.out or (args.dir.parent / "merge-out")
     written = 0
     for idx, unit in enumerate(units, 1):
         lines = merge_unit(unit, notes)
         if lines is None:
             continue
-        name = f"{args.book}-{idx:02d}.xhtml"
+        sequence = unit["sequence"] if unit["sequence"] is not None else idx
+        name = f"{output_book}-{sequence:02d}.xhtml"
         body_paras = sum(1 for line in lines if re.match(r"^\s*<p\b", line))
         img_rows = sum(1 for line in lines if is_image_line(line))
-        print(f"[单元 {idx:02d}] {unit['title'] or '引子'}：页 {len(unit['pages'])}，"
+        display_title = unit["title"] or ("引子" if idx == 1 else "无标题单元")
+        print(f"[单元 {idx:02d}] {display_title}：页 {len(unit['pages'])}，"
               f"插图页 {unit['image_pages']}，正文段 {body_paras}，图片行 {img_rows} → {name}")
         if args.dry_run:
             continue
