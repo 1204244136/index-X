@@ -143,15 +143,15 @@
     <item id="Message.xhtml" href="Text/S1_19-Information.xhtml" media-type="application/xhtml+xml"/>
     <item id="id1" href="Text/S1_19-Introduction.xhtml" media-type="application/xhtml+xml"/>
     <item href="Text/S1_19-Illustrations.xhtml" id="Illustrations" media-type="application/xhtml+xml"/>
-    <item href="Text/S1_19-00_Prologue.xhtml" id="id6" media-type="application/xhtml+xml"/>
-    <item href="Text/S1_19-01_Chapter1.xhtml" id="id16" media-type="application/xhtml+xml"/>
-    <item href="Text/S1_19-02_Between_the_Lines1.xhtml" id="id4" media-type="application/xhtml+xml"/>
-    <item href="Text/S1_19-03_Chapter2.xhtml" id="id8" media-type="application/xhtml+xml"/>
-    <item href="Text/S1_19-04_Between_the_Lines2.xhtml" id="id9" media-type="application/xhtml+xml"/>
-    <item href="Text/S1_19-05_Chapter3.xhtml" id="id10" media-type="application/xhtml+xml"/>
-    <item href="Text/S1_19-06_Chapter4.xhtml" id="id11" media-type="application/xhtml+xml"/>
-    <item href="Text/S1_19-07_Epilogue.xhtml" id="id12" media-type="application/xhtml+xml"/>
-    <item href="Text/S1_19-08_Afterwords.xhtml" id="id17" media-type="application/xhtml+xml"/>
+    <item href="Text/S1_19-01_Prologue.xhtml" id="id6" media-type="application/xhtml+xml"/>
+    <item href="Text/S1_19-02_Chapter1.xhtml" id="id16" media-type="application/xhtml+xml"/>
+    <item href="Text/S1_19-03_Between_the_Lines1.xhtml" id="id4" media-type="application/xhtml+xml"/>
+    <item href="Text/S1_19-04_Chapter2.xhtml" id="id8" media-type="application/xhtml+xml"/>
+    <item href="Text/S1_19-05_Between_the_Lines2.xhtml" id="id9" media-type="application/xhtml+xml"/>
+    <item href="Text/S1_19-06_Chapter3.xhtml" id="id10" media-type="application/xhtml+xml"/>
+    <item href="Text/S1_19-07_Chapter4.xhtml" id="id11" media-type="application/xhtml+xml"/>
+    <item href="Text/S1_19-08_Epilogue.xhtml" id="id12" media-type="application/xhtml+xml"/>
+    <item href="Text/S1_19-09_Afterwords.xhtml" id="id17" media-type="application/xhtml+xml"/>
     <item id="id13" href="Text/S1_19-Back_cover.xhtml" media-type="application/xhtml+xml"/>
     <item id="id3" href="Text/S1_19-Note.xhtml" media-type="application/xhtml+xml"/>
     <item id="nav" href="../nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
