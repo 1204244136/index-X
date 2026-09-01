@@ -26,6 +26,30 @@ def xhtml(body_lines: list[str]) -> str:
 
 
 class AlignmentTests(unittest.TestCase):
+    def test_heading_breaks_and_block_wrappers_are_rejected(self):
+        heading_break = xhtml(["<p>正文</p>"]).splitlines()
+        heading_break[3] = "<h1>主标题<br/>副标题</h1>"
+        block_wrapper = xhtml(["<p>正文</p>"]).splitlines()
+        block_wrapper[3] = "<h1><div>标题</div></h1>"
+        body_heading = xhtml(["<p>正文</p>", "<h2>特典<br/>副标题</h2>"]).splitlines()
+        embedded = xhtml(["<p>正文</p>", "<p>前缀</p><h2>标题</h2>"]).splitlines()
+
+        self.assertIn("L4 h1/h2 内嵌 <br/>", check_alignment.check_file(heading_break))
+        self.assertIn(
+            "L4 h1/h2 含 div/p 块级包装",
+            check_alignment.check_file(block_wrapper),
+        )
+        self.assertIn("L7 h1/h2 内嵌 <br/>", check_alignment.check_file(body_heading))
+        self.assertIn("L7 h1/h2 未独占一个物理行", check_alignment.check_file(embedded))
+
+    def test_semantic_heading_spans_are_allowed(self):
+        lines = xhtml(["<p>正文</p>"]).splitlines()
+        lines[3] = (
+            '<h1 class="heading-lines"><span class="heading-main">主标题</span>'
+            '<span class="heading-subtitle">副标题</span></h1>'
+        )
+        self.assertEqual(check_alignment.check_file(lines), [])
+
     def test_body_lines_must_be_atomic(self):
         adjacent = xhtml(["<p>一</p><p>二</p>"]).splitlines()
         footer = xhtml(["<p>一</p><hr/>"]).splitlines()

@@ -54,6 +54,12 @@ CONTENT_BODY_CLOSE_RE = re.compile(
     r"(?:</div>\s*)*</body>",
     re.I,
 )
+HEADING_OPEN_RE = re.compile(r"<(?P<tag>h[12])\b[^>]*>", re.I)
+HEADING_CONTENT_RE = re.compile(
+    r"<(?P<tag>h[12])\b[^>]*>(?P<inner>.*?)</(?P=tag)>", re.I | re.S
+)
+HEADING_BR_RE = re.compile(r"<br\s*/?>", re.I)
+HEADING_BLOCK_WRAP_RE = re.compile(r"<(?:div|p)\b", re.I)
 
 def read_lines(path: Path) -> list[str]:
     return path.read_text(encoding="utf-8", errors="ignore").splitlines()
@@ -110,6 +116,21 @@ def check_file(lines: list[str], allow_list_wrap_slot: bool = False) -> list[str
             errs.append(f"L{lineno} 同一物理行包含多个正文块")
         if CONTENT_BODY_CLOSE_RE.search(line):
             errs.append(f"L{lineno} 正文与 body 闭标签同行")
+    for lineno, line in enumerate(lines, 1):
+        opening = HEADING_OPEN_RE.search(line)
+        if not opening:
+            continue
+        heading = HEADING_CONTENT_RE.search(line)
+        if not heading:
+            errs.append(f"L{lineno} h1/h2 未独占一个物理行")
+            continue
+        if line.strip() != heading.group(0):
+            errs.append(f"L{lineno} h1/h2 未独占一个物理行")
+        inner = heading.group("inner")
+        if HEADING_BR_RE.search(inner):
+            errs.append(f"L{lineno} h1/h2 内嵌 <br/>")
+        if HEADING_BLOCK_WRAP_RE.search(inner):
+            errs.append(f"L{lineno} h1/h2 含 div/p 块级包装")
     return errs
 
 
