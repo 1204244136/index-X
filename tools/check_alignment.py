@@ -41,6 +41,7 @@ TAG_RE = re.compile(r"<[^>]*>")
 H_OPEN_RE = re.compile(r"<(h1|h2)\b", re.I)
 BODY_RE = re.compile(r"<body\b", re.I)
 IMG_RE = re.compile(r"<(?:img|svg)\b|data-image-continuation=", re.I)
+BR_LINE_RE = re.compile(r"^\s*<br\s*/>\s*$", re.I)
 LIST_WRAP_RE = re.compile(r"^\s*<(ul|ol)\b[^>]*>\s*$", re.I)
 FLOW_SIBLING_RE = re.compile(
     r"(?:</(?:p|h[12]|li|ul|ol|blockquote|table|tr|td)>|"
@@ -126,6 +127,27 @@ def h2_lines(lines: list[str]) -> list[int]:
     return [i + 1 for i, line in enumerate(lines) if re.search(r"<h2\b", line)]
 
 
+def standalone_br_lines(lines: list[str]) -> list[int]:
+    return [i + 1 for i, line in enumerate(lines) if BR_LINE_RE.match(line)]
+
+
+def pair_problems(header: str, japanese: list[str], chinese: list[str]) -> list[str]:
+    problems: list[str] = []
+    if len(japanese) != len(chinese):
+        problems.append(f"行数 {len(japanese)} vs {len(chinese)}")
+    japanese_h2, chinese_h2 = h2_lines(japanese), h2_lines(chinese)
+    if japanese_h2 != chinese_h2:
+        problems.append(f"h2 位置 JP{japanese_h2} vs CN{chinese_h2}")
+    japanese_images, chinese_images = img_lines(japanese), img_lines(chinese)
+    if japanese_images != chinese_images and header not in TEXTUAL_IMAGE_HEADERS:
+        problems.append(f"图片行 JP{japanese_images} vs CN{chinese_images}")
+    japanese_br = standalone_br_lines(japanese)
+    chinese_br = standalone_br_lines(chinese)
+    if japanese_br != chinese_br and header not in TEXTUAL_IMAGE_HEADERS:
+        problems.append(f"<br/> 位置 JP{japanese_br} vs CN{chinese_br}")
+    return problems
+
+
 def main() -> int:
     import argparse
     ap = argparse.ArgumentParser(description="检查中日缓存统一固定行模板与对齐")
@@ -204,15 +226,7 @@ def main() -> int:
                 add(side_, jp_id if side_ == "日" else cn_id,
                     str(p_.relative_to(cache)), h, True, check_file(lines_, allow_list))
             # 配对检查
-            pair_probs = []
-            if len(jl) != len(cl):
-                pair_probs.append(f"行数 {len(jl)} vs {len(cl)}")
-            jh, ch = h2_lines(jl), h2_lines(cl)
-            if jh != ch:
-                pair_probs.append(f"h2 位置 JP{jh} vs CN{ch}")
-            ji, ci = img_lines(jl), img_lines(cl)
-            if ji != ci and h not in TEXTUAL_IMAGE_HEADERS:
-                pair_probs.append(f"图片行 JP{ji} vs CN{ci}")
+            pair_probs = pair_problems(h, jl, cl)
             if pair_probs:
                 rel_pair = (
                     f"JP:{jp_p.relative_to(cache)} | CN:{cn_p.relative_to(cache)}"

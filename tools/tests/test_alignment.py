@@ -68,6 +68,18 @@ class AlignmentTests(unittest.TestCase):
             ):
                 self.assertEqual(check_alignment.main(), 1)
 
+    def test_standalone_br_positions_must_match(self):
+        japanese = xhtml(["<p>一</p>", "<br/>", "<p>二</p>"]).splitlines()
+        chinese = xhtml(["<br/>", "<p>一</p>", "<p>二</p>"]).splitlines()
+        problems = check_alignment.pair_problems("S1_01-01", japanese, chinese)
+        self.assertIn("<br/> 位置 JP[7] vs CN[6]", problems)
+
+    def test_textual_image_headers_exempt_br_positions(self):
+        japanese = xhtml(["<p>一</p>", "<br/>", "<p>二</p>"]).splitlines()
+        chinese = xhtml(["<br/>", "<p>一</p>", "<p>二</p>"]).splitlines()
+        problems = check_alignment.pair_problems("S2_14-04", japanese, chinese)
+        self.assertFalse(any(problem.startswith("<br/> 位置") for problem in problems))
+
 
 if __name__ == "__main__":
     unittest.main()
