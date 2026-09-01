@@ -12,7 +12,7 @@ p {
   display: block;
   line-height: 1.6em;
   margin: 0em;
-  word-wrap:break-word;
+  word-wrap: break-word;
 }
 div {
   margin: 0;
@@ -421,4 +421,10 @@ span.frame1 {
 	border-style: solid;
 	border-width: 1px;
 	background-color:transparent;
+}
+
+.heading-lines > .heading-main,
+.heading-lines > .heading-subtitle,
+.heading-lines > .heading-code {
+  display: block;
 }

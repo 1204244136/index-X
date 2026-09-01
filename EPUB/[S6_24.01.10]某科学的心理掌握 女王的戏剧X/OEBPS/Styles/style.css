@@ -55,8 +55,8 @@ rt {
   text-decoration: none;
   color: #879AC5;
 }
-.nodeco:hover {
-  font-weight: bold;
+.nodeco:hover{
+	font-weight:bold;
 }
 .noteimg {
   width: 1em;
@@ -171,7 +171,6 @@ td {
   text-indent: 0;
   text-align: center;
 }
-
 .right {
   text-indent: 0;
   text-align: right;
@@ -406,6 +405,7 @@ td {
   text-indent: 0;
   font-size: 1.2em;
 }
+
 .fit {
   display: inline-block;
   page-break-inside: avoid;
@@ -417,8 +417,14 @@ td {
   text-align: left;
 }
 span.frame1 {
-  font-size: 0.9em;
-  border-style: solid;
-  border-width: 1px;
-  background-color: transparent;
+	font-size: 0.9em;
+	border-style: solid;
+	border-width: 1px;
+	background-color:transparent;
+}
+
+.heading-lines > .heading-main,
+.heading-lines > .heading-subtitle,
+.heading-lines > .heading-code {
+  display: block;
 }
