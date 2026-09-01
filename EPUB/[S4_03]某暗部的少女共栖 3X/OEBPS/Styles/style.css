@@ -422,3 +422,9 @@ span.frame1 {
   border-width: 1px;
   background-color: transparent;
 }
+
+.heading-lines > .heading-main,
+.heading-lines > .heading-subtitle,
+.heading-lines > .heading-code {
+  display: block;
+}
