@@ -16,20 +16,20 @@ OneDrive EPUB → pull.ps1（增量解压）→ .cache/epub-work/（工作缓存
 
 ### 阶段 1：BookWalker 源文件预处理（仅限新书导入）
 ```
-bw 原始 EPUB → bw_preprocess.py（清理排版噪声）→ 预处理后分页目录
+bw 原始 EPUB → bw_preprocess.py（清理噪声 + 建立 L1-L5 分页模板）→ 预处理后分页目录
 ```
 - **工具**：`bw_preprocess.py`
-- **职责**：清理 BookWalker 特有排版噪声（ruby 合并、span 解包、页首/页尾填充 `<br/>` 删除）
+- **职责**：清理 BookWalker 特有排版噪声，并把正文页头部折叠到 L3、章节/小节重建为 L4/L5 的 `h1/h2`
 - **输入**：BookWalker 解包的原始分页 EPUB
 - **输出**：`<原名>.preprocessed.epub` 或就地改写的目录
-- **不做**：头部折叠、容器解包、标题提取等模板操作
+- **边界**：只建立分页合并器所需的固定槽位；最终文件命名、中日配对和完整规范化仍在后续阶段完成
 
 ### 阶段 2：分页合并为章节文件（仅限新书导入）
 ```
 预处理后分页 → merge_bw_pages.py（按 h1 合并 + 跨页衔接）→ 规范化章节文件 ✅
 ```
 - **工具**：`merge_bw_pages.py`
-- **职责**：按章节标题合并分页，处理跨页间隔（文本+文本插 3 行 `<br/>`、跨图无缝）
+- **职责**：按章节标题合并分页，处理跨页间隔（文本+文本插入 1 行换页标记 `<div style="break-after: page;"></div>`、跨图无缝）
 - **输入**：`bw_preprocess` 处理后的分页目录
 - **输出**：`<book>-NN.xhtml` 规范化章节文件（已套用 L1-L6 模板）✨
 - **检测**：页首/页尾残留 `<br/>`（若有则报告警告）
@@ -83,7 +83,7 @@ python tools/normalize_paired.py
 
 **工作流位置（新架构）**：
 ```
-阶段 1：bw EPUB → bw_preprocess（清理噪声）→ 预处理分页
+阶段 1：bw EPUB → bw_preprocess（清理噪声 + L1-L5 分页模板）→ 预处理分页
 阶段 2：预处理分页 → merge_bw_pages（合并章节）→ 接近规范的文件
 阶段 3a：已配对缓存 → normalize_paired.py → 成对规范化并保持行数约束
 阶段 3b：明确指定的单文件/目录 → normalize_single.py → 独立规范化
@@ -199,7 +199,7 @@ python tools/migrate_heading_breaks.py --apply
 - 序章（`Prologue`）之前的内容，无论页数多少，只写为一个文件「引子」，语义后缀用 `Before_the_Prologue`；不得按量拆分或并入 `Prologue` 文件。
 - 后记（`Afterwords`）之后的内容，无论页数多少，只写为一个文件「尾声」，语义后缀用 `After_the_Epilogue`。
 - 判定以表头内容序为准：引子位于第一个 `Prologue` 之前，尾声位于第一个 `Afterwords` 之后。该位置规则与 `epub_char_count` 的成分名规范化（第一个「序章」前的成分 → 引子、第一个「后记」后的成分 → 尾声）一致。
-- `docx2epub` 在首章为 `Prologue` 时会把此前无标题正文自动生成为 `-00_Before_the_Prologue.xhtml`；其他首章前文本仍并入首章。
+- 数字内容序统一从 `-01` 开始，`-00` 为验证错误。`docx2epub` 在首章为 `Prologue` 时会把此前无标题正文自动生成为 `-01_Before_the_Prologue.xhtml`，后续章节依次顺移；其他首章前文本仍并入首章。
 
 ### 换页衔接处理（跨页文件合并）
 
@@ -213,19 +213,16 @@ python tools/migrate_heading_breaks.py --apply
   <p>…文本…</p>
   ```
 
-- **文本 + 文本**（连续两页正文）：衔接处插入 3 行视觉间隔，每行一个独占一行的 `<br/>`：
+- **文本 + 文本**（连续两页正文）：在前一页末尾段落追加 `class="pb"`，不插入额外空白行：
 
   ```html
-  <p>…前一页末段…</p>
-  <br/>
-  <br/>
-  <br/>
+  <p class="pb">…前一页末段…</p>
   <p>…下一页首段…</p>
   ```
 
-- 若前一页末段与后一页首段是同一段落的断续，先按原文语义拼回完整段落，不再套用 3 行间隔；页首/页尾的填充 `<br/>` 属排版噪声，合并时删除，不得残留残缺行。
+- 若前一页末段与后一页首段是同一段落的断续，先按原文语义拼回完整段落，不再套用换页标记；页首/页尾的填充 `<br/>` 属排版噪声，合并时删除，不得残留残缺行。
 - 整页无文本且无图/SVG 的空占位页删除并前移后续文件序号（见「空占位页清理」）。
-- 全页插图页（SVG 或 `body.p-image`）保留为图片行，随归属章节合并；中日两侧同一位置的视觉间隔数量一致（见「对齐检查」）。
+- 全页插图页（SVG 或 `body.p-image`）保留为图片行，随归属章节合并；中日两侧同一位置的换页标记数量一致（见「对齐检查」）。
 
 ## 拉取与发布流程
 
@@ -419,7 +416,7 @@ python tools/normalize_single.py 文件.xhtml      # 定向处理单文件
 
 已知跳过项（内容级特例，需人工处理）：`S1_25-Stiyl_Magnus`（已手工完成模板对齐并修复原文件缺 `<body>` 的 XML 缺陷，跳过以免重建破坏手工对齐）。
 
-### bw 提取预处理（BookWalker 原始 EPUB -> 清理排版噪声）
+### bw 提取预处理（BookWalker 原始 EPUB -> 清理噪声并建立分页模板）
 
 ```powershell
 python tools/bw_preprocess.py 某本bw提取.epub            # 输出 某本bw提取.preprocessed.epub
@@ -427,28 +424,34 @@ python tools/bw_preprocess.py --dry-run 某本bw提取.epub   # 只预览
 python tools/bw_preprocess.py --out 输出目录/ 某本bw提取.epub
 python tools/bw_preprocess.py 已解包的目录/               # 就地改写目录下全部 .xhtml/.html/.htm
 python tools/bw_preprocess.py --rules 自定义.rules.json 某本bw提取.epub
-python tools/bw_preprocess.py --check 某本bw提取.epub     # 校验模式，不写盘
+python tools/bw_preprocess.py --book-id S4_05 某本bw提取.epub # 为 XHTML/图片分配表头并更新引用
+python tools/bw_preprocess.py --book-id S4_05 --header-map 自定义映射.json 某本bw提取.epub
+python tools/bw_preprocess.py --book-id S4_05 --check 某本bw提取.epub # 完整产物校验，不写盘
 ```
 
-对 BookWalker 解包后的原始 XHTML 应用查找/替换规则集，**只清理 BookWalker 特有的排版噪声**，为后续处理做准备。
+对 BookWalker 解包后的原始 XHTML 应用查找/替换规则集，清理排版噪声，并建立 `merge_bw_pages.py` 所依赖的 L1-L5 固定槽位。
 
-**本工具职责**（v2 职责边界调整）：
+**本工具职责**（v3）：
+- ✅ 正文页头部折叠为 L1-L3；无标题页补 L4/L5 空槽，保证正文从 L6 开始
+- ✅ `start-3em` / `font-1em30` 章节标题转为 L4 单行 `h1`
+- ✅ `start-5em` 和裸数字小节转为 `h2`；首小节放在 L5，后续小节保持正文区独占行
 - ✅ 合并多段 ruby 为单段（`<ruby>学<rt>がく</rt>園<rt>えん</rt>` → `<ruby>学園<rt>がくえん</rt>`）
 - ✅ `<p><br/></p>` 展平为 `<br/>`
 - ✅ 页首/页尾填充 `<br/>` 删除（`<div class="main">` 后与 `</div>` 前）
 - ✅ 解包排版 span（`font-1em50`、`em-sesame`→`<b>`、`tcy`、`line-break-loose` 等）
-- ❌ **不做**头部折叠、容器解包（`start-3em`/`start-5em`）、标题提取（p 型标题→h1、数字小节→h2）等“套用固定行模板”操作 → 这些由共享规范化核心统一处理
 
 **工作流位置**：
 ```
-bw 原始 EPUB → bw_preprocess（清理噪声）→ merge_bw_pages（合并分页）→ normalize（套用模板）
+bw 原始 EPUB → bw_preprocess（清理噪声 + 分页模板）→ merge_bw_pages（合并分页）→ normalize（最终规范化）
 ```
 
-- 规则文件：`tools/bw_extract_preprocess.json`（v2，已移除头部折叠/容器解包规则）。
+- 规则文件：`tools/bw_extract_preprocess.json`（v3，恢复分页合并器所需的头部折叠、标题提取和 L4/L5 槽位规则）。
 - 输入 `.epub` 时解包改写后重新打包为 `<原名>.preprocessed.epub`，保留原文件、条目顺序、压缩方式与 `mimetype` 首项；输入目录时**就地**改写。
+- `--book-id` 只用于已经确认作品号和内容顺序的 EPUB：第一个内容单元使用 `-01`，后续每遇到一个新的 L4 `h1` 递增内容序；无 h1 的续页和全页插图 XHTML 沿用当前表头。输出名形如 `S4_05-07_p-008.xhtml`；其他 XHTML（标准 `nav.xhtml` 除外）与全部图片加完整作品号前缀。图片保留源语义名和页码，如 `i-030.jpg` → `S4_05-i-030.jpg`，不从分页位置猜测内容序。工具同步更新 OPF、NCX、导航、XHTML、CSS 和 SVG 引用。该选项不能代替中日内容确认，不适用于目录模式。
+- `tools/bw_page_header_overrides.json` 保存无法仅凭 `h1` 安全判断的已审计分页映射。映射完整列出该书全部 `p-NNN.xhtml`：正整数表示内容序，`null` 表示作品级包装页；`0`、负数或实际分页与映射不完全一致时直接阻断。`S4_05` 已确认 `p-012/p-013` 是后记作者署名之后的尾声（`-10`），`p-014/p-015` 是作者著作目录包装页，不参与正文配对。`--header-map` 可显式指定同格式文件。
 - 保留原文件的 BOM 与换行风格（LF/CRLF），并把孤立 `\r`、`\r\r\n` 等脏换行归一化后再应用规则；规则按 JSON 顺序逐条执行，整体幂等（重复运行不再改写）。
-- `--check` 校验模式：内存中应用规则后检查内容文件（`<body class="p-text">`）的基本结构（L1-L3），报告问题清单；不写盘。不再检查完整 L1-L6 模板符合度（由 `normalize` 负责）。
-- 页首/页尾填充清理：规则「页首填充br删除(main后)」删除 `<div class="main">` 之后的填充 `<br/>`，规则「页尾填充br删除」删除 `</div>` 前的填充空段/`<br/>`。处理后的分页文件页首/页尾应无残留填充 `<br/>`；若 `merge_bw_pages` 检测到残留，会报告警告（说明本工具规则需增强）。
+- `--check` 校验模式：内存中应用完整转换但不写盘。除内容文件 L1-L6 固定模板外，配合 `--book-id` 还会模拟 XHTML/图片表头重命名，并检查 EPUB `mimetype`/`container.xml`、全部 XML 语法、XHTML/OPF/NCX/nav/CSS/SVG 内部资源引用以及无表头图片。正常处理同样执行这些门禁；有问题时返回非零并阻止写出产物。
+- 页首/页尾填充清理：头部折叠规则删除 `main` 后的源排版 `<br/>` 并建立 L4/L5 槽位；「页尾填充br删除」清除最终 `</div>` 前的填充空段/`<br/>`。若 `merge_bw_pages` 仍检测到残留，会报告警告（说明规则需增强）。
 
 ### 分页源合并为章节文件（跨页衔接处理）
 
@@ -458,35 +461,33 @@ python tools/merge_bw_pages.py 分页目录 --book S4_05 --dry-run   # 只预览
 python tools/merge_bw_pages.py 分页目录 --book S4_05 --out 输出目录/
 ```
 
-把 `bw_preprocess.py` 处理后的分页目录（`p-NNN.xhtml`）按章节标题（`<h1>`）合并为章节文件，落实 AGENTS.md「换页衔接处理」：
+把 `bw_preprocess.py` 处理后的分页目录（`p-NNN.xhtml`，或 `--book-id` 生成的 `S4_05-07_p-NNN.xhtml`）按章节标题（`<h1>`）合并为章节文件，落实 AGENTS.md「换页衔接处理」。带表头分页会保留原内容序；`-00`、作品号混用、同单元表头冲突或重复内容序会阻止写盘：
 
-- **页边界按衔接处两侧页型定间距**：文本+文本（连续两页正文）插入 3 行视觉间隔（每行一个独占一行的 `<br/>`）；跨整页插图（页边界行含 img/image/svg）无缝衔接、前后不插 `<br/>`。
+- **页边界按衔接处两侧页型定间距**：文本+文本（连续两页正文）插入 1 行换页标记（独占一行的 `<div style="break-after: page;"></div>`）；跨整页插图（页边界行含 img/image/svg）无缝衔接、前后不插 `<br/>` 或换页标记。
 - **全页插图页**（`body.p-image` / SVG）保留为图片行，并入其前一章节单元末尾（无缝）；SVG 折叠为单行。
 - **引子**：第一个 `<h1>` 之前的无标题页合并为独立「引子」单元（L4/L5 空行占位）。
 - **空占位页**（无文本无图）跳过并报告。
-- **页首/页尾 `<br/>` 残留检测**：合并时检测页首/页尾是否有残留填充 `<br/>`（应由 `bw_preprocess` 清理），若发现则报告警告并删除，避免跨页间隔被残留 `<br/>` 叠加成 4 行以上；小节/章节标题（`<h1>/<h2>`）边界的页边界不套 3 行间隔（标题自带分隔），并输出「标题边界」待核对。
-- 输出**待人工确认清单**：文本+文本页边界是否同一段落断续（须按语义拼回、勿套 3 行间隔）、标题边界、全页插图归属是否应调整、预处理残留的 `<br/>`。
+- **页首/页尾 `<br/>` 残留检测**：合并时检测页首/页尾是否有残留填充 `<br/>`（应由 `bw_preprocess` 清理），若发现则报告警告并删除；小节/章节标题（`<h1>/<h2>`）边界的页边界不套换页标记（标题自带分隔），并输出「标题边界」待核对。
+- 输出**待人工确认清单**：文本+文本页边界是否同一段落断续（须按语义拼回、勿套换页标记）、标题边界、全页插图归属是否应调整、预处理残留的 `<br/>`。
 
 `process_split_pages.py` 是保留用于复现旧产物的兼容入口，会在运行时打印警告；新导入不得与本流程混用。
 
 #### 输出文件命名与后续处理
 
-`merge_bw_pages.py` 输出的 `<book>-NN.xhtml` 是**临时序号文件**，NN 为章节单元的顺序号（01、02、...）。这些临时文件需在**中日对齐时重命名**为最终表头格式 `<表头>-<内容序>_<语义后缀>.xhtml`。
+推荐流程先由 `bw_preprocess.py --book-id` 给分页建立稳定表头；`merge_bw_pages.py` 会直接保留该内容序，并要求它从 01 开始，不得再按合并单元重排。只有未带表头的历史 `p-NNN.xhtml` 输入才回退为 01 起的临时顺序号。合并文件仍需在中日内容确认后补语义后缀，形成 `<表头>_<语义后缀>.xhtml`。
 
 **重命名规则表**（以 S4_05 为例）：
 
-| 临时文件 | 单元类型 | 最终表头文件名示例 | 说明 |
-|---------|---------|------------------|------|
-| S4_05-01.xhtml | 引子（无 h1 标题） | S4_05-00_Before_the_Prologue.xhtml | 内容序从 00 开始 |
-| S4_05-02.xhtml | 序章（h1=序章） | S4_05-01_Prologue.xhtml | 序章占内容序 01 |
-| S4_05-03.xhtml | 第一章 | S4_05-02_Chapter1.xhtml | 第一章占内容序 02 |
-| S4_05-04.xhtml | 第二章 | S4_05-03_Chapter2.xhtml | 依此类推 |
-| ... | ... | ... | ... |
-| S4_05-15.xhtml | 后记 | S4_05-14_Afterwords.xhtml | 后记占内容序 14 |
-| S4_05-16.xhtml | 尾声（后记之后） | S4_05-15_After_the_Epilogue.xhtml | 尾声占最后内容序 |
+| 带表头分页 | 合并输出 | 最终文件名示例 | 说明 |
+|------------|----------|----------------|------|
+| S4_05-01_p-001.xhtml | S4_05-01.xhtml | S4_05-01_Before_the_Prologue.xhtml | 序章前的无标题正文是引子，占首个内容序 01 |
+| S4_05-02_p-002.xhtml | S4_05-02.xhtml | S4_05-02_Prologue.xhtml | 序章占内容序 02 |
+| S4_05-03_p-003.xhtml | S4_05-03.xhtml | S4_05-03_Chapter1.xhtml | 第一章占内容序 03 |
+| S4_05-09_p-011.xhtml | S4_05-09.xhtml | S4_05-09_Afterwords.xhtml | 后记独立成单元 |
+| S4_05-10_p-012.xhtml、p-013 | S4_05-10.xhtml | S4_05-10_After_the_Epilogue.xhtml | 后记作者署名之后的正文聚合为尾声 |
 
 **重命名要点**：
-1. **临时序号 ≠ 最终内容序**：引子占临时序号 01 但内容序为 00，导致后续所有内容序比临时序号小 1。
+1. **内容序从 01 起**：引子若参与配对就占内容序 01，序章及后续单元依次顺移；不得生成或保留 00。
 2. **语义后缀规则**：
    - 引子（第一个 Prologue 之前）→ `Before_the_Prologue`
    - 序章 → `Prologue`
@@ -497,6 +498,13 @@ python tools/merge_bw_pages.py 分页目录 --book S4_05 --out 输出目录/
    - 尾声（第一个 Afterwords 之后）→ `After_the_Epilogue`
 3. **中日对齐**：按日文侧临时文件的内容和位置，匹配中文侧对应文件，确定最终内容序后统一重命名。中日两侧同一位置的视觉间隔数量须一致（本工具只合并日文分页，中文侧对齐时按日文间隔数对齐）。
 4. **OPF/NCX/nav 更新**：重命名后需同步更新 EPUB 元数据文件中的文件引用。
+
+既有作品需要整体顺移内容序时，使用 `shift_content_sequences.py`，不要逐个替换导致相邻序号级联覆盖。工具默认预览，写入时会同步更新 XHTML、OPF、NCX、nav、CSS、SVG 和 XML 引用；若旧目录仍引用裸 `p-NNN.xhtml`，仅在目录中不存在同名真实文件且目标唯一时修复为新表头文件名，歧义情况保持不动并交由资源引用验证报告：
+
+```powershell
+python tools/shift_content_sequences.py 解包书籍目录 --work-id S4_05 --offset 1
+python tools/shift_content_sequences.py 解包书籍目录 --work-id S4_05 --offset 1 --apply
+```
 
 ### EPUB → DOCX（交稿格式，ruby 还原为 |基文[注音]）
 
@@ -549,7 +557,7 @@ nav.xhtml / toc.ncx / style.css 全套骨架。
   无法识别用 SectionN）；纯数字者为小节，生成 `<h2 id="toc_N">`。
 - 正文中 docx 直接写出的可信行内 HTML 标签（`<b>`/`<i>`/`<small>`/`<sup>` 等）原样
   保留为标签，其余尖括号内容一律转义。
-- 首章为序章时，其前的无标题正文自动生成为内容序 `00` 的 `Before_the_Prologue` 文件；其他首章前文本并入首章。docx 内嵌图片按字节去重提取。
+- 首章为序章时，其前的无标题正文自动生成为内容序 `01` 的 `Before_the_Prologue` 文件，序章从 `02` 起依次顺移；其他首章前文本并入首章。docx 内嵌图片按字节去重提取。
 - **插图占位符**：正文中的 `【插图-N】` 占位符可用 `--images-from 日文原版.epub`
   自动替换为图片行（按 spine 中正文内容页的图片出现顺序对应），无对应图时保留
   占位符原样便于人工补图。

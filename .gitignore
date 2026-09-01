@@ -3,3 +3,5 @@ __pycache__/
 *.py[cod]
 .dsh-filess/
 .claude/
+calibre_check_report.*
+
