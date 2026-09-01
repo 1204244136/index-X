@@ -35,7 +35,7 @@ from alignment_rules import (
     TEXTUAL_IMAGE_HEADERS,
     pairing_header_of,
 )
-from epub_ids import book_id, is_packaging_header, japanese_book_id
+from epub_ids import book_id, content_sequence, is_packaging_header, japanese_book_id
 
 TAG_RE = re.compile(r"<[^>]*>")
 H_OPEN_RE = re.compile(r"<(h1|h2)\b", re.I)
@@ -208,6 +208,17 @@ def main() -> int:
         duplicates: set[str] = set()
         for path in paths:
             header = pairing_header_of(path.name)
+            if content_sequence(path.name) == 0:
+                add(
+                    side,
+                    book,
+                    str(path.relative_to(cache)),
+                    header,
+                    False,
+                    ["内容序 -00 非法；数字内容序必须从 -01 开始"],
+                )
+                seen.add(path)
+                continue
             if not header or header in duplicates or not has_body(read_lines(path)):
                 continue
             if header in index:

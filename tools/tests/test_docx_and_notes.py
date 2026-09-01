@@ -32,7 +32,7 @@ class NoteOrderTests(unittest.TestCase):
     def test_order_uses_header_sequence(self):
         names = [
             "S5_01_03-10_Chapter1.xhtml",
-            "S5_01_03-00_Introduction.xhtml",
+            "S5_01_03-01_Introduction.xhtml",
             "S5_01_03-02_Chapter9.xhtml",
         ]
         ordered = sorted(names, key=lambda name: book_order_key(name, "S5_01_03-Note.xhtml"))

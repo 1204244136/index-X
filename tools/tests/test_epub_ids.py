@@ -24,7 +24,9 @@ class EpubIdTests(unittest.TestCase):
         self.assertEqual(japanese_book_id("S5_01_03"), "S5_01")
 
     def test_headers_and_sequence(self):
+        # 解析器仍识别旧的 -00，供验证器明确报告；规范名称从 -01 开始。
         self.assertEqual(header_of("S5_01_03-00_Introduction.xhtml"), "S5_01_03-00")
+        self.assertEqual(content_sequence("S5_01_03-00_Introduction.xhtml"), 0)
         self.assertEqual(header_of("S6_24.06.07-02_Chapter.xhtml"), "S6_24.06.07-02")
         self.assertEqual(header_of("S1_25-Uiharu_Kazari.xhtml"), "S1_25-UIHARU_KAZARI")
         self.assertEqual(content_sequence("S1_01-02_Chapter1.xhtml"), 2)

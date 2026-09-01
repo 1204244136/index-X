@@ -92,6 +92,28 @@ class AlignmentTests(unittest.TestCase):
             ):
                 self.assertEqual(check_alignment.main(), 1)
 
+    def test_zero_content_sequence_is_a_strict_error(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cache = Path(tmp)
+            cn = cache / "chinese-text" / "[S1_01]中" / "OEBPS" / "Text"
+            jp = cache / "japanese-text" / "[S1_01]日" / "OEBPS" / "Text"
+            cn.mkdir(parents=True)
+            jp.mkdir(parents=True)
+            (cn / "S1_01-00_Prologue.xhtml").write_text(
+                xhtml(["<p>一</p>"]), encoding="utf-8"
+            )
+            (jp / "S1_01-00_p-001.xhtml").write_text(
+                xhtml(["<p>一</p>"]), encoding="utf-8"
+            )
+            with patch.object(
+                sys,
+                "argv",
+                ["check_alignment.py", "--cache", str(cache), "--strict"],
+            ):
+                self.assertEqual(check_alignment.main(), 1)
+            report = (cache / "alignment-check.tsv").read_text(encoding="utf-8-sig")
+            self.assertIn("内容序 -00 非法", report)
+
     def test_standalone_br_positions_must_match(self):
         japanese = xhtml(["<p>一</p>", "<br/>", "<p>二</p>"]).splitlines()
         chinese = xhtml(["<br/>", "<p>一</p>", "<p>二</p>"]).splitlines()

@@ -1008,10 +1008,8 @@ def process_one(docx_path: Path, args: argparse.Namespace) -> int:
     notes: list[str] = []  # 行内译注 -> Note 页
     for ch in chapters:
         suffix = ch["suffix"]
-        is_intro = suffix == "Before_the_Prologue"
-        if not is_intro:
-            seq += 1
-        content_seq = 0 if is_intro else seq
+        seq += 1
+        content_seq = seq
         if suffix == "Between_the_Lines":
             bt += 1
             suffix = f"Between_the_Lines{bt}"
