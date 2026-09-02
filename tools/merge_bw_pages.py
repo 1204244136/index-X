@@ -3,8 +3,9 @@
 
 输入 bw_preprocess 处理后的分页目录（p-NNN.xhtml），按章节标题（<h1>）分组，
 把分页合并为章节文件。页边界按衔接处两侧的页型定间距：
-  - 文本 + 文本（连续两页正文）→ 插入 1 行换页标记（独占一行的 <hr/>）
-  - 跨整页插图（文本 + 图片 + 文本）→ 无缝衔接，图片行直接夹在两段文本之间
+  - 文本 + 文本（连续两页正文）→ 在前一页末尾段落追加 class="pb"
+  - 跨整页插图（文本 + 图片 + 文本）→ 图片包裹的 <p> 标签中追加 class="pb"，
+    图片与前后文本无缝衔接且前后文本段落不额外追加换页标记
   - 若前一页末段与后一页首段是同一段落的断续，须按语义拼回完整段落（工具无法
     自动判断，输出「待确认清单」供人工核对，不再套用换页标记）
 
@@ -326,18 +327,22 @@ def merge_unit(unit: dict, notes: list[str]) -> list[str] | None:
         body = cleaned_bodies[i]
         prev_last = prev_body[-1] if prev_body else None
         next_first = body[0] if body else None
-        if next_first and prev_last and not (
-                is_image_line(prev_last) or is_image_line(next_first)) and not (
-                HEADING_RE.match(prev_last) or HEADING_RE.match(next_first)):
+        if not (prev_last and next_first):
+            continue
+        if HEADING_RE.match(prev_last) or HEADING_RE.match(next_first):
+            notes.append(
+                f"[标题边界] {pages[i-1]['name']} → {pages[i]['name']} 边界含小节/章节标题，"
+                f"未追加 class=\"pb\"，请核对")
+        elif not is_image_line(prev_last) and not is_image_line(next_first):
             prev_body[-1] = add_class_pb(prev_last)
             notes.append(
                 f"[同段核对] {pages[i-1]['name']} → {pages[i]['name']} 边界为文本+文本，"
                 f"已在末段追加 class=\"pb\"；若为同一段落断续请按语义拼回（勿套换页标记）")
-        elif next_first and prev_last and (
-                HEADING_RE.match(prev_last) or HEADING_RE.match(next_first)):
+        elif is_image_line(prev_last):
+            prev_body[-1] = add_class_pb(prev_last)
             notes.append(
-                f"[标题边界] {pages[i-1]['name']} → {pages[i]['name']} 边界含小节/章节标题，"
-                f"未追加 class=\"pb\"，请核对")
+                f"[插图跨页] {pages[i-1]['name']} → {pages[i]['name']} 边界前侧为图片，"
+                f"已在图片段落追加 class=\"pb\"")
 
     out = list(head) + [l4, l5]
     for body in cleaned_bodies:
