@@ -59,7 +59,7 @@
 ## 维护流程
 
 1. **拉取**：运行 `./tools/pull.ps1` 将 OneDrive 中的中文和日文 EPUB 解压到缓存。脚本用 `.cache/epub-work/pull-state.tsv` 记录每个 EPUB 的修改时间与大小，只解压发生变化的书籍；首次运行会全部解压一次以建立状态。`-Force` 全量重新解压，`-WhatIf` 预览，`-Side chinese/japanese` 只处理一侧，`-SyncToEpub` 解压后把变更文件增量同步到 `EPUB/`（OneDrive 侧改动回流仓库的流程）。解压后只为被解压的书籍更新哈希清单 `manifest.json`，未变化书籍的清单基线保持不变。
-2. **修改**：使用 agent 或手动修改缓存中的文件；中日成对批量处理运行 `python tools/normalize_paired.py`，只处理明确指定的单文件/目录运行 `python tools/normalize_single.py`。随后用 `python tools/check_alignment.py` 检查模板符合性与中日对齐，最后运行 `python tools/epub_audit.py` 审计。`normalize_epub_cache.py` 仅为 `normalize_paired.py` 的兼容入口。
+2. **修改**：使用 agent 或手动修改缓存中的文件；中日成对批量处理运行 `python tools/normalize_paired.py`，只处理明确指定的单文件/目录运行 `python tools/normalize_single.py`。随后用 `python tools/check_alignment.py` 检查模板符合性与中日对齐，最后运行 `python tools/epub_audit.py` 审计。
 3. **发布**：运行 `python tools/publish.py --dry-run` 预览变更，确认后运行 `python tools/publish.py`。脚本会对比 `manifest.json` 只处理被改动的书籍：中文变更只把发生变更的文件写入 `EPUB/`（含删除传播），中日两侧分别打包并上传到 OneDrive（每本一个 `.epub`），上传后同步更新 `pull-state.tsv` 避免下次拉取重复解压。发布成功后自动更新清单。`--sync-only` 只同步 `EPUB/` 不打包上传。
 4. **反向发布**（仅当直接改了 `EPUB/` 时）：运行 `python tools/publish_epub.py --dry-run` 预览，确认后运行 `python tools/publish_epub.py`。对比 `manifest.json` 只处理 `EPUB/` 中变化的（中文）书：从 `EPUB/` 打包 `.epub` 上传到 OneDrive，并把变化文件增量覆盖回缓存（含删除传播），成功后更新清单与 `pull-state.tsv`。默认会跳过缓存中仍有未发布修改的冲突书籍（用 `--overwrite-cache` 强制覆盖）。运行前务必 `--dry-run` 确认变更范围（按字节哈希比较，换行差异也会算变更）。
 5. 检查 `git status`、变更文件数、`git diff --stat`，并抽查文本 diff。

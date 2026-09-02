@@ -77,7 +77,7 @@ python tools/normalize_paired.py
 - **约束**：
   - ⚠️ 只处理有中日配对的文件
   - ⚠️ 单独导入的日文书会被跳过
-- **说明**：配对文件只有在两侧均可重建且重建后行数相同时才写入；`normalize_epub_cache.py` 是本入口的兼容别名。
+- **说明**：配对文件只有在两侧均可重建且重建后行数相同时才写入。
 
 ---
 
@@ -400,7 +400,7 @@ python tools/normalize_paired.py                 # 中日成对应用
 python tools/normalize_single.py 文件.xhtml      # 定向处理单文件
 ```
 
-两个入口共享 `xhtml_template.py` 的重建实现。`normalize_paired.py` 只处理 `.cache/epub-work/` 中可确认的配对/单侧中文正文，并在成对写入前验证行数相等；`normalize_single.py` 只处理命令行明确指定的文件或目录，不保证中日对齐。两者都不修改 `EPUB/`。旧命令 `normalize_epub_cache.py` 保留为 `normalize_paired.py` 的兼容入口。
+两个入口共享 `xhtml_template.py` 的重建实现。`normalize_paired.py` 只处理 `.cache/epub-work/` 中可确认的配对/单侧中文正文，并在成对写入前验证行数相等；`normalize_single.py` 只处理命令行明确指定的文件或目录，不保证中日对齐。两者都不修改 `EPUB/`。
 
 统一规则如下：
 
@@ -469,8 +469,6 @@ python tools/merge_bw_pages.py 分页目录 --book S4_05 --out 输出目录/
 - **空占位页**（无文本无图）跳过并报告。
 - **页首/页尾 `<br/>` 残留检测**：合并时检测页首/页尾是否有残留填充 `<br/>`（应由 `bw_preprocess` 清理），若发现则报告警告并删除；小节/章节标题（`<h1>/<h2>`）边界的页边界不套换页标记（标题自带分隔），并输出「标题边界」待核对。
 - 输出**待人工确认清单**：文本+文本页边界是否同一段落断续（须按语义拼回、勿套换页标记）、标题边界、全页插图归属是否应调整、预处理残留的 `<br/>`。
-
-`process_split_pages.py` 是保留用于复现旧产物的兼容入口，会在运行时打印警告；新导入不得与本流程混用。
 
 #### 输出文件命名与后续处理
 
