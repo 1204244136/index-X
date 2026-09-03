@@ -20,7 +20,7 @@
     {
       "case_sensitive": false,
       "dot_all": true,
-      "find": "(<\\?xml[^>]*\\?>)\\s+<!DOCTYPE html>\\s+<html\\s+xmlns=\"http://www.w3.org/1999/xhtml\"\\s+xmlns:epub=\"http://www.idpf.org/2007/ops\"\\s+xml:lang=\"ja\"\\s+class=\"vrtl\"\\s*>\\s+<head>\\s+<meta charset=\"UTF-8\"/>\\s+<title>(.*?)</title>\\s+<link rel=\"stylesheet\" type=\"text/css\" href=\"../style/book-style.css\"/>\\s+</head>\\s+<body class=\"p-text\">\\s+<div class=\"main\">\\s*(?:<br/>\\s*)*",
+      "find": "(<\\?xml[^>]*\\?>)\\s+<!DOCTYPE html>\\s+<html\\b[^>]*\\bclass=\"(?:vrtl|hltr)\"[^>]*>\\s+<head>(?:(?!</head>).)*?<title>(.*?)</title>.*?</head>\\s+<body class=\"p-text\">\\s+<div class=\"main(?:\\s+[^\"]*)?\">\\s*(?:<br/>\\s*)*",
       "mode": "regex",
       "name": "头部整体合并为L3单行+main后两空行占位",
       "replace": "\\1\n<!DOCTYPE html>\n<html xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:epub=\"http://www.idpf.org/2007/ops\" xml:lang=\"ja\" class=\"vrtl\"><head><meta charset=\"UTF-8\"/><title>\\2</title><link rel=\"stylesheet\" type=\"text/css\" href=\"../style/book-style.css\"/></head><body class=\"p-text\"><div class=\"main\">\n\n\n"
@@ -28,10 +28,42 @@
     {
       "case_sensitive": false,
       "dot_all": true,
-      "find": "(<div class=\"main\">)\\s*<div class=\"start-3em\">\\s*<p([^>]*)>(.*?)</p>\\s*</div>",
+      "find": "(<div class=\"main(?:\\s+[^\"]*)?\">)\\s*<div class=\"start-3em\">\\s*<p([^>]*)>(.*?)</p>\\s*</div>",
       "mode": "regex",
       "name": "章节容器折叠为h1独占行(L4)",
       "replace": "\\1\n<h1\\2>\\3</h1>\n\n"
+    },
+    {
+      "case_sensitive": false,
+      "dot_all": true,
+      "find": "(<div class=\"main(?:\\s+[^\"]*)?\">)\\s*<p\\b([^>]*)>\\s*<span class=\"(?:font-130per|font-1em30)\">(.*?)</span>\\s*</p>",
+      "mode": "regex",
+      "name": "早期格式span大字标题折叠为h1独占行(L4)",
+      "replace": "\\1\n<h1\\2>\\3</h1>\n\n"
+    },
+    {
+      "case_sensitive": false,
+      "dot_all": true,
+      "find": "(<div class=\"main(?:\\s+[^\"]*)?\">)\\s*<p\\b([^>]*class=\"[^\"]*font-1em30[^\"]*\"[^>]*)>(.*?)</p>",
+      "mode": "regex",
+      "name": "早期格式p大字标题折叠为h1独占行(L4)",
+      "replace": "\\1\n<h1\\2>\\3</h1>\n\n"
+    },
+    {
+      "case_sensitive": false,
+      "dot_all": true,
+      "find": "(<div class=\"main(?:\\s+[^\"]*)?\">)\\s*<p\\b([^>]*\\bid=\"toc-\\d+\"[^>]*)>(?:【)?(序章|終章|プロローグ|エピローグ|あとがき|第[一二三四五六七八九十0-9]+[章話]|目次)(.*?)(?:】)?</p>",
+      "mode": "regex",
+      "name": "语义段落标题折叠为h1独占行(L4)",
+      "replace": "\\1\n<h1\\2>\\3\\4</h1>\n\n"
+    },
+    {
+      "case_sensitive": false,
+      "dot_all": true,
+      "find": "(<h1[^>]*>.*?</h1>)\\s*(?:<br/>\\s*)*<div class=\"start-3em\">\\s*<p([^>]*)>([0-9０-９]+)</p>\\s*</div>\\s*(?:<br/>\\s*)*",
+      "mode": "regex",
+      "name": "首小节容器折叠为h2独占行(L5,h1后,start-3em数字)",
+      "replace": "\\1\n<h2\\2>\\3</h2>\n"
     },
     {
       "case_sensitive": false,
@@ -48,6 +80,14 @@
       "mode": "regex",
       "name": "首小节容器折叠为h2独占行(L5,无h1)",
       "replace": "\\1\n\n<h2\\2>\\3</h2>\n"
+    },
+    {
+      "case_sensitive": false,
+      "dot_all": true,
+      "find": "<div class=\"start-3em\">\\s*<p([^>]*)>([0-9０-９]+)</p>\\s*</div>",
+      "mode": "regex",
+      "name": "正文中部小节容器折叠为h2行(start-3em数字)",
+      "replace": "<h2\\1>\\2</h2>"
     },
     {
       "case_sensitive": false,
@@ -119,6 +159,22 @@
       "find": "<span class=\"line-break-loose word-break-break-all\">(.*?)</span>",
       "mode": "regex",
       "name": "换行样式span解包",
+      "replace": "\\1"
+    },
+    {
+      "case_sensitive": false,
+      "dot_all": true,
+      "find": "<div class=\"font-080per\">\\s*(<p>.*?</p>)\\s*</div>",
+      "mode": "regex",
+      "name": "说明div解包",
+      "replace": "\\1"
+    },
+    {
+      "case_sensitive": false,
+      "dot_all": false,
+      "find": "(<(?:p|h1|h2)\\b[^>]*>)[　 ]+",
+      "mode": "regex",
+      "name": "段首排版空格清理",
       "replace": "\\1"
     }
   ],

@@ -38,6 +38,7 @@
 from __future__ import annotations
 
 import argparse
+import difflib
 import json
 import posixpath
 import re
@@ -46,6 +47,13 @@ import zipfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
+
+# Windows 终端控制台编码自适应，防止 GBK 代码页打印日文与特殊字符乱码
+if sys.platform == "win32":
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    if hasattr(sys.stderr, "reconfigure"):
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 import merge_bw_pages
 
@@ -632,7 +640,8 @@ def merge_epub_pages(
 def process_epub(epub_path: Path, rules: list[dict], out_path: Path,
                  dry_run: bool, book_id: str | None = None,
                  page_map: dict[str, int | None] | None = None,
-                 merge_pages: bool = True) -> dict:
+                 merge_pages: bool = True,
+                 unpacked_dir: Path | None = None) -> dict:
     """处理 .epub：解包改写、分页合并后重新打包。返回统计 dict。"""
     with zipfile.ZipFile(epub_path) as zin:
         infos = zin.infolist()
@@ -698,6 +707,12 @@ def process_epub(epub_path: Path, rules: list[dict], out_path: Path,
             new_info.comment = info.comment
             new_info.extra = info.extra
             zout.writestr(new_info, data)
+    if unpacked_dir:
+        unpacked_dir.mkdir(parents=True, exist_ok=True)
+        for name, data in entries.items():
+            dest = unpacked_dir / name
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            dest.write_bytes(data)
     return stats
 
 
@@ -790,6 +805,71 @@ def check_epub(
         return stats
 
 
+def infer_book_id(name: str) -> str | None:
+    """根据书名或文件名规范推导作品号（如 S4_01）。"""
+    # 1. 直接匹配已有的 [S4_01] 或 S4_01
+    m = BOOK_ID_RE.search(name)
+    if m:
+        return m.group(0).upper()
+
+    trans = str.maketrans("０１２３４５６７８９", "0123456789")
+    norm = name.translate(trans)
+
+    # 2. 匹配 暗部の少女共棲 系列 (S4)
+    if "暗部の少女共棲" in norm or "暗部の少女共栖" in norm:
+        vm = re.search(r"[（\(](\d+)[）\)]", norm)
+        vol = int(vm.group(1)) if vm else 1
+        return f"S4_{vol:02d}"
+
+    # 3. 匹配 超電磁砲 (S6_22.06.10)
+    if "超電磁砲" in norm:
+        return "S6_22.06.10"
+
+    # 4. 匹配 エース御坂美琴 対 クイーン食蜂操祈 (S6_24.06.07)
+    if "エース御坂美琴" in norm or "クイーン食蜂操祈" in norm:
+        return "S6_24.06.07"
+
+    # 5. 匹配 外典書庫 (S5)
+    if "外典書庫" in norm:
+        vm = re.search(r"[（\(](\d+)[）\)]", norm)
+        vol = int(vm.group(1)) if vm else 1
+        return f"S5_{vol:02d}"
+
+    # 6. 匹配 創約 (S3)
+    if "創約" in norm and "禁書目録" in norm:
+        vm = re.search(r"[（\(]?(\d+)[）\)]?", norm)
+        vol = int(vm.group(1)) if vm else 1
+        return f"S3_{vol:02d}"
+
+    # 7. 匹配 新約 (S2)
+    if "新約" in norm and "禁書目録" in norm:
+        if "リバース" in norm:
+            return "S2_23"
+        vm = re.search(r"[（\(]?(\d+)[）\)]?", norm)
+        vol = int(vm.group(1)) if vm else 1
+        return f"S2_{vol:02d}"
+
+    # 8. 匹配 旧约 禁書目録 (S1)
+    if "禁書目録" in norm:
+        if "SP" in norm:
+            return "S1_25"
+        if "SS" in norm:
+            vm = re.search(r"[（\(](\d+)[）\)]", norm)
+            return "S1_18" if (vm and vm.group(1) == "2") else "S1_14"
+        vm = re.search(r"[（\(]?(\d+)[）\)]?", norm)
+        if not vm:
+            return "S1_01"
+        vol = int(vm.group(1))
+        if vol >= 17:
+            return f"S1_{vol + 2:02d}"
+        elif vol >= 14:
+            return f"S1_{vol + 1:02d}"
+        else:
+            return f"S1_{vol:02d}"
+
+    return None
+
+
 def clean_book_title(raw_title: str, book_id: str | None = None) -> str:
     """清理下载站噪声，并严格对齐 OneDrive\\某系列\\日文原文 既有命名格式。"""
     title = raw_title
@@ -806,17 +886,39 @@ def clean_book_title(raw_title: str, book_id: str | None = None) -> str:
     title = re.sub(r"\s+", " ", title).strip()
 
     if book_id:
-        m = re.match(r"^S(\d+)_(\d+)", book_id, re.I)
+        book_id_upper = book_id.upper()
+        if book_id_upper == "S1_14":
+            return "とある魔術の禁書目録SS"
+        elif book_id_upper == "S1_18":
+            return "とある魔術の禁書目録SS(2)"
+        elif book_id_upper == "S1_25":
+            return "とある魔術の禁書目録SP"
+        elif book_id_upper == "S2_23":
+            return "新約 とある魔術の禁書目録(22)リバース"
+        elif book_id_upper == "S6_22.06.10":
+            return "とある科学の超電磁砲"
+        elif book_id_upper == "S6_24.06.07":
+            return "とある魔術の禁書目録外伝　エース御坂美琴 対 クイーン食蜂操祈!!"
+
+        m = re.match(r"^S(\d+)_(\d+)", book_id_upper)
         if m:
             series_num, vol_num = int(m.group(1)), int(m.group(2))
-            if series_num == 4:
+            if series_num == 5:
+                return f"とある魔術の禁書目録 外典書庫({vol_num})"
+            elif series_num == 4:
                 return f"とある暗部の少女共棲({vol_num})"
             elif series_num == 3:
                 return f"創約 とある魔術の禁書目録({vol_num:02d})"
             elif series_num == 2:
                 return f"新約 とある魔術の禁書目録({vol_num:02d})"
             elif series_num == 1:
-                return f"とある魔術の禁書目録({vol_num:02d})"
+                if vol_num >= 19:
+                    orig_vol = vol_num - 2
+                elif vol_num >= 15:
+                    orig_vol = vol_num - 1
+                else:
+                    orig_vol = vol_num
+                return f"とある魔術の禁書目録({orig_vol:02d})"
     return title
 
 
@@ -862,6 +964,10 @@ def main() -> int:
                     help=f"已审计分页映射 JSON（默认 {DEFAULT_HEADER_MAP_JSON}）")
     ap.add_argument("--out", type=Path, default=None,
                     help="epub 模式输出目录（默认写在源文件同目录）")
+    ap.add_argument("--unpacked", action="store_true",
+                    help="同时在输出目录解包展开为书籍文件夹，便于直接对接下游 merge_bw_pages")
+    ap.add_argument("--unpacked-dir", type=Path, default=None,
+                    help="解包展开书籍文件夹的目标目录（默认与 --out 相同）")
     ap.add_argument("--dry-run", action="store_true", help="只预览，不写文件")
     ap.add_argument("--check", action="store_true",
                     help="内存校验 L1-L6；配合 --book-id 检查完整 EPUB 产物契约")
@@ -890,7 +996,19 @@ def main() -> int:
         p = Path(raw)
         if not p.exists():
             print(f"[跳过] 不存在：{p}")
+            has_issues = True
             continue
+
+        # 若未显式传入 --book-id，尝试从文件名智能推导作品号
+        cur_book_id = args.book_id
+        cur_page_map = page_map
+        if cur_book_id is None and p.is_file():
+            inferred = infer_book_id(p.stem)
+            if inferred:
+                print(f"[{p.name}] 自动识别作品号：{inferred}")
+                cur_book_id = inferred
+                cur_page_map = load_header_map(cur_book_id, args.header_map)
+
         if p.is_dir():
             if args.check:
                 stats = check_dir(p, rules)
@@ -900,24 +1018,34 @@ def main() -> int:
                 report_stats(f"目录 {p}", stats, args.dry_run, False)
         elif p.is_file() and p.suffix.lower() == ".epub":
             if args.check:
-                stats = check_epub(p, rules, args.book_id, page_map)
+                stats = check_epub(p, rules, cur_book_id, cur_page_map)
                 report_stats(f"epub {p}", stats, False, True)
             else:
                 target_dir = args.out if args.out and args.out.is_dir() else (args.out.parent if args.out and not args.out.is_dir() else p.parent)
+                clean_title = clean_book_title(p.stem, cur_book_id)
                 if args.out is None or args.out.is_dir():
-                    if args.book_id:
-                        clean_title = clean_book_title(p.stem)
-                        out = target_dir / f"[{args.book_id}]{clean_title}.epub"
+                    if cur_book_id:
+                        out = target_dir / f"[{cur_book_id}]{clean_title}.epub"
                     else:
                         out = target_dir / (p.stem + ".preprocessed" + p.suffix)
                 else:
                     out = args.out
+                unpacked_dir = None
+                if args.unpacked and not args.dry_run:
+                    unpacked_target_dir = args.unpacked_dir if args.unpacked_dir else target_dir
+                    unpacked_name = f"[{cur_book_id}]{clean_title}" if cur_book_id else (p.stem + ".preprocessed")
+                    unpacked_dir = unpacked_target_dir / unpacked_name
                 stats = process_epub(
-                    p, rules, out, args.dry_run, args.book_id, page_map)
+                    p, rules, out, args.dry_run, cur_book_id, cur_page_map,
+                    unpacked_dir=unpacked_dir)
+                out_label = str(out)
+                if unpacked_dir:
+                    out_label += f" + 解包目录：{unpacked_dir}"
                 report_stats(f"epub {p}", stats, args.dry_run, False,
-                             None if args.dry_run else out)
+                             None if args.dry_run else out_label)
         else:
             print(f"[跳过] 不是 .epub 或目录：{p}")
+            has_issues = True
         if stats is not None and stats.get("issues"):
             has_issues = True
     return 1 if has_issues else 0

@@ -253,6 +253,14 @@ class BookWalkerTemplateTests(unittest.TestCase):
         )
         self.assertTrue(any("第一个条目" in issue for _, issue in issues))
 
+    def test_infer_book_id(self):
+        from bw_preprocess import infer_book_id
+        self.assertEqual(infer_book_id("とある暗部の少女共棲"), "S4_01")
+        self.assertEqual(infer_book_id("とある暗部の少女共棲（２）"), "S4_02")
+        self.assertEqual(infer_book_id("とある暗部の少女共棲(6)"), "S4_06")
+        self.assertEqual(infer_book_id("創約 とある魔術の禁書目録(11)"), "S3_11")
+        self.assertEqual(infer_book_id("[S4_05]とある暗部の少女共棲"), "S4_05")
+
 
 if __name__ == "__main__":
     unittest.main()
