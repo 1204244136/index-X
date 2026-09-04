@@ -32,6 +32,31 @@ def update_pull_state_record(
     )
 
 
+def remove_pull_state_record(cache_root: Path, book_key: str) -> bool:
+    """从 pull-state.tsv 移除一本书的记录；返回是否实际移除。
+
+    用于书籍已从缓存整体删除（如外典合订卷拆分、目录改名）后，
+    同步清理拉取状态记录。
+    """
+    state_path = cache_root / PULL_STATE_FILENAME
+    if not state_path.is_file():
+        return False
+    side, book = book_key.split("/", 1)
+    removed = False
+    kept: list[str] = []
+    for line in state_path.read_text(encoding="utf-8-sig").splitlines():
+        parts = line.split("\t")
+        if len(parts) == 4 and parts[0] == side and parts[1] == book:
+            removed = True
+            continue
+        kept.append(line)
+    if removed:
+        state_path.write_text(
+            "".join(f"{line}\n" for line in kept), encoding="utf-8"
+        )
+    return removed
+
+
 def parse_book_path(rel_path: str) -> tuple[str, str, str] | None:
     parts = rel_path.split("/", 2)
     if len(parts) < 3:

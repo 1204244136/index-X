@@ -70,6 +70,54 @@ class SyncCoreTests(unittest.TestCase):
             self.assertFalse(ok)
             self.assertIn("OneDrive", message)
 
+    def test_removed_book_is_retired_not_packaged(self):
+        """整本已从缓存移除的书走清理路径：删 OneDrive 旧 EPUB 与 pull-state 记录，不打包。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            cache, epub, onedrive = (
+                root / "cache", root / "epub", root / "onedrive")
+            cache.mkdir()
+            onedrive.mkdir()
+            epub.mkdir()
+            (cache / "pull-state.tsv").write_text(
+                "japanese-text\t[S5_01]旧合订卷\t123\t456\n"
+                "japanese-text\t[S5_01_01]新拆分\t789\t10\n",
+                encoding="utf-8",
+            )
+            (onedrive / "[S5_01]旧合订卷.epub").write_bytes(b"old")
+
+            ok, message = publish_book(
+                "japanese-text/[S5_01]旧合订卷",
+                {"mimetype": "deleted", "item/a.xhtml": "deleted"},
+                cache, epub,
+                {"japanese-text": onedrive},
+            )
+            self.assertTrue(ok, message)
+            self.assertFalse((onedrive / "[S5_01]旧合订卷.epub").exists())
+            state = (cache / "pull-state.tsv").read_text(encoding="utf-8")
+            self.assertNotIn("旧合订卷", state)
+            self.assertIn("[S5_01_01]新拆分", state)
+
+    def test_removed_chinese_book_also_drops_epub_archive(self):
+        """中文侧整本删除时，EPUB/ 归档目录一并删除。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            cache, epub, onedrive = (
+                root / "cache", root / "epub", root / "onedrive")
+            cache.mkdir()
+            onedrive.mkdir()
+            epub.mkdir()
+            (epub / "[S1_01]旧书").mkdir()
+            (epub / "[S1_01]旧书" / "a.xhtml").write_text("x", encoding="utf-8")
+
+            ok, message = publish_book(
+                "chinese-text/[S1_01]旧书", {"a.xhtml": "deleted"},
+                cache, epub, {"chinese-text": onedrive},
+                no_upload=True,
+            )
+            self.assertTrue(ok, message)
+            self.assertFalse((epub / "[S1_01]旧书").exists())
+
 
 class PlaceholderTests(unittest.TestCase):
     def test_rename_updates_metadata_references(self):

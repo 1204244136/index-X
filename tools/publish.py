@@ -9,6 +9,10 @@ Workflow:
 Only books with changed files (vs the manifest) are processed, and only the
 changed files are written into EPUB/; a full directory rebuild happens only
 with --force. OneDrive upload granularity is one .epub per changed book.
+Books removed entirely from the cache (e.g. the S5 omnibus volumes after
+being split into individual works) are retired instead of re-packaged:
+their EPUB/ directory, OneDrive .epub and pull-state record are deleted,
+and the manifest baseline drops the book on success.
 
 Usage:
     python tools/publish.py --dry-run
@@ -38,6 +42,7 @@ from sync_core import (  # noqa: E402
     STATUS_LABELS,
     UNIX_TO_DOTNET_TICKS_OFFSET,
     detect_changes,
+    remove_pull_state_record,
     sync_file_changes,
     update_manifest_for_book,
     update_pull_state_record,
@@ -95,6 +100,51 @@ def sync_book_changes(
     )
 
 
+def retire_removed_book(
+    book_key: str,
+    cache_root: Path,
+    epub_root: Path,
+    onedrive_dirs: dict[str, Path | None],
+    no_upload: bool = False,
+    sync_only: bool = False,
+) -> tuple[bool, str]:
+    """清理一本已从缓存整体移除的书（拆分、改名等场景）。
+
+    不再打包：缓存目录已不存在，打包必然失败。清理动作：
+    - 中文侧删除 EPUB/ 下的归档目录（删除传播）；
+    - OneDrive 上旧 `<书名>.epub` 一并删除（不再期望以该书形式分发，
+      如 S5 外典合订卷已拆分为独立作品）；
+    - pull-state 记录同步移除。
+    成功返回后，清单基线随 update_manifest_for_book 自动清掉该书记录，
+    变更列表不再反复出现。
+    """
+    side, book = book_key.split("/", 1)
+    removed: list[str] = []
+
+    epub_book_dir = epub_root / book
+    if epub_book_dir.is_dir():
+        shutil.rmtree(epub_book_dir)
+        removed.append(f"EPUB/{book}")
+
+    if not sync_only and not no_upload:
+        onedrive_dir = onedrive_dirs.get(side)
+        if onedrive_dir is None:
+            return False, "未配置 OneDrive 目录；若只需本地同步请显式使用 --no-upload"
+        if not onedrive_dir.is_dir():
+            return False, f"OneDrive 目录不存在: {onedrive_dir}"
+        dest = onedrive_dir / f"{book}.epub"
+        if dest.is_file():
+            dest.unlink()
+            removed.append(f"OneDrive:{dest.name}")
+
+    if remove_pull_state_record(cache_root, book_key):
+        removed.append("pull-state")
+
+    detail = "、".join(removed) if removed else "无残留产物"
+    print(f"  [清理] {book}: {detail}")
+    return True, ""
+
+
 def publish_book(
     book_key: str,
     file_changes: dict[str, str],
@@ -108,6 +158,16 @@ def publish_book(
     """Publish a single changed book. Returns (success, error_message)."""
     side, book = book_key.split("/", 1)
     book_dir = cache_root / book_key
+    if not book_dir.is_dir():
+        # 整本书已从缓存移除（全部文件为 deleted）：走清理路径而非打包。
+        return retire_removed_book(
+            book_key,
+            cache_root,
+            epub_root,
+            onedrive_dirs,
+            no_upload=no_upload,
+            sync_only=sync_only,
+        )
     packed_epub = cache_root / "packed-epubs" / side / f"{book}.epub"
 
     if not sync_only and not no_upload:
