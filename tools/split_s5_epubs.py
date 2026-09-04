@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import posixpath
 import re
+import shutil
 import sys
 import zipfile
 from pathlib import Path
@@ -242,6 +243,8 @@ def split_and_process_s5(
                     )
                     zout.writestr(new_info, data)
 
+            if unpacked_dir.exists():
+                shutil.rmtree(unpacked_dir)
             unpacked_dir.mkdir(parents=True, exist_ok=True)
             for name, data in split_entries.items():
                 dest = unpacked_dir / name

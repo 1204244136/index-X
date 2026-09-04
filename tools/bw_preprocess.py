@@ -48,6 +48,7 @@ import difflib
 import json
 import posixpath
 import re
+import shutil
 import sys
 import zipfile
 import xml.etree.ElementTree as ET
@@ -386,14 +387,14 @@ def pairing_header_renames(
         if page_map is not None:
             mapped_sequence = page_map[basename]
             if mapped_sequence is None:
-                renames[name] = _with_basename(name, f"{book_id}-{basename}")
+                unrenamed_pages.add(name)
             else:
                 renames[name] = _with_basename(
                     name, f"{book_id}-{mapped_sequence:02d}_{basename}")
             continue
         text = entries[name].decode("utf-8-sig", errors="replace")
         if page_number == 1 and is_reading_notice(text):
-            renames[name] = _with_basename(name, f"{book_id}-{basename}")
+            unrenamed_pages.add(name)
             continue
         lines = text.splitlines()
         if backmatter_started:
@@ -435,16 +436,6 @@ def pairing_header_renames(
             name, f"{book_id}-{sequence:02d}_{basename}")
 
     for name in entries:
-        if not name.lower().endswith(XHTML_SUFFIXES) or name in renames:
-            continue
-        if name in unrenamed_pages:
-            continue
-        basename = name.rsplit("/", 1)[-1]
-        if basename.casefold() == "nav.xhtml" or basename.upper().startswith(book_id + "-"):
-            continue
-        renames[name] = _with_basename(name, f"{book_id}-{basename}")
-
-    for name in entries:
         if not name.lower().endswith(IMAGE_SUFFIXES):
             continue
         basename = name.rsplit("/", 1)[-1]
@@ -466,12 +457,13 @@ def page_map_contract_issues(
     book_id = book_id.upper()
     expected = {
         (f"{book_id}-{sequence:02d}_{raw_name}"
-         if sequence is not None else f"{book_id}-{raw_name}")
+         if sequence is not None else raw_name)
         for raw_name, sequence in page_map.items()
     }
     actual = {
         name.rsplit("/", 1)[-1] for name in entries
-        if HEADERED_PAGE_RE.fullmatch(name)
+        if (HEADERED_PAGE_RE.fullmatch(name)
+            or (name.rsplit("/", 1)[-1] in page_map and page_map[name.rsplit("/", 1)[-1]] is None))
     }
     issues: list[tuple[str, str]] = []
     for missing in sorted(expected - actual):
@@ -868,6 +860,8 @@ def process_epub(epub_path: Path, rules: list[dict], out_path: Path,
             new_info.extra = info.extra
             zout.writestr(new_info, data)
     if unpacked_dir:
+        if unpacked_dir.exists():
+            shutil.rmtree(unpacked_dir)
         unpacked_dir.mkdir(parents=True, exist_ok=True)
         for name, data in entries.items():
             dest = unpacked_dir / name

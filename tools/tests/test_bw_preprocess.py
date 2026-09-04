@@ -209,10 +209,7 @@ class BookWalkerTemplateTests(unittest.TestCase):
             renames["item/xhtml/p-003.xhtml"],
             "item/xhtml/S4_05-02_p-003.xhtml",
         )
-        self.assertEqual(
-            renames["item/xhtml/p-cover.xhtml"],
-            "item/xhtml/S4_05-p-cover.xhtml",
-        )
+        self.assertNotIn("item/xhtml/p-cover.xhtml", renames)
         self.assertEqual(
             renames["item/image/i-030.jpg"],
             "item/image/S4_05-i-030.jpg",
@@ -222,7 +219,7 @@ class BookWalkerTemplateTests(unittest.TestCase):
         self.assertIn(b"S4_05-01_p-001.xhtml", rewritten["item/standard.opf"])
         self.assertIn(
             b"S4_05-02_p-002.xhtml",
-            rewritten["item/S4_05-navigation-documents.xhtml"],
+            rewritten["item/navigation-documents.xhtml"],
         )
         self.assertIn(b"S4_05-i-030.jpg", rewritten["item/standard.opf"])
         self.assertIn(b"S4_05-i-030.jpg", rewritten["item/style/book-style.css"])
@@ -245,10 +242,7 @@ class BookWalkerTemplateTests(unittest.TestCase):
         self.assertTrue(is_reading_notice(notice.decode("utf-8")))
         self.assertFalse(is_content(notice.decode("utf-8")))
         renames = pairing_header_renames(entries, "S1_21")
-        self.assertEqual(
-            renames["item/xhtml/p-001.xhtml"],
-            "item/xhtml/S1_21-p-001.xhtml",
-        )
+        self.assertNotIn("item/xhtml/p-001.xhtml", renames)
         self.assertEqual(
             renames["item/xhtml/p-002.xhtml"],
             "item/xhtml/S1_21-01_p-002.xhtml",
@@ -275,10 +269,7 @@ class BookWalkerTemplateTests(unittest.TestCase):
             renames["item/xhtml/p-002.xhtml"],
             "item/xhtml/S4_05-09_p-002.xhtml",
         )
-        self.assertEqual(
-            renames["item/xhtml/p-003.xhtml"],
-            "item/xhtml/S4_05-p-003.xhtml",
-        )
+        self.assertNotIn("item/xhtml/p-003.xhtml", renames)
         rewritten = apply_entry_renames(entries, renames)
         self.assertEqual(
             page_map_contract_issues(rewritten, "S4_05", page_map), [])

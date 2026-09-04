@@ -147,8 +147,16 @@ def parse_page_content(name: str, text: str, bom: bool = False, crlf: bool = Fal
         # 全页 SVG 插图折叠为单行图片行
         body = [" ".join(line.strip() for line in body)]
     elif is_image_page and len(body) > 1:
-        # 非 SVG 插图页（如多行 <p>\n<img/>\n</p>）折叠为单行图片行
-        body = [re.sub(r">\s+<", "><", " ".join(line.strip() for line in body))]
+        # 非 SVG 插图页：若由多行构成的单个段落折叠为单行；多段图片保持每段一行
+        p_count = len(re.findall(r"<p\b", joined, re.I))
+        if p_count <= 1:
+            body = [re.sub(r">\s+<", "><", " ".join(line.strip() for line in body))]
+        else:
+            paras = re.findall(r"<p\b.*?</p>", joined, re.I | re.S)
+            if paras:
+                body = [re.sub(r">\s+<", "><", " ".join(line.strip() for line in p.splitlines())) for p in paras]
+            else:
+                body = [re.sub(r">\s+<", "><", " ".join(line.strip() for line in body))]
     h1 = None
     if is_p_text and header and H1_RE.match(header[0]):
         m = H1_INNER_RE.search(header[0])

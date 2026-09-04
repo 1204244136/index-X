@@ -20,6 +20,14 @@
     {
       "case_sensitive": false,
       "dot_all": false,
+      "find": "(</p>)(<p\\b)",
+      "mode": "regex",
+      "name": "同行邻接p标签拆分",
+      "replace": "\\1\n\\2"
+    },
+    {
+      "case_sensitive": false,
+      "dot_all": false,
       "find": "<span class=\"tcy\">(.*?)</span>",
       "mode": "regex",
       "name": "纵中横span解包",
