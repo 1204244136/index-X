@@ -10,6 +10,9 @@
     自动判断，输出「待确认清单」供人工核对，不再套用换页标记）
 
 - 全页插图页（`body.p-image` 或 SVG）保留为图片行，并入其前一章节单元末尾；
+- 章名整页图片扉页（非正文页且 main 容器带导航锚点 id，如 `toc-NNN`）开启新的
+  章节单元，章名由导航文档补回（`attach_nav_titles`）；带表头输入仍以内容序
+  变化优先；
 - 无标题引子页（第一个 <h1> 之前的内容）合并为从 01 开始的独立「引子」单元；
 - 整页无文本且无图/SVG 的空占位页跳过并报告；
 - 每个 <h1> 起一个章节单元，其后无 <h1> 的页续入当前单元。
@@ -46,7 +49,7 @@ P_TAG_RE = re.compile(r"<p\b", re.I)
 BODY_CLASS_RE = re.compile(r"<body\b([^>]*)>", re.I)
 BODY_RE = re.compile(r"<body\b", re.I)
 HTML_BODY_RE = re.compile(r"(<html\b.*?<body\b[^>]*>)", re.I | re.S)
-MAIN_DIV_RE = re.compile(r'<div\b[^>]*class="[^"]*main[^"]*"', re.I)
+MAIN_DIV_RE = re.compile(r'<div\b[^>]*class=["\'][^"\']*main[^"\']*["\']', re.I)
 CLOSE_DIV_RE = re.compile(r"</div>")
 # 数字小节：单独一行的 <p>N</p>（N 为数字）
 NUM_P_RE = re.compile(r"^\s*<p\b[^>]*>\s*\d+\s*</p>\s*$", re.I)
@@ -121,7 +124,7 @@ def parse_page_content(name: str, text: str, bom: bool = False, crlf: bool = Fal
         if m:
             body_class = m.group(1)
             break
-    is_p_text = 'class="p-text"' in body_class
+    is_p_text = bool(re.search(r'class=["\'][^"\']*\bp-text\b', body_class, re.I))
     if is_p_text:
         header = lines[main_idx + 1: main_idx + 3]          # L4/L5（h1/h2 或空行）
         body = [
@@ -135,11 +138,17 @@ def parse_page_content(name: str, text: str, bom: bool = False, crlf: bool = Fal
 
     joined = "\n".join(body)
     is_svg = bool(SVG_RE.search(joined) and not P_TAG_RE.search(joined))
-    is_image_page = ('class="p-image"' in body_class) or is_svg or bool(
-        body and all(is_image_line(line) for line in body))
+    has_p_image = bool(re.search(r'class=["\'][^"\']*\bp-image\b', body_class, re.I))
+    is_image_page = has_p_image or is_svg or bool(
+        body and all(is_image_line(line) for line in body)) or bool(
+            not is_p_text and (IMG_TAG_RE.search(joined) or SVG_RE.search(joined))
+        )
     if is_svg:
         # 全页 SVG 插图折叠为单行图片行
         body = [" ".join(line.strip() for line in body)]
+    elif is_image_page and len(body) > 1:
+        # 非 SVG 插图页（如多行 <p>\n<img/>\n</p>）折叠为单行图片行
+        body = [re.sub(r">\s+<", "><", " ".join(line.strip() for line in body))]
     h1 = None
     if is_p_text and header and H1_RE.match(header[0]):
         m = H1_INNER_RE.search(header[0])
@@ -149,6 +158,16 @@ def parse_page_content(name: str, text: str, bom: bool = False, crlf: bool = Fal
     if not head_match:
         return None
     head3 = re.sub(r">\s+<", "><", head_match.group(1)).strip()
+    # main 容器自带的 id（如 BW 章名扉页的 toc-NNN 导航锚点）：
+    # 「章名以整页图片承载」的确定性章节边界信号。
+    main_id = None
+    m_main = MAIN_DIV_RE.search(lines[main_idx])
+    if m_main:
+        seg = lines[main_idx][m_main.start():]
+        seg = seg[: seg.find(">") + 1]
+        m_id = re.search(r'\bid=["\']([^"\']+)["\']', seg)
+        if m_id:
+            main_id = m_id.group(1)
     return {
         "name": name,
         "book_id": name_match.group("book"),
@@ -163,6 +182,7 @@ def parse_page_content(name: str, text: str, bom: bool = False, crlf: bool = Fal
         "is_empty": not body,
         "has_h1": h1 is not None,
         "h1": h1,
+        "main_id": main_id,
         "head3": head3,
         "bom": bom,
         "crlf": crlf,
@@ -226,6 +246,21 @@ def group_units(pages: list[dict], notes: list[str]) -> list[dict]:
                    "sequence": pg["sequence"]}
             continue
         if pg["is_image_page"]:
+            if pg.get("main_id") and pg["sequence"] is None:
+                # 章名整页图片扉页：main 带原版导航锚点 id（如 toc-NNN），是
+                # 确定性的章节边界信号——章名以整页图片承载、正文再无 h1 的书
+                # （如 S6_22.06.10）必须在此切分单元，章名由导航补回
+                # （attach_nav_titles）。带表头输入以内容序变化切分，不走此分支，
+                # 避免与逐页显式映射（bw_page_header_overrides.json）冲突。
+                if cur:
+                    units.append(cur)
+                cur = {"title": None, "h1": None, "h2": None,
+                       "pages": [pg], "image_pages": 1,
+                       "sequence": pg["sequence"]}
+                notes.append(
+                    f"[章名扉页] {pg['name']}（main id={pg['main_id']}）"
+                    f"开启新章节单元，章名由导航补回")
+                continue
             if cur:
                 if cur.get("h1") and AFTERWORD_RE.search(cur["h1"]):
                     units.append(cur)

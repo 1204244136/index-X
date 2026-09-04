@@ -243,6 +243,27 @@ def is_content(text: str) -> bool:
     return _has_text_body(text) and not is_reading_notice(text)
 
 
+MAIN_DIV_TAG_RE = re.compile(
+    r'<div\b[^>]*\bclass=["\'][^"\']*main[^"\']*["\'][^>]*>', re.I)
+
+
+def is_image_title_page(text: str) -> bool:
+    """章名整页图片扉页：非正文页，main 容器带原版导航锚点 id（如 toc-NNN）。
+
+    BW 用 main 的 id 作为导航锚点目标；正文页头部折叠后 main 一律无 id，
+    普通整页插图页（如 i-317）的 main 同样无 id。这是「章名以整页图片承载」
+    书籍的确定性章节边界信号，作为内容序递增依据之一。
+    """
+    if is_content(text):
+        return False
+    if "<svg" not in text and "<image" not in text and "<img" not in text:
+        return False
+    m = MAIN_DIV_TAG_RE.search(text)
+    if not m:
+        return False
+    return bool(re.search(r'\bid=["\'][^"\']+["\']', m.group(0)))
+
+
 MERGED_HEAD_RE = re.compile(r"<body\b[^>]*>", re.IGNORECASE)
 
 
@@ -324,11 +345,13 @@ def pairing_header_renames(
     """为 BookWalker XHTML 和图片分配稳定表头，返回 ZIP 条目重命名映射。
 
     第一个正文分页单元使用 ``-01``；此后每遇到一个新的 L4 ``h1``，内容序加一。
+    章名整页图片扉页（非正文页且 main 带导航锚点 id）同样是新单元起点，递增
+    内容序；其后无 h1 的续页和普通全页插图沿用当前内容序。普通整页插图
+    （main 无 id）不得开启新单元。
     p-001 若是 ``※本書…`` 等阅读提示，则作为作品级包装页命名为
-    ``<作品号>-p-001.xhtml``，从 p-002 开始分配正文表头。没有 h1 的续页和
-    全页插图 XHTML 沿用当前内容序。其他 XHTML 和图片只加完整作品号，保留
-    原稳定 basename；图片不得根据所在分页猜测内容序。标准 ``nav.xhtml``
-    是唯一不加作品号的 XHTML。
+    ``<作品号>-p-001.xhtml``，从 p-002 开始分配正文表头。其他 XHTML 和图片只加
+    完整作品号，保留原稳定 basename；图片不得根据所在分页猜测内容序。标准
+    ``nav.xhtml`` 是唯一不加作品号的 XHTML。
 
     后记之后的处理按「连续正文文本」界定：紧跟后记的连续正文文本页聚为单一
     ``尾声`` 单元；一旦遇到非正文页（纯插图页、封底 ``hyou4``、著者介绍/版权页），
@@ -403,6 +426,10 @@ def pairing_header_renames(
             renames[name] = _with_basename(
                 name, f"{book_id}-{epilogue_sequence:02d}_{basename}")
             continue
+        elif is_image_title_page(text):
+            # 章名整页图片扉页（main 带导航锚点 id）：新章节单元的起点，
+            # 递增内容序；后记之后的扉页仍按上方附录闩锁处理，不递增。
+            sequence += 1
 
         renames[name] = _with_basename(
             name, f"{book_id}-{sequence:02d}_{basename}")

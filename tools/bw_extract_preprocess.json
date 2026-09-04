@@ -19,6 +19,14 @@
     },
     {
       "case_sensitive": false,
+      "dot_all": false,
+      "find": "<span class=\"tcy\">(.*?)</span>",
+      "mode": "regex",
+      "name": "纵中横span解包",
+      "replace": "\\1"
+    },
+    {
+      "case_sensitive": false,
       "dot_all": true,
       "find": "(<\\?xml[^>]*\\?>)\\s+<!DOCTYPE html>\\s+<html\\b[^>]*\\bclass=\"(?:vrtl|hltr)\"[^>]*>\\s+<head>(?:(?!</head>).)*?<title>(.*?)</title>.*?</head>\\s+<body class=\"p-text\">\\s+<div class=\"main(?:\\s+[^\"]*)?\">\\s*(?:<br/>\\s*)*",
       "mode": "regex",
@@ -132,7 +140,7 @@
     {
       "case_sensitive": false,
       "dot_all": false,
-      "find": "^<p\\b[^>]*>[ 　]*([0-9０-９]+(?:（[^）]*）)?|◇)[ 　]*</p>$",
+      "find": "^<p\\b[^>]*>[ 　]*([0-9０-９]+(?:（[^）]*）)?|◇)[ 　]*</p>\\r?$",
       "mode": "regex",
       "name": "裸数字小节转为h2",
       "replace": "<h2>\\1</h2>"
@@ -200,14 +208,6 @@
       "mode": "regex",
       "name": "着重号span转b标签",
       "replace": "<b>\\1</b>"
-    },
-    {
-      "case_sensitive": false,
-      "dot_all": false,
-      "find": "<span class=\"tcy\">(.*?)</span>",
-      "mode": "regex",
-      "name": "纵中横span解包",
-      "replace": "\\1"
     },
     {
       "case_sensitive": false,
