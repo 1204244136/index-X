@@ -120,11 +120,15 @@ class AlignmentTests(unittest.TestCase):
         problems = check_alignment.pair_problems("S1_01-01", japanese, chinese)
         self.assertIn("<br/> 位置 JP[7] vs CN[6]", problems)
 
-    def test_textual_image_headers_exempt_br_positions(self):
+    def test_textual_image_headers_waive_pairing_checks(self):
+        """文本化图片例外（AGENTS.md）：配对检查整体豁免（行数/h2/图片行/<br/>）。"""
         japanese = xhtml(["<p>一</p>", "<br/>", "<p>二</p>"]).splitlines()
         chinese = xhtml(["<br/>", "<p>一</p>", "<p>二</p>"]).splitlines()
-        problems = check_alignment.pair_problems("S2_14-04", japanese, chinese)
-        self.assertFalse(any(problem.startswith("<br/> 位置") for problem in problems))
+        for header in ("S2_14-02", "S2_14-04", "S2_14-07", "S2_14-10", "S2_14-13"):
+            self.assertEqual(
+                check_alignment.pair_problems(header, japanese, chinese), [])
+        problems = check_alignment.pair_problems("S1_01-01", japanese, chinese)
+        self.assertTrue(any(p.startswith("<br/> 位置") for p in problems))
 
 
 if __name__ == "__main__":

@@ -13,7 +13,7 @@
 - 逐文件：L1/L2/L3 头部结构、L4=h1 独占或空、L5=h2 独占或空、L6=正文；
 - 正文行原子性：每条物理行只允许一个同级正文块，正文不得与 body/html 闭标签同行；
 - 配对文件：总行数一致、h2 位置一致、图片行一致（gaiji/height-2em 字形不计；
-  S2_14-04/07/10/13 为已确认的文本化图片例外）；
+  S2_14-02/04/07/10/13 为已确认的文本化图片例外，配对检查整体豁免）；
 - 纯图片页/无正文页不适用；仅单侧存在的 EPUB、日文独有包装页不参与检查。
 
 用法：
@@ -153,6 +153,10 @@ def standalone_br_lines(lines: list[str]) -> list[int]:
 
 
 def pair_problems(header: str, japanese: list[str], chinese: list[str]) -> list[str]:
+    if header in TEXTUAL_IMAGE_HEADERS:
+        # 已确认的文本化图片例外（AGENTS.md）：中文侧把整页图片重排为样式文本行，
+        # 行数/h2/图片行/<br/> 位置本就允许不同，配对检查整体豁免。
+        return []
     problems: list[str] = []
     if len(japanese) != len(chinese):
         problems.append(f"行数 {len(japanese)} vs {len(chinese)}")
@@ -160,11 +164,11 @@ def pair_problems(header: str, japanese: list[str], chinese: list[str]) -> list[
     if japanese_h2 != chinese_h2:
         problems.append(f"h2 位置 JP{japanese_h2} vs CN{chinese_h2}")
     japanese_images, chinese_images = img_lines(japanese), img_lines(chinese)
-    if japanese_images != chinese_images and header not in TEXTUAL_IMAGE_HEADERS:
+    if japanese_images != chinese_images:
         problems.append(f"图片行 JP{japanese_images} vs CN{chinese_images}")
     japanese_br = standalone_br_lines(japanese)
     chinese_br = standalone_br_lines(chinese)
-    if japanese_br != chinese_br and header not in TEXTUAL_IMAGE_HEADERS:
+    if japanese_br != chinese_br:
         problems.append(f"<br/> 位置 JP{japanese_br} vs CN{chinese_br}")
     return problems
 
