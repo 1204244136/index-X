@@ -140,6 +140,30 @@ class MergeBwTests(unittest.TestCase):
             self.assertEqual([unit["sequence"] for unit in units], [9, 10])
             self.assertIsNone(units[1]["title"])
 
+    def test_same_sequence_afterword_boundary_keeps_text_pages(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "S2_99-12_p-018.xhtml").write_text(
+                self.page("<h1>あとがき</h1>", "<p>作者署名</p>"), encoding="utf-8"
+            )
+            (root / "S2_99-12_p-019.xhtml").write_text(
+                self.page("", "<p>尾声</p>"), encoding="utf-8"
+            )
+            (root / "S2_99-12_p-020.xhtml").write_text(
+                self.page("", "<p>尾声续</p>"), encoding="utf-8"
+            )
+            notes: list[str] = []
+            units = group_units(collect_pages(root), notes)
+            self.assertEqual(len(units), 2)
+            self.assertEqual(
+                [pg["name"] for pg in units[0]["pages"]],
+                ["S2_99-12_p-018.xhtml"],
+            )
+            self.assertEqual(
+                [pg["name"] for pg in units[1]["pages"]],
+                ["S2_99-12_p-019.xhtml", "S2_99-12_p-020.xhtml"],
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

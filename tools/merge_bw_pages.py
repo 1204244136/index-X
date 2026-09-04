@@ -25,6 +25,7 @@
 from __future__ import annotations
 
 import argparse
+import html
 import re
 from pathlib import Path
 
@@ -50,6 +51,35 @@ CLOSE_DIV_RE = re.compile(r"</div>")
 # 数字小节：单独一行的 <p>N</p>（N 为数字）
 NUM_P_RE = re.compile(r"^\s*<p\b[^>]*>\s*\d+\s*</p>\s*$", re.I)
 TAG_RE = re.compile(r"<[^>]*>")
+AFTERWORD_RE = re.compile(
+    r"(?:あとがき|後書き|後記|后记|跋|Afterword)",
+    re.IGNORECASE,
+)
+# 原版导航（目录）文档：用于给「章名以整页图片承载」的单元补回 h1 文本。
+# 允许 bw_preprocess 加过作品号前缀的名字（S6_22.06.10-navigation-documents.xhtml）。
+# 注意：调用方用 re.match（头部锚定），所以前缀必须写成显式可选组，
+# 不能用 (?:^|[-_]) —— 那种写法在 match 下永远只在串首生效。
+NAV_FILE_RE = re.compile(r"^(?:[\w.-]*[-_])?navigation[^/]*\.xhtml$", re.IGNORECASE)
+NAV_ANCHOR_RE = re.compile(
+    r'<a\b[^>]*href="(?P<href>[^"#]+)#(?P<anchor>[^"]+)"[^>]*>(?P<label>.*?)</a>',
+    re.IGNORECASE | re.S,
+)
+
+
+def nav_page_titles(text: str) -> dict[str, str]:
+    """解析 EPUB 导航文档，返回「目标分页文件名 → 目录条目文本」。
+
+    只收 `p-NNN.xhtml#…` 形式的条目（包装页与纯锚点不计），用于确定性地补回
+    图片扉页单元的 h1；不做任何模糊匹配，映射不上就留空槽。
+    """
+    out: dict[str, str] = {}
+    for m in NAV_ANCHOR_RE.finditer(text):
+        base = html.unescape(m.group("href")).rsplit("/", 1)[-1]
+        label = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", m.group("label"))).strip()
+        if not label or not PAGE_RE.match(base) or base in out:
+            continue
+        out[base] = label
+    return out
 
 
 def read_lines(path: Path):
@@ -197,6 +227,13 @@ def group_units(pages: list[dict], notes: list[str]) -> list[dict]:
             continue
         if pg["is_image_page"]:
             if cur:
+                if cur.get("h1") and AFTERWORD_RE.search(cur["h1"]):
+                    units.append(cur)
+                    cur = {"title": None, "h1": None, "h2": None,
+                           "pages": [pg], "image_pages": 1,
+                           "sequence": pg["sequence"]}
+                    notes.append(f"[后记边界] {pg['name']}（全页插图）位于后记后，不并入后记")
+                    continue
                 append_to_current(pg)
                 cur["image_pages"] += 1
                 notes.append(f"[插图归属] {pg['name']}（全页插图）并入「{cur['title'] or '引子'}」末尾，请核对")
@@ -207,7 +244,14 @@ def group_units(pages: list[dict], notes: list[str]) -> list[dict]:
                 notes.append(f"[插图归属] {pg['name']} 位于首章前，归入引子单元，请核对")
             continue
         if cur:
-            append_to_current(pg)
+            if cur.get("h1") and AFTERWORD_RE.search(cur["h1"]):
+                units.append(cur)
+                cur = {"title": None, "h1": None, "h2": None,
+                       "pages": [pg], "image_pages": 0,
+                       "sequence": pg["sequence"]}
+                notes.append(f"[后记边界] {pg['name']}（正文）位于后记后，作为独立单元，请核对")
+            else:
+                append_to_current(pg)
         else:
             # 最前面的无标题页 → 引子单元
             if not units or units[-1].get("title") is not None:
@@ -292,19 +336,62 @@ def gap_for(prev_last: str | None, next_first: str | None) -> list[str]:
     return []
 
 
+def leading_image_pages(unit: dict) -> list[int]:
+    """单元开头「整页插图且非文本页」的下标。
+
+    BW 有些书把章名做成整页图片（图片扉页），这类单元没有 `<h1>` 文本，扉页
+    必须按「篇首插图并入第 3 行头部行」处理，而不是留在正文区占行。
+    """
+    if unit.get("h1"):
+        return []
+    out: list[int] = []
+    for i, pg in enumerate(unit["pages"]):
+        if pg["is_image_page"] and not pg["is_p_text"]:
+            out.append(i)
+            continue
+        break
+    return out
+
+
+def attach_nav_titles(units: list[dict], nav_text: str | None,
+                      notes: list[str]) -> None:
+    """给无文本 h1 的图片扉页单元补回原版目录标题（就地写 `nav_title`）。
+
+    只在导航条目与单元首页文件名精确相等时补；对不上就留空槽并报告，
+    不做任何模糊猜测。
+    """
+    titles = nav_page_titles(nav_text) if nav_text else {}
+    for u in units:
+        if u.get("h1"):
+            continue
+        first = u["pages"][0]["name"]
+        if first in titles:
+            u["nav_title"] = titles[first]
+            notes.append(f"[补回目录标题] {first} → 「{titles[first]}」放入 L4")
+        elif leading_image_pages(u):
+            notes.append(
+                f"[缺目录标题] {first} 单元无文本 h1 且导航无对应条目，L4 留空槽")
+
+
 def merge_unit(unit: dict, notes: list[str]) -> list[str] | None:
     """合并一个章节单元，返回输出行；无法合并返回 None。"""
     pages = unit["pages"]
     if not pages:
         return None
+    # 图片扉页单元：头部必须取自首个文本页，否则正文会套用图片页的
+    # fixed-layout 样式并丢掉 body class / html vrtl。
+    lead = leading_image_pages(unit)
+    text_first = next((i for i, pg in enumerate(pages) if pg["is_p_text"]), None)
+    fold = bool(lead) and text_first is not None
+    head_page = pages[text_first] if fold else pages[0]
+    lines = head_page["lines"]
     # 固定模板 L1-L3；main 仅是分页源排版包装，不进入输出。
-    lines = pages[0]["lines"]
-    head = [lines[0], lines[1], pages[0]["head3"]]
+    head = [lines[0], lines[1], head_page["head3"]]
 
-    # 准备 h1 标题（提取 id 属性）
-    h1_text = unit["h1"] or ""
+    # 准备 h1 标题（提取 id 属性）；无文本 h1 时可用原版目录标题补回
+    h1_text = unit["h1"] or (unit.get("nav_title") or "")
     h1_id = ""
-    if h1_text:
+    if unit["h1"]:
         # 从原始 h1 提取 id；标题可能已经由预处理器重建，不再依赖旧 class。
         for pg in pages:
             source_h1 = pg["header"][0] if pg["header"] else ""
@@ -314,14 +401,20 @@ def merge_unit(unit: dict, notes: list[str]) -> list[str] | None:
                     h1_id = f' id="{id_match.group(1)}"'
                 if h1_id:
                     break
-        l4 = f'<h1{h1_id}>{h1_text}</h1>' if h1_text else ''
-    else:
-        l4 = ''
+    l4 = f'<h1{h1_id}>{h1_text}</h1>' if h1_text else ''
 
-    l5 = unit["h2"] if unit["h1"] else ""
-    out = list(head) + [l4, l5]
+    l5 = (unit["h2"] or "") if h1_text else ""
 
-    cleaned_bodies = [check_edge_br(pg["body"], pg["name"], notes) for pg in pages]
+    cleaned_bodies = []
+    for i, pg in enumerate(pages):
+        body = check_edge_br(pg["body"], pg["name"], notes)
+        if i > 0 and pg.get("header"):
+            extra_headers = [
+                h for h in pg["header"] if h and HEADING_RE.match(h)
+            ]
+            if extra_headers:
+                body = extra_headers + body
+        cleaned_bodies.append(body)
     for i in range(1, len(pages)):
         prev_body = cleaned_bodies[i - 1]
         body = cleaned_bodies[i]
@@ -343,6 +436,25 @@ def merge_unit(unit: dict, notes: list[str]) -> list[str] | None:
             notes.append(
                 f"[插图跨页] {pages[i-1]['name']} → {pages[i]['name']} 边界前侧为图片，"
                 f"已在图片段落追加 class=\"pb\"")
+
+    if fold:
+        # 图片扉页并入 L3 头部行（body 开头、标题之前），不再于正文区占行。
+        images = [line for i in lead for line in cleaned_bodies[i]]
+        for i in lead:
+            cleaned_bodies[i] = []
+        head = [head[0], head[1], head[2] + "".join(images)]
+        notes.append(
+            f"[篇首插图] {pages[lead[0]]['name']} 的 {len(images)} 行整页插图并入 L3 头部行")
+    if not l5:
+        # 图片扉页单元的「首小节」来自后续页头部，须提回 L5 槽位，正文才落在 L6。
+        for body in cleaned_bodies:
+            if not body:
+                continue
+            if H2_RE.match(body[0]):
+                l5 = body.pop(0)
+                notes.append(
+                    f"[首小节归位] {pages[0]['name']} 单元的首个 <h2> 提到 L5 槽位")
+            break
 
     out = list(head) + [l4, l5]
     for body in cleaned_bodies:
@@ -406,6 +518,12 @@ def main() -> int:
     if len(header_sequences) != len(set(header_sequences)):
         print("[错误] 多个合并单元使用了相同内容序；拒绝覆盖输出")
         return 1
+    nav_text = None
+    for cand in sorted(args.dir.rglob("*.xhtml")):
+        if NAV_FILE_RE.match(cand.name):
+            nav_text = cand.read_text(encoding="utf-8", errors="replace")
+            break
+    attach_nav_titles(units, nav_text, notes)
     out_dir = args.out or (args.dir.parent / "merge-out")
     written = 0
     for idx, unit in enumerate(units, 1):

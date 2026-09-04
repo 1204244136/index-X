@@ -59,6 +59,14 @@
     },
     {
       "case_sensitive": false,
+      "dot_all": false,
+      "find": "(<h1\\b[^>]*>)[ \\t\\r\\n]+(?=.)",
+      "mode": "regex",
+      "name": "跨行h1折叠为单行",
+      "replace": "\\1"
+    },
+    {
+      "case_sensitive": false,
       "dot_all": true,
       "find": "(<h1[^>]*>.*?</h1>)\\s*(?:<br/>\\s*)*<div class=\"start-3em\">\\s*<p([^>]*)>([0-9０-９]+)</p>\\s*</div>\\s*(?:<br/>\\s*)*",
       "mode": "regex",
@@ -76,10 +84,26 @@
     {
       "case_sensitive": false,
       "dot_all": true,
+      "find": "(<h1[^>]*>.*?</h1>)\\s*(?:<br\\s*/?>\\s*)*<p\\b[^>]*>[ 　]*([0-9０-９]+(?:（[^）]*）)?|◇)[ 　]*</p>\\s*(?:<br\\s*/?>\\s*)*",
+      "mode": "regex",
+      "name": "首小节裸段落折叠为h2独占行(L5,h1后)",
+      "replace": "\\1\n<h2>\\2</h2>\n"
+    },
+    {
+      "case_sensitive": false,
+      "dot_all": true,
       "find": "(<div class=\"main\">)\\s*(?:<br/>\\s*)*<div class=\"start-5em\">\\s*<p([^>]*)>(.*?)</p>\\s*</div>\\s*(?:<br/>\\s*)*",
       "mode": "regex",
       "name": "首小节容器折叠为h2独占行(L5,无h1)",
-      "replace": "\\1\n\n<h2\\2>\\3</h2>\n"
+      "replace": "\\1\\n\\n<h2\\2>\\3</h2>\\n"
+    },
+    {
+      "case_sensitive": false,
+      "dot_all": true,
+      "find": "(<div class=\"main\">)\\s*(?:<p>\\s*<br\\s*/?\\s*>\\s*</p>\\s*)*<p\\b[^>]*>[ 　]*([0-9０-９]+(?:（[^）]*）)?|◇)[ 　]*</p>\\s*(?:<p>\\s*<br\\s*/?\\s*>\\s*</p>\\s*)*",
+      "mode": "regex",
+      "name": "首小节裸段落折叠为h2独占行(L5,无h1无容器)",
+      "replace": "\\1\\n\\n<h2>\\2</h2>\\n"
     },
     {
       "case_sensitive": false,
@@ -108,10 +132,26 @@
     {
       "case_sensitive": false,
       "dot_all": false,
-      "find": "^<p>([0-9０-９]+)</p>$",
+      "find": "^<p\\b[^>]*>[ 　]*([0-9０-９]+(?:（[^）]*）)?|◇)[ 　]*</p>$",
       "mode": "regex",
       "name": "裸数字小节转为h2",
       "replace": "<h2>\\1</h2>"
+    },
+    {
+      "case_sensitive": false,
+      "dot_all": false,
+      "find": "\\n(?:\\s*<br\\s*/?>\\s*)+(?=<h2\\b)",
+      "mode": "regex",
+      "name": "h2前填充br清理",
+      "replace": "\n"
+    },
+    {
+      "case_sensitive": false,
+      "dot_all": false,
+      "find": "(<h2\\b[^>]*>.*?</h2>)(?:\\s*<br\\s*/?>\\s*)+",
+      "mode": "regex",
+      "name": "h2后填充br清理",
+      "replace": "\\1\n"
     },
     {
       "case_sensitive": false,
@@ -120,6 +160,30 @@
       "mode": "regex",
       "name": "页尾填充br删除",
       "replace": "\n"
+    },
+    {
+      "case_sensitive": false,
+      "dot_all": false,
+      "find": "^[ \\t]*<div class=\"(align-end|align-center|align-right|gfont|font-1em30 start-2em|start-4em|h-indent-1em|h-indent-5em)\">[ \\t]*\\r?\\n[ \\t]*<p>([^\\n]*)</p>[ \\t]*\\r?\\n[ \\t]*</div>[ \\t]*$",
+      "mode": "regex",
+      "name": "单段排版容器折叠为带类名的p",
+      "replace": "<p class=\"\\1\">\\2</p>"
+    },
+    {
+      "case_sensitive": false,
+      "dot_all": true,
+      "find": "(?:<br\\s*/?>\\s*)+(<p\\b[^>]*>\\s*<(?:img|image)\\b[^>]*/>\\s*</p>|<svg\\b)",
+      "mode": "regex",
+      "name": "图片前填充br清理",
+      "replace": "\\1"
+    },
+    {
+      "case_sensitive": false,
+      "dot_all": true,
+      "find": "(<p\\b[^>]*>\\s*<(?:img|image)\\b[^>]*/>\\s*</p>|</svg>)\\s*(?:<br\\s*/?>\\s*)+(?=<)",
+      "mode": "regex",
+      "name": "图片后填充br清理",
+      "replace": "\\1\n"
     },
     {
       "case_sensitive": false,
@@ -178,6 +242,6 @@
       "replace": "\\1"
     }
   ],
-  "version": 3,
-  "_comment": "恢复分页合并所需的固定行模板契约：正文页折叠 L1-L3，章节标题转 h1，数字小节转 h2，无标题页保留 L4/L5 空槽；同时清理 BookWalker 排版噪声。"
+  "version": 6,
+  "_comment": "恢复分页合并所需的固定行模板契约：正文页折叠 L1-L3，章节标题转 h1（含跨行 h1 折叠为单行），数字小节转 h2，无标题页保留 L4/L5 空槽；同时清理 BookWalker 排版噪声（含 h2 前后填充 br 清理）。v6：单段排版 div 容器折叠从 align-end 推广到 align-center/align-right/gfont/h-indent-*/start-*/font-1em30 start-2em 白名单，并改为行锚定匹配，杜绝把多段容器吞成一行。"
 }

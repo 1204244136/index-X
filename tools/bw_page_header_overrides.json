@@ -51,6 +51,222 @@
         "p-008.xhtml": 6,
         "p-009.xhtml": 7
       }
+    },
+    "S6_22.06.10": {
+      "evidence": "内容序从 -01 开始；章名均以扉页图片(m-001~m-006)承载：p-001/002为序章(-01)，p-003/004为第一章(-02)，p-005/006为第二章(-03)，p-007/008为第三章(-04)，p-009~012为第四章(-05)，p-013~016为终章(-06)，p-017为后记(-07)。",
+      "pages": {
+        "p-001.xhtml": 1,
+        "p-002.xhtml": 1,
+        "p-003.xhtml": 2,
+        "p-004.xhtml": 2,
+        "p-005.xhtml": 3,
+        "p-006.xhtml": 3,
+        "p-007.xhtml": 4,
+        "p-008.xhtml": 4,
+        "p-009.xhtml": 5,
+        "p-010.xhtml": 5,
+        "p-011.xhtml": 5,
+        "p-012.xhtml": 5,
+        "p-013.xhtml": 6,
+        "p-014.xhtml": 6,
+        "p-015.xhtml": 6,
+        "p-016.xhtml": 6,
+        "p-017.xhtml": 7
+      }
+    },
+    "S3_02": {
+      "evidence": "内容序从 -01 开始；p-013 为后记(-11)；p-014 为后记后的尾声(-12)。",
+      "pages": {
+        "p-001.xhtml": 1,
+        "p-002.xhtml": 2,
+        "p-003.xhtml": 3,
+        "p-004.xhtml": 4,
+        "p-005.xhtml": 5,
+        "p-006.xhtml": 5,
+        "p-007.xhtml": 5,
+        "p-008.xhtml": 6,
+        "p-009.xhtml": 7,
+        "p-010.xhtml": 8,
+        "p-011.xhtml": 9,
+        "p-012.xhtml": 10,
+        "p-013.xhtml": 11,
+        "p-014.xhtml": 12
+      }
+    },
+    "S3_03": {
+      "evidence": "内容序从 -01 开始；p-020 为后记(-11)；p-021 为后记后的尾声(-12)。",
+      "pages": {
+        "p-001.xhtml": 1,
+        "p-002.xhtml": 2,
+        "p-003.xhtml": 2,
+        "p-004.xhtml": 3,
+        "p-005.xhtml": 4,
+        "p-006.xhtml": 4,
+        "p-007.xhtml": 4,
+        "p-008.xhtml": 5,
+        "p-009.xhtml": 6,
+        "p-010.xhtml": 6,
+        "p-011.xhtml": 6,
+        "p-012.xhtml": 6,
+        "p-013.xhtml": 6,
+        "p-014.xhtml": 7,
+        "p-015.xhtml": 8,
+        "p-016.xhtml": 8,
+        "p-017.xhtml": 9,
+        "p-018.xhtml": 10,
+        "p-019.xhtml": 10,
+        "p-020.xhtml": 11,
+        "p-021.xhtml": 12
+      }
+    },
+    "S3_04": {
+      "evidence": "内容序从 -01 开始；p-013 为后记(-11)；p-014 为后记后的尾声(-12)。",
+      "pages": {
+        "p-001.xhtml": 1,
+        "p-002.xhtml": 2,
+        "p-003.xhtml": 3,
+        "p-004.xhtml": 4,
+        "p-005.xhtml": 5,
+        "p-006.xhtml": 6,
+        "p-007.xhtml": 7,
+        "p-008.xhtml": 7,
+        "p-009.xhtml": 7,
+        "p-010.xhtml": 8,
+        "p-011.xhtml": 9,
+        "p-012.xhtml": 10,
+        "p-013.xhtml": 11,
+        "p-014.xhtml": 12
+      }
+    },
+    "S3_05": {
+      "evidence": "内容序从 -01 开始；p-016 为后记(-11)；p-017 为后记后的尾声(-12)。",
+      "pages": {
+        "p-001.xhtml": 1,
+        "p-002.xhtml": 2,
+        "p-003.xhtml": 3,
+        "p-004.xhtml": 4,
+        "p-005.xhtml": 4,
+        "p-006.xhtml": 5,
+        "p-007.xhtml": 5,
+        "p-008.xhtml": 6,
+        "p-009.xhtml": 6,
+        "p-010.xhtml": 7,
+        "p-011.xhtml": 7,
+        "p-012.xhtml": 8,
+        "p-013.xhtml": 8,
+        "p-014.xhtml": 9,
+        "p-015.xhtml": 10,
+        "p-016.xhtml": 11,
+        "p-017.xhtml": 12
+      }
+    },
+    "S3_07": {
+      "evidence": "内容序从 -01 开始；p-014 为后记(-12)；p-015 为后记后的尾声(-13)。",
+      "pages": {
+        "p-001.xhtml": 1,
+        "p-002.xhtml": 2,
+        "p-003.xhtml": 3,
+        "p-004.xhtml": 4,
+        "p-005.xhtml": 5,
+        "p-006.xhtml": 6,
+        "p-007.xhtml": 7,
+        "p-008.xhtml": 8,
+        "p-009.xhtml": 8,
+        "p-010.xhtml": 8,
+        "p-011.xhtml": 9,
+        "p-012.xhtml": 10,
+        "p-013.xhtml": 11,
+        "p-014.xhtml": 12,
+        "p-015.xhtml": 13
+      }
+    },
+    "S3_08": {
+      "evidence": "内容序从 -01 开始；p-014 为后记(-12)；p-015/p-016 为后记后的尾声(-13)；p-017/p-018 为包装插图页(null)。",
+      "pages": {
+        "p-001.xhtml": 1,
+        "p-002.xhtml": 2,
+        "p-003.xhtml": 3,
+        "p-004.xhtml": 4,
+        "p-005.xhtml": 5,
+        "p-006.xhtml": 6,
+        "p-007.xhtml": 7,
+        "p-008.xhtml": 8,
+        "p-009.xhtml": 9,
+        "p-010.xhtml": 10,
+        "p-011.xhtml": 11,
+        "p-012.xhtml": 11,
+        "p-013.xhtml": 11,
+        "p-014.xhtml": 12,
+        "p-015.xhtml": 13,
+        "p-016.xhtml": 13,
+        "p-017.xhtml": null,
+        "p-018.xhtml": null
+      }
+    },
+    "S3_09": {
+      "evidence": "内容序从 -01 开始；p-015 为后记(-11)；p-016 为后记后的尾声(-12)；p-017/p-018 为包装插图页(null)。",
+      "pages": {
+        "p-001.xhtml": 1,
+        "p-002.xhtml": 1,
+        "p-003.xhtml": 1,
+        "p-004.xhtml": 2,
+        "p-005.xhtml": 3,
+        "p-006.xhtml": 4,
+        "p-007.xhtml": 5,
+        "p-008.xhtml": 6,
+        "p-009.xhtml": 7,
+        "p-010.xhtml": 8,
+        "p-011.xhtml": 9,
+        "p-012.xhtml": 10,
+        "p-013.xhtml": 10,
+        "p-014.xhtml": 10,
+        "p-015.xhtml": 11,
+        "p-016.xhtml": 12,
+        "p-017.xhtml": null,
+        "p-018.xhtml": null
+      }
+    },
+    "S3_10": {
+      "evidence": "内容序从 -01 开始；p-012 为后记(-07)；p-013/p-014 为后记后的尾声(-08)；p-015/p-016 为包装插图页(null)。",
+      "pages": {
+        "p-001.xhtml": 1,
+        "p-002.xhtml": 1,
+        "p-003.xhtml": 2,
+        "p-004.xhtml": 3,
+        "p-005.xhtml": 4,
+        "p-006.xhtml": 4,
+        "p-007.xhtml": 4,
+        "p-008.xhtml": 5,
+        "p-009.xhtml": 5,
+        "p-010.xhtml": 6,
+        "p-011.xhtml": 6,
+        "p-012.xhtml": 7,
+        "p-013.xhtml": 8,
+        "p-014.xhtml": 8,
+        "p-015.xhtml": null,
+        "p-016.xhtml": null
+      }
+    },
+    "S3_11": {
+      "evidence": "内容序从 -01 开始；p-013 为后记(-07)；p-014 为后记后的尾声(-08)；p-015/p-016 为包装插图页(null)。",
+      "pages": {
+        "p-001.xhtml": 1,
+        "p-002.xhtml": 1,
+        "p-003.xhtml": 2,
+        "p-004.xhtml": 3,
+        "p-005.xhtml": 3,
+        "p-006.xhtml": 3,
+        "p-007.xhtml": 4,
+        "p-008.xhtml": 4,
+        "p-009.xhtml": 5,
+        "p-010.xhtml": 6,
+        "p-011.xhtml": 6,
+        "p-012.xhtml": 6,
+        "p-013.xhtml": 7,
+        "p-014.xhtml": 8,
+        "p-015.xhtml": null,
+        "p-016.xhtml": null
+      }
     }
   }
 }

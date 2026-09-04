@@ -7,6 +7,7 @@
   - 多段 ruby 合并为单段
   - font-1em50 / em-sesame / tcy / line-break-loose 等排版 span 解包
   - 页首/页尾填充 <br/> 删除
+  - h2 前后填充 <br/> 删除（小节标题折叠后两侧不留 <br/> 排版噪声）
   - <p><br/></p> 展平为 <br/>
 
 默认只建立 ``merge_bw_pages.py`` 读取分页所需的 L1-L5 契约；显式提供
@@ -34,6 +35,11 @@
     python tools/bw_preprocess.py --rules 自定义.rules.json 某本bw提取.epub
     python tools/bw_preprocess.py --book-id S4_05 某本bw提取.epub
     python tools/bw_preprocess.py --check 某本bw提取.epub   # 校验模式，不写盘
+    python tools/bw_preprocess.py --merged --check 缓存目录/  # 校验合并后的章节文件
+
+``--merged`` 用于目录输入已是 ``merge_bw_pages`` 产物（缓存工作源）的场景：合并器
+不会把 ``<div class="main">`` 写进输出，默认的分页契约会把这类文件全部误报为
+「L3 未折叠」。
 """
 from __future__ import annotations
 
@@ -56,6 +62,7 @@ if sys.platform == "win32":
         sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 import merge_bw_pages
+from alignment_rules import JP_WRAPPER_RE
 
 XHTML_SUFFIXES = (".xhtml", ".html", ".htm")
 IMAGE_SUFFIXES = (
@@ -67,6 +74,44 @@ DEFAULT_HEADER_MAP_JSON = "bw_page_header_overrides.json"
 REFERENCE_SUFFIXES = XHTML_SUFFIXES + (".opf", ".ncx", ".xml", ".css", ".svg")
 XML_SUFFIXES = XHTML_SUFFIXES + (".opf", ".ncx", ".xml", ".svg")
 NUMERIC_PAGE_RE = re.compile(r"^(?:.*/)?p-(\d{3})\.xhtml$", re.IGNORECASE)
+AFTERWORD_TITLE_RE = re.compile(
+    r"<h1\b[^>]*>(?:<[^>]*>\s*)*(?:あとがき|後書き|後記|后记|跋|Afterword)",
+    re.IGNORECASE,
+)
+AUTHOR_PROFILE_RE = re.compile(
+    r"著者近影|プロフィール|著者紹介|イラストレーター紹介|年\d+月\d+日生まれ|新人作家|奥付",
+    re.IGNORECASE,
+)
+# 著者介绍/版权类包装页都是短页；长正文页里出现的「プロフィール」等词是叙述内容，
+# 不得据此把正文页判成包装页（S4_01 尾声首页即因叙述中的该词被整页丢弃）。
+PACKAGING_MAX_PARAS = 12
+
+
+def is_epilogue_story_page(text: str) -> bool:
+    """判断是否为后记之后的正文尾声页面（排除纯插图页和著者介绍/版权包装页）。"""
+    if 'class="p-image"' in text or "<svg" in text:
+        return False
+    body_match = re.search(r"<body\b[^>]*>(.*?)</body>", text, re.S)
+    body = body_match.group(1) if body_match else text
+    plain = re.sub(r"<[^>]*>", "", body).strip()
+    if not plain:
+        return False
+    paras = re.findall(r"<p\b[^>]*>(.*?)</p>", body, re.S)
+    text_paras = [re.sub(r"<[^>]*>", "", p).strip() for p in paras]
+    text_paras = [p for p in text_paras if p]
+    if not text_paras:
+        return False
+    # 只有「短页 + 关键词位于页首」才是著者介绍/版权包装页。
+    if (len(text_paras) <= PACKAGING_MAX_PARAS
+            and AUTHOR_PROFILE_RE.search("\n".join(text_paras[:2]))):
+        return False
+    return True
+# BookWalker sometimes puts a short reading notice on p-001 before the first
+# numbered content page. It is a work-level wrapper, not a pairing unit.
+READING_NOTICE_RE = re.compile(
+    r"<p\b[^>]*>\s*※(?:本書|本巻|この本)",
+    re.IGNORECASE | re.DOTALL,
+)
 HEADERED_PAGE_RE = re.compile(
     r"^(?:.*/)?S\d+_(?:\d+(?:_\d+)?|\d{2}(?:\.\d{2}){2})-"
     r"(?:\d+_)?p-(\d{3})\.xhtml$",
@@ -170,18 +215,47 @@ def tag_has_class(tag: str, class_name: str) -> bool:
     return class_name.casefold() in {token.casefold() for token in value.split()}
 
 
-def is_content(text: str) -> bool:
-    """是否为正文内容文件（body 的 class 包含 p-text）。"""
+def _has_text_body(text: str) -> bool:
+    """是否为文本型分页（仅检查 body class，不排除作品级包装页）。"""
     body = BODY_TAG_RE.search(text)
     return body is not None and tag_has_class(body.group(0), "p-text")
 
 
-def template_issues(lines: list[str]) -> list[str]:
-    """固定行模板 L1-L6 校验；空列表表示可安全交给分页合并器。
+def is_reading_notice(text: str) -> bool:
+    """是否为首部 BookWalker 阅读提示包装页。
 
-    L1 XML，L2 DOCTYPE，L3 折叠后的 html/head/body/main，L4 h1 或空槽，
-    L5 h2 或空槽，L6 正文 p。另做完整 XML 语法检查，防止结构合法性被行模板
-    检查掩盖。
+    仅识别正文模板中的 ``※本書…`` / ``※本巻…`` / ``※この本…`` 首段；
+    该页不应占用中日正文配对序号。调用方还需限制它只能出现在 p-001。
+    """
+    if not _has_text_body(text):
+        return False
+    body = BODY_TAG_RE.search(text)
+    assert body is not None
+    body_text = text[body.end():]
+    first_paragraph = re.search(r"<p\b[^>]*>", body_text, re.IGNORECASE)
+    return first_paragraph is not None and READING_NOTICE_RE.match(
+        body_text[first_paragraph.start():]
+    ) is not None
+
+
+def is_content(text: str) -> bool:
+    """是否为正文内容文件（p-text，排除首部阅读提示包装页）。"""
+    return _has_text_body(text) and not is_reading_notice(text)
+
+
+MERGED_HEAD_RE = re.compile(r"<body\b[^>]*>", re.IGNORECASE)
+
+
+def template_issues(lines: list[str], *, merged: bool = False) -> list[str]:
+    """固定行模板 L1-L6 校验；空列表表示可安全交给下游。
+
+    L1 XML，L2 DOCTYPE，L3 折叠后的单行头部，L4 h1 或空槽，L5 h2 或空槽，
+    L6 正文 p。另做完整 XML 语法检查，防止结构合法性被行模板检查掩盖。
+
+    ``merged=False``（默认）是**分页契约**：L3 必须含 ``<div class="main">``，
+    这是 ``merge_bw_pages.parse_page_content`` 定位正文的锚点，缺了就静默不合并。
+    ``merged=True`` 是**合并后契约**：``merge_unit`` 本就不把 main 容器写进输出，
+    此时只要求 L3 为折叠的 ``<html …><head>…</head><body…>`` 单行。
     """
     issues: list[str] = []
     if len(lines) < 6:
@@ -190,8 +264,15 @@ def template_issues(lines: list[str]) -> list[str]:
         issues.append(f"L1 非 XML 声明：{lines[0][:40]}")
     if not lines[1].startswith("<!DOCTYPE"):
         issues.append(f"L2 非 DOCTYPE：{lines[1][:40]}")
-    if not (lines[2].startswith("<html") and '<div class="main">' in lines[2]):
+    if merged:
+        if not (lines[2].startswith("<html") and MERGED_HEAD_RE.search(lines[2])):
+            issues.append("L3 未折叠为单行头部（需含 <body>）")
+    elif not (lines[2].startswith("<html") and '<div class="main">' in lines[2]):
         issues.append('L3 未折叠为单行头部（需含 <div class="main">）')
+        if lines[2].startswith("<html") and MERGED_HEAD_RE.search(lines[2]):
+            issues.append(
+                "L3 已含 <body> 但无 <div class=\"main\">：这是 merge_bw_pages "
+                "合并后的章节文件形态，校验缓存请加 --merged")
     l4, l5, l6 = lines[3], lines[4], lines[5]
     if l4 and not re.match(r"^<h1\b[^>]*>.*</h1>$", l4):
         issues.append(f"L4 应为单行 <h1> 或空行：{l4[:40]}")
@@ -206,11 +287,11 @@ def template_issues(lines: list[str]) -> list[str]:
     return issues
 
 
-def verify_text(text: str) -> list[str]:
+def verify_text(text: str, *, merged: bool = False) -> list[str]:
     """内容文件的模板校验；非内容（图片页/包装页）返回空列表。"""
     if not is_content(text):
         return []
-    return template_issues(text.splitlines())
+    return template_issues(text.splitlines(), merged=merged)
 
 
 def transform_bytes(data: bytes, rules: list[dict]) -> tuple[bytes, bool]:
@@ -242,10 +323,17 @@ def pairing_header_renames(
         page_map: dict[str, int | None] | None = None) -> dict[str, str]:
     """为 BookWalker XHTML 和图片分配稳定表头，返回 ZIP 条目重命名映射。
 
-    第一个分页单元使用 ``-01``；此后每遇到一个新的 L4 ``h1``，内容序加一。
-    没有 h1 的续页和全页插图 XHTML 沿用当前内容序。其他 XHTML 和图片只加
-    完整作品号，保留原稳定 basename；图片不得根据所在分页猜测内容序。标准
-    ``nav.xhtml`` 是唯一不加作品号的 XHTML。
+    第一个正文分页单元使用 ``-01``；此后每遇到一个新的 L4 ``h1``，内容序加一。
+    p-001 若是 ``※本書…`` 等阅读提示，则作为作品级包装页命名为
+    ``<作品号>-p-001.xhtml``，从 p-002 开始分配正文表头。没有 h1 的续页和
+    全页插图 XHTML 沿用当前内容序。其他 XHTML 和图片只加完整作品号，保留
+    原稳定 basename；图片不得根据所在分页猜测内容序。标准 ``nav.xhtml``
+    是唯一不加作品号的 XHTML。
+
+    后记之后的处理按「连续正文文本」界定：紧跟后记的连续正文文本页聚为单一
+    ``尾声`` 单元；一旦遇到非正文页（纯插图页、封底 ``hyou4``、著者介绍/版权页），
+    即从该页起进入**书末附录**，其后所有页（含著者/插画师介绍页）一律保留原始
+    文件名、不重命名不合并，也不得再回头新开 ``尾声`` 单元。
     """
     if not BOOK_ID_RE.fullmatch(book_id):
         raise ValueError(f"无效作品号：{book_id}")
@@ -266,7 +354,11 @@ def pairing_header_renames(
                 f"分页表头映射与 EPUB 不一致：缺少 {missing or '无'}；"
                 f"未登记 {unexpected or '无'}")
     sequence = 0
-    for _, name in numeric:
+    seen_afterwords = False
+    backmatter_started = False
+    epilogue_sequence = None
+    unrenamed_pages: set[str] = set()
+    for page_number, name in numeric:
         basename = name.rsplit("/", 1)[-1]
         if page_map is not None:
             mapped_sequence = page_map[basename]
@@ -277,16 +369,48 @@ def pairing_header_renames(
                     name, f"{book_id}-{mapped_sequence:02d}_{basename}")
             continue
         text = entries[name].decode("utf-8-sig", errors="replace")
+        if page_number == 1 and is_reading_notice(text):
+            renames[name] = _with_basename(name, f"{book_id}-{basename}")
+            continue
         lines = text.splitlines()
-        if sequence == 0 or (
-                is_content(text) and len(lines) > 3
-                and lines[3].lstrip().startswith("<h1")):
+        if backmatter_started:
+            # 书末附录一旦开始，其后的页一律保留原名：必须在 has_new_h1 分支之前拦截，
+            # 否则附录里的解说/收录短篇/次卷预告（自带 h1）会绕过后记分支拿到内容序。
+            unrenamed_pages.add(name)
+            continue
+        has_new_h1 = (
+            is_content(text) and len(lines) > 3
+            and lines[3].lstrip().startswith("<h1")
+        )
+        if sequence == 0 or has_new_h1:
             sequence += 1
+            if has_new_h1 and AFTERWORD_TITLE_RE.search(lines[3]):
+                seen_afterwords = True
+        elif seen_afterwords:
+            # 明确规定：后记不会出现图片；后记之后若有**连续**正文文本页面，归入单一的
+            # 「尾声」单元（After_the_Epilogue）。
+            # 书末附录起点：一旦遇到非正文页（纯插图页、封底 hyou4、著者介绍/版权页），
+            # 即视为进入书末附录，其后的页一律不再计入正文，也不得回头新开「尾声」——
+            # 紧跟其后的著者/插画师介绍页属于附录，不是故事性尾声。
+            if not is_epilogue_story_page(text):
+                backmatter_started = True
+            if backmatter_started:
+                unrenamed_pages.add(name)
+                continue
+            if epilogue_sequence is None:
+                sequence += 1
+                epilogue_sequence = sequence
+            renames[name] = _with_basename(
+                name, f"{book_id}-{epilogue_sequence:02d}_{basename}")
+            continue
+
         renames[name] = _with_basename(
             name, f"{book_id}-{sequence:02d}_{basename}")
 
     for name in entries:
         if not name.lower().endswith(XHTML_SUFFIXES) or name in renames:
+            continue
+        if name in unrenamed_pages:
             continue
         basename = name.rsplit("/", 1)[-1]
         if basename.casefold() == "nav.xhtml" or basename.upper().startswith(book_id + "-"):
@@ -372,8 +496,9 @@ def artifact_contract_issues(entries: dict[str, bytes], book_id: str) -> list[tu
     for name in entries:
         basename = name.rsplit("/", 1)[-1]
         if name.lower().endswith(XHTML_SUFFIXES):
-            if basename.casefold() != "nav.xhtml" and not basename.upper().startswith(
-                    book_id + "-"):
+            if (basename.casefold() != "nav.xhtml"
+                    and not JP_WRAPPER_RE.match(basename)
+                    and not basename.upper().startswith(book_id + "-")):
                 issues.append((name, f"XHTML 缺少作品号表头 {book_id}-"))
             sequence_match = re.match(
                 rf"^{re.escape(book_id)}-(\d+)(?:_|\.(?:xhtml|html|htm)$)",
@@ -491,7 +616,7 @@ def merge_epub_pages(
             continue
         basename = name.rsplit("/", 1)[-1]
         m = merge_bw_pages.PAGE_RE.match(basename)
-        if m:
+        if m and m.group("sequence") is not None:
             page_candidates.append((int(m.group("page")), name, data))
 
     if not page_candidates:
@@ -514,6 +639,14 @@ def merge_epub_pages(
     units = merge_bw_pages.group_units(parsed_pages, notes)
     if not units:
         return entries, infos, notes
+
+    # 章名以整页图片承载的书：从原版导航（目录）精确补回 L4 的 h1 文本
+    nav_name = next((n for n in entries
+                     if merge_bw_pages.NAV_FILE_RE.match(posixpath.basename(n))), None)
+    merge_bw_pages.attach_nav_titles(
+        units,
+        entries[nav_name].decode("utf-8-sig", errors="replace") if nav_name else None,
+        notes)
 
     # 生成合并后的章节文件
     dir_prefix = posixpath.dirname(parsed_pages[0]["entry_path"])
@@ -716,8 +849,13 @@ def process_epub(epub_path: Path, rules: list[dict], out_path: Path,
     return stats
 
 
-def process_dir(dir_path: Path, rules: list[dict], dry_run: bool) -> dict:
-    """就地处理目录下全部 XHTML。返回统计 dict。"""
+def process_dir(dir_path: Path, rules: list[dict], dry_run: bool,
+                *, merged: bool = False) -> dict:
+    """就地处理目录下全部 XHTML。返回统计 dict。
+
+    ``merged=True`` 表示目录里是 ``merge_bw_pages`` 之后的章节文件（无 main 容器），
+    按合并后契约校验 L1-L6。
+    """
     files = sorted(p for p in dir_path.rglob("*")
                    if p.is_file() and p.suffix.lower() in XHTML_SUFFIXES)
     stats = {"total": 0, "changed": 0, "renamed": 0,
@@ -733,12 +871,12 @@ def process_dir(dir_path: Path, rules: list[dict], dry_run: bool) -> dict:
             stats["changed"] += 1
             if not dry_run:
                 p.write_bytes(new_data)
-        for it in verify_text(text):
+        for it in verify_text(text, merged=merged):
             stats["issues"].append((p.name, it))
     return stats
 
 
-def check_dir(dir_path: Path, rules: list[dict]) -> dict:
+def check_dir(dir_path: Path, rules: list[dict], *, merged: bool = False) -> dict:
     """--check：内存中应用规则并校验 L1-L6 固定模板，不写盘。"""
     files = sorted(p for p in dir_path.rglob("*")
                    if p.is_file() and p.suffix.lower() in XHTML_SUFFIXES)
@@ -749,7 +887,7 @@ def check_dir(dir_path: Path, rules: list[dict]) -> dict:
             p.read_bytes().decode("utf-8-sig", errors="replace"), rules)
         if is_content(text):
             stats["content"] += 1
-            for it in template_issues(text.splitlines()):
+            for it in template_issues(text.splitlines(), merged=merged):
                 stats["issues"].append((p.name, it))
     return stats
 
@@ -950,6 +1088,13 @@ def report_stats(label: str, stats: dict, dry_run: bool, check: bool,
         print(f"  ! {name}: {it}")
     if len(stats["issues"]) > 30:
         print(f"  …另有 {len(stats['issues']) - 30} 条问题未列出")
+    merge_notes = stats.get("merge_notes") or []
+    if merge_notes:
+        print(f"  合并待核对 {len(merge_notes)} 条：")
+        for n in merge_notes[:20]:
+            print(f"    · {n}")
+        if len(merge_notes) > 20:
+            print(f"    …另有 {len(merge_notes) - 20} 条未列出")
 
 
 def main() -> int:
@@ -971,6 +1116,9 @@ def main() -> int:
     ap.add_argument("--dry-run", action="store_true", help="只预览，不写文件")
     ap.add_argument("--check", action="store_true",
                     help="内存校验 L1-L6；配合 --book-id 检查完整 EPUB 产物契约")
+    ap.add_argument("--merged", action="store_true",
+                    help="目录输入是 merge_bw_pages 之后的章节文件（无 main 容器），"
+                         "按合并后契约校验 L1-L6")
     args = ap.parse_args()
 
     if args.book_id and not BOOK_ID_RE.fullmatch(args.book_id):
@@ -979,6 +1127,8 @@ def main() -> int:
         ap.error("--book-id 当前只支持 .epub 输入；目录模式请先打包或人工重命名")
     if args.header_map and not args.book_id:
         ap.error("--header-map 必须与 --book-id 同时使用")
+    if args.merged and not any(Path(raw).is_dir() for raw in args.paths):
+        ap.error("--merged 只适用于目录输入；.epub 是分页管线，L3 必须含 main 容器")
 
     rules = load_rules(args.rules)
     page_map = load_header_map(args.book_id, args.header_map)
@@ -1010,12 +1160,13 @@ def main() -> int:
                 cur_page_map = load_header_map(cur_book_id, args.header_map)
 
         if p.is_dir():
+            label = f"目录 {p}{'' if not args.merged else '（合并后契约）'}"
             if args.check:
-                stats = check_dir(p, rules)
-                report_stats(f"目录 {p}", stats, False, True)
+                stats = check_dir(p, rules, merged=args.merged)
+                report_stats(label, stats, False, True)
             else:
-                stats = process_dir(p, rules, args.dry_run)
-                report_stats(f"目录 {p}", stats, args.dry_run, False)
+                stats = process_dir(p, rules, args.dry_run, merged=args.merged)
+                report_stats(label, stats, args.dry_run, False)
         elif p.is_file() and p.suffix.lower() == ".epub":
             if args.check:
                 stats = check_epub(p, rules, cur_book_id, cur_page_map)
