@@ -195,21 +195,86 @@ def is_wrapper(label: str, path: str) -> bool:
     return any(k in hay for k in WRAPPER_KEYWORDS)
 
 
-def spine_xhtml_items(z: zipfile.ZipFile) -> list[dict]:
+# 图片扩展名（成分分析工具共用）
+EPUB_IMAGE_EXTS = (".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg")
+
+
+class EpubSource:
+    """EPUB 内容读取的统一入口：既支持打包 `.epub`，也支持解包书目录。
+
+    解包目录按 EPUB 规范定位 OPF（`META-INF/container.xml` → rootfile）；个别
+    历史目录缺失 container.xml 时回退到 `item/standard.opf` 或 `*.opf` 中唯一项。
+    目录模式下 `read()` 的相对路径即解包目录内的 POSIX 相对路径。
+    """
+
+    def __init__(self, path: Path):
+        self.path = Path(path)
+        self.origin = str(self.path)
+        self.book_name = self.path.name
+        self._zip: zipfile.ZipFile | None = None
+        self._root: Path | None = None
+        self._opf_rel: str | None = None
+        if self.path.is_dir():
+            self._root = self.path
+            self._opf_rel = self._find_opf_in_dir()
+        else:
+            self._zip = zipfile.ZipFile(self.path)
+
+    @classmethod
+    def from_path(cls, path: Path) -> "EpubSource":
+        return cls(path)
+
+    def _find_opf_in_dir(self) -> str:
+        assert self._root is not None
+        cont = self._root / "META-INF" / "container.xml"
+        if cont.is_file():
+            try:
+                root = ET.fromstring(cont.read_bytes())
+                rf = next((e for e in root.iter()
+                           if tag_local(e.tag) == "rootfile"), None)
+                if rf is not None and rf.get("full-path"):
+                    return rf.get("full-path").replace("\\", "/")
+            except ET.ParseError:
+                pass
+        for cand in ("item/standard.opf", "OEBPS/content.opf", "content.opf"):
+            if (self._root / cand).is_file():
+                return cand
+        opfs = sorted(self._root.rglob("*.opf"))
+        if len(opfs) == 1:
+            return opfs[0].relative_to(self._root).as_posix()
+        raise SystemExit(f"目录中找不到唯一 OPF：{self._root}")
+
+    def read(self, rel: str) -> bytes:
+        """按 OPF 相对路径读取条目；不存在时抛 KeyError（与 zipfile 行为一致）。"""
+        rel = rel.replace("\\", "/")
+        if self._zip is not None:
+            return self._zip.read(rel)
+        assert self._root is not None
+        target = (self._root / rel).resolve()
+        if not target.is_file():
+            raise KeyError(rel)
+        return target.read_bytes()
+
+    def close(self) -> None:
+        if self._zip is not None:
+            self._zip.close()
+
+
+def spine_xhtml_items(source: "EpubSource") -> list[dict]:
     """解析 OPF，返回按 spine 顺序排列的正文 XHTML 项。
 
     每项：{path, media_type, props_manifest, props_itemref}
     解析失败时抛 SystemExit。
     """
     try:
-        cont = ET.fromstring(z.read("META-INF/container.xml"))
+        cont = ET.fromstring(source.read("META-INF/container.xml"))
     except KeyError as exc:
         raise SystemExit("缺少 META-INF/container.xml，不是合法 EPUB") from exc
     rootfile = next((e for e in cont.iter() if tag_local(e.tag) == "rootfile"), None)
     if rootfile is None:
         raise SystemExit("container.xml 中找不到 rootfile")
     opf_path = rootfile.get("full-path")
-    root = ET.fromstring(z.read(opf_path))
+    root = ET.fromstring(source.read(opf_path))
     opf_dir = posixpath.dirname(opf_path)
 
     manifest: dict[str, dict] = {}
@@ -245,8 +310,8 @@ def is_fixed_layout(item: dict) -> bool:
     return "svg" in item["props_manifest"] or "pre-paginated" in item["props_itemref"]
 
 
-def analyze(z: zipfile.ZipFile, item: dict, pages_per: int) -> dict:
-    raw = z.read(item["path"]).decode("utf-8", errors="replace")
+def analyze(source: "EpubSource", item: dict, pages_per: int) -> dict:
+    raw = source.read(item["path"]).decode("utf-8", errors="replace")
     stem = Path(item["path"]).stem
     h1 = h1_of(raw)
     txt = text_of(raw)
@@ -277,28 +342,28 @@ def analyze(z: zipfile.ZipFile, item: dict, pages_per: int) -> dict:
 
 def scan_book(path: Path, pages_per: int, include_wrapper: bool,
               min_chars: int, label_map: dict, normalize: bool = True) -> dict:
-    with zipfile.ZipFile(path) as z:
-        items = spine_xhtml_items(z)
-        comps, skipped = [], []
-        for it in items:
-            if it["media_type"] != "application/xhtml+xml":
-                continue
-            if "nav" in it["props_manifest"]:
-                continue
-            stem = Path(it["path"]).stem
-            if not include_wrapper and (is_fixed_layout(it) or is_wrapper(stem, it["path"])):
-                skipped.append(stem)
-                continue
-            c = analyze(z, it, pages_per)
-            if c["all_chars"] == 0:
-                skipped.append(stem)
-                continue
-            if c["all_chars"] < min_chars:
-                skipped.append(stem)
-                continue
-            if label_map:
-                c["label"] = label_map.get(stem) or label_map.get(it["path"]) or c["label"]
-            comps.append(c)
+    source = EpubSource(path)
+    items = spine_xhtml_items(source)
+    comps, skipped = [], []
+    for it in items:
+        if it["media_type"] != "application/xhtml+xml":
+            continue
+        if "nav" in it["props_manifest"]:
+            continue
+        stem = Path(it["path"]).stem
+        if not include_wrapper and (is_fixed_layout(it) or is_wrapper(stem, it["path"])):
+            skipped.append(stem)
+            continue
+        c = analyze(source, it, pages_per)
+        if c["all_chars"] == 0:
+            skipped.append(stem)
+            continue
+        if c["all_chars"] < min_chars:
+            skipped.append(stem)
+            continue
+        if label_map:
+            c["label"] = label_map.get(stem) or label_map.get(it["path"]) or c["label"]
+        comps.append(c)
     if normalize:
         for c in comps:
             c["label"] = normalize_label(c["label"])
@@ -306,7 +371,7 @@ def scan_book(path: Path, pages_per: int, include_wrapper: bool,
     tot_all = sum(c["all_chars"] for c in comps)
     tot_cjk = sum(c["cjk_chars"] for c in comps)
     return {
-        "book": path.name,
+        "book": source.book_name,
         "pages_per": pages_per,
         "components": comps,
         "skipped": skipped,
@@ -321,16 +386,26 @@ def scan_book(path: Path, pages_per: int, include_wrapper: bool,
 
 
 def collect_paths(args: argparse.Namespace) -> list[Path]:
+    """收集输入路径。
+
+    - 文件：.epub 直接使用；
+    - 目录：若自身是解包书目录（含 META-INF/container.xml 或 OPF）按单本处理，
+      否则递归收集目录下的 .epub 文件（也收集解包书子目录）。
+    """
     out: list[Path] = []
     for p in args.paths:
         if p.is_file():
             out.append(p)
         elif p.is_dir():
+            if (p / "META-INF" / "container.xml").is_file() or any(p.glob("*.opf")) \
+                    or (p / "item" / "standard.opf").is_file():
+                out.append(p)
+                continue
             out.extend(sorted(p.rglob("*.epub")))
         else:
             raise SystemExit(f"路径不存在：{p}")
     if not out:
-        raise SystemExit("未找到任何 .epub 文件")
+        raise SystemExit("未找到任何 .epub 文件或解包书目录")
     return out
 
 
