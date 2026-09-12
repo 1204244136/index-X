@@ -138,7 +138,7 @@
   <manifest>
     <item id="S5_02_03-Cover.xhtml" href="Text/S5_02_03-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
     <item id="Message.xhtml" href="Text/S5_02_03-Information.xhtml" media-type="application/xhtml+xml"/>
-    <item href="Text/S5_02_03-Main.xhtml" id="id9" media-type="application/xhtml+xml"/>
+    <item href="Text/S5_02_03-01_Main.xhtml" id="id9" media-type="application/xhtml+xml"/>
     <item id="id6" href="Text/S5_02_03-Back_cover.xhtml" media-type="application/xhtml+xml"/>
     <item id="id1" href="Text/S5_02_03-Note.xhtml" media-type="application/xhtml+xml"/>
     <item id="nav" href="../nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>

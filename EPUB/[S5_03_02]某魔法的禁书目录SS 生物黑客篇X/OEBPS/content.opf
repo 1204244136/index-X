@@ -150,14 +150,14 @@
   <manifest>
     <item id="S5_03_02-Cover.xhtml" href="Text/S5_03_02-Cover.xhtml" media-type="application/xhtml+xml" properties="calibre:title-page"/>
     <item id="Message.xhtml" href="Text/S5_03_02-Information.xhtml" media-type="application/xhtml+xml"/>
-    <item id="id1" href="Text/S5_03_02-Introduction.xhtml" media-type="application/xhtml+xml"/>
-    <item href="Text/S5_03_02-01_Chapter1.xhtml" id="id3" media-type="application/xhtml+xml"/>
-    <item href="Text/S5_03_02-02_Chapter2.xhtml" id="id16" media-type="application/xhtml+xml"/>
-    <item href="Text/S5_03_02-03_Chapter3.xhtml" id="id4" media-type="application/xhtml+xml"/>
-    <item href="Text/S5_03_02-04_Chapter4.xhtml" id="id8" media-type="application/xhtml+xml"/>
-    <item href="Text/S5_03_02-05_Chapter5.xhtml" id="id9" media-type="application/xhtml+xml"/>
-    <item href="Text/S5_03_02-06_Chapter6.xhtml" id="id10" media-type="application/xhtml+xml"/>
-    <item id="id12" href="Text/S5_03_02-07_Afterwords.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id1" href="Text/S5_03_02-01_Introduction.xhtml" media-type="application/xhtml+xml"/>
+    <item href="Text/S5_03_02-02_Chapter1.xhtml" id="id3" media-type="application/xhtml+xml"/>
+    <item href="Text/S5_03_02-03_Chapter2.xhtml" id="id16" media-type="application/xhtml+xml"/>
+    <item href="Text/S5_03_02-04_Chapter3.xhtml" id="id4" media-type="application/xhtml+xml"/>
+    <item href="Text/S5_03_02-05_Chapter4.xhtml" id="id8" media-type="application/xhtml+xml"/>
+    <item href="Text/S5_03_02-06_Chapter5.xhtml" id="id9" media-type="application/xhtml+xml"/>
+    <item href="Text/S5_03_02-07_Chapter6.xhtml" id="id10" media-type="application/xhtml+xml"/>
+    <item id="id12" href="Text/S5_03_02-08_Afterwords.xhtml" media-type="application/xhtml+xml"/>
     <item id="id11" href="Text/S5_03_02-Note.xhtml" media-type="application/xhtml+xml"/>
     <item id="nav" href="../nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
     <item id="toc" href="../toc.ncx" media-type="application/x-dtbncx+xml"/>
