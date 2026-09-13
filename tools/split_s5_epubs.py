@@ -16,9 +16,17 @@
 - 外典書庫（４）：
     S5_04_01: ステートバリウス編 (p-001 ~ p-009)
     S5_04_02: 御坂美琴と食蜂操祈をイチャイチャさせる完全にキレたやり方 (p-010 ~ p-024)
+
+用法：
+    python tools/split_s5_epubs.py "<BW 提取源目录>"
+    python tools/split_s5_epubs.py "<BW 提取源目录>" --packed-out 打包输出目录 --unpacked-out 解包输出目录
+
+源目录必须显式传入（存放「とある魔術の禁書目録 外典書庫（N）.epub」的 BW 提取目录）；输出默认写到
+.cache/epub-work/ 下的打包与解包目录。不在仓库里写死个人环境路径。
 """
 from __future__ import annotations
 
+import argparse
 import posixpath
 import re
 import shutil
@@ -256,8 +264,27 @@ def split_and_process_s5(
             print(f"  -> 已成功输出: EPUB={out_epub_path.name}, 章节数={ch_count}, 解包={unpacked_dir.name}")
 
 
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="外典书库合订卷拆分：日文合订卷 -> 独立作品（EPUB 与解包目录）"
+    )
+    parser.add_argument(
+        "src",
+        help="BW 提取源目录（存放「とある魔術の禁書目録 外典書庫（N）.epub」）",
+    )
+    parser.add_argument(
+        "--packed-out",
+        default=".cache/epub-work/packed-epubs/japanese-text",
+        help="打包输出目录（默认 .cache/epub-work/packed-epubs/japanese-text）",
+    )
+    parser.add_argument(
+        "--unpacked-out",
+        default=".cache/epub-work/japanese-text",
+        help="解包输出目录（默认 .cache/epub-work/japanese-text）",
+    )
+    return parser.parse_args(argv)
+
+
 if __name__ == "__main__":
-    src = Path(r"C:\Users\12042\OneDrive\某系列\BW提取")
-    packed = Path(".cache/epub-work/packed-epubs/japanese-text")
-    unpacked = Path(".cache/epub-work/japanese-text")
-    split_and_process_s5(src, packed, unpacked)
+    args = parse_args()
+    split_and_process_s5(Path(args.src), Path(args.packed_out), Path(args.unpacked_out))

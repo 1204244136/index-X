@@ -513,6 +513,42 @@ python tools/shift_content_sequences.py 解包书籍目录 --work-id S4_05 --off
 python tools/shift_content_sequences.py 解包书籍目录 --work-id S4_05 --offset 1 --apply
 ```
 
+### 外典书库（S5）合订卷拆分（仅限新书导入）
+
+```powershell
+python tools/split_s5_epubs.py "<BW 提取源目录>"
+python tools/split_s5_epubs.py "<BW 提取源目录>" --packed-out 打包输出目录 --unpacked-out 解包输出目录
+```
+
+外典书库的日文原版是合订卷（`とある魔術の禁書目録 外典書庫（N）.epub`），一本含 2–3 个独立作品；中文侧按独立作品分别收录。本工具按 `SPLIT_SPECS` 把合订卷拆成各自独立的作品，并对每一份跑一遍与主工作流相同的导入管线，产出的日文缓存即可直接用 `S5_AA_BB-BB` 表头与中文侧配对。
+
+**拆分范围**（页区间写死在 `SPLIT_SPECS`，按合订卷内的 `p-NNN.xhtml` 划分）：
+
+| 合订卷 | 目标作品 | 页区间 |
+| --- | --- | --- |
+| 外典書庫（1） | `S5_01_01` 神裂火織編 / `S5_01_02` 『必要悪の教会』特別編入試験編 / `S5_01_03` ロード・トゥ・エンデュミオン | p-001~009 / 010~018 / 019~027 |
+| 外典書庫（2） | `S5_02_01` 学芸都市編 / `S5_02_02` 能力実演旅行編 / `S5_02_03` コールドゲーム | p-001~009 / 010~018 / 019~021 |
+| 外典書庫（3） | `S5_03_01` アニェーゼの魔術サイドお仕事体験編 / `S5_03_02` バイオハッカー編 | p-001~009 / 010~019 |
+| 外典書庫（4） | `S5_04_01` ステートバリウス編 / `S5_04_02` 御坂美琴と食蜂操祈をイチャイチャさせる完全にキレたやり方 | p-001~009 / 010~024 |
+
+**每部作品的处理步骤**：
+
+1. 固定基础设施整体拷贝：`mimetype`、`META-INF/`、全部 `.css`；
+2. 按页区间取 `p-NNN.xhtml`（区间内的每一页都必须存在，缺页不会被补齐）；
+3. 收集这些页引用到的图片：`img src` 与 `svg` 的 `href`／`xlink:href`，按 OPF 相对路径解析，解析不到或不在包内的引用直接丢弃；
+4. 重建独立 OPF：manifest 只保留仍存在于拆分包内的 item，spine 再按保留下来的 item id 过滤，`dc:title` 改写为作品标题；
+5. 保存时 `mimetype` 用 `ZIP_STORED`、其余用 `ZIP_DEFLATED`（与 EPUB 容器要求一致）；
+6. 复用主工作流的 `bw_preprocess`／`merge_bw_pages`：规则预处理 → 分配 `S5_AA_BB` 表头前缀与资源重命名 → 分页合并为章节 → 注入 pb 样式 → 契约校验（`artifact_contract_issues`）。
+
+**输出**：打包 `.cache/epub-work/packed-epubs/japanese-text/[S5_AA_BB]标题.epub` 与解包目录 `.cache/epub-work/japanese-text/[S5_AA_BB]标题/`（同名目录已存在时先整目录删除再重建）。每部作品打印章节数与契约校验结果，「[校验通过] 契约校验 0 问题」为正常。
+
+**注意**：
+
+- **源目录必须显式传入**（`src` 位置参数）：存放「とある魔術の禁書目録 外典書庫（N）.epub」的 BW 提取目录。传错或目录不存在时按卷打印「[跳过] 不存在」并以退出码 0 正常结束——不会报错，别把它当成已经跑完。输出目录默认在 `.cache/epub-work/` 下，可用 `--packed-out`／`--unpacked-out` 覆盖。
+- **页区间与合订卷内的实际分页强绑定**。新卷、或出版社重新排版后，必须回到 BW 提取源核对页区间再更新 `SPLIT_SPECS`；区间错会静默拆出内容错位的作品，且不会报错。
+- 依赖 `bw_preprocess` 的内部辅助函数（`load_rules`、`transform_bytes`、`pairing_header_renames`、`apply_entry_renames`、`merge_epub_pages`、`inject_pb_css`、`artifact_contract_issues`、`_resolved_reference`）；改动这些函数的签名或语义会连带影响本工具。
+- 输出目标在 `.cache/` 下，且会覆盖同名日文目录。若该作品的日文缓存已有校对成果，先确认再跑。
+
 ### EPUB → DOCX（交稿格式，ruby 还原为 |基文[注音]）
 
 ```powershell
@@ -654,6 +690,36 @@ python tools/restore_cn_scene_breaks.py --apply               # 写盘
 3. 补完后中文行数必须**恰好等于**日文行数。
 
 保留中文侧 BOM 与换行风格；`MANUAL_ALIGNMENT_HEADERS` 与不配对文件不参与。实测：`S6_22.06.10` 补回 107 行后该卷问题记录归零；全缓存另有 19 个文件补回 38 行（多为 `Afterwords`/`After_the_Epilogue` 的源内分隔），74 个文件因前提不满足被拒。
+
+### 中日换页标记 pb 同步（写缓存）
+
+```powershell
+python tools/sync_pb_tags.py             # 预览（默认，不写盘）
+python tools/sync_pb_tags.py --apply     # 写盘
+```
+
+落实 AGENTS.md「中日两侧同一位置的换页标记与视觉间隔数量一致」：分页源合并时在日文侧段落追加了 `class="pb"`（不占行），中文侧同一位置若缺 `pb`，本工具补上。与「中文侧旧合页 `<br/>` 清理」是一对——那条负责删掉旧写法的多余物理行，这条负责把不占行的换页标记补齐。
+
+**配对与判定**：从文件名提取表头建立日文→中文映射（支持 `S1_01-02`、`S5_01_03-02`、`S6_22.06.10-06` 三种形式，允许其后跟随 `_语义后缀`；`p-NNN.xhtml` 等包装页不参与），然后**按物理行号**逐行比对：
+
+- 日文行含独立单词 `pb` 的 `class` 属性 → 该行是换页边界；
+- 中文同行已有 `pb` → 计入「中文已有 pb」；
+- 中文同行没有 `pb` 且是 `<p>` 段 → 在既有 `class` 值末尾追加 `pb`（保留原有 class；无 `class` 属性时写成 `<p class="pb">`）；
+- 中文同行不是 `<p>` → 计「非段落」；
+- 中文行数不足 → 计「越界」。
+
+后两类计入「异常/不匹配」并逐条打印，**不猜测位置、不做模糊匹配**，也不会为了对齐而插删行。日文侧完全没有 `pb` 的文件直接跳过。
+
+**输出**：逐条打印 `[补全 pb]` 的中日对照（日文原行／中文旧行／中文新行），末尾统计 `日文 pb 总数 / 中文已有 pb / 本次补充 pb / 异常·不匹配 / 涉及修改文件数`。
+
+**实测（2026-09-13 缓存）**：日文 pb 67、中文已有 64、待补 3（`S5_01_03-06_Chapter5.xhtml` 2 处、`S5_02_03-01_Main.xhtml` 1 处）、异常 0，涉及 2 个文件。
+
+**注意**：
+
+- 中日缓存根目录写死为 `.cache/epub-work/{japanese-text,chinese-text}`，无 `--cache` 参数。
+- 写盘时按 `"\n".join(lines) + "\n"` 重写整个文件，会把该文件的换行统一成 LF（原为 CRLF 的文件在 `git diff` 中会整文件变动）；方向与 `.gitattributes` 的规范化一致。
+- 行号配对以中日行数对齐为前提：行数不一致只会报「越界」而不会误改，但**两侧行数相同、内容错位**的情形本工具发现不了，需另跑 `check_alignment.py` 把关。
+- 只改中文缓存；产物需经 `publish.py` 才会同步到 `EPUB/` 与 OneDrive。
 
 ### 段落级差异不做自动拆合
 
