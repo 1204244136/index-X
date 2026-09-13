@@ -61,8 +61,11 @@
 
 1. **拉取**：运行 `./tools/pull.ps1` 将 OneDrive 中的中文和日文 EPUB 解压到缓存。脚本用 `.cache/epub-work/pull-state.tsv` 记录每个 EPUB 的修改时间与大小，只解压发生变化的书籍；首次运行会全部解压一次以建立状态。`-Force` 全量重新解压，`-WhatIf` 预览，`-Side chinese/japanese` 只处理一侧，`-SyncToEpub` 解压后把变更文件增量同步到 `EPUB/`（OneDrive 侧改动回流仓库的流程）。解压后只为被解压的书籍更新哈希清单 `manifest.json`，未变化书籍的清单基线保持不变。
 2. **修改**：使用 agent 或手动修改缓存中的文件；中日成对批量处理运行 `python tools/normalize_paired.py`，只处理明确指定的单文件/目录运行 `python tools/normalize_single.py`。随后用 `python tools/check_alignment.py` 检查模板符合性与中日对齐，最后运行 `python tools/epub_audit.py` 审计。
-3. **发布**：运行 `python tools/publish.py --dry-run` 预览变更，确认后运行 `python tools/publish.py`。脚本会对比 `manifest.json` 只处理被改动的书籍：中文变更只把发生变更的文件写入 `EPUB/`（含删除传播），中日两侧分别打包并上传到 OneDrive（每本一个 `.epub`），上传后同步更新 `pull-state.tsv` 避免下次拉取重复解压。发布成功后自动更新清单。`--sync-only` 只同步 `EPUB/` 不打包上传。发布前做基线前置检查：本次处理范围内某一侧在缓存里有书、而清单基线里该侧一条记录都没有时直接报错并给出 `manifest.py --update-books` 重建命令（`--force` 跳过该检查），避免把整侧当成「全部新增」重新打包上传。
-4. **反向发布**（仅当直接改了 `EPUB/` 时）：运行 `python tools/publish_epub.py --dry-run` 预览，确认后运行 `python tools/publish_epub.py`。对比 `manifest.json` 只处理 `EPUB/` 中变化的（中文）书：从 `EPUB/` 打包 `.epub` 上传到 OneDrive，并把变化文件增量覆盖回缓存（含删除传播），成功后更新清单与 `pull-state.tsv`。默认会跳过缓存中仍有未发布修改的冲突书籍（用 `--overwrite-cache` 强制覆盖）。运行前务必 `--dry-run` 确认变更范围（按字节哈希比较，换行差异也会算变更）。反向发布同样做上一条的基线前置检查（作用于中文侧）。
+3. **发布**：先 `python tools/publish_auto.py --dry-run` 预览方向与变更，确认后运行 `python tools/publish_auto.py` 检查并发布。统一入口把缓存、`EPUB/`、OneDrive 三份副本分别与 `manifest.json` 基线比对，判断改动只出现在哪一处，再调用对应的底层流程：缓存有未发布修改走流程 B，`EPUB/` 有改动走流程 C，OneDrive 的 `.epub` 与 `pull-state.tsv` 不一致（外部更新）走流程 A。**同一本书**两侧都有改动、或 OneDrive 与本地对同一本书都有改动时不猜方向，直接报错并用 `--from cache|epub|onedrive` 指定以哪一侧为准（以 `EPUB/` 或 OneDrive 为准去覆盖缓存必须显式加 `--overwrite-cache`）。`--force` 需配合 `--from` 才有意义。
+4. **底层单方向流程**（统一入口内部调用；只改了一处、方向明确时也可直接运行）：
+   - 流程 B（缓存为准）：`python tools/publish.py --dry-run` 预览变更，确认后运行 `python tools/publish.py`。脚本会对比 `manifest.json` 只处理被改动的书籍：中文变更只把发生变更的文件写入 `EPUB/`（含删除传播），中日两侧分别打包并上传到 OneDrive（每本一个 `.epub`），上传后同步更新 `pull-state.tsv` 避免下次拉取重复解压。发布成功后自动更新清单。`--sync-only` 只同步 `EPUB/` 不打包上传。发布前做基线前置检查：本次处理范围内某一侧在缓存里有书、而清单基线里该侧一条记录都没有时直接报错并给出 `manifest.py --update-books` 重建命令（`--force` 跳过该检查），避免把整侧当成「全部新增」重新打包上传。
+   - 流程 C（`EPUB/` 为准，仅当直接改了 `EPUB/` 时）：`python tools/publish_epub.py --dry-run` 预览，确认后运行 `python tools/publish_epub.py`。对比 `manifest.json` 只处理 `EPUB/` 中变化的（中文）书：从 `EPUB/` 打包 `.epub` 上传到 OneDrive，并把变化文件增量覆盖回缓存（含删除传播），成功后更新清单与 `pull-state.tsv`。默认会跳过缓存中仍有未发布修改的冲突书籍（用 `--overwrite-cache` 强制覆盖）。运行前务必 `--dry-run` 确认变更范围（按字节哈希比较，换行差异也会算变更；归档目录因换行转换产生的差异由统一入口额外警告）。反向发布同样做上一条的基线前置检查（作用于中文侧）。
+   - 流程 A（OneDrive 为准）：`./tools/pull.ps1 -SyncToEpub`，只解压 OneDrive 中变化的书并同步 `EPUB/`，不打包上传。
 5. 检查 `git status`、变更文件数、`git diff --stat`，并抽查文本 diff。
 6. 初始设置或全量重建 `EPUB/` 时，运行 `./tools/pull.ps1` 后执行 `python tools/publish.py --force --no-upload`（`--force` 时 `EPUB/` 按整本全量重建）；不要直接解包 OneDrive 的 `.epub` 到 `EPUB/`。
 
@@ -77,7 +80,7 @@
 编辑回流规则：
 
 - 只在 `.cache/` 中编辑。直接修改 `EPUB/` 不会同步回 OneDrive，因为 `publish.py` 只读取 `.cache/`。
-- 若确实直接改了 `EPUB/`，必须用 `python tools/publish_epub.py`（反向发布，流程 4）回流：它从 `EPUB/` 打包上传 OneDrive 并把变化文件增量覆盖回缓存。运行前先 `--dry-run`；默认跳过缓存中仍有未发布修改的冲突书，用 `--overwrite-cache` 才强制覆盖。不得用其他方式把 `EPUB/` 改动直接塞回缓存。
+- 若确实直接改了 `EPUB/`，必须用 `python tools/publish_epub.py`（反向发布，流程 4）回流，或直接运行统一入口 `python tools/publish_auto.py`（检测到只有 `EPUB/` 有改动时会自动走该流程）：它从 `EPUB/` 打包上传 OneDrive 并把变化文件增量覆盖回缓存。运行前先 `--dry-run`；默认跳过缓存中仍有未发布修改的冲突书，用 `--overwrite-cache` 才强制覆盖。不得用其他方式把 `EPUB/` 改动直接塞回缓存。
 - 不得直接修改 OneDrive 中的 `.epub`。若已修改，切勿在发布前运行 `pull.ps1`，否则 OneDrive 的改动会被当作新基线拉入 `.cache/`，覆盖缓存中的编辑。
 - `.cache/` 中的改动必须经 `publish.py` 才会同步到 `EPUB/` 和 OneDrive；中文书籍发布只写入发生变更的文件，缓存中已删除的文件也会从 `EPUB/` 删除（`--force` 时才整本全量重建）。发布后中文缓存与 `EPUB/` 逐字节一致、日文缓存与对应 OneDrive EPUB 解包内容逐字节一致，均属预期行为。
 - `.cache/` 可丢弃：删除后运行 `./tools/pull.ps1` 即可完整重建。
@@ -144,7 +147,7 @@
 
 ### 工具与记录的边界
 
-`tools/` 只放**会反复使用**的流程工具：拉取、解包、规范化、对齐检查、审计、打包发布，以及新书导入管线（`pull.ps1`、`normalize_paired.py`／`normalize_single.py`、`check_alignment.py`／`check_translation_spec.py`／`check_note_order.py`、`epub_audit.py`、`bw_preprocess.py`、`merge_bw_pages.py`、`publish.py`／`publish_epub.py` 等）。判断标准只有一条：**这个动作会不会在后续新拉取或新导入的书籍上再次发生？**
+`tools/` 只放**会反复使用**的流程工具：拉取、解包、规范化、对齐检查、审计、打包发布，以及新书导入管线（`pull.ps1`、`normalize_paired.py`／`normalize_single.py`、`check_alignment.py`／`check_translation_spec.py`／`check_note_order.py`、`epub_audit.py`、`bw_preprocess.py`、`merge_bw_pages.py`、`publish_auto.py`／`publish.py`／`publish_epub.py` 等）。判断标准只有一条：**这个动作会不会在后续新拉取或新导入的书籍上再次发生？**
 
 一次性的内容修订**不新增复用工具，也不保留其临时脚本与映射数据**，改完即删，只把结论落盘：
 

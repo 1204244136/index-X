@@ -114,16 +114,20 @@ python tools/normalize_paired.py
 
 ### 阶段 6：发布
 ```
-缓存改动 → publish.py（增量同步 + 打包 + 上传）→ EPUB/ + OneDrive
+publish_auto.py（判别改动位置，选择方向）
+  ├─ 缓存有改动     → publish.py（增量同步 + 打包 + 上传）      → EPUB/ + OneDrive
+  ├─ EPUB/ 有改动   → publish_epub.py（打包 + 上传 + 覆盖缓存） → OneDrive + 缓存
+  └─ OneDrive 有外部更新 → pull.ps1 -SyncToEpub（解压 + 同步）   → 缓存 + EPUB/
 ```
-- **工具**：`publish.py`
-- **职责**：检测缓存变更，只处理变化的书籍和文件
+- **入口**：`publish_auto.py`（日常只需这一条命令）
+- **工具**：`publish.py`（缓存为准）、`publish_epub.py`（归档为准）、`pull.ps1 -SyncToEpub`（OneDrive 为准）
+- **职责**：与 `manifest.json` 基线比对，判断改动只出现在哪一处，再调用对应工具；只处理变化的书籍和文件
 - **流程**：
   1. 对比 `manifest.json` 检测变更
   2. 中文变更增量写入 `EPUB/`（含删除传播）
   3. 打包为 `.epub`（输出到 `.cache/epub-work/packed-epubs/`）
   4. 上传到 OneDrive 并更新 `pull-state.tsv`
-- **反向流程**：若直接修改了 `EPUB/`，用 `publish_epub.py` 回流到 OneDrive 和缓存
+- **反向流程**：若直接修改了 `EPUB/`，用 `publish_epub.py` 回流到 OneDrive 和缓存；统一入口会自动选中这个方向
 
 ### 特殊流程：交稿文件处理
 ```
@@ -240,7 +244,30 @@ python tools/migrate_heading_breaks.py --apply
 - 缓存中的改动必须经 `publish.py` 才会同步到 `EPUB/` 和 OneDrive。发布后中文缓存与 `EPUB/` 逐字节一致属预期行为。
 - `.cache/` 可丢弃：删除后运行 `./tools/pull.ps1` 即可完整重建。
 
-### 三种常用工作流（均增量处理，不做全量写入）
+### 统一发布入口（日常只需这一条命令）
+
+```powershell
+python tools/publish_auto.py --dry-run   # 预览方向、书籍与文件差异
+python tools/publish_auto.py             # 检查并发布
+```
+
+把缓存、`EPUB/`、OneDrive 三份副本分别与 `manifest.json` 基线比对，判断改动只出现在哪一处，
+再调用对应的底层流程工具，因此不必自己记住三条命令。判定口径：
+
+- 只有缓存有未发布修改 -> 流程 B；只有 `EPUB/` 有改动 -> 流程 C；两侧改动属于**不同书**时两个方向都执行。
+- **同一本书**在缓存与 `EPUB/` 两侧都有改动，或 OneDrive 的 `.epub` 被外部更新而本地对同一本书也有未发布修改时，**不猜方向**：直接报错并列出冲突书，用 `--from cache`、`--from epub --overwrite-cache` 或 `--from onedrive --overwrite-cache` 明确以哪一侧为准。
+- OneDrive 的 `.epub` 与 `pull-state.tsv` 不一致（外部更新）时按流程 A 拉回；`--from cache` / `--from epub` 显式指定本地方向时不隐式拉取，只提示。
+- 各流程原有门禁全部保留：`publish.py` 的严格对齐检查、`publish_epub.py` 的缓存未发布修改冲突跳过、清单基线整侧缺失检查。
+- `EPUB/` 相对基线只差换行符时额外警告：归档检出时的 CRLF/LF 转换不是真实编辑，先 `git restore EPUB/` 再重跑。
+
+参数：`--cache` / `--epub`、`--from auto|cache|epub|onedrive`、`--side`、`--pattern`、`--only-books`、
+`--dry-run`、`--no-upload`、`--force`（需配合 `--from`）、`--overwrite-cache`、
+`--chinese-onedrive` / `--japanese-onedrive`。退出码 1 表示被阻塞或发布失败；
+`--dry-run` 只预览，不写入任何副本，也不触发严格对齐检查。
+
+下面三条是统一入口内部调用的底层流程，需要单方向重做或排查时仍可单独运行。
+
+### 底层流程 A/B/C（均增量处理，不做全量写入）
 
 **流程 A：OneDrive 已有外部变更 → 拉回缓存并写进 `EPUB/`**
 
@@ -307,6 +334,9 @@ python tools/publish.py --dry-run    # 预览变更
 python tools/publish.py              # 执行发布
 ```
 
+> 日常改用统一入口 `python tools/publish_auto.py` 即可自动选中本流程；只有需要单方向强制执行时
+> 才直接调用 `publish.py`（例如 `--force` 全量重建、`--sync-only` 只同步 `EPUB/`）。
+
 对比 `manifest.json` 检测自上次拉取以来哪些文件被修改、新增或删除，只处理受影响的书籍：
 
 1. **重新打包**受影响的书籍为 `.epub`（输出到 `.cache/epub-work/packed-epubs/`）；打包失败不会改动 `EPUB/`
@@ -346,6 +376,9 @@ python tools/manifest.py --cache .cache/epub-work --update-books @keys
 python tools/publish_epub.py --dry-run    # 预览变更
 python tools/publish_epub.py              # 执行反向发布
 ```
+
+> 日常改用统一入口 `python tools/publish_auto.py` 即可自动选中本流程（检测到 `EPUB/` 有改动时）；
+> 直接调用 `publish_epub.py` 适用于强制方向或排查的场景。
 
 与 `publish.py` 方向相反：检测 `EPUB/` 相对 `manifest.json` 的变化（新增/修改/删除），只处理受影响的中文书，逐本：
 
