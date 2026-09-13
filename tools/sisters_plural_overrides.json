@@ -1,0 +1,1973 @@
+{
+  "note": "日文「妹達（シスターズ）」单复数判定 → 中文汉字写法（妹妹／妹妹们）的逐处改写明细。规则：单数指代、或复数但带数量·集合修饰 → 「妹妹」；其余复数 → 「妹妹们」；注音两侧一律 Sisters。条目以「中文文件基名 + 行号 + 第几处」定位，行号随缓存重建或行结构变动可能失效——失效条目由 fix_sisters_plural.py 预检拦截（整次不写盘并报异常），须按判定规则重建后再跑。依据与统计见 docs/maintenance-records/sisters-plural-number-ruling-2026-09-12.md",
+  "entries": [
+    {
+      "file": "S1_01-01_Prologue.xhtml",
+      "line": 79,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_03-03_Chapter2.xhtml",
+      "line": 521,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_03-03_Chapter2.xhtml",
+      "line": 562,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_03-03_Chapter2.xhtml",
+      "line": 719,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_03-03_Chapter2.xhtml",
+      "line": 725,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_03-03_Chapter2.xhtml",
+      "line": 805,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_03-03_Chapter2.xhtml",
+      "line": 854,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_03-03_Chapter2.xhtml",
+      "line": 863,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_03-03_Chapter2.xhtml",
+      "line": 891,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_03-03_Chapter2.xhtml",
+      "line": 893,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_03-03_Chapter2.xhtml",
+      "line": 899,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_03-03_Chapter2.xhtml",
+      "line": 903,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_03-03_Chapter2.xhtml",
+      "line": 911,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_03-03_Chapter2.xhtml",
+      "line": 996,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_03-04_Chapter3.xhtml",
+      "line": 35,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_03-04_Chapter3.xhtml",
+      "line": 39,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_03-04_Chapter3.xhtml",
+      "line": 40,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_03-04_Chapter3.xhtml",
+      "line": 92,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_03-04_Chapter3.xhtml",
+      "line": 178,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_03-04_Chapter3.xhtml",
+      "line": 235,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_03-04_Chapter3.xhtml",
+      "line": 239,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_03-04_Chapter3.xhtml",
+      "line": 259,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_03-04_Chapter3.xhtml",
+      "line": 372,
+      "occ": 2,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 2
+    },
+    {
+      "file": "S1_03-04_Chapter3.xhtml",
+      "line": 398,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_03-04_Chapter3.xhtml",
+      "line": 493,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_03-04_Chapter3.xhtml",
+      "line": 503,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_03-04_Chapter3.xhtml",
+      "line": 528,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_03-04_Chapter3.xhtml",
+      "line": 533,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_03-04_Chapter3.xhtml",
+      "line": 534,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_03-05_Chapter4.xhtml",
+      "line": 92,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_03-05_Chapter4.xhtml",
+      "line": 631,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_03-05_Chapter4.xhtml",
+      "line": 709,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_03-05_Chapter4.xhtml",
+      "line": 715,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_03-05_Chapter4.xhtml",
+      "line": 761,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_03-05_Chapter4.xhtml",
+      "line": 814,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_03-05_Chapter4.xhtml",
+      "line": 834,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 2
+    },
+    {
+      "file": "S1_03-05_Chapter4.xhtml",
+      "line": 834,
+      "occ": 2,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 2
+    },
+    {
+      "file": "S1_03-06_Epilogue.xhtml",
+      "line": 73,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_03-06_Epilogue.xhtml",
+      "line": 78,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 2
+    },
+    {
+      "file": "S1_03-06_Epilogue.xhtml",
+      "line": 78,
+      "occ": 2,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 2
+    },
+    {
+      "file": "S1_03-06_Epilogue.xhtml",
+      "line": 84,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_03-06_Epilogue.xhtml",
+      "line": 87,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 2
+    },
+    {
+      "file": "S1_03-06_Epilogue.xhtml",
+      "line": 87,
+      "occ": 2,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 2
+    },
+    {
+      "file": "S1_05-02_Chapter1.xhtml",
+      "line": 55,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_05-02_Chapter1.xhtml",
+      "line": 106,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 3
+    },
+    {
+      "file": "S1_05-02_Chapter1.xhtml",
+      "line": 106,
+      "occ": 2,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 3
+    },
+    {
+      "file": "S1_05-02_Chapter1.xhtml",
+      "line": 106,
+      "occ": 3,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 3
+    },
+    {
+      "file": "S1_05-02_Chapter1.xhtml",
+      "line": 121,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_05-02_Chapter1.xhtml",
+      "line": 126,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_05-02_Chapter1.xhtml",
+      "line": 133,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 2
+    },
+    {
+      "file": "S1_05-02_Chapter1.xhtml",
+      "line": 133,
+      "occ": 2,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 2
+    },
+    {
+      "file": "S1_05-02_Chapter1.xhtml",
+      "line": 134,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_05-02_Chapter1.xhtml",
+      "line": 135,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_05-02_Chapter1.xhtml",
+      "line": 270,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_05-02_Chapter1.xhtml",
+      "line": 344,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_05-02_Chapter1.xhtml",
+      "line": 346,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 2
+    },
+    {
+      "file": "S1_05-02_Chapter1.xhtml",
+      "line": 346,
+      "occ": 2,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 2
+    },
+    {
+      "file": "S1_05-02_Chapter1.xhtml",
+      "line": 347,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 2
+    },
+    {
+      "file": "S1_05-02_Chapter1.xhtml",
+      "line": 347,
+      "occ": 2,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 2
+    },
+    {
+      "file": "S1_05-02_Chapter1.xhtml",
+      "line": 349,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_05-02_Chapter1.xhtml",
+      "line": 350,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_05-02_Chapter1.xhtml",
+      "line": 375,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_05-02_Chapter1.xhtml",
+      "line": 399,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_05-02_Chapter1.xhtml",
+      "line": 421,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_05-02_Chapter1.xhtml",
+      "line": 440,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_05-02_Chapter1.xhtml",
+      "line": 447,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_05-02_Chapter1.xhtml",
+      "line": 502,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_05-03_Chapter2.xhtml",
+      "line": 236,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_05-04_Chapter3.xhtml",
+      "line": 37,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_05-04_Chapter3.xhtml",
+      "line": 44,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_05-04_Chapter3.xhtml",
+      "line": 46,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_05-04_Chapter3.xhtml",
+      "line": 53,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 2
+    },
+    {
+      "file": "S1_05-04_Chapter3.xhtml",
+      "line": 72,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_05-04_Chapter3.xhtml",
+      "line": 73,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_05-04_Chapter3.xhtml",
+      "line": 78,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_05-04_Chapter3.xhtml",
+      "line": 108,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 2
+    },
+    {
+      "file": "S1_05-04_Chapter3.xhtml",
+      "line": 108,
+      "occ": 2,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 2
+    },
+    {
+      "file": "S1_05-04_Chapter3.xhtml",
+      "line": 109,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_05-04_Chapter3.xhtml",
+      "line": 122,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 2
+    },
+    {
+      "file": "S1_05-04_Chapter3.xhtml",
+      "line": 127,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_05-04_Chapter3.xhtml",
+      "line": 142,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 2
+    },
+    {
+      "file": "S1_05-04_Chapter3.xhtml",
+      "line": 142,
+      "occ": 2,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 2
+    },
+    {
+      "file": "S1_05-04_Chapter3.xhtml",
+      "line": 144,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 2
+    },
+    {
+      "file": "S1_05-04_Chapter3.xhtml",
+      "line": 144,
+      "occ": 2,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 2
+    },
+    {
+      "file": "S1_05-04_Chapter3.xhtml",
+      "line": 157,
+      "occ": 2,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 2
+    },
+    {
+      "file": "S1_05-04_Chapter3.xhtml",
+      "line": 178,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_05-04_Chapter3.xhtml",
+      "line": 226,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_05-04_Chapter3.xhtml",
+      "line": 228,
+      "occ": 2,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 2
+    },
+    {
+      "file": "S1_05-04_Chapter3.xhtml",
+      "line": 229,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 3
+    },
+    {
+      "file": "S1_05-04_Chapter3.xhtml",
+      "line": 229,
+      "occ": 2,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 3
+    },
+    {
+      "file": "S1_05-04_Chapter3.xhtml",
+      "line": 229,
+      "occ": 3,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 3
+    },
+    {
+      "file": "S1_05-04_Chapter3.xhtml",
+      "line": 314,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_05-04_Chapter3.xhtml",
+      "line": 414,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_05-04_Chapter3.xhtml",
+      "line": 492,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_05-04_Chapter3.xhtml",
+      "line": 496,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_05-04_Chapter3.xhtml",
+      "line": 575,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_05-04_Chapter3.xhtml",
+      "line": 807,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_05-06_Epilogue.xhtml",
+      "line": 40,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_06-08_Epilogue.xhtml",
+      "line": 102,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_06-08_Epilogue.xhtml",
+      "line": 103,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_08-06_Chapter3.xhtml",
+      "line": 308,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_08-07_Between_the_Lines3.xhtml",
+      "line": 47,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_08-07_Between_the_Lines3.xhtml",
+      "line": 48,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_08-07_Between_the_Lines3.xhtml",
+      "line": 62,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 2
+    },
+    {
+      "file": "S1_08-07_Between_the_Lines3.xhtml",
+      "line": 67,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_08-07_Between_the_Lines3.xhtml",
+      "line": 84,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 2
+    },
+    {
+      "file": "S1_08-07_Between_the_Lines3.xhtml",
+      "line": 84,
+      "occ": 2,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 2
+    },
+    {
+      "file": "S1_08-07_Between_the_Lines3.xhtml",
+      "line": 106,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_08-07_Between_the_Lines3.xhtml",
+      "line": 112,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_08-10_Epilogue.xhtml",
+      "line": 57,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_10-03_Chapter6.xhtml",
+      "line": 621,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_10-05_Chapter7.xhtml",
+      "line": 578,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_12-02_Chapter1.xhtml",
+      "line": 94,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_12-02_Chapter1.xhtml",
+      "line": 99,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_12-02_Chapter1.xhtml",
+      "line": 124,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_12-02_Chapter1.xhtml",
+      "line": 125,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_12-02_Chapter1.xhtml",
+      "line": 137,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_12-02_Chapter1.xhtml",
+      "line": 177,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_12-04_Chapter2.xhtml",
+      "line": 385,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_12-04_Chapter2.xhtml",
+      "line": 470,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_12-06_Chapter3.xhtml",
+      "line": 87,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_12-06_Chapter3.xhtml",
+      "line": 380,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_12-08_Chapter4.xhtml",
+      "line": 81,
+      "occ": 2,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 2
+    },
+    {
+      "file": "S1_12-08_Chapter4.xhtml",
+      "line": 247,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_12-10_Chapter5.xhtml",
+      "line": 369,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_13-01_Chapter6.xhtml",
+      "line": 524,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_13-01_Chapter6.xhtml",
+      "line": 616,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 2
+    },
+    {
+      "file": "S1_13-01_Chapter6.xhtml",
+      "line": 636,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_13-01_Chapter6.xhtml",
+      "line": 680,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_13-03_Chapter7.xhtml",
+      "line": 136,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_13-05_Chapter8.xhtml",
+      "line": 232,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 2
+    },
+    {
+      "file": "S1_13-05_Chapter8.xhtml",
+      "line": 232,
+      "occ": 2,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 2
+    },
+    {
+      "file": "S1_13-05_Chapter8.xhtml",
+      "line": 386,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_13-05_Chapter8.xhtml",
+      "line": 468,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_13-05_Chapter8.xhtml",
+      "line": 542,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_13-05_Chapter8.xhtml",
+      "line": 667,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_13-06_Between_the_Lines8.xhtml",
+      "line": 31,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_13-07_Chapter9.xhtml",
+      "line": 10,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_13-07_Chapter9.xhtml",
+      "line": 24,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_13-07_Chapter9.xhtml",
+      "line": 32,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_13-07_Chapter9.xhtml",
+      "line": 34,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_13-09_Epilogue.xhtml",
+      "line": 167,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_13-09_Epilogue.xhtml",
+      "line": 237,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_14-06_Epilogue.xhtml",
+      "line": 59,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 2
+    },
+    {
+      "file": "S1_14-06_Epilogue.xhtml",
+      "line": 59,
+      "occ": 2,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 2
+    },
+    {
+      "file": "S1_16-02_Chapter1.xhtml",
+      "line": 31,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_16-10_Chapter5.xhtml",
+      "line": 317,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_16-12_Afterwords.xhtml",
+      "line": 11,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_17-02_Chapter1.xhtml",
+      "line": 230,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_17-08_Chapter4.xhtml",
+      "line": 74,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_17-08_Chapter4.xhtml",
+      "line": 88,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_17-08_Chapter4.xhtml",
+      "line": 92,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_18-13_Chapter13.xhtml",
+      "line": 6,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_18-13_Chapter13.xhtml",
+      "line": 28,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_18-13_Chapter13.xhtml",
+      "line": 33,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_18-21_Chapter21.xhtml",
+      "line": 7,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_22-07_Chapter3.xhtml",
+      "line": 161,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_22-07_Chapter3.xhtml",
+      "line": 182,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_22-07_Chapter3.xhtml",
+      "line": 183,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_22-07_Chapter3.xhtml",
+      "line": 188,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_22-07_Chapter3.xhtml",
+      "line": 208,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_22-07_Chapter3.xhtml",
+      "line": 247,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_22-07_Chapter3.xhtml",
+      "line": 249,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_22-07_Chapter3.xhtml",
+      "line": 250,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_22-07_Chapter3.xhtml",
+      "line": 254,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_22-07_Chapter3.xhtml",
+      "line": 259,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_22-07_Chapter3.xhtml",
+      "line": 268,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_22-07_Chapter3.xhtml",
+      "line": 269,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_22-07_Chapter3.xhtml",
+      "line": 509,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_22-07_Chapter3.xhtml",
+      "line": 558,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_22-07_Chapter3.xhtml",
+      "line": 595,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_22-07_Chapter3.xhtml",
+      "line": 598,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_22-07_Chapter3.xhtml",
+      "line": 605,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_22-07_Chapter3.xhtml",
+      "line": 653,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_22-07_Chapter3.xhtml",
+      "line": 689,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_22-07_Chapter3.xhtml",
+      "line": 895,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_22-08_Between_the_Lines3.xhtml",
+      "line": 10,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_22-08_Between_the_Lines3.xhtml",
+      "line": 21,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_22-08_Between_the_Lines3.xhtml",
+      "line": 34,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_22-09_Chapter4.xhtml",
+      "line": 391,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_22-10_After_the_Epilogue.xhtml",
+      "line": 228,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_23-04_Between_the_Lines4.xhtml",
+      "line": 21,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_23-04_Between_the_Lines4.xhtml",
+      "line": 24,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_24-02_Chapter9.xhtml",
+      "line": 332,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_24-08_Chapter12.xhtml",
+      "line": 542,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_24-09_Epilogue.xhtml",
+      "line": 212,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S1_24-09_Epilogue.xhtml",
+      "line": 221,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S2_01-02_Chapter1.xhtml",
+      "line": 327,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S2_01-02_Chapter1.xhtml",
+      "line": 329,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S2_01-08_Chapter4.xhtml",
+      "line": 609,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S2_06-03_Chapter5.xhtml",
+      "line": 397,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S2_06-07_Chapter7.xhtml",
+      "line": 285,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S2_06-07_Chapter7.xhtml",
+      "line": 455,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S2_06-07_Chapter7.xhtml",
+      "line": 474,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S2_06-07_Chapter7.xhtml",
+      "line": 481,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S2_06-07_Chapter7.xhtml",
+      "line": 494,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S2_06-07_Chapter7.xhtml",
+      "line": 508,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S2_06-07_Chapter7.xhtml",
+      "line": 936,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S2_06-09_Epilogue.xhtml",
+      "line": 89,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S2_06-09_Epilogue.xhtml",
+      "line": 102,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S2_09-09_Chapter7.xhtml",
+      "line": 238,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S2_09-09_Chapter7.xhtml",
+      "line": 245,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S2_09-09_Chapter7.xhtml",
+      "line": 346,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S2_09-09_Chapter7.xhtml",
+      "line": 374,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S2_09-09_Chapter7.xhtml",
+      "line": 605,
+      "occ": 2,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 2
+    },
+    {
+      "file": "S2_10-09_Chapter16.xhtml",
+      "line": 214,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S2_12-06_Chapter3.xhtml",
+      "line": 8,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S2_19-11_Epilogue.xhtml",
+      "line": 202,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S2_20-01_Prologue.xhtml",
+      "line": 125,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S2_22-07_Chapter3.xhtml",
+      "line": 1084,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S3_01-05_Chapter2.xhtml",
+      "line": 183,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S3_01-05_Chapter2.xhtml",
+      "line": 188,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S3_01-05_Chapter2.xhtml",
+      "line": 194,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S3_01-05_Chapter2.xhtml",
+      "line": 276,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S3_01-07_Chapter3.xhtml",
+      "line": 141,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S3_01-07_Chapter3.xhtml",
+      "line": 288,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S3_04-03_Chapter1.xhtml",
+      "line": 387,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S3_04-07_Chapter3.xhtml",
+      "line": 1087,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S3_04-07_Chapter3.xhtml",
+      "line": 1113,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S3_04-08_Between_the_Lines3.xhtml",
+      "line": 15,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S3_04-09_Chapter4.xhtml",
+      "line": 7,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S3_04-09_Chapter4.xhtml",
+      "line": 103,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S3_04-09_Chapter4.xhtml",
+      "line": 373,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S3_04-09_Chapter4.xhtml",
+      "line": 656,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S3_04-10_Epilogue.xhtml",
+      "line": 75,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S3_04-10_Epilogue.xhtml",
+      "line": 76,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S3_04-10_Epilogue.xhtml",
+      "line": 80,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S3_04-10_Epilogue.xhtml",
+      "line": 96,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S3_05-06_Between_the_Lines3.xhtml",
+      "line": 22,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S3_05-09_Chapter4.xhtml",
+      "line": 1015,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S3_07-01_Prologue.xhtml",
+      "line": 64,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S3_07-01_Prologue.xhtml",
+      "line": 77,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S3_07-02_Chapter1.xhtml",
+      "line": 208,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S3_07-02_Chapter1.xhtml",
+      "line": 216,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S3_07-02_Chapter1.xhtml",
+      "line": 230,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S3_07-02_Chapter1.xhtml",
+      "line": 272,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S3_07-02_Chapter1.xhtml",
+      "line": 281,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S3_07-02_Chapter1.xhtml",
+      "line": 285,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S3_07-02_Chapter1.xhtml",
+      "line": 287,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S3_07-02_Chapter1.xhtml",
+      "line": 292,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S3_07-04_Chapter2.xhtml",
+      "line": 213,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S3_07-12_Afterwords.xhtml",
+      "line": 18,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S3_08-04_Chapter1.xhtml",
+      "line": 407,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S3_08-04_Chapter1.xhtml",
+      "line": 410,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S3_08-08_Chapter3.xhtml",
+      "line": 143,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    },
+    {
+      "file": "S3_08-08_Chapter3.xhtml",
+      "line": 149,
+      "occ": 1,
+      "old": "妹妹<rt>Sisters</rt>",
+      "new": "妹妹们<rt>Sisters</rt>",
+      "jp_occurrences": 1
+    }
+  ]
+}
