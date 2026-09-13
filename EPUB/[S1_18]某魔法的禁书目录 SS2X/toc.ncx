@@ -49,7 +49,7 @@
     </navPoint>
     <navPoint id="num_7" playOrder="7">
       <navLabel>
-        <text>第四章 七人之中第七名的实力 三月、第三个星期五</text>
+        <text>第四章 七人之中第七位的实力 三月、第三个星期五</text>
       </navLabel>
       <content src="OEBPS/Text/S1_18-04_Chapter4.xhtml"/>
     </navPoint>
