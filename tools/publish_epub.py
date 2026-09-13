@@ -38,9 +38,11 @@ from manifest import compute_hash, load_manifest, save_manifest  # noqa: E402
 from package_cache_epubs import package_book, PackageError  # noqa: E402
 from sync_core import (  # noqa: E402
     ONEDRIVE_DEFAULTS,
+    SIDE_LABELS,
     STATUS_LABELS,
     UNIX_TO_DOTNET_TICKS_OFFSET,
     detect_changes,
+    missing_baseline_sides,
     sync_file_changes,
     update_manifest_for_book,
     update_pull_state_record,
@@ -230,6 +232,27 @@ def main() -> int:
     elif args.force:
         print("警告: --force 模式，忽略已有清单，按整本全量重建缓存。")
         baseline = {}
+
+    # Pre-flight: 中文基线整侧缺失时 EPUB/ 会被判成全部新增，反向发布会把整侧
+    # 重新打包上传。先报错。
+    if baseline:
+        missing = missing_baseline_sides(cache, baseline, ("chinese-text",))
+        if missing:
+            labels = "、".join(f"{SIDE_LABELS[m]}（{m}）" for m in missing)
+            print(
+                f"错误: 清单基线缺少整侧记录: {labels}。"
+                "EPUB/ 会被判为全部新增，反向发布将重传整侧。",
+                file=sys.stderr,
+            )
+            print(
+                "  修复: python tools/manifest.py --cache "
+                f"{cache} --update-books "
+                + " ".join(f"{m}/<书籍名>" for m in missing)
+                + "（确认缓存已是已发布状态后再重建基线）",
+                file=sys.stderr,
+            )
+            print("  若确实要整本重发，使用 --force。", file=sys.stderr)
+            return 1
 
     # Scan EPUB/ as the current (user-edited) state.
     print("扫描 EPUB/ ...")

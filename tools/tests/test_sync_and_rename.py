@@ -12,7 +12,11 @@ sys.path.insert(0, str(TOOLS))
 from fix_empty_placeholders import apply_candidate  # noqa: E402
 from publish import alignment_preflight, publish_book  # noqa: E402
 from publish_epub import publish_book_reverse  # noqa: E402
-from sync_core import detect_changes, sync_file_changes  # noqa: E402
+from sync_core import (  # noqa: E402
+    detect_changes,
+    missing_baseline_sides,
+    sync_file_changes,
+)
 
 
 class SyncCoreTests(unittest.TestCase):
@@ -117,6 +121,26 @@ class SyncCoreTests(unittest.TestCase):
             )
             self.assertTrue(ok, message)
             self.assertFalse((epub / "[S1_01]旧书").exists())
+
+
+    def test_missing_baseline_side_is_detected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cache = Path(tmp)
+            (cache / "chinese-text" / "book").mkdir(parents=True)
+            (cache / "japanese-text" / "book").mkdir(parents=True)
+            baseline = {"chinese-text/book/a.txt": "h"}
+            self.assertEqual(missing_baseline_sides(cache, baseline), ["japanese-text"])
+            self.assertEqual(
+                missing_baseline_sides(cache, baseline, ("chinese-text",)), []
+            )
+
+    def test_missing_baseline_side_ignores_side_without_books(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cache = Path(tmp)
+            (cache / "chinese-text" / "book").mkdir(parents=True)
+            (cache / "japanese-text").mkdir()
+            baseline = {"chinese-text/book/a.txt": "h"}
+            self.assertEqual(missing_baseline_sides(cache, baseline), [])
 
 
 class PlaceholderTests(unittest.TestCase):

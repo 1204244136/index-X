@@ -39,9 +39,12 @@ from manifest import scan_cache, load_manifest, save_manifest  # noqa: E402
 from package_cache_epubs import package_book, PackageError  # noqa: E402
 from sync_core import (  # noqa: E402
     ONEDRIVE_DEFAULTS,
+    SIDE_DIRECTORIES,
+    SIDE_LABELS,
     STATUS_LABELS,
     UNIX_TO_DOTNET_TICKS_OFFSET,
     detect_changes,
+    missing_baseline_sides,
     remove_pull_state_record,
     sync_file_changes,
     update_manifest_for_book,
@@ -300,6 +303,28 @@ def main() -> int:
     elif args.force:
         print("警告: --force 模式，忽略已有清单，处理所有文件。")
         baseline = {}
+
+    # Pre-flight: 某一侧基线整侧缺失时，该侧所有文件都会被判成 added，发布会把
+    # 整侧重新打包并重传。先报错，避免这种静默的全量重发。
+    if baseline:
+        scope = SIDE_DIRECTORIES if args.side == "all" else (SIDE_MAP[args.side],)
+        missing = missing_baseline_sides(cache, baseline, scope)
+        if missing:
+            labels = "、".join(f"{SIDE_LABELS[m]}（{m}）" for m in missing)
+            print(
+                f"错误: 清单基线缺少整侧记录: {labels}。"
+                "该侧全部文件都会被判为新增，发布将重新打包并重传整侧。",
+                file=sys.stderr,
+            )
+            print(
+                "  修复: python tools/manifest.py --cache "
+                f"{cache} --update-books "
+                + " ".join(f"{m}/<书籍名>" for m in missing)
+                + "（确认该侧缓存已是已发布状态后再重建基线）",
+                file=sys.stderr,
+            )
+            print("  若确实要整侧重发，使用 --force。", file=sys.stderr)
+            return 1
 
     # Scan current cache state
     print("扫描缓存...")

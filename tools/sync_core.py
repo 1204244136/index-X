@@ -14,6 +14,9 @@ ONEDRIVE_DEFAULTS = {
     "japanese-text": Path.home() / "OneDrive" / "某系列" / "日文原文",
 }
 
+SIDE_DIRECTORIES = ("chinese-text", "japanese-text")
+SIDE_LABELS = {"chinese-text": "中文", "japanese-text": "日文"}
+
 
 def update_pull_state_record(
     cache_root: Path, book_key: str, mtime_ticks: int, size: int
@@ -62,6 +65,30 @@ def parse_book_path(rel_path: str) -> tuple[str, str, str] | None:
     if len(parts) < 3:
         return None
     return parts[0], parts[1], parts[2]
+
+
+def missing_baseline_sides(
+    cache_root: Path,
+    baseline: dict[str, str],
+    sides: tuple[str, ...] = SIDE_DIRECTORIES,
+) -> list[str]:
+    """返回「缓存里有书、基线里却一条记录都没有」的侧。
+
+    某一侧的清单记录整侧缺失时，`detect_changes` 会把该侧每个文件都判成
+    `added`——发布于是把整侧重新打包并重传，内容却没有任何变化。该状态意味着
+    基线从未建立，或缓存被 `pull.ps1` 之外的途径整批替换过，必须在发布前修复
+    （用 `python tools/manifest.py --update-books` 重建该侧基线）。
+    缓存里本来就没有书的侧不算缺失。
+    """
+    missing: list[str] = []
+    for side in sides:
+        root = cache_root / side
+        if not root.is_dir() or not any(p.is_dir() for p in root.iterdir()):
+            continue
+        prefix = side + "/"
+        if not any(path.startswith(prefix) for path in baseline):
+            missing.append(side)
+    return missing
 
 
 def detect_changes(
