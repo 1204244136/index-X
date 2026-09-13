@@ -216,3 +216,9 @@
 
 一次性扫描脚本（不提交）：`.cache/scan_side.py`、`scan_side2.py`、`scan_side3.py`、`scan_side4.py`、`scan_side5.py`；
 原始报告：`.cache/side-report.md`（逐点对照 816 条）、`side-report2.md`（按卷配对分布）、`side-report3.md`（写法拆分与异常词形）、`side-report4.md`（繁体残留与 EPUB 交叉验证）、`side-report5.md`（按卷原文写法）。
+
+## 工具去向
+
+本次新增的一次性工具与映射表（`tools/fix_side_term_variants.py`、`tools/check_side_terms.py`、`tools/side_term_overrides.json`）已按 AGENTS.md「工具与记录的边界」删除：单一术语统一属一次性修订，不保留复用工具与映射数据。改动内容见提交 `e013f486`——`git show e013f486` 可逐条复核，`git revert e013f486` 可整体回退。
+
+术语判定口径（分层规则与 `<rt>` 剥离要求）保留在 `AGENTS.md`「Agent 操作边界」；本文的检索统计、分层分析与结论即为长期依据。附「检索脚本」一节列出的 `.cache/` 一次性脚本不提交、可随时删除。

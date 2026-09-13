@@ -20,9 +20,4 @@
 
 ## 复现
 
-```powershell
-python tools/fix_screen_term_variants.py            # 预览
-python tools/fix_screen_term_variants.py --apply    # 写入中文缓存
-```
-
-工具用法见 `tools/README.md`「荧幕术语异译统一（写缓存）」。
+本轮的定位脚本与统一工具（`tools/fix_screen_term_variants.py`）已按 AGENTS.md「工具与记录的边界」删除：单一术语统一属一次性修订，不保留复用工具与映射数据。改动内容见提交 `8bca1055`——`git show 8bca1055` 可逐条复核，`git revert 8bca1055` 可整体回退。

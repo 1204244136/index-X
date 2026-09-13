@@ -112,11 +112,8 @@
 
 ## 复现
 
-```powershell
-# 逐处判定与清单（只读，输出 .cache/sisters-scan/）
-python tools/fix_sisters_plural.py            # 预览
-python tools/fix_sisters_plural.py --apply    # 写入中文缓存
-python tools/check_translation_spec.py        # P10 = 0 即注音未被破坏
-```
+本轮的定位脚本、统一工具与映射表（`tools/fix_sisters_plural.py`、`tools/check_bw_ruby_anchor.py`、`tools/sisters_plural_overrides.json`）已按 AGENTS.md「工具与记录的边界」删除：单一术语的单复数判定属一次性修订，不保留复用工具与映射数据。改动内容见提交 `56b74369`——`git show 56b74369` 可逐条复核，`git revert 56b74369` 可整体回退。
+
+注音未被破坏仍可用 `python tools/check_translation_spec.py` 复核（P10 = 0）。判定「某处原文是否带特殊注音」必须回 BookWalker 分页源核对（缓存区日文 XHTML 是预处理产物），该口径已固化到 `AGENTS.md`。
 
 改动只落在 `.cache/epub-work/chinese-text`（唯一编辑点），需经 `python tools/publish.py` 才会同步到 `EPUB/` 与 OneDrive。
