@@ -330,6 +330,16 @@ python tools/publish.py              # 执行发布
 
 若需要让全部中文缓存与项目 `EPUB/`、以及两侧 OneDrive 打包文件重新建立一致，使用 `python tools/publish.py --force`；该命令会重建并覆盖全部书籍的 EPUB，执行前应先确认缓存就是预期发布源。
 
+**基线前置检查**：发布前会核对清单基线是否覆盖本次处理范围内的每一侧。若某一侧在缓存里有书、基线里却**一条记录都没有**，该侧全部文件都会被判成「新增」，发布会把整侧重新打包并重传——而内容其实没变（实测曾出现 87 本日文、约 696 MB 的整侧重传）。这种情况直接报错并给出修复命令，不再静默全量重发：
+
+```powershell
+# 确认该侧缓存就是已发布状态后，只重建该侧基线（另一侧不受影响）
+$keys = Get-ChildItem -LiteralPath .cache/epub-work/japanese-text -Directory | ForEach-Object { "japanese-text/$($_.Name)" }
+python tools/manifest.py --cache .cache/epub-work --update-books @keys
+```
+
+用 `--side` 或 `--only-books` 把该侧排除在本次范围外即可正常发布；确认确实要整侧重发时用 `--force`（该模式跳过此项检查）。日文侧基线只在 `pull.ps1` 重新解压某书、或 `manifest.json` 不存在时全量扫描才会建立，所以缓存若被 `pull.ps1` 之外的途径整批替换过，基线会静默缺失——这条检查即为此设。
+
 ### 4. 反向发布（`EPUB/` -> OneDrive + 缓存，流程 C）
 
 ```powershell
@@ -354,6 +364,8 @@ python tools/publish_epub.py              # 执行反向发布
 - `--dry-run`：仅预览，不执行任何操作
 
 **冲突保护**：默认情况下，若某个文件在缓存中的副本与清单基线不一致（即缓存里还有未发布的修改），反向覆盖会丢失这些修改，本工具会列出冲突并跳过该书，不打包、不上传、不更新清单；确认要覆盖时用 `--overwrite-cache`，或先用 `publish.py` 把缓存修改发布掉。
+
+**基线前置检查**：与 `publish.py` 同一项检查，作用于中文侧——中文基线整侧缺失时 `EPUB/` 会被判成「全部新增」并触发整侧重传，此时直接报错并给出重建命令（`--force` 跳过该检查）。
 
 > 注意：`manifest.json` 以缓存为基线且按字节哈希比较，`EPUB/` 与缓存/基线的换行符差异（如 LF vs CRLF）也会被当作变更。反向发布前请先 `--dry-run` 确认变更范围符合预期。
 
@@ -717,7 +729,7 @@ python tools/sync_pb_tags.py --apply     # 写盘
 **注意**：
 
 - 中日缓存根目录写死为 `.cache/epub-work/{japanese-text,chinese-text}`，无 `--cache` 参数。
-- 写盘时按 `"\n".join(lines) + "\n"` 重写整个文件，会把该文件的换行统一成 LF（原为 CRLF 的文件在 `git diff` 中会整文件变动）；方向与 `.gitattributes` 的规范化一致。
+- 写盘时按行重写**整个文件**（`"\n".join(lines) + "\n"`），且 Python 默认文本模式把 `\n` 落成平台换行——在 Windows 上即 CRLF。仓库 `.gitattributes` 对 `*.xhtml` 声明 `text eol=lf` 并在入库时归一化，所以行尾差异不进入 `git diff` 与提交内容（`git status` 只会提示「CRLF will be replaced by LF」）；但请留意它是整文件重写，不是逐处替换。
 - 行号配对以中日行数对齐为前提：行数不一致只会报「越界」而不会误改，但**两侧行数相同、内容错位**的情形本工具发现不了，需另跑 `check_alignment.py` 把关。
 - 只改中文缓存；产物需经 `publish.py` 才会同步到 `EPUB/` 与 OneDrive。
 
