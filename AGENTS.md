@@ -10,7 +10,7 @@
 - `docs/`：项目说明和需要长期保留的维护记录。
 - `tools/`：可重复使用、经过验证的维护工具。
 - `.github/workflows/`：发布和自动化流程。
-- `.cache/`：本地缓存、解包工作区、规范化文本、审计 JSON/报告；不得提交，可随时删除并用 `./tools/pull.ps1` 重建。
+- `.cache/`：本地只读参考副本、解包缓存、规范化文本、审计 JSON/报告；agent 不得把内容写入这里，工具同步可以更新该副本。不得提交，可随时删除并用 `./tools/pull.ps1` 重建。
 
 ## 系列编号与表头命名
 
@@ -60,29 +60,34 @@
 ## 维护流程
 
 1. **拉取**：运行 `./tools/pull.ps1` 将 OneDrive 中的中文和日文 EPUB 解压到缓存。脚本用 `.cache/epub-work/pull-state.tsv` 记录每个 EPUB 的修改时间与大小，只解压发生变化的书籍；首次运行会全部解压一次以建立状态。`-Force` 全量重新解压，`-WhatIf` 预览，`-Side chinese/japanese` 只处理一侧，`-SyncToEpub` 解压后把变更文件增量同步到 `EPUB/`（OneDrive 侧改动回流仓库的流程）。解压后只为被解压的书籍更新哈希清单 `manifest.json`，未变化书籍的清单基线保持不变。
-2. **修改**：使用 agent 或手动修改缓存中的文件；中日成对批量处理运行 `python tools/normalize_paired.py`，只处理明确指定的单文件/目录运行 `python tools/normalize_single.py`。随后用 `python tools/check_alignment.py` 检查模板符合性与中日对齐，最后运行 `python tools/epub_audit.py` 审计。
-3. **发布**：先 `python tools/publish_auto.py --dry-run` 预览方向与变更，确认后运行 `python tools/publish_auto.py` 检查并发布。统一入口把缓存、`EPUB/`、OneDrive 三份副本分别与 `manifest.json` 基线比对，判断改动只出现在哪一处，再调用对应的底层流程：缓存有未发布修改走流程 B，`EPUB/` 有改动走流程 C，OneDrive 的 `.epub` 与 `pull-state.tsv` 不一致（外部更新）走流程 A。**同一本书**两侧都有改动、或 OneDrive 与本地对同一本书都有改动时不猜方向，直接报错并用 `--from cache|epub|onedrive` 指定以哪一侧为准（以 `EPUB/` 或 OneDrive 为准去覆盖缓存必须显式加 `--overwrite-cache`）。`--force` 需配合 `--from` 才有意义。
+2. **写入前同步**：先运行 `python tools/publish_auto.py`，把 `.cache/`、`EPUB/`、OneDrive 的最新内容同步完整。需要预览时可用 `python tools/publish_auto.py --dry-run`。
+3. **修改**：`.cache/` 仅用于读取、核对和审计，不得直接编辑、规范化、修复或删除其中文件。所有内容写入 `EPUB/`；中日成对批量处理运行 `python tools/normalize_paired.py --cache <临时目录>` 等入口时，也必须把最终结果写入 `EPUB/`，不得把 `.cache/epub-work` 当作写入目标。只处理明确指定的单文件/目录时可运行 `python tools/normalize_single.py`，目标必须位于 `EPUB/`。
 4. **底层单方向流程**（统一入口内部调用；只改了一处、方向明确时也可直接运行）：
    - 流程 B（缓存为准）：`python tools/publish.py --dry-run` 预览变更，确认后运行 `python tools/publish.py`。脚本会对比 `manifest.json` 只处理被改动的书籍：中文变更只把发生变更的文件写入 `EPUB/`（含删除传播），中日两侧分别打包并上传到 OneDrive（每本一个 `.epub`），上传后同步更新 `pull-state.tsv` 避免下次拉取重复解压。发布成功后自动更新清单。`--sync-only` 只同步 `EPUB/` 不打包上传。发布前做基线前置检查：本次处理范围内某一侧在缓存里有书、而清单基线里该侧一条记录都没有时直接报错并给出 `manifest.py --update-books` 重建命令（`--force` 跳过该检查），避免把整侧当成「全部新增」重新打包上传。
-   - 流程 C（`EPUB/` 为准，仅当直接改了 `EPUB/` 时）：`python tools/publish_epub.py --dry-run` 预览，确认后运行 `python tools/publish_epub.py`。对比 `manifest.json` 只处理 `EPUB/` 中变化的（中文）书：从 `EPUB/` 打包 `.epub` 上传到 OneDrive，并把变化文件增量覆盖回缓存（含删除传播），成功后更新清单与 `pull-state.tsv`。默认会跳过缓存中仍有未发布修改的冲突书籍（用 `--overwrite-cache` 强制覆盖）。运行前务必 `--dry-run` 确认变更范围（按字节哈希比较，换行差异也会算变更；归档目录因换行转换产生的差异由统一入口额外警告）。反向发布同样做上一条的基线前置检查（作用于中文侧）。
+   - 流程 C（`EPUB/` 为准，内容写入后的默认方向）：`python tools/publish_epub.py --dry-run` 预览，确认后运行 `python tools/publish_epub.py`。对比 `manifest.json` 只处理 `EPUB/` 中变化的（中文）书：从 `EPUB/` 打包 `.epub` 上传到 OneDrive，并把变化文件增量覆盖回缓存（含删除传播），成功后更新清单与 `pull-state.tsv`。默认会跳过缓存中仍有未发布修改的冲突书籍（用 `--overwrite-cache` 强制覆盖）。运行前务必 `--dry-run` 确认变更范围（按字节哈希比较，换行差异也会算变更；归档目录因换行转换产生的差异由统一入口额外警告）。反向发布同样做上一条的基线前置检查（作用于中文侧）。
    - 流程 A（OneDrive 为准）：`./tools/pull.ps1 -SyncToEpub`，只解压 OneDrive 中变化的书并同步 `EPUB/`，不打包上传。
-5. 检查 `git status`、变更文件数、`git diff --stat`，并抽查文本 diff。
-6. 初始设置或全量重建 `EPUB/` 时，运行 `./tools/pull.ps1` 后执行 `python tools/publish.py --force --no-upload`（`--force` 时 `EPUB/` 按整本全量重建）；不要直接解包 OneDrive 的 `.epub` 到 `EPUB/`。
+5. **写入后同步**：内容写入 `EPUB/` 后立即再次运行 `python tools/publish_auto.py`，把本次写入发布到 OneDrive，并让缓存与清单回到最新一致状态。
+6. **冲突处理**：若同步报冲突，先逐书、逐文件分析差异，再尝试自行合并。两边都有需要保留的有用改动时，必须把双方最新有效内容合并到 `EPUB/` 后重新同步，不得直接选边覆盖。只有依据内容、文件差异和项目规约仍无法可靠判断时，才询问用户。
+7. **校验与提交**：检查 `git status`、变更文件数、`git diff --stat` 并抽查文本 diff；确认写入范围和同步结果后，直接提交本次任务相关的写入。只暂存本任务涉及的文件，不纳入用户已有改动或其他任务改动，不 push。
+8. 初始设置或全量重建 `EPUB/` 时，运行 `./tools/pull.ps1` 后执行 `python tools/publish.py --force --no-upload`（`--force` 时 `EPUB/` 按整本全量重建）；不要直接解包 OneDrive 的 `.epub` 到 `EPUB/`。
 
 ## 数据流与编辑边界
 
 三处中文文件副本各有固定角色，不得互相替代：
 
-- `.cache/`（解包工作区，不提交）：唯一编辑点。`pull.ps1` 从 OneDrive 解包生成，可随时删除重建。
-- `EPUB/`（解包归档，提交到 git）：版本化归档基线，diff 友好；由 `publish.py` 从 `.cache/` 同步覆盖，或经 `publish_epub.py` 反向发布（`EPUB/` -> OneDrive + 缓存）。它不是日常编辑点。
+- `.cache/`（只读参考副本，不提交）：仅供读取、核对和审计；`pull.ps1` 或同步工具可以更新它，但 agent 不得直接写入。可随时删除重建。
+- `EPUB/`（解包归档，提交到 git）：唯一内容写入落点，同时是与 OneDrive 同步的版本化归档基线；内容写入后经 `publish_epub.py` 或统一入口 `publish_auto.py` 发布到 OneDrive 并更新缓存。
 - OneDrive（打包 `.epub`，外部）：分发与阅读副本；既是 `pull.ps1` 的输入，也是 `publish.py` / `publish_epub.py` 的上传目标。
 
 编辑回流规则：
 
-- 只在 `.cache/` 中编辑。直接修改 `EPUB/` 不会同步回 OneDrive，因为 `publish.py` 只读取 `.cache/`。
-- 若确实直接改了 `EPUB/`，必须用 `python tools/publish_epub.py`（反向发布，流程 4）回流，或直接运行统一入口 `python tools/publish_auto.py`（检测到只有 `EPUB/` 有改动时会自动走该流程）：它从 `EPUB/` 打包上传 OneDrive 并把变化文件增量覆盖回缓存。运行前先 `--dry-run`；默认跳过缓存中仍有未发布修改的冲突书，用 `--overwrite-cache` 才强制覆盖。不得用其他方式把 `EPUB/` 改动直接塞回缓存。
-- 不得直接修改 OneDrive 中的 `.epub`。若已修改，切勿在发布前运行 `pull.ps1`，否则 OneDrive 的改动会被当作新基线拉入 `.cache/`，覆盖缓存中的编辑。
-- `.cache/` 中的改动必须经 `publish.py` 才会同步到 `EPUB/` 和 OneDrive；中文书籍发布只写入发生变更的文件，缓存中已删除的文件也会从 `EPUB/` 删除（`--force` 时才整本全量重建）。发布后中文缓存与 `EPUB/` 逐字节一致、日文缓存与对应 OneDrive EPUB 解包内容逐字节一致，均属预期行为。
+- `.cache/` 中的文件仅用于读取；所有内容写入落到与用户及线上仓库同步的 `EPUB/`。
+- 内容写入前运行一次 `python tools/publish_auto.py`，确保本地三份副本都在最新状态。
+- `.cache/` 只读。不得在其中编辑、规范化、修复、删除文件，也不得把临时处理结果写在那里。
+- 所有写入只落到 `EPUB/`。写入完成后立即再次运行 `python tools/publish_auto.py`；它从 `EPUB/` 打包上传 OneDrive，并把变化文件增量覆盖回缓存。只有需要单方向强制处理时才直接运行底层流程。
+- 同步冲突必须逐项分析并优先自行合并；两边都有有用改动时，把双方最新有效内容合并到 `EPUB/` 后再同步。无法可靠判断时才询问用户，不得默认用 `--from` 或 `--overwrite-cache` 选边丢改动。
+- 不得直接修改 OneDrive 中的 `.epub`。若已修改，切勿在发布前运行 `pull.ps1`，否则 OneDrive 的改动会被当作新基线拉入 `.cache/`，覆盖尚未发布的本地内容。
+- `EPUB/` 的改动必须经 `publish_auto.py`（或冲突分析明确后的 `publish_epub.py`）回流到 OneDrive 和缓存。发布后中文缓存与 `EPUB/` 逐字节一致、日文缓存与对应 OneDrive EPUB 解包内容逐字节一致，均属预期行为。
 - `.cache/` 可丢弃：删除后运行 `./tools/pull.ps1` 即可完整重建。
 
 ## 版本控制边界
@@ -95,10 +100,10 @@
 
 ## Agent 操作边界
 
-- 默认只修改工作区，不自动 commit、push、创建 release 或删除档案。
+- 默认只修改工作区，不自动 push、创建 release 或删除档案；但按「数据流与编辑边界」完成内容写入并成功同步后，必须直接提交本次任务相关变更，不得跳过 commit。
 - 不回滚用户已有修改；发现同步覆盖或大批量变化时先报告统计和代表性 diff。
 - 修改同步、审计或发布工具后，至少运行一次对应命令验证；失败项必须在结果中明确列出。
-- `pull.ps1` 刚生成的日文缓存是 EPUB 原样解压快照；运行 `normalize_paired.py`、`normalize_single.py` 或人工校对后，`.cache/epub-work` 是可发布工作源，允许按本规约折叠日文排版包装。需要查看未规范化原文时，应重新从 OneDrive 拉取到临时缓存，不得把规范化后的工作源误称为原样快照。
+- `.cache/epub-work` 始终是只读参考副本；运行 `normalize_paired.py`、`normalize_single.py` 或人工校对时，实际写入只落到 `EPUB/`。需要查看未规范化原文时，读取同步后的缓存或重新从 OneDrive 拉取到临时缓存，不得把规范化后的工作源误称为原样快照。
 - 缓存区内相对应的中文与日文 XHTML 应保持行数对齐，以便按行定位内容；检查发现不对齐时，必须明确报告涉及文件及其行数差异。可用 `python tools/check_alignment.py` 检查。
 - 中日两侧带正文的 XHTML 使用统一固定行模板（绝对行号，不随内容有无偏移）：
   1. `<?xml …?>`
@@ -126,7 +131,7 @@
 - 中日配对只要求 h1/h2 外层标题所在物理行对应；两侧实际存在的标题层数可以不同，不得为凑层数添加空 span。NCX/nav 中已有标题保持不变；若工具从标题重新生成纯文本标签，应按 `heading-main`、`heading-subtitle`、`heading-code` 顺序以单个空格连接非空层，禁止无分隔粘连。
 - 历史批量迁移使用 `python tools/migrate_heading_breaks.py` 预览，确认后加 `--apply` 写入。工具只接受已审计的二层/三层 span、直接副标题、`sup` 编码层和单层尾随换行结构；任一未知结构都会在写入前停止，禁止扩大为宽松猜测。
 - `check_alignment.py --strict` 全局阻断 h1/h2 内嵌 `<br/>`、`div`/`p` 块级包装以及跨物理行标题。新增、重建或再次同步的 XHTML 不得重新引入；发现旧源回流时应重新运行专用迁移工具，不得临时放宽门禁。
-- 迁移仍遵循缓存编辑边界：只改 `.cache/epub-work` 中的 XHTML 和对应书籍 CSS，先核对标题分层与渲染，再用 `publish.py` 同步；不得直接批量改写 `EPUB/`。
+- 迁移遵循 EPUB 写入边界：内容写入只改 `EPUB/` 中的 XHTML 和对应书籍 CSS，写入前后运行 `publish_auto.py` 同步；不得把 `.cache/epub-work` 当作写入目标。
 - 正文区以顶层块为行对齐原子：每条物理行只能承载一个同级正文块。禁止用 `<p>…</p><p>…</p>`、`<p>…</p><hr/>` 等方式把多个块挤入一行，也禁止把正文与 `</body>`/`</html>` 闭标签拼在同一行。若一侧一个段落对应另一侧多个段落，必须先确认语义关系，再通过删除内部段落边界真正合并为一个 `<p>`；不得只删除物理换行。无法安全合并时保留问题并交由人工决策。
 - 日文侧规范化：头部标签跨行折叠为一行；填充 `<br/>` 删除；跨行 h1/h2 折叠为单行；`<div class="start-3em/start-5em">` 容器内嵌标题按语义重建为独立 `<h1>`；p 型标题（`font-1em10/30`、裸 `<p>あとがき`、`<p>译注` 等）转为 `<h1>`；数字小节 `<p>N</p>` 转为 `<h2>`。中文侧裸 `<div>` 仅作为单块排版包装时清除标签，保留带 class 的语义容器；相邻裸开闭标签形成 `<div></div>` 时删除该空行。中文 Note 等列表型包装页中 `<p>` 包裹 `<li>` 时剥离 `<p>`，保留 `<li>`。
 - 篇首插图并入第 3 行头部行（body 开头，图片在标题前）；正文中的图片正常占正文行，两侧图片行必须一一对应（`gaiji`/`height-2em` 内嵌字形不计；`S2_14-02/04/07/10/13` 为已确认的文本化图片例外，配对检查整体豁免）。SP 等稳定名称篇目（S1_25-*）日文侧补 `<h1>`（标题取自日文原版目录）；日文缺失的 h2 小节补在对应空行位置。
