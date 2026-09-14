@@ -77,13 +77,24 @@ def scan_epub(epub_root: Path) -> dict[str, str]:
 def find_conflicts(
     book_key: str,
     cache_current: dict[str, str],
+    epub_current: dict[str, str],
     baseline: dict[str, str],
 ) -> list[str]:
-    """List every cache-vs-baseline divergence for one book."""
+    """List cache edits that would be lost by an EPUB/ -> cache overwrite.
+
+    A cache-vs-baseline change is not a conflict when EPUB/ already contains
+    the same bytes. That happens when a one-off fix was applied to both copies
+    without advancing manifest.json first.
+    """
     prefix = book_key + "/"
     cache_book = {
         path.removeprefix(prefix): digest
         for path, digest in cache_current.items()
+        if path.startswith(prefix)
+    }
+    epub_book = {
+        path.removeprefix(prefix): digest
+        for path, digest in epub_current.items()
         if path.startswith(prefix)
     }
     baseline_book = {
@@ -96,6 +107,8 @@ def find_conflicts(
         cache_hash = cache_book.get(file_in_book)
         baseline_hash = baseline_book.get(file_in_book)
         if cache_hash == baseline_hash:
+            continue
+        if cache_hash == epub_book.get(file_in_book):
             continue
         if baseline_hash is None:
             status = "added"
@@ -206,7 +219,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--overwrite-cache",
         action="store_true",
-        help="allow overwriting cache files that have un-published edits",
+        help="allow overwriting cache edits that EPUB/ does not already contain",
     )
     parser.add_argument(
         "--only-books",
@@ -315,7 +328,9 @@ def main() -> int:
     conflicted: dict[str, list[str]] = {}
     if not args.force and not args.overwrite_cache:
         for book_key in sorted(changes):
-            conflicts = find_conflicts(book_key, cache_current, baseline)
+            conflicts = find_conflicts(
+                book_key, cache_current, current, baseline
+            )
             if conflicts:
                 conflicted[book_key] = conflicts
         if conflicted:

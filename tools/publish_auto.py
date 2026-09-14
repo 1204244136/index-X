@@ -11,7 +11,8 @@
 因此日常只需记住这一条命令。判定口径：
 
 - 只有一侧有改动时直接按该侧方向发布；两侧改动的书互不相交时两个方向都会执行。
-- 同一本书在缓存与 EPUB/ 两侧都有改动时默认停止，不猜测方向；用 --from 决定以哪一侧为准。
+- 同一本书两侧都有改动但缓存内容已经包含在 EPUB/ 中时，按流程 C 推进清单；
+  缓存仍有 EPUB/ 未包含的内容时默认停止，用 --from 决定以哪一侧为准。
 - OneDrive 的 .epub 与 pull-state.tsv 不一致（外部更新）时报告并提示流程 A；
   若这本同时还存在缓存未发布修改，视为副本已分叉，同样停止并交人工决定。
 
@@ -36,7 +37,7 @@ TOOLS_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(TOOLS_DIR))
 
 from manifest import load_manifest, scan_cache  # noqa: E402
-from publish_epub import scan_epub  # noqa: E402
+from publish_epub import find_conflicts, scan_epub  # noqa: E402
 from sync_core import (  # noqa: E402
     ONEDRIVE_DEFAULTS,
     PULL_STATE_FILENAME,
@@ -94,7 +95,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--overwrite-cache",
         action="store_true",
-        help="流程 C / 流程 A 允许覆盖缓存中尚未发布的修改",
+        help="流程 C / 流程 A 允许覆盖缓存中目标侧未包含的修改",
     )
     parser.add_argument(
         "--chinese-onedrive", type=Path, default=ONEDRIVE_DEFAULTS["chinese-text"]
@@ -441,7 +442,17 @@ def main(argv: list[str] | None = None) -> int:
     }
 
     drifted, drift_notes = detect_onedrive_drift(cache, source_dirs, args)
-    conflicts = sorted(set(cache_changes) & set(epub_changes))
+    overlap = set(cache_changes) & set(epub_changes)
+    conflict_details = {
+        book_key: find_conflicts(
+            book_key, cache_current, epub_current, baseline
+        )
+        for book_key in overlap
+    }
+    conflicts = sorted(
+        book_key for book_key, details in conflict_details.items() if details
+    )
+    converged = sorted(overlap - set(conflicts))
     # 分叉：OneDrive 的 .epub 被外部更新，而本地对同一本书也有未发布改动
     diverged = sorted(set(drifted) & (set(cache_changes) | set(epub_changes)))
 
@@ -454,6 +465,13 @@ def main(argv: list[str] | None = None) -> int:
             print(f"    {describe_book(book_key)}")
     else:
         print("  OneDrive 有外部更新（pull-state 不一致）：无")
+    if converged:
+        print(
+            f"  同一本书两侧都有改动，但缓存侧内容已包含在 EPUB/ 中："
+            f"{len(converged)} 本"
+        )
+        for book_key in converged:
+            print(f"    {describe_book(book_key)}")
     for note in drift_notes:
         print(f"  提示: {note}")
 
@@ -469,7 +487,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"    …（另有 {len(suspects) - 5} 个）")
         print("  若只是换行转换，请先还原归档（git restore EPUB/）再重跑。")
 
-    # 冲突：同一本书两侧都有改动，方向必须由用户决定
+    # 冲突：同一本书两侧都有改动，且缓存侧仍有 EPUB/ 未包含的内容。
     if conflicts and args.source == "auto":
         report_conflict(conflicts, cache_changes, epub_changes)
         return 1
@@ -511,10 +529,12 @@ def main(argv: list[str] | None = None) -> int:
     # --from epub ：冲突书只走流程 C（EPUB/ 覆盖缓存，需 --overwrite-cache）。
     cache_books = set(cache_changes)
     epub_books = set(epub_changes)
-    if args.source == "cache":
-        epub_books -= set(conflicts)
-    elif args.source == "epub":
-        cache_books -= set(conflicts)
+    if args.source in ("auto", "epub"):
+        # 重叠书中没有缓存独占内容时，流程 C 只会复制相同内容或补入
+        # EPUB/ 独有改动，不会丢失缓存修改。
+        cache_books -= overlap
+    elif args.source == "cache":
+        epub_books -= overlap
     elif args.source == "onedrive":
         if cache_books or epub_books:
             print(

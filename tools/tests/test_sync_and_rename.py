@@ -195,13 +195,44 @@ class SyncCoreTests(unittest.TestCase):
                 f"{book_key}/deleted.txt": "baseline hash",
             }
 
-            conflicts = find_conflicts(book_key, scan_cache(cache), baseline)
+            epub_current = {
+                f"{book_key}/deleted.txt": "baseline hash",
+            }
+            conflicts = find_conflicts(
+                book_key, scan_cache(cache), epub_current, baseline
+            )
 
             report = "\n".join(conflicts)
             self.assertIn("added.txt", report)
             self.assertIn("modified.txt", report)
             self.assertIn("deleted.txt", report)
             self.assertNotIn("unchanged.txt", report)
+
+    def test_reverse_conflict_ignores_cache_edits_already_in_epub(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            cache = root / "cache"
+            book_key = "chinese-text/book"
+            book = cache / book_key
+            book.mkdir(parents=True)
+            modified = book / "modified.txt"
+            added = book / "added.txt"
+            modified.write_text("same edit", encoding="utf-8")
+            added.write_text("same addition", encoding="utf-8")
+            baseline = {
+                f"{book_key}/modified.txt": "baseline hash",
+                f"{book_key}/deleted.txt": "baseline hash",
+            }
+            epub_current = {
+                f"{book_key}/modified.txt": compute_hash(modified),
+                f"{book_key}/added.txt": compute_hash(added),
+            }
+
+            conflicts = find_conflicts(
+                book_key, scan_cache(cache), epub_current, baseline
+            )
+
+            self.assertEqual(conflicts, [])
 
 
 class PlaceholderTests(unittest.TestCase):

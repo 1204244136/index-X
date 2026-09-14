@@ -159,6 +159,28 @@ class RoutingTests(ToolTestCase):
         self.assertIn("--from cache", output)
         self.assertIn("--from epub", output)
 
+    def test_identical_changes_on_both_sides_route_to_flow_c(self):
+        self.fx.write_book(self.fx.cache, "chinese-text", BOOK_CN, "<p>双方同改</p>")
+        self.fx.write_book(self.fx.epub, "chinese-text", BOOK_CN, "<p>双方同改</p>")
+        code, calls, output = self.run_tool()
+        self.assertEqual(code, 0)
+        self.assertEqual([self.tool_name(cmd) for cmd in calls], ["publish_epub.py"])
+        self.assertNotIn("--overwrite-cache", calls[0])
+        self.assertIn("缓存侧内容已包含在 EPUB/ 中", output)
+
+    def test_identical_overlap_with_epub_only_file_routes_to_flow_c(self):
+        self.fx.write_book(self.fx.cache, "chinese-text", BOOK_CN, "<p>双方同改</p>")
+        epub_book = self.fx.write_book(
+            self.fx.epub, "chinese-text", BOOK_CN, "<p>双方同改</p>"
+        )
+        (epub_book / "OEBPS" / "b.xhtml").write_text(
+            "<p>仅归档新增</p>", encoding="utf-8"
+        )
+        code, calls, _ = self.run_tool()
+        self.assertEqual(code, 0)
+        self.assertEqual([self.tool_name(cmd) for cmd in calls], ["publish_epub.py"])
+        self.assertNotIn("--overwrite-cache", calls[0])
+
     def test_from_cache_resolves_conflict_to_flow_b(self):
         self.fx.write_book(self.fx.cache, "chinese-text", BOOK_CN, "<p>缓存版</p>")
         self.fx.write_book(self.fx.epub, "chinese-text", BOOK_CN, "<p>归档版</p>")
@@ -166,6 +188,18 @@ class RoutingTests(ToolTestCase):
         self.assertEqual(code, 0)
         self.assertEqual([self.tool_name(cmd) for cmd in calls], ["publish.py"])
         self.assertIn("以缓存为准", output)
+
+    def test_from_cache_resolves_identical_overlap_only_once(self):
+        self.fx.write_book(self.fx.cache, "chinese-text", BOOK_CN, "<p>双方同改</p>")
+        epub_book = self.fx.write_book(
+            self.fx.epub, "chinese-text", BOOK_CN, "<p>双方同改</p>"
+        )
+        (epub_book / "OEBPS" / "b.xhtml").write_text(
+            "<p>仅归档新增</p>", encoding="utf-8"
+        )
+        code, calls, _ = self.run_tool("--from", "cache")
+        self.assertEqual(code, 0)
+        self.assertEqual([self.tool_name(cmd) for cmd in calls], ["publish.py"])
 
     def test_from_epub_requires_overwrite_cache_for_conflicts(self):
         self.fx.write_book(self.fx.cache, "chinese-text", BOOK_CN, "<p>缓存版</p>")
@@ -324,6 +358,15 @@ class IntegrationTests(unittest.TestCase):
 
         cached = self.fx.cache / "chinese-text" / BOOK_CN / "OEBPS" / "a.xhtml"
         self.assertEqual(cached.read_text(encoding="utf-8"), "<p>归档新</p>")
+
+    def test_identical_changes_advance_manifest_through_real_tools(self):
+        cache_target = self.fx.cache / "chinese-text" / BOOK_CN / "OEBPS" / "a.xhtml"
+        epub_target = self.fx.epub / BOOK_CN / "OEBPS" / "a.xhtml"
+        cache_target.write_text("<p>双方同改</p>", encoding="utf-8")
+        epub_target.write_text("<p>双方同改</p>", encoding="utf-8")
+
+        self.assertEqual(self.run_tool("--side", "chinese", "--no-upload"), 0)
+        self.assertEqual(self.run_tool("--side", "chinese", "--no-upload"), 0)
 
 
 if __name__ == "__main__":
