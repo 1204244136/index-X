@@ -185,8 +185,18 @@ def main() -> int:
     args = ap.parse_args()
     cache = args.cache
 
-    cn_books = {book_id(d.name): d for d in (cache / "chinese-text").iterdir() if d.is_dir()}
-    jp_books = {book_id(d.name): d for d in (cache / "japanese-text").iterdir() if d.is_dir()}
+    cn_root = cache / "chinese-text"
+    jp_root = cache / "japanese-text"
+    cn_books = (
+        {book_id(d.name): d for d in cn_root.iterdir() if d.is_dir()}
+        if cn_root.is_dir()
+        else {}
+    )
+    jp_books = (
+        {book_id(d.name): d for d in jp_root.iterdir() if d.is_dir()}
+        if jp_root.is_dir()
+        else {}
+    )
     pairs = []
     for cn_id, cn_dir in sorted(cn_books.items()):
         if cn_id is None or cn_id in NON_PAIR_WORK_IDS:

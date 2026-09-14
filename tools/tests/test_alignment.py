@@ -92,6 +92,22 @@ class AlignmentTests(unittest.TestCase):
             ):
                 self.assertEqual(check_alignment.main(), 1)
 
+    def test_missing_japanese_cache_side_does_not_crash(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cache = Path(tmp)
+            cn = cache / "chinese-text" / "[S1_01]中" / "OEBPS" / "Text"
+            cn.mkdir(parents=True)
+            (cn / "S1_01-01_Chapter1.xhtml").write_text(
+                xhtml(["<p>一</p>"]), encoding="utf-8"
+            )
+            with patch.object(
+                sys,
+                "argv",
+                ["check_alignment.py", "--cache", str(cache), "--strict"],
+            ):
+                self.assertEqual(check_alignment.main(), 0)
+            self.assertTrue((cache / "alignment-check.tsv").is_file())
+
     def test_zero_content_sequence_is_a_strict_error(self):
         with tempfile.TemporaryDirectory() as tmp:
             cache = Path(tmp)

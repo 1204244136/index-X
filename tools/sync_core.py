@@ -5,6 +5,8 @@ from __future__ import annotations
 import shutil
 from pathlib import Path
 
+from path_safety import is_extract_artifact
+
 
 STATUS_LABELS = {"added": "新增", "modified": "修改", "deleted": "删除"}
 PULL_STATE_FILENAME = "pull-state.tsv"
@@ -137,7 +139,9 @@ def sync_file_changes(
             shutil.rmtree(destination_book_dir)
         copied = 0
         for source in source_book_dir.rglob("*"):
-            if not source.is_file() or ".extract-" in source.name:
+            if not source.is_file():
+                continue
+            if is_extract_artifact(source.relative_to(source_book_dir)):
                 continue
             relative = source.relative_to(source_book_dir)
             destination = destination_book_dir / relative

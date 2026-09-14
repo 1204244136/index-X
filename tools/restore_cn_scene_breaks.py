@@ -72,8 +72,8 @@ def plan(japanese: list[str], chinese: list[str]) -> tuple[list[str] | None, str
     """返回（补回后的中文行, 拒绝原因）。成功时原因为空串。"""
     jb = japanese[body_start(japanese) + 1:]
     cb = chinese[body_start(chinese) + 1:]
-    jk = [line_kind(l) for l in jb]
-    ck = [line_kind(l) for l in cb]
+    jk = [line_kind(line) for line in jb]
+    ck = [line_kind(line) for line in cb]
     j_no_br = [k for k in jk if k != "br"]
     c_no_br = [k for k in ck if k != "br"]
     if j_no_br != c_no_br:
@@ -85,7 +85,7 @@ def plan(japanese: list[str], chinese: list[str]) -> tuple[list[str] | None, str
     if cn_br > jp_br:
         return None, f"中文侧已有 {cn_br} 个 br，多于日文侧 {jp_br}，不擅自搬动"
     rebuilt = ["<br/>" if k == "br" else None for k in jk]
-    it = iter([l for l, k in zip(cb, ck) if k != "br"])
+    it = iter([line for line, kind in zip(cb, ck) if kind != "br"])
     merged = [next(it) if x is None else x for x in rebuilt]
     if list(it):
         return None, "中文内容行未被完全消费（内部不一致）"

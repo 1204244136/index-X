@@ -16,6 +16,8 @@ import json
 from datetime import datetime
 from pathlib import Path
 
+from path_safety import is_extract_artifact
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_CACHE = REPO_ROOT / ".cache" / "epub-work"
 MANIFEST_FILENAME = "manifest.json"
@@ -40,7 +42,7 @@ def scan_cache(cache_root: Path) -> dict[str, str]:
         for path in side_root.rglob("*"):
             if not path.is_file():
                 continue
-            if ".extract-" in path.name:
+            if is_extract_artifact(path, root=side_root):
                 continue
             rel = path.relative_to(cache_root).as_posix()
             files[rel] = compute_hash(path)
@@ -87,10 +89,12 @@ def update_manifest_books(
         book_dir = cache_root / key
         if not book_dir.is_dir():
             continue
+        if is_extract_artifact(book_dir, root=cache_root):
+            continue
         for path in book_dir.rglob("*"):
             if not path.is_file():
                 continue
-            if ".extract-" in path.name:
+            if is_extract_artifact(path, root=cache_root):
                 continue
             rel = path.relative_to(cache_root).as_posix()
             files[rel] = compute_hash(path)

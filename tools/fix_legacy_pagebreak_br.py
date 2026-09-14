@@ -46,7 +46,7 @@ def read_lines(path: Path) -> list[str]:
 
 
 def body_start(lines: list[str]) -> int:
-    return next((i for i, l in enumerate(lines) if BODY_RE.search(l)), 2)
+    return next((i for i, line in enumerate(lines) if BODY_RE.search(line)), 2)
 
 
 def _br_run(lines: list[str], start: int) -> list[int]:

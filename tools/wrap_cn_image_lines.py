@@ -30,7 +30,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from alignment_rules import NON_PAIR_WORK_IDS, pairing_header_of  # noqa: E402
-from epub_ids import book_id, japanese_book_id  # noqa: E402
+from epub_ids import book_id  # noqa: E402
 
 IMG = re.compile(r"<img\b[^>]*/?>", re.I)
 DIV_OPEN = re.compile(r"<div\b[^>]*>", re.I)

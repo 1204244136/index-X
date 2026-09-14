@@ -110,11 +110,17 @@ def apply_label_rules(comps: list[dict]) -> list[dict]:
     - 第一个「后记」之后的成分 → 尾声。
     """
     labels = [c["label"] for c in comps]
-    first_pro = next((i for i, l in enumerate(labels) if l == "序章"), None)
+    first_pro = next(
+        (i for i, label in enumerate(labels) if label == "序章"),
+        None,
+    )
     if first_pro is not None:
         for c in comps[:first_pro]:
             c["label"] = "引子"
-    first_af = next((i for i, l in enumerate(labels) if l == "后记"), None)
+    first_af = next(
+        (i for i, label in enumerate(labels) if label == "后记"),
+        None,
+    )
     if first_af is not None:
         for c in comps[first_af + 1:]:
             c["label"] = "尾声"

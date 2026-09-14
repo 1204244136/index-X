@@ -10,8 +10,9 @@ TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 
 from fix_empty_placeholders import apply_candidate  # noqa: E402
+from manifest import compute_hash, scan_cache  # noqa: E402
 from publish import alignment_preflight, publish_book  # noqa: E402
-from publish_epub import publish_book_reverse  # noqa: E402
+from publish_epub import find_conflicts, publish_book_reverse, scan_epub  # noqa: E402
 from sync_core import (  # noqa: E402
     detect_changes,
     missing_baseline_sides,
@@ -141,6 +142,66 @@ class SyncCoreTests(unittest.TestCase):
             (cache / "japanese-text").mkdir()
             baseline = {"chinese-text/book/a.txt": "h"}
             self.assertEqual(missing_baseline_sides(cache, baseline), [])
+
+    def test_internal_extract_directories_are_ignored_by_scans_and_mirror(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            cache, epub = root / "cache", root / "epub"
+            cache_book = cache / "chinese-text" / "book"
+            epub_book = epub / "book"
+            cache_book.mkdir(parents=True)
+            epub_book.mkdir(parents=True)
+            (cache_book / "a.txt").write_text("a", encoding="utf-8")
+            (epub_book / "a.txt").write_text("a", encoding="utf-8")
+            for base, name in (
+                (cache / "chinese-text", ".extract-orphan"),
+                (cache_book, ".extract-nested"),
+                (epub, ".extract-orphan"),
+                (epub_book, ".extract-nested"),
+            ):
+                target = base / name / "OEBPS" / "leak.txt"
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text("leak", encoding="utf-8")
+
+            self.assertEqual(set(scan_cache(cache)), {"chinese-text/book/a.txt"})
+            self.assertEqual(set(scan_epub(epub)), {"chinese-text/book/a.txt"})
+
+            source, destination = root / "source", root / "destination"
+            source.mkdir()
+            (source / "a.txt").write_text("a", encoding="utf-8")
+            nested = source / ".extract-nested" / "leak.txt"
+            nested.parent.mkdir()
+            nested.write_text("leak", encoding="utf-8")
+            copied, deleted = sync_file_changes(
+                source, destination, {}, full_mirror=True
+            )
+            self.assertEqual((copied, deleted), (1, 0))
+            self.assertFalse((destination / ".extract-nested").exists())
+
+    def test_reverse_conflicts_cover_added_modified_and_deleted_cache_files(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cache = Path(tmp)
+            book_key = "chinese-text/book"
+            book = cache / book_key
+            book.mkdir(parents=True)
+            unchanged = book / "unchanged.txt"
+            modified = book / "modified.txt"
+            unchanged.write_text("same", encoding="utf-8")
+            modified.write_text("cache edit", encoding="utf-8")
+            (book / "added.txt").write_text("cache addition", encoding="utf-8")
+            baseline = {
+                f"{book_key}/unchanged.txt": compute_hash(unchanged),
+                f"{book_key}/modified.txt": "baseline hash",
+                f"{book_key}/deleted.txt": "baseline hash",
+            }
+
+            conflicts = find_conflicts(book_key, scan_cache(cache), baseline)
+
+            report = "\n".join(conflicts)
+            self.assertIn("added.txt", report)
+            self.assertIn("modified.txt", report)
+            self.assertIn("deleted.txt", report)
+            self.assertNotIn("unchanged.txt", report)
 
 
 class PlaceholderTests(unittest.TestCase):

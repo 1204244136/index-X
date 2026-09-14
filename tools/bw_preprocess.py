@@ -44,7 +44,6 @@
 from __future__ import annotations
 
 import argparse
-import difflib
 import json
 import posixpath
 import re
@@ -64,6 +63,11 @@ if sys.platform == "win32":
 
 import merge_bw_pages
 from alignment_rules import JP_WRAPPER_RE
+from path_safety import (
+    UnsafeArchivePath,
+    archive_member_destination,
+    validate_archive_member_name,
+)
 
 XHTML_SUFFIXES = (".xhtml", ".html", ".htm")
 IMAGE_SUFFIXES = (
@@ -703,7 +707,6 @@ def merge_epub_pages(
             spine_match = re.search(r"<spine\b[^>]*>(.*?)</spine>", opf_data, re.S)
             if manifest_match and spine_match:
                 manifest_content = manifest_match.group(1)
-                spine_content = spine_match.group(1)
 
                 old_id_to_unit: dict[str, str] = {}
                 manifest_lines = manifest_content.splitlines(keepends=True)
@@ -801,6 +804,11 @@ def process_epub(epub_path: Path, rules: list[dict], out_path: Path,
     stats = {"total": 0, "changed": 0, "renamed": 0,
              "renamed_xhtml": 0, "renamed_images": 0,
              "content": 0, "issues": []}
+    for info in infos:
+        try:
+            validate_archive_member_name(info.filename)
+        except UnsafeArchivePath as exc:
+            stats["issues"].append((info.filename, f"ZIP 条目路径不安全：{exc}"))
     stats["issues"].extend(epub_zip_issues(infos, entries))
     for name in entries:
         if name.lower().endswith(XHTML_SUFFIXES):
@@ -864,7 +872,10 @@ def process_epub(epub_path: Path, rules: list[dict], out_path: Path,
             shutil.rmtree(unpacked_dir)
         unpacked_dir.mkdir(parents=True, exist_ok=True)
         for name, data in entries.items():
-            dest = unpacked_dir / name
+            dest = archive_member_destination(unpacked_dir, name)
+            if name.endswith("/"):
+                dest.mkdir(parents=True, exist_ok=True)
+                continue
             dest.parent.mkdir(parents=True, exist_ok=True)
             dest.write_bytes(data)
     return stats

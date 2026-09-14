@@ -27,13 +27,11 @@
 from __future__ import annotations
 
 import argparse
-import posixpath
 import re
 import shutil
 import sys
 import zipfile
 from pathlib import Path
-import xml.etree.ElementTree as ET
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
@@ -41,8 +39,12 @@ if hasattr(sys.stdout, "reconfigure"):
 TOOLS = Path(__file__).resolve().parent
 sys.path.insert(0, str(TOOLS))
 
-import bw_preprocess
-import merge_bw_pages
+import bw_preprocess  # noqa: E402
+from path_safety import (  # noqa: E402
+    UnsafeArchivePath,
+    archive_member_destination,
+    validate_archive_member_name,
+)
 
 SPLIT_SPECS = [
     # Volume 1
@@ -100,8 +102,13 @@ def split_and_process_s5(
             continue
 
         with zipfile.ZipFile(epub_path) as zin:
-            raw_entries = {info.filename: zin.read(info.filename) for info in zin.infolist()}
-            raw_infos = {info.filename: info for info in zin.infolist()}
+            infos = zin.infolist()
+            try:
+                for info in infos:
+                    validate_archive_member_name(info.filename)
+            except UnsafeArchivePath as exc:
+                raise ValueError(f"输入 EPUB 含不安全路径 {epub_path}: {exc}") from exc
+            raw_entries = {info.filename: zin.read(info.filename) for info in infos}
 
         # 查找 OPF
         opf_name = next(n for n in raw_entries if n.lower().endswith(".opf"))
@@ -235,7 +242,7 @@ def split_and_process_s5(
             if issues:
                 print(f"  [警告] 校验问题 ({len(issues)}): {issues[:5]}")
             else:
-                print(f"  [校验通过] 契约校验 0 问题")
+                print("  [校验通过] 契约校验 0 问题")
 
             # 7. 写盘
             out_epub_path = packed_out_dir / f"[{book_id}]{clean_title}.epub"
@@ -255,7 +262,10 @@ def split_and_process_s5(
                 shutil.rmtree(unpacked_dir)
             unpacked_dir.mkdir(parents=True, exist_ok=True)
             for name, data in split_entries.items():
-                dest = unpacked_dir / name
+                dest = archive_member_destination(unpacked_dir, name)
+                if name.endswith("/"):
+                    dest.mkdir(parents=True, exist_ok=True)
+                    continue
                 dest.parent.mkdir(parents=True, exist_ok=True)
                 dest.write_bytes(data)
 

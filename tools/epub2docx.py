@@ -100,7 +100,6 @@ def rewrite_ruby(text: str) -> tuple[str, int]:
     out: list[str] = []
     count = 0
     pos = 0
-    n = len(text)
     while True:
         start = _RUBY_START.search(text, pos)
         if start is None:

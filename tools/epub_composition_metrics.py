@@ -344,11 +344,6 @@ def split_sections(raw: str, pages_per: int = 400) -> list[dict]:
     return out
 
 
-def image_anchors(raw: str) -> list[tuple[str, tuple[int, int] | None]]:
-    """按出现顺序返回成分内全部图片引用及其可用的印刷页码区间。"""
-    return [(href, page_ref_of(href)) for href in IMG_REF_RE.findall(raw)]
-
-
 def normalize_labels(rep: dict) -> None:
     """成分名规范化（与 epub_char_count 同一套规则）。
 
@@ -360,11 +355,17 @@ def normalize_labels(rep: dict) -> None:
     for c in comps:
         c["label"] = normalize_label(c["label"])
     labels = [c["label"] for c in comps]
-    first_pro = next((i for i, l in enumerate(labels) if l == "序章"), None)
+    first_pro = next(
+        (i for i, label in enumerate(labels) if label == "序章"),
+        None,
+    )
     if first_pro is not None:
         for c in comps[:first_pro]:
             c["label"] = "引子"
-    first_af = next((i for i, l in enumerate(labels) if l == "后记"), None)
+    first_af = next(
+        (i for i, label in enumerate(labels) if label == "后记"),
+        None,
+    )
     if first_af is not None:
         for c in comps[first_af + 1:]:
             c["label"] = "尾声"

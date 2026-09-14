@@ -34,8 +34,9 @@ from pathlib import Path
 
 TOOLS_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(TOOLS_DIR))
-from manifest import compute_hash, load_manifest, save_manifest  # noqa: E402
+from manifest import compute_hash, load_manifest, save_manifest, scan_cache  # noqa: E402
 from package_cache_epubs import package_book, PackageError  # noqa: E402
+from path_safety import is_extract_artifact  # noqa: E402
 from sync_core import (  # noqa: E402
     ONEDRIVE_DEFAULTS,
     SIDE_LABELS,
@@ -61,10 +62,12 @@ def scan_epub(epub_root: Path) -> dict[str, str]:
     """
     files: dict[str, str] = {}
     for book_dir in sorted(p for p in epub_root.iterdir() if p.is_dir()):
+        if is_extract_artifact(book_dir, root=epub_root):
+            continue
         for path in book_dir.rglob("*"):
             if not path.is_file():
                 continue
-            if ".extract-" in path.name:
+            if is_extract_artifact(path, root=epub_root):
                 continue
             rel = path.relative_to(epub_root).as_posix()
             files[f"chinese-text/{rel}"] = compute_hash(path)
@@ -73,23 +76,38 @@ def scan_epub(epub_root: Path) -> dict[str, str]:
 
 def find_conflicts(
     book_key: str,
-    file_changes: dict[str, str],
-    cache_root: Path,
+    cache_current: dict[str, str],
     baseline: dict[str, str],
 ) -> list[str]:
-    """List files whose cache copy has un-published edits that this flow would
-    overwrite/delete. A file is safe to overwrite only when the cache copy
-    still matches the manifest baseline (i.e. it has no un-published edits).
-    """
+    """List every cache-vs-baseline divergence for one book."""
+    prefix = book_key + "/"
+    cache_book = {
+        path.removeprefix(prefix): digest
+        for path, digest in cache_current.items()
+        if path.startswith(prefix)
+    }
+    baseline_book = {
+        path.removeprefix(prefix): digest
+        for path, digest in baseline.items()
+        if path.startswith(prefix)
+    }
     conflicts: list[str] = []
-    for file_in_book, status in file_changes.items():
-        cache_file = cache_root / book_key / file_in_book
-        if not cache_file.is_file():
+    for file_in_book in sorted(cache_book.keys() | baseline_book.keys()):
+        cache_hash = cache_book.get(file_in_book)
+        baseline_hash = baseline_book.get(file_in_book)
+        if cache_hash == baseline_hash:
             continue
-        baseline_hash = baseline.get(f"{book_key}/{file_in_book}")
-        if baseline_hash is not None and compute_hash(cache_file) == baseline_hash:
-            continue  # cache matches baseline; safe to overwrite/delete
-        suffix = "（将删除，缓存含未发布修改）" if status == "deleted" else "（将被覆盖，缓存含未发布修改）"
+        if baseline_hash is None:
+            status = "added"
+        elif cache_hash is None:
+            status = "deleted"
+        else:
+            status = "modified"
+        suffix = {
+            "added": "（缓存有未发布新增）",
+            "deleted": "（缓存有未发布删除）",
+            "modified": "（缓存有未发布修改）",
+        }[status]
         conflicts.append(f"{file_in_book} {suffix}")
     return conflicts
 
@@ -256,7 +274,9 @@ def main() -> int:
 
     # Scan EPUB/ as the current (user-edited) state.
     print("扫描 EPUB/ ...")
+    cache_current = scan_cache(cache)
     current = scan_epub(epub_root)
+    print(f"  缓存: {len(cache_current)} 个文件")
     print(f"  EPUB/: {len(current)} 个文件")
     print(f"  清单基线: {len(baseline)} 个文件")
 
@@ -295,7 +315,7 @@ def main() -> int:
     conflicted: dict[str, list[str]] = {}
     if not args.force and not args.overwrite_cache:
         for book_key in sorted(changes):
-            conflicts = find_conflicts(book_key, changes[book_key], cache, baseline)
+            conflicts = find_conflicts(book_key, cache_current, baseline)
             if conflicts:
                 conflicted[book_key] = conflicts
         if conflicted:

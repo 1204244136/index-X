@@ -162,7 +162,7 @@ class ImageTitlePageMergeTests(unittest.TestCase):
             attach_nav_titles(units, None, notes)
             out = merge_unit(units[0], notes)
             self.assertIn("fixed-layout-jp.css", out[2], "无文本页时仍用图片页头部")
-            self.assertTrue(any("<image" in l for l in out[3:]),
+            self.assertTrue(any("<image" in line for line in out[3:]),
                             "无文本页可借头部时，图片应继续作为正文行，不并入 L3")
 
     def test_nav_parser_only_accepts_page_anchors(self):
