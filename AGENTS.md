@@ -154,6 +154,10 @@
 - 带「符号 + ruby 注音」的风格化段落（如创约 11 卷 CRC 口吻的 `<ruby>〼<rt>是</rt></ruby>`、`<ruby>◎<rt>若</rt></ruby>`，其繁简混用与符号是风格的一部分）不得按错字或繁体残留处理，术语判定默认跳过这类行。
 - 判定「原文是否带注音／注音内容是什么」必须回 BookWalker 分页源核对，不能只看缓存：缓存区的日文 XHTML 是预处理产物（`bw_preprocess.py` 会把多段 ruby 合并为单段，如 `<ruby>検<rt>シリ</rt>体<rt>アル</rt>番<rt>ナン</rt>号<rt>バー</rt></ruby>` → `<ruby>検体番号<rt>シリアルナンバー</rt></ruby>`）。源中 BookWalker 对多数汉字词都标读音（`<ruby>学<rt>がく</rt>園<rt>えん</rt>都<rt>と</rt>市<rt>し</rt></ruby>`），缓存只保留**特殊注音**；故「日文有特殊注音则译文必须有注音」的锚点是源中的特殊读音（当て字／外来语），普通读音不构成译文注音义务。
 
+- 代码结构问题取用 CodeGraph：符号在哪定义、谁调用它、改动会波及什么、相关测试在哪。MCP 面当前可用 `codegraph_explore`，另挂了 `codegraph_impact`、`codegraph_status`；CLI 等价入口为 `codegraph explore|impact|status|query|callers|callees`。索引覆盖 `tools/*.py` 的符号与 `EPUB/` 的 XHTML 文件节点。
+- 正文文本检索一律用 `rg` 或直读，不用 CodeGraph：日语原文、中文译法、术语出现位置、中日对照都属于字面文本，XHTML 正文不构成符号；分析源按「数据流与编辑边界」优先读 `.cache/`。
+- CodeGraph 的使用说明不在本仓库维护：`codegraph` 1.6 起 `install` 不再生成 `.cursor/rules/codegraph.mdc`，口径以 MCP server 的 initialize instructions 与 `~/.codex/AGENTS.md` 中上游维护的标记块为准，不要在仓库内重建第二份说明文件。
+
 ## 变更说明
 
 维护工具的行为变更应同步更新 `tools/README.md`；但该文件只写工具的定位、入口、参数、数据流、判定口径与可验证行为，**不写历次修订记录与验收结论**（每轮改动规模、通过哪些门禁、遗留项处置等）——这类内容记入 `docs/maintenance-records/`（长期保留的检查结论）。`docs/changelog.md` 已冻结并归档为 `docs/archive/legacy-changelog.md`，禁止继续编辑。工具改动按工具自身测试、检查和文档门禁验证，不执行 EPUB 文本修改的写入前后通用同步。如果新增缓存目录、报告目录或构建产物，必须同时更新 `.gitignore` 和本文件。
