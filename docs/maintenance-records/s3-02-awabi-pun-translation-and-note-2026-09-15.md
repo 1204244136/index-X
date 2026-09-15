@@ -35,4 +35,4 @@
 ## 备注（同批发现，未处理）
 
 - `check_note_order.py` 报告 S2_03（新约03）note15 在序章首次引用、早于 note1，Note 列表顺序与首次出现顺序不一致。该文件在本仓库最后写入时间为 2026-08-31，属既有状态，本次未触及。
-- `git ls-files --eol` 显示 S3_02-05_Chapter2.xhtml 为 `w/mixed`、S3_02-11_Afterwords.xhtml 为 `w/crlf`，与 `.gitattributes` 的 `eol=lf` 约定不符（EPUB/ 与缓存两侧换行一致，均为此状态）。本次改动按原样保留其换行，未做批量转换。
+- `git ls-files --eol` 显示 S3_02-05_Chapter2.xhtml 为 `w/mixed`、S3_02-11_Afterwords.xhtml 为 `w/crlf`（EPUB/ 与缓存两侧换行一致）。按 `AGENTS.md`「版本控制边界」的换行口径，CRLF 属仓库容忍的既有态、入库已归一化为 LF，故不作修改对象：本次改动按原样保留了其换行；同日一度把这两个文件转为 LF 并重发，现已还原为 CRLF，不再反复转换。

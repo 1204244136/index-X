@@ -105,6 +105,7 @@
 - 修改 EPUB 文本且涉及不止一个 EPUB 文本文件时，必须将长期留档写入 `docs/maintenance-records/`，只保留结论、范围、统计和必要样例，不复制整个缓存。
 - 禁止编辑 `docs/changelog.md`；该文件已冻结并归档为 `docs/archive/legacy-changelog.md`。
 - 不要为了格式化而批量改写 EPUB；保持文件名、目录结构、编码和换行行为稳定。
+- 换行符不作为修改对象：`EPUB/` 出现 CRLF 属仓库容忍的既有态（Windows 文本模式写入、OneDrive 回流解包自带 CRLF），`.gitattributes` 已在入库时统一归一化为 LF，行尾差异不进 diff 与提交内容，也不影响阅读和中日行数对齐。不得为了「统一换行」改写 `EPUB/` 文本——CRLF→LF 与 LF→CRLF 两个方向都不做；`publish_auto.py` 对「只差换行符」的变化只给警告，确认属检出/回流转换时用 `git restore EPUB/` 还原，不得按真实编辑发布。确需改变某文件的换行风格时，作为独立任务处理并在本节补充口径。
 
 ## Agent 操作边界
 
