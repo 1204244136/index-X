@@ -42,7 +42,6 @@ PAGE_RE = re.compile(
 H1_RE = re.compile(r"^\s*<h1\b", re.I)
 H1_INNER_RE = re.compile(r"<h1\b[^>]*>(.*?)</h1>", re.I | re.S)
 H2_RE = re.compile(r"^\s*<h2\b", re.I)
-H2_INNER_RE = re.compile(r"<h2\b[^>]*>(.*?)</h2>", re.I | re.S)
 IMG_TAG_RE = re.compile(r"<(?:img|image)\b", re.I)
 SVG_RE = re.compile(r"<svg\b|</svg>", re.I)
 P_TAG_RE = re.compile(r"<p\b", re.I)
@@ -342,18 +341,6 @@ def check_edge_br(body: list[str], page_name: str, notes: list[str]) -> list[str
     return body[start:end]
 
 
-def semantic_edge(body: list[str]) -> tuple[str | None, str | None]:
-    """返回页首/页尾的语义内容行（跳过 <br/> 填充，不报告警告）。"""
-    start = 0
-    while start < len(body) and BR_LINE_RE.match(body[start]):
-        start += 1
-    end = len(body)
-    while end > start and BR_LINE_RE.match(body[end - 1]):
-        end -= 1
-    b = body[start:end]
-    return (b[0] if b else None, b[-1] if b else None)
-
-
 def add_class_pb(line: str) -> str:
     """在段落标签上追加 class="pb" 用于跨文件分页。"""
     if re.search(r'\bclass\s*=\s*"([^"]*)"', line):
@@ -372,10 +359,6 @@ def add_class_pb(line: str) -> str:
         )
     else:
         return re.sub(r"<p\b", '<p class="pb"', line, count=1, flags=re.I)
-
-
-def gap_for(prev_last: str | None, next_first: str | None) -> list[str]:
-    """按衔接处两侧页型定间距：换页直接在末段上标记 class="pb"，不再插入独立空白行。"""
     return []
 
 

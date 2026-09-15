@@ -41,11 +41,6 @@ BARE_IMG_LINE = re.compile(r"^\s*<img\b[^>]*/?>\s*$", re.I)
 BODY_RE = re.compile(r"<body\b", re.I)
 
 
-def _non_tag(line: str) -> str:
-    """去掉 img/div 标签与空白后剩下的文字。"""
-    return re.sub(r"\s+", "", re.sub(r"<(?:img|/div|div\b[^>]*)[^>]*>", "", line, flags=re.I))
-
-
 def _img_only(line: str) -> bool:
     """该行内容是否只有 <img/> 与 div 标签（可含零或多个 img）。"""
     if INNER_SVG.search(line):

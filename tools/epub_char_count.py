@@ -201,10 +201,6 @@ def is_wrapper(label: str, path: str) -> bool:
     return any(k in hay for k in WRAPPER_KEYWORDS)
 
 
-# 图片扩展名（成分分析工具共用）
-EPUB_IMAGE_EXTS = (".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg")
-
-
 class EpubSource:
     """EPUB 内容读取的统一入口：既支持打包 `.epub`，也支持解包书目录。
 

@@ -18,28 +18,13 @@ if sys.platform == "win32":
     if hasattr(sys.stderr, "reconfigure"):
         sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from merge_bw_pages import add_class_pb  # noqa: E402
+
+
 PB_RE = re.compile(r'\bclass=[\"\'][^\"\']*\bpb\b[^\"\']*[\"\']')
 P_TAG_RE = re.compile(r'<p\b', re.I)
-
-
-def add_class_pb(line: str) -> str:
-    """在段落标签上追加 class="pb" 用于跨文件分页。"""
-    if re.search(r'\bclass\s*=\s*"([^"]*)"', line):
-        return re.sub(
-            r'\bclass\s*=\s*"([^"]*)"',
-            lambda m: f'class="{m.group(1)} pb"' if "pb" not in m.group(1).split() else m.group(0),
-            line,
-            count=1,
-        )
-    elif re.search(r"\bclass\s*=\s*'([^']*)'", line):
-        return re.sub(
-            r"\bclass\s*=\s*'([^']*)'",
-            lambda m: f"class='{m.group(1)} pb'" if "pb" not in m.group(1).split() else m.group(0),
-            line,
-            count=1,
-        )
-    else:
-        return re.sub(r"<p\b", '<p class="pb"', line, count=1, flags=re.I)
 
 
 def extract_header(filename: str) -> str | None:

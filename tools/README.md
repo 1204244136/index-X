@@ -149,6 +149,7 @@ X版 EPUB → epub2docx.py（<ruby> → |基文[注音]）→ 交稿 docx
 - `xhtml_template.py`：固定行模板的纯重建规则；由两个 normalize 入口共同调用。
 - `notes_core.py`：Note 条目解析、正文引用收集和阅读顺序。
 - `sync_core.py`：清单差异、文件增量镜像和 `pull-state.tsv` 更新。
+- `path_safety.py`：解包路径安全（拒绝绝对路径、`..`、反斜杠与盘符的 ZIP 条目）和 `.extract-*` 残留目录识别。
 
 修改上述共享规则或其调用方后运行：
 

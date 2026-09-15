@@ -721,10 +721,6 @@ def compare_book(cn_assets: list[Asset], jp_assets: list[Asset]) -> tuple[list[M
     return matches, [a for a in cn_assets if a.path not in used_cn], [a for a in jp_assets if a.path not in used_jp]
 
 
-def _display_path(asset: Asset) -> str:
-    return asset.relative.replace("\\", "/")
-
-
 def render_markdown(report: dict) -> str:
     lines = ["# 中日 EPUB 图片对应检查", "", f"缓存：`{report['cache']}`", "",
              "算法候选（尤其是 `possible_same_content_text_or_font_changed`）需要人工查看原图确认。", ""]
