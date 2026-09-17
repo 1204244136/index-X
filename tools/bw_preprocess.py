@@ -122,7 +122,10 @@ HEADERED_PAGE_RE = re.compile(
     r"(?:\d+_)?p-(\d{3})\.xhtml$",
     re.IGNORECASE,
 )
-BOOK_ID_RE = re.compile(r"S\d+_(?:\d+(?:_\d+)?|\d{2}(?:\.\d{2}){2})", re.IGNORECASE)
+BOOK_ID_RE = re.compile(
+    # 日期作品号（S6_24.12.10）必须整体匹配：日期形态排在数字形态之前，
+    # 否则 search/fullmatch 都会在第一个点号前截断成 S6_24。
+    r"S\d+_(?:\d{2}(?:\.\d{2}){2}|\d+(?:_\d+)?)", re.IGNORECASE)
 BODY_TAG_RE = re.compile(r"<body\b[^>]*>", re.IGNORECASE | re.DOTALL)
 CSS_URL_RE = re.compile(rb"url\(\s*(['\"]?)([^)'\"]+)\1\s*\)", re.IGNORECASE)
 CLASS_ATTR_RE = re.compile(
@@ -267,6 +270,74 @@ def is_image_title_page(text: str) -> bool:
     if not m:
         return False
     return bool(re.search(r'\bid=["\'][^"\']+["\']', m.group(0)))
+
+
+IMAGE_TAG_RE = re.compile(r"<(?:img|svg|image)\b", re.IGNORECASE)
+# 整页插图页允许的可见文本字符数：BW 图册页只留一个全角空格之类的占位。
+IMAGE_PAGE_MAX_TEXT = 2
+
+
+def is_full_page_image(text: str) -> bool:
+    """整页插图页：非正文页，正文区只承载图片、没有可读文本。
+
+    BW 的画集／图册源（「はいむらきよたか画集」系列等）每一页都是这个形态。
+    这类书里往往还附有**以图片形式收录的小说**——内容在，但不是文本，
+    所以「没有正文页」不等于「没有内容」（见 ``image_only_source``）。
+    """
+    if is_content(text):
+        return False
+    body = BODY_TAG_RE.search(text)
+    body_text = text[body.end():] if body else text
+    if not IMAGE_TAG_RE.search(body_text):
+        return False
+    plain = re.sub(r"\s+", "", re.sub(r"<[^>]+>", "", body_text))
+    return len(plain) <= IMAGE_PAGE_MAX_TEXT
+
+
+def image_only_source(content_pages: int, image_pages: int) -> bool:
+    """整本没有一个正文文本页、却有整页图片页 → 画集／纯图册源。
+
+    这类源不进入文本管线：bw 预处理做的是排版噪声清理、文本模板重建与分页合并，
+    对整页图片没有可处理的对象；跑一遍只会给图片页套上 L1-L6 槽位、按书内位置
+    分配内容序，把源的真实形态盖掉。
+    """
+    return content_pages == 0 and image_pages > 0
+
+
+def image_only_note(info: dict) -> list[str]:
+    """纯图册源的跳过说明；CLI 与报告共用一份口径，避免两处漂移。"""
+    return [
+        f"{info['xhtml']} 个 XHTML 里没有正文文本页，其中 "
+        f"{info['image_pages']} 页是整页图片。",
+        "内容并没有丢：画集正文本来就以图片承载（还可能含图片形式收录的小说），"
+        "但 bw 预处理只做文本模板与分页合并，没有可处理的文本。",
+        "已跳过整本：不改写、不分配表头、不重命名图片、不合并分页、不写产物；"
+        "画集按图片资源原样入档，不参与中日文本配对。",
+        "确需按文本源强制处理时加 --force-image-only。",
+    ]
+
+
+def probe_image_only(epub_path: Path) -> dict | None:
+    """只读探测纯图册源（画集）；命中返回说明 dict，未命中返回 None。
+
+    用**源文件形态**判定（整本没有 ``body.p-text`` 正文页、却有整页图片页），
+    因此画集在推断作品号、分配表头与分页合并之前就被识别，
+    不会被先当成文本源改写一遍再产出无意义的产物。
+    """
+    with zipfile.ZipFile(epub_path) as zin:
+        names = [n for n in zin.namelist()
+                 if n.lower().endswith(XHTML_SUFFIXES)]
+        image_pages = 0
+        for name in names:
+            text = zin.read(name).decode("utf-8-sig", errors="replace")
+            if is_content(text):
+                return None
+            if is_full_page_image(text):
+                image_pages += 1
+    if image_pages == 0:
+        # 既无正文也无整页图片：不是画集，交给常规流程去报它自己的问题。
+        return None
+    return {"xhtml": len(names), "image_pages": image_pages}
 
 
 MERGED_HEAD_RE = re.compile(r"<body\b[^>]*>", re.IGNORECASE)
@@ -796,14 +867,19 @@ def process_epub(epub_path: Path, rules: list[dict], out_path: Path,
                  dry_run: bool, book_id: str | None = None,
                  page_map: dict[str, int | None] | None = None,
                  merge_pages: bool = True,
-                 unpacked_dir: Path | None = None) -> dict:
-    """处理 .epub：解包改写、分页合并后重新打包。返回统计 dict。"""
+                 unpacked_dir: Path | None = None,
+                 force_image_only: bool = False) -> dict:
+    """处理 .epub：解包改写、分页合并后重新打包。返回统计 dict。
+
+    ``force_image_only=True`` 时允许处理画集／纯图册源；默认在识别到该形态后
+    整本跳过（``stats["image_only"]``），不分配表头、不重命名图片、不写产物。
+    """
     with zipfile.ZipFile(epub_path) as zin:
         infos = zin.infolist()
         entries = {i.filename: zin.read(i.filename) for i in infos}
     stats = {"total": 0, "changed": 0, "renamed": 0,
              "renamed_xhtml": 0, "renamed_images": 0,
-             "content": 0, "issues": []}
+             "content": 0, "image_pages": 0, "issues": []}
     for info in infos:
         try:
             validate_archive_member_name(info.filename)
@@ -818,11 +894,18 @@ def process_epub(epub_path: Path, rules: list[dict], out_path: Path,
                 stats["changed"] += 1
             # dry-run 也必须在内存中基于转换结果分配表头和执行完整验证。
             entries[name] = new_data
-            if is_content(new_data.decode("utf-8-sig", errors="replace")):
+            text = new_data.decode("utf-8-sig", errors="replace")
+            if is_content(text):
                 stats["content"] += 1
-            issues = verify_text(new_data.decode("utf-8-sig", errors="replace"))
-            for it in issues:
+            elif is_full_page_image(text):
+                stats["image_pages"] += 1
+            for it in verify_text(text):
                 stats["issues"].append((name, it))
+    if image_only_source(stats["content"], stats["image_pages"]) and not force_image_only:
+        # 画集／图册源：在表头重命名与分页合并之前退出，不写任何产物。
+        stats["image_only"] = {"xhtml": stats["total"],
+                               "image_pages": stats["image_pages"]}
+        return stats
     renames = pairing_header_renames(entries, book_id, page_map) if book_id else {}
     stats["renamed"] = len(renames)
     stats["renamed_xhtml"] = sum(
@@ -882,16 +965,20 @@ def process_epub(epub_path: Path, rules: list[dict], out_path: Path,
 
 
 def process_dir(dir_path: Path, rules: list[dict], dry_run: bool,
-                *, merged: bool = False) -> dict:
+                *, merged: bool = False, force_image_only: bool = False) -> dict:
     """就地处理目录下全部 XHTML。返回统计 dict。
 
     ``merged=True`` 表示目录里是 ``merge_bw_pages`` 之后的章节文件（无 main 容器），
     按合并后契约校验 L1-L6。
+
+    与 ``process_epub`` 一致：先判定整本形态，画集／纯图册目录整目录跳过，
+    不落任何改写（避免把图片页就地套上文本模板）。
     """
     files = sorted(p for p in dir_path.rglob("*")
                    if p.is_file() and p.suffix.lower() in XHTML_SUFFIXES)
     stats = {"total": 0, "changed": 0, "renamed": 0,
-             "content": 0, "issues": []}
+             "content": 0, "image_pages": 0, "issues": []}
+    pending: list[tuple[Path, bytes, bool]] = []
     for p in files:
         stats["total"] += 1
         data = p.read_bytes()
@@ -899,20 +986,29 @@ def process_dir(dir_path: Path, rules: list[dict], dry_run: bool,
         text = new_data.decode("utf-8-sig", errors="replace")
         if is_content(text):
             stats["content"] += 1
+        elif is_full_page_image(text):
+            stats["image_pages"] += 1
+        pending.append((p, new_data, ch))
+        for it in verify_text(text, merged=merged):
+            stats["issues"].append((p.name, it))
+    if image_only_source(stats["content"], stats["image_pages"]) and not force_image_only:
+        stats["image_only"] = {"xhtml": stats["total"],
+                               "image_pages": stats["image_pages"]}
+        return stats
+    for p, new_data, ch in pending:
         if ch:
             stats["changed"] += 1
             if not dry_run:
                 p.write_bytes(new_data)
-        for it in verify_text(text, merged=merged):
-            stats["issues"].append((p.name, it))
     return stats
 
 
-def check_dir(dir_path: Path, rules: list[dict], *, merged: bool = False) -> dict:
+def check_dir(dir_path: Path, rules: list[dict], *, merged: bool = False,
+              force_image_only: bool = False) -> dict:
     """--check：内存中应用规则并校验 L1-L6 固定模板，不写盘。"""
     files = sorted(p for p in dir_path.rglob("*")
                    if p.is_file() and p.suffix.lower() in XHTML_SUFFIXES)
-    stats = {"total": 0, "content": 0, "issues": []}
+    stats = {"total": 0, "content": 0, "image_pages": 0, "issues": []}
     for p in files:
         stats["total"] += 1
         text = apply_rules(
@@ -921,18 +1017,28 @@ def check_dir(dir_path: Path, rules: list[dict], *, merged: bool = False) -> dic
             stats["content"] += 1
             for it in template_issues(text.splitlines(), merged=merged):
                 stats["issues"].append((p.name, it))
+        elif is_full_page_image(text):
+            stats["image_pages"] += 1
+    if image_only_source(stats["content"], stats["image_pages"]) and not force_image_only:
+        stats["image_only"] = {"xhtml": stats["total"],
+                               "image_pages": stats["image_pages"]}
     return stats
 
 
 def check_epub(
         epub_path: Path, rules: list[dict], book_id: str | None = None,
         page_map: dict[str, int | None] | None = None,
-        merge_pages: bool = True) -> dict:
-    """--check：在内存中模拟全部转换与分页合并，再校验模板与 EPUB 产物契约。"""
+        merge_pages: bool = True,
+        force_image_only: bool = False) -> dict:
+    """--check：在内存中模拟全部转换与分页合并，再校验模板与 EPUB 产物契约。
+
+    画集／纯图册源与其他入口一致：命中后只报跳过，不模拟表头重命名、
+    分页合并与产物契约校验（那些检查对整页图片没有判定意义）。
+    """
     with zipfile.ZipFile(epub_path) as zin:
         infos = zin.infolist()
         entries = {info.filename: zin.read(info.filename) for info in infos}
-        stats = {"total": 0, "content": 0, "renamed": 0,
+        stats = {"total": 0, "content": 0, "image_pages": 0, "renamed": 0,
                  "renamed_xhtml": 0, "renamed_images": 0, "issues": []}
         stats["issues"].extend(epub_zip_issues(infos, entries))
         for info in infos:
@@ -946,6 +1052,12 @@ def check_epub(
                 stats["content"] += 1
                 for it in template_issues(text.splitlines()):
                     stats["issues"].append((info.filename, it))
+            elif is_full_page_image(text):
+                stats["image_pages"] += 1
+        if image_only_source(stats["content"], stats["image_pages"]) and not force_image_only:
+            stats["image_only"] = {"xhtml": stats["total"],
+                                   "image_pages": stats["image_pages"]}
+            return stats
         renames = pairing_header_renames(entries, book_id, page_map) if book_id else {}
         stats["renamed"] = len(renames)
         stats["renamed_xhtml"] = sum(
@@ -1092,8 +1204,23 @@ def clean_book_title(raw_title: str, book_id: str | None = None) -> str:
     return title
 
 
+def _report_issues(stats: dict) -> None:
+    for name, it in stats["issues"][:30]:
+        print(f"  ! {name}: {it}")
+    if len(stats["issues"]) > 30:
+        print(f"  …另有 {len(stats['issues']) - 30} 条问题未列出")
+
+
 def report_stats(label: str, stats: dict, dry_run: bool, check: bool,
                  out=None) -> None:
+    if stats.get("image_only"):
+        info = stats["image_only"]
+        print(f"[跳过] {label}：画集/纯图册源（{info['image_pages']} 页整页图片，"
+              f"无正文文本页），bw 预处理不处理这类源")
+        for line in image_only_note(info):
+            print(f"  · {line}")
+        _report_issues(stats)
+        return
     non_content = stats["total"] - stats["content"]
     base = (f"XHTML {stats['total']} 个：内容 {stats['content']}，"
             f"非内容 {non_content}")
@@ -1116,10 +1243,7 @@ def report_stats(label: str, stats: dict, dry_run: bool, check: bool,
     if stats.get("blocked"):
         base += "（验证失败，已阻止写盘）"
     print(f"[{label}] {base}")
-    for name, it in stats["issues"][:30]:
-        print(f"  ! {name}: {it}")
-    if len(stats["issues"]) > 30:
-        print(f"  …另有 {len(stats['issues']) - 30} 条问题未列出")
+    _report_issues(stats)
     merge_notes = stats.get("merge_notes") or []
     if merge_notes:
         print(f"  合并待核对 {len(merge_notes)} 条：")
@@ -1151,6 +1275,9 @@ def main() -> int:
     ap.add_argument("--merged", action="store_true",
                     help="目录输入是 merge_bw_pages 之后的章节文件（无 main 容器），"
                          "按合并后契约校验 L1-L6")
+    ap.add_argument("--force-image-only", action="store_true",
+                    help="允许处理画集/纯图册源（整本无正文文本页、全为整页图片）；"
+                         "默认整本跳过并说明原因")
     args = ap.parse_args()
 
     if args.book_id and not BOOK_ID_RE.fullmatch(args.book_id):
@@ -1181,6 +1308,17 @@ def main() -> int:
             has_issues = True
             continue
 
+        # 画集/纯图册源在推断作品号与分配表头之前就整本跳过：它们没有正文文本页，
+        # 跑文本管线只会给整页图片套上模板、按书内位置分配内容序，产出无意义产物。
+        if (p.is_file() and p.suffix.lower() == ".epub"
+                and not args.force_image_only):
+            probe = probe_image_only(p)
+            if probe is not None:
+                print(f"[跳过] {p}：画集/纯图册源，bw 预处理不处理这类源")
+                for line in image_only_note(probe):
+                    print(f"  · {line}")
+                continue
+
         # 若未显式传入 --book-id，尝试从文件名智能推导作品号
         cur_book_id = args.book_id
         cur_page_map = page_map
@@ -1194,14 +1332,17 @@ def main() -> int:
         if p.is_dir():
             label = f"目录 {p}{'' if not args.merged else '（合并后契约）'}"
             if args.check:
-                stats = check_dir(p, rules, merged=args.merged)
+                stats = check_dir(p, rules, merged=args.merged,
+                                  force_image_only=args.force_image_only)
                 report_stats(label, stats, False, True)
             else:
-                stats = process_dir(p, rules, args.dry_run, merged=args.merged)
+                stats = process_dir(p, rules, args.dry_run, merged=args.merged,
+                                    force_image_only=args.force_image_only)
                 report_stats(label, stats, args.dry_run, False)
         elif p.is_file() and p.suffix.lower() == ".epub":
             if args.check:
-                stats = check_epub(p, rules, cur_book_id, cur_page_map)
+                stats = check_epub(p, rules, cur_book_id, cur_page_map,
+                                   force_image_only=args.force_image_only)
                 report_stats(f"epub {p}", stats, False, True)
             else:
                 target_dir = args.out if args.out and args.out.is_dir() else (args.out.parent if args.out and not args.out.is_dir() else p.parent)
@@ -1220,7 +1361,8 @@ def main() -> int:
                     unpacked_dir = unpacked_target_dir / unpacked_name
                 stats = process_epub(
                     p, rules, out, args.dry_run, cur_book_id, cur_page_map,
-                    unpacked_dir=unpacked_dir)
+                    unpacked_dir=unpacked_dir,
+                    force_image_only=args.force_image_only)
                 out_label = str(out)
                 if unpacked_dir:
                     out_label += f" + 解包目录：{unpacked_dir}"

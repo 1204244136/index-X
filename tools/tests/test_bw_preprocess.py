@@ -25,6 +25,8 @@ from bw_preprocess import (  # noqa: E402
     load_rules,
     page_map_contract_issues,
     pairing_header_renames,
+    process_dir,
+    process_epub,
     template_issues,
 )
 
@@ -527,6 +529,157 @@ class BookWalkerTemplateTests(unittest.TestCase):
         self.assertEqual(infer_book_id("とある暗部の少女共棲(6)"), "S4_06")
         self.assertEqual(infer_book_id("創約 とある魔術の禁書目録(11)"), "S3_11")
         self.assertEqual(infer_book_id("[S4_05]とある暗部の少女共棲"), "S4_05")
+
+    def test_infer_book_id_keeps_dated_work_id_intact(self):
+        """日期作品号是整体标识：不得被截断成 S6_24 而与别的月份作品号混同。"""
+        from bw_preprocess import BOOK_ID_RE, infer_book_id
+        self.assertEqual(
+            infer_book_id("[S6_24.12.10]はいむらきよたか画集４　ＲＥＢＩＲＴＨ"),
+            "S6_24.12.10")
+        self.assertEqual(infer_book_id("[S6_20.05.09]創約 とある魔術の禁書目録SS"),
+                         "S6_20.05.09")
+        self.assertIsNotNone(BOOK_ID_RE.fullmatch("S6_24.12.10"))
+        self.assertIsNotNone(BOOK_ID_RE.fullmatch("S5_01_03"))
+
+
+def image_page(image: str = "../image/i-001.jpg") -> str:
+    """BW 图册源的一页：整页图片、没有可读文本。"""
+    return "\n".join([
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        "<!DOCTYPE html>",
+        "<html",
+        ' xmlns="http://www.w3.org/1999/xhtml"',
+        ' xml:lang="ja"',
+        ' class="vrtl"',
+        ">",
+        "<head>",
+        '<meta charset="UTF-8"/>',
+        "<title>画集</title>",
+        '<link rel="stylesheet" type="text/css" href="../style/fixed-layout-jp.css"/>',
+        "</head>",
+        '<body class="p-image">',
+        '<div class="main">',
+        f'<p><img class="fit" src="{image}" alt=""/></p>',
+        "</div>",
+        "</body>",
+        "</html>",
+    ])
+
+
+def write_epub(path: Path, pages: dict[str, str]) -> None:
+    with zipfile.ZipFile(path, "w") as archive:
+        info = zipfile.ZipInfo("mimetype")
+        info.compress_type = zipfile.ZIP_STORED
+        archive.writestr(info, b"application/epub+zip")
+        for name, text in pages.items():
+            archive.writestr(name, text)
+
+
+class ImageOnlySourceTests(unittest.TestCase):
+    """画集/纯图册源（整本无正文文本页）不进入 bw 预处理。"""
+
+    def test_image_page_detection_requires_image_and_no_readable_text(self):
+        from bw_preprocess import is_full_page_image
+        self.assertTrue(is_full_page_image(image_page()))
+        self.assertFalse(is_full_page_image(raw_page(["<p>正文</p>"])))
+        # 有图片但带可读文本的页不是整页插图页
+        self.assertFalse(is_full_page_image(raw_page(
+            ["<p><img src=\"../image/i-002.jpg\" alt=\"\"/>插图说明文字</p>"])))
+
+    def test_probe_detects_artbook_and_ignores_text_book(self):
+        from bw_preprocess import probe_image_only
+        with tempfile.TemporaryDirectory() as tmp:
+            artbook = Path(tmp) / "画集.epub"
+            write_epub(artbook, {
+                "item/navigation-documents.xhtml": "<html><body>目录</body></html>",
+                "item/xhtml/p-001.xhtml": image_page(),
+                "item/xhtml/p-002.xhtml": image_page("../image/i-002.jpg"),
+            })
+            probe = probe_image_only(artbook)
+            self.assertIsNotNone(probe)
+            self.assertEqual(probe["image_pages"], 2)
+            self.assertEqual(probe["xhtml"], 3)
+
+            text_book = Path(tmp) / "小说.epub"
+            write_epub(text_book, {
+                "item/xhtml/p-001.xhtml": raw_page(["<p>正文</p>"]),
+                "item/xhtml/p-002.xhtml": image_page(),
+            })
+            self.assertIsNone(probe_image_only(text_book))
+
+            image_free = Path(tmp) / "只读提示.epub"
+            write_epub(image_free, {"item/nav.xhtml": "<html><body>目录</body></html>"})
+            self.assertIsNone(probe_image_only(image_free))
+
+    def test_process_epub_skips_artbook_before_renaming(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            epub_path = root / "artbook.epub"
+            out_path = root / "out.epub"
+            write_epub(epub_path, {
+                "item/xhtml/p-001.xhtml": image_page(),
+                "item/xhtml/p-002.xhtml": image_page("../image/i-002.jpg"),
+            })
+            stats = process_epub(epub_path, RULES, out_path, dry_run=False,
+                                 book_id="S6_24.12.10", merge_pages=True)
+            self.assertTrue(stats["image_only"])
+            self.assertEqual(stats["renamed"], 0)
+            self.assertEqual(stats["content"], 0)
+            self.assertFalse(out_path.exists())
+
+    def test_force_image_only_keeps_artbook_in_the_text_pipeline(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            epub_path = root / "artbook.epub"
+            write_epub(epub_path, {
+                "item/xhtml/p-001.xhtml": image_page(),
+                "item/image/i-001.jpg": "jpeg data",
+            })
+            stats = process_epub(epub_path, RULES, root / "out.epub",
+                                 dry_run=True, book_id="S6_24.12.10",
+                                 force_image_only=True)
+            self.assertNotIn("image_only", stats)
+            self.assertGreater(stats["renamed"], 0)
+
+    def test_process_dir_skips_artbook_directory_without_writing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            page = root / "p-001.xhtml"
+            page.write_text(image_page(), encoding="utf-8")
+            before = page.read_bytes()
+            stats = process_dir(root, RULES, dry_run=False)
+            self.assertTrue(stats["image_only"])
+            self.assertEqual(stats["changed"], 0)
+            self.assertEqual(page.read_bytes(), before)
+
+    def test_image_only_note_states_reason_and_force_flag(self):
+        from bw_preprocess import image_only_note
+        note = "\n".join(image_only_note({"xhtml": 154, "image_pages": 153}))
+        self.assertIn("--force-image-only", note)
+        self.assertIn("图片形式收录的小说", note)
+        self.assertIn("不参与中日文本配对", note)
+
+    def test_cli_skips_artbook_and_reports_them(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            epub_path = Path(tmp) / "artbook.epub"
+            write_epub(epub_path, {
+                "item/xhtml/p-001.xhtml": image_page(),
+                "item/xhtml/p-002.xhtml": image_page("../image/i-002.jpg"),
+            })
+            skipped = subprocess.run(
+                [sys.executable, str(TOOLS / "bw_preprocess.py"), str(epub_path)],
+                capture_output=True, text=True, encoding="utf-8", errors="replace")
+            self.assertEqual(skipped.returncode, 0, skipped.stderr)
+            self.assertIn("[跳过]", skipped.stdout)
+            self.assertIn("--force-image-only", skipped.stdout)
+            self.assertFalse((Path(tmp) / "artbook.preprocessed.epub").exists())
+
+            forced = subprocess.run(
+                [sys.executable, str(TOOLS / "bw_preprocess.py"),
+                 "--force-image-only", "--dry-run", str(epub_path)],
+                capture_output=True, text=True, encoding="utf-8", errors="replace")
+            self.assertEqual(forced.returncode, 0, forced.stderr)
+            self.assertNotIn("[跳过]", forced.stdout)
 
 
 if __name__ == "__main__":
