@@ -107,10 +107,13 @@ python tools/normalize_paired.py
 对齐后缓存 → check_alignment.py（模板与对齐检查）→ 报告
             → check_translation_spec.py（翻译规范检查）→ 报告
             → check_note_order.py（注释顺序检查）→ 报告
+
+归档目录   → check_epub_health.py（EPUB/ 单侧机械体检）→ 报告（CI 每日，只读）
 ```
-- **工具**：`check_alignment.py`、`check_translation_spec.py`、`check_note_order.py` 等
+- **工具**：`check_alignment.py`、`check_translation_spec.py`、`check_note_order.py`、`check_epub_health.py` 等
 - **职责**：只读检查，不修改文件
-- **输出**：`.cache/epub-work/` 下的检查报告（TSV/JSON/Markdown）
+- **输出**：`.cache/epub-work/` 下的检查报告（TSV/JSON/Markdown）；`check_epub_health.py` 只写 `--tsv`/`--json` 指定路径，默认不落盘
+- **两侧分工**：前三个读中日缓存、需要对照；`check_epub_health.py` 只读 `EPUB/` 中文侧、只判「不需要对照就能判定」的机械问题，因此可以放进 CI
 
 ### 阶段 6：发布
 ```
@@ -156,6 +159,8 @@ X版 EPUB → epub2docx.py（<ruby> → |基文[注音]）→ 交稿 docx
 ```powershell
 python -m unittest discover -s tools/tests -p "test_*.py" -v
 ```
+
+体检类工具（`check_epub_health.py`）额外要求**负向自检**：每个检查项都要有一个能触发它的最小反例，否则判定写错（正则静默失配、路径没匹配上）会表现为「永远报 0」而看不出异常。见 `tools/tests/test_check_epub_health.py`。
 
 ---
 
@@ -863,16 +868,67 @@ python tools/text_norm.py --apply --report r.md --summary s.txt
 | `ellipsis-ascii-dot` | 删省略号后的半角句点（`(?!\d)` 避开 `….5`） | 一.5 |
 | `dash-codepoint` | `─`(U+2500) → `—`(U+2014) | 一.1 |
 | `halfwidth-comma` | 中文后半角逗号 → `，`（吞 ASCII 空格；前导须为中文，故千分位不匹配） | 一.1 |
+| `bold-punct` | 把 `<b>` 段内的标点移到加粗外（在该处闭合 `</b>`、写出标点、另起 `<b>`） | 一.8 |
+
+`bold-punct` 是唯一的**行级**规则，不进 `RULES` 表（它处理的是整行内的 `<b>` 段，而不是标签外文本），但和其它规则共用同一套报告口径。判定标准取自**日文傍点自身的字符构成**（实测日文 8397 个傍点段）：允许留在加粗内的是汉字假名、`ー`、`＝`、`〇`、`々`、全角英数字、`％＆♯＃×`、`/` 与空白，中文侧对应保留 `·`（≈`＝`）和 `～`（≈`ー`）；`，。、？！：；「」『』（）…—` 及半角 `,.;:?!()[]`、弯引号等标点一律移出。文字（含中文增译）一律留在加粗内——对齐的是**含义**而不是逐字，一句情感强烈的话不因中日段数对不上就把增译晾在加粗外。
+
+三条保护片段整体保留、不参与切分：XML 实体（`&amp;` 的分号若被拆开会得到非法的 `&amp`，XML 直接报废）、作品号（`[S5_01_01]` 是中文项目的本地化标识，方括号属标识符一部分）、缩写点与小数字（`Mr.`、`A.A.A.`、`.50`）。该规则会增删 `<b>` 标签但**不增删物理行**，可见文字与标点顺序完全不变；执行后纯文本与执行前逐字节相同。
 
 边界与安全闸：
 
 - **标签感知替换**：只改标签之外的文本。标签自身（属性里的 `class`/`href`/内联 `style`）与 `<rt>` 注音、`<style>`/`<script>` 块内容一律原样保留，避免改坏 XML 属性与 CSS。
-- **不改行结构**：全部规则为 1:1 或缩短替换，不增删物理行，因此不影响中日行数对齐；处理逐字节保留 BOM 与换行风格。
+- **不改行结构**：除 `bold-punct` 只重写标签外，其余规则为 1:1 或缩短替换；两者都不增删物理行，因此不影响中日行数对齐；处理逐字节保留 BOM 与换行风格。
 - **fail-safe**：遇到跨行注释、`CDATA` 段或额外行分隔符（U+2028/U+2029/`\x0b`/`\x0c`/`\x85`）的文件拒绝处理并列入报告，不猜测、不部分替换。
 - **只写 `EPUB/`**：不写 `.cache/epub-work/`。按流程 C（`EPUB/` 为准）的权威方向，本地 `publish_auto.py` 会把这里的改动回流到 OneDrive 与缓存。
 - 明确**不**纳入的规则（各有误报或需判断，理由逐条记在工具源码注释里）：儿化音、NBSP、半角括号、弯引号、单独半角 `!`/`?`、半角句号（枪械口径 `.50`）、系列名、拟声破折号变体、全角 `＆％＝＊＋／`、`・`/`‧`、`!？？` 混合、连续 ASCII 空格、引号不配对。改动规则表前必须先做一次全库全量核对。
 
 `.github/workflows/normalize-epub-text.yml` 每日 04:30（UTC+8）跑 `--apply`，有实际修改才提交，无命中则完全不提交。该 workflow 用 `GITHUB_TOKEN` 推送，GitHub 的防递归机制使其不会触发 `Build EPUB Release`——修复进仓库但不自动发版，需要发版时手动触发。
+
+### EPUB 单侧体检（只读）
+
+```powershell
+python tools/check_epub_health.py                    # 终端汇总
+python tools/check_epub_health.py --strict           # 有 error 级命中时非零退出
+python tools/check_epub_health.py --pattern "*S3_*"
+python tools/check_epub_health.py --only bold-punct,ruby,dangling
+python tools/check_epub_health.py --tsv r.tsv --json r.json
+```
+
+把「**不需要中日对照就能判定**」的机械问题一次报全，作为每日规范化 CI 之外的检查闸。它是**汇总入口**，不是新判定口径的来源：每条判定都取自既有规约或既有工具，报告只输出到终端与 `--tsv`/`--json` 指定路径，**不写 `EPUB/`、不写 `.cache/`、不提交**。
+
+| 检查项 | 判定 |
+| --- | --- |
+| `XML` | 每个 XHTML 能被 `xml.etree` 解析，且 `<img>` 都带 `src` |
+| `template` | 固定行模板与正文行原子性（直接调用 `check_alignment.check_file`） |
+| `bold-punct` | `<b>` 段内含标点（直接调用 `text_norm.split_bold_punct`，与每日 CI 同源） |
+| `bold-empty` | 空 `<b>` 段 |
+| `bold-pair` | `<b>` 开闭标签数量不一致 |
+| `ruby` | `<ruby>` 缺 `<rt>` 注音 / ruby 开闭不配对 |
+| `seq-00` | 非法内容序 `-00` |
+| `dup-header` | 同一本书内重复表头 |
+| `seq-gap` | 同一作品内内容序缺号 |
+| `img-prefix` | 图片文件名缺完整作品号前缀 |
+| `dangling` | XHTML/OPF/CSS 引用的资源或锚点不存在 |
+
+与 `text_norm.py` 同源是有意的：体检报告说「有 N 处 `<b>` 含标点」时，规范化 CI 一定会去改同样这 N 处；两个工具的判定不会漂移。
+
+**检出能力上限**：CI 只有中文 `EPUB/`，看不到 `.cache/` 里的日文侧，所以**中日行错位、加粗范围是否对应日文傍点、注音义务**这类必须对照的问题在 CI 里结构上做不到。单侧检查的上限就是「不需要对照就能判定的问题」；中日对照仍需本地定期跑 `check_alignment.py`。
+
+**刻意不纳入的检查项**（判定不唯一或有误报，纳进来只会制造噪声）：
+
+- **引号配对**：全库有 21 处「开/闭不在同一段」的写法——引语跨段、强调性收尾（`……仍可继续进行。』`）、把原文截断以模拟通讯中断（`「喂，我好歹还是知道要保留点警戒d`）。逐条都需要人工判断该补还是该删，不满足「替换值唯一」。需要时单独逐本人工核查。
+- **Note 列表项编号**：它与正文条目号是两套编号，且条目号与普通正文行（如「4.5 个榻榻米的大小」）形式上无法区分，任何判据都会误报。Note 编号一致性由 `check_note_order.py` 在缓存上按「定义顺序 vs 正文首次引用顺序」判定，口径更强。
+- **换行符**：`AGENTS.md` 明确「换行符不作为修改对象」，`EPUB/` 出现 CRLF 属仓库容忍的既有态，不是问题，不检查也不报告。
+
+**豁免名单**（`EXEMPT_BOOKS`）：按「书 + 检查项」豁免，不是整本跳过。目前只有三本、只豁免 `template`，且都不是「待修的问题书」而是**已裁定不纳入正文模板检查**的文件：`S0_00`（读前必看，非正文作品）、`S6_10.06.26` 与 `S6_24.12.10`（无 BW 分页源，明确不处理）。豁免外的模板命中数为 0，因此这三本的既有结构差异不会淹没真信号；往名单里加条目等于放宽体检口径，必须同时写明依据。
+
+**负向自检**：`tools/tests/test_check_epub_health.py` 对每个检查项都构造一个能触发它的最小反例，另用一份正常样本确认不误报。体检类工具最大的风险不是漏报，而是判定写错却**永远报 0** 却看上去一切正常，所以这一层测试是必需的：
+
+```powershell
+python -m unittest discover -s tools/tests -p "test_check_epub_health.py" -v
+```
+
+`.github/workflows/check-epub-health.yml` 每日 06:00（UTC+8，排在每日规范化之后）跑全量测试与 `--strict` 体检，只报告不修复，发现 error 级问题时让 workflow 变红；完整 TSV/JSON 作为 artifact 上传 30 天。`permissions` 只有 `contents: read`。
 
 ### 术语审计
 

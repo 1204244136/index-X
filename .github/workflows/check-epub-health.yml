@@ -1,0 +1,92 @@
+name: Check EPUB Health
+
+# 每日对 EPUB/ 做**只读**单侧体检，并在发现 error 级问题时让这个 workflow 变红。
+#
+# 定位：
+#   - 这是「报告器」，不是「修复器」——不写盘、不提交、不推送、不发版。
+#   - 与 Normalize EPUB Text 的分工：那个只做替换值唯一、可机械执行的字符替换；
+#     这个只做不需要判断的**检查**，包括那些「不该自动改」的项（模板/结构/引用）。
+#   - 判定标准与既有工具同源：模板复用 check_alignment.check_file，
+#     加粗标点复用 text_norm.split_bold_punct（与每日规范化 CI 完全一致），
+#     因此体检报告说「有 N 处」时，规范化 CI 一定会去改同样这 N 处。
+#
+# 检出能力上限：
+#   CI 只有中文 EPUB/，看不到 .cache/ 里的日文侧，因此**中日行错位、加粗范围是否
+#   对应日文傍点、注音义务**这类必须对照的问题在 CI 里结构上做不到。
+#   这里只覆盖「不需要对照就能判定」的问题；中日对照仍需本地定期核查
+#   （tools/check_alignment.py）。
+#
+# 退出码：--strict 只在 error 级命中时非零。warning（如内容序缺号）只报告不阻断。
+
+on:
+  schedule:
+    - cron: "0 22 * * *" # UTC+8 06:00，排在每日规范化（04:30）之后看结果
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: check-epub-health-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          show-progress: false
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      # 先验工具本身：体检类工具最大的风险是判定写错却永远报 0，
+      # 所以每次跑真体检之前先跑一遍测试（含 check_epub_health 的负向自检：
+      # 对每个检查项注入一个能触发它的最小反例）。
+      - name: 工具测试
+        run: python -m unittest discover -s tools/tests -p "test_*.py"
+
+      - name: EPUB/ 单侧体检
+        run: |
+          python tools/check_epub_health.py --strict \
+            --top 50 \
+            --tsv /tmp/epub-health.tsv \
+            --json /tmp/epub-health.json
+
+      - name: 写入 job summary
+        if: always()
+        run: |
+          {
+            echo "## EPUB 单侧体检"
+            echo ""
+            if [ -f /tmp/epub-health.tsv ]; then
+              total=$(( $(wc -l < /tmp/epub-health.tsv) - 1 ))
+              echo "命中 **${total}** 条。"
+              echo ""
+              if [ "$total" -gt 0 ]; then
+                echo '```'
+                head -50 /tmp/epub-health.tsv
+                echo '```'
+              fi
+            else
+              echo "体检未产出报告（检查步骤失败，见上方日志）。"
+            fi
+            echo ""
+            echo "本 workflow 只报告不修复；修复口径见 \`tools/check_epub_health.py\` 模块说明。"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 上传体检报告
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: epub-health-report
+          path: |
+            /tmp/epub-health.tsv
+            /tmp/epub-health.json
+          if-no-files-found: warn
+          retention-days: 30

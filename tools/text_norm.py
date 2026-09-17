@@ -16,6 +16,12 @@
 规则表 RULES 是唯一事实来源，每条标注 `translation-spec.md` 条款；改动规范时需
 同步本文件与 `tools/check_translation_spec.py` 的检查项。
 
+另有一条行级规则不放进 RULES（它的处理单位是整行内的 `<b>` 段，不是标签外文本）：
+  bold-punct    把 `<b>` 段内的标点移到加粗外（一.8「加粗落在标点上」）
+判定标准取自日文傍点自身的字符构成，见下方 BOLD_* 常量。所有规则都只做字符
+级重写——`bold-punct` 会增删 `<b>` 标签，但绝不增删物理行、不改变可见文字与标点
+顺序（移动后去掉标签，纯文本完全一致）。
+
 用法：
     python tools/text_norm.py                          # 只读报告（默认根目录 EPUB/）
     python tools/text_norm.py --apply                  # 写盘
@@ -82,6 +88,109 @@ TAG_SPLIT = re.compile(r"(<[^>]*>)")
 SKIP_OPEN_RE = re.compile(r"<\s*(rt|style|script)\b", re.I)
 SKIP_CLOSE_RE = re.compile(r"<\s*/\s*(rt|style|script)\s*>", re.I)
 EXTRA_SEPARATORS = "\u2028\u2029\x0b\x0c\x85"
+
+# ---------------------------------------------------------------------------
+# 加粗规则：`<b>` 段内不得含标点（translation-spec 一.8「加粗落在标点上」）。
+#
+# 判定标准从日文傍点自身的字符构成反推（实测日文 8397 个傍点段）：
+#   允许在加粗内 —— 汉字假名、ー(568)、＝(99)、〇 々、全角英数字、％＆♯＃×、
+#                    / 及空白；中文侧对应地保留「·」（≈＝）与「～」（≈ー）
+#   从不包含     —— ，！：；「」『』）—～・ 及半角 ,.;:?()[] 等
+# 故下列字符一旦出现在 `<b>` 段内，即在该处断段、把标点留在加粗外；
+# 文字（含中文增译）一律留在加粗内。
+# ---------------------------------------------------------------------------
+BOLD_DISALLOWED = set("，。、？！：；「」『』（）〔〕【】《》〈〉…—"
+                      ",.;:?!()[]{}\u201c\u201d\u2018\u2019")
+
+# 需整体保留、不得当作标点拆开的片段：
+#   XML 实体     —— &amp; 的分号若被拆开会得到 `&amp`，XML 直接报废
+#   作品号        —— 中文项目的本地化标识，方括号是标识符一部分
+#   缩写点/小数字  —— Mr. / A.A.A. / .50，点是内容的一部分
+BOLD_KEEP_PATTERNS = (
+    re.compile(r"&(?:[a-zA-Z]+|#\d+|#x[0-9a-fA-F]+);"),
+    re.compile(r"\[S\d+_[0-9A-Za-z_.]*\]"),
+    re.compile(r"[A-Za-z]\."),
+    re.compile(r"\d\.|\.\d"),
+)
+_BOLD_KEEP_ALL = re.compile("|".join(p.pattern for p in BOLD_KEEP_PATTERNS))
+B_BLOCK_RE = re.compile(r"<b\b([^>]*)>(.*?)</b\s*>", re.S | re.I)
+_BOLD_PLACEHOLDER = "\u0001%d\u0002"
+
+# 报告用：行级规则的标识与展示名（不进 RULES，见模块 docstring）
+BOLD_RULE_ID = "bold-punct"
+BOLD_RULE_SPEC = "一.8"
+BOLD_RULE_DISPLAY = "加粗段内标点移到加粗外"
+
+
+def split_bold_punct(line: str):
+    """把行内 `<b>` 段中的标点移到加粗外，返回 (新行, 命中山列表)。
+
+    标点一到即在该处闭合 `</b>`、写出标点、另起 `<b>`；`<rt>` 注音内容与
+    XML 实体、作品号、缩写点整体保留，不参与切分。
+    """
+    prot: list[str] = []
+
+    def _stash(m):
+        prot.append(m.group(0))
+        return _BOLD_PLACEHOLDER % (len(prot) - 1)
+
+    work = _BOLD_KEEP_ALL.sub(_stash, line)
+    hits: list[tuple[str, str, str]] = []
+
+    def _rebuild(attrs: str, inner: str):
+        toks = TAG_SPLIT.split(inner)
+        out: list[str] = []
+        buf: list[str] = []
+        skip: str | None = None
+        changed = False
+
+        def flush():
+            nonlocal buf
+            content = "".join(buf)
+            if content:
+                out.append("<b%s>%s</b>" % (attrs, content))
+            buf = []
+
+        for tok in toks:
+            if not tok:
+                continue
+            if tok.startswith("<"):
+                if SKIP_CLOSE_RE.match(tok):
+                    skip = None
+                elif SKIP_OPEN_RE.match(tok):
+                    skip = skip or SKIP_OPEN_RE.match(tok).group(1).casefold()
+                buf.append(tok)
+                continue
+            if skip is not None:
+                buf.append(tok)
+                continue
+            seg = ""
+            for ch in tok:
+                if ch in BOLD_DISALLOWED:
+                    if seg:
+                        buf.append(seg)
+                        seg = ""
+                    flush()
+                    out.append(ch)
+                    changed = True
+                else:
+                    seg += ch
+            if seg:
+                buf.append(seg)
+        flush()
+        return "".join(out), changed
+
+    def _repl(m):
+        new, changed = _rebuild(m.group(1), m.group(2))
+        if changed:
+            hits.append(("bold-punct", m.group(0), new))
+            return new
+        return m.group(0)
+
+    work = B_BLOCK_RE.sub(_repl, work)
+    for i, s in enumerate(prot):
+        work = work.replace(_BOLD_PLACEHOLDER % i, s)
+    return work, hits
 
 
 def _skip_state_after(tag: str, skip: str | None) -> str | None:
@@ -166,7 +275,8 @@ def process_file(path: Path, apply_changes: bool):
     file_hits: list[tuple[int, str, str, str]] = []
     for lineno, (body, eol) in enumerate(split_lines(text), 1):
         new_body, hits, skip = transform_line(body, skip)
-        for rid, matched, ctx in hits:
+        new_body, b_hits = split_bold_punct(new_body)
+        for rid, matched, ctx in hits + b_hits:
             file_hits.append((lineno, rid, matched, ctx))
         out_lines.append(new_body + eol)
 
@@ -245,16 +355,22 @@ def main() -> int:
     spots = len(line_hits)
     mode = "已写盘" if args.apply else "只读"
 
+    # 报告口径统一到一张表：RULES（标签外文本替换）+ 行级 bold-punct
+    report_rules = [(rid, disp, spec) for rid, _rx, _rep, spec, disp in RULES]
+    report_rules.append((BOLD_RULE_ID, BOLD_RULE_DISPLAY, BOLD_RULE_SPEC))
+
+    def rule_lines(rid: str) -> int:
+        return len([k for k in line_hits if "|%s|" % rid in k])
+
     print("字符级规范化（%s）：%d 行命中、%d 个字符替换，涉及 %d 个文件（扫描 %d 个 XHTML）"
           % (mode, spots, total, len(touched), scanned))
     if not total:
         print("  无命中。")
-    for rid, _rx, _rep, spec, disp in RULES:
+    for rid, disp, spec in report_rules:
         n = rule_counts.get(rid, 0)
         if n:
             print("  %-20s 字符 %4d / 行 %3d / 文件 %3d   %s  [%s]"
-                  % (rid, n, len({k for k in line_hits if "|%s|" % rid in k}),
-                     len(rule_files.get(rid, ())), disp, spec))
+                  % (rid, n, rule_lines(rid), len(rule_files.get(rid, ())), disp, spec))
     if nav_counts:
         print("  其中 nav.xhtml：%s"
               % ", ".join("%s=%d" % (k, v) for k, v in sorted(nav_counts.items())))
@@ -277,16 +393,16 @@ def main() -> int:
                  "- 命中：**%d** 行 / %d 个字符替换，涉及 %d 个文件" % (spots, total, len(touched)),
                  "- 写盘文件：%d" % written_files, "",
                  "规则来源：`docs/translation-spec.md`（可机械执行子集）。", "",
-                 "| 规则 | 替换 | 依据 | 字符 | 涉及文件 |", "| --- | --- | --- | --- | --- |"]
-        for rid, _rx, _rep, spec, disp in RULES:
+                 "| 规则 | 替换 | 依据 | 命中数 | 涉及文件 |", "| --- | --- | --- | --- | --- |"]
+        for rid, disp, spec in report_rules:
             lines.append("| `%s` | %s | %s | %d | %d |"
                          % (rid, disp, spec, rule_counts.get(rid, 0),
                             len(rule_files.get(rid, ()))))
         lines.append("")
-        for rid, _rx, _rep, _spec, disp in RULES:
+        for rid, disp, spec in report_rules:
             if not rule_samples.get(rid):
                 continue
-            lines += ["## `%s` — %s（%d 个字符）" % (rid, disp, rule_counts[rid]), ""]
+            lines += ["## `%s` — %s（%d 处）" % (rid, disp, rule_counts[rid]), ""]
             lines += ["- %s" % s for s in rule_samples[rid]]
             lines.append("")
         if skipped:
