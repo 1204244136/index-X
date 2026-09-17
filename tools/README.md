@@ -844,6 +844,35 @@ python tools/check_translation_spec.py --pattern "*S3_10*"   # 按书名筛选
 
 报告写入 `.cache/epub-work/translation-spec-check.tsv`（逐条）、`translation-spec-check.json`（结构化）与 `translation-spec-check.md`（按书/按类别汇总及样例）。可用 `--cache` 指定中文缓存根目录、`--output` 指定报告输出目录、`--top` 控制每类样例数。
 
+### 文本字符级规范化（写 `EPUB/`）
+
+```powershell
+python tools/text_norm.py                          # 只读报告（根目录默认 EPUB/）
+python tools/text_norm.py --apply                  # 写盘
+python tools/text_norm.py --pattern "*S4_*"        # 按书目录名筛选
+python tools/text_norm.py --apply --report r.md --summary s.txt
+```
+
+`check_translation_spec.py` 的**可写执行器**：只落地「替换值唯一 + 1:1 字符映射 + 全库全量命中逐条核对无例外」的规则，其余一律留在检查器里报告、不自动写盘。与检查器的分工是**窄**而不是等价的——本工具的规则表刻意比 `P1`–`P14` 少。
+
+| 规则 | 替换 | 依据 |
+| --- | --- | --- |
+| `interrobang` | `！？`/`！?` → `？！` | translation-spec 一.4 |
+| `ellipsis-period` | 删省略号后的句号（`(?!…)` 排除「……。……」两段独立停顿） | 一.5 |
+| `ellipsis-ascii-dot` | 删省略号后的半角句点（`(?!\d)` 避开 `….5`） | 一.5 |
+| `dash-codepoint` | `─`(U+2500) → `—`(U+2014) | 一.1 |
+| `halfwidth-comma` | 中文后半角逗号 → `，`（吞 ASCII 空格；前导须为中文，故千分位不匹配） | 一.1 |
+
+边界与安全闸：
+
+- **标签感知替换**：只改标签之外的文本。标签自身（属性里的 `class`/`href`/内联 `style`）与 `<rt>` 注音、`<style>`/`<script>` 块内容一律原样保留，避免改坏 XML 属性与 CSS。
+- **不改行结构**：全部规则为 1:1 或缩短替换，不增删物理行，因此不影响中日行数对齐；处理逐字节保留 BOM 与换行风格。
+- **fail-safe**：遇到跨行注释、`CDATA` 段或额外行分隔符（U+2028/U+2029/`\x0b`/`\x0c`/`\x85`）的文件拒绝处理并列入报告，不猜测、不部分替换。
+- **只写 `EPUB/`**：不写 `.cache/epub-work/`。按流程 C（`EPUB/` 为准）的权威方向，本地 `publish_auto.py` 会把这里的改动回流到 OneDrive 与缓存。
+- 明确**不**纳入的规则（各有误报或需判断，理由逐条记在工具源码注释里）：儿化音、NBSP、半角括号、弯引号、单独半角 `!`/`?`、半角句号（枪械口径 `.50`）、系列名、拟声破折号变体、全角 `＆％＝＊＋／`、`・`/`‧`、`!？？` 混合、连续 ASCII 空格、引号不配对。改动规则表前必须先做一次全库全量核对。
+
+`.github/workflows/normalize-epub-text.yml` 每日 04:30（UTC+8）跑 `--apply`，有实际修改才提交，无命中则完全不提交。该 workflow 用 `GITHUB_TOKEN` 推送，GitHub 的防递归机制使其不会触发 `Build EPUB Release`——修复进仓库但不自动发版，需要发版时手动触发。
+
 ### 术语审计
 
 ```powershell

@@ -1,0 +1,97 @@
+name: Normalize EPUB Text
+
+# 每日对 EPUB/ 做字符级规范化（docs/translation-spec.md 的可机械执行子集）。
+#
+# 设计口径（「宁愿不改，也不乱改」）：
+#   - 只做替换值唯一、1:1、全量核对无例外的字符替换；规则表见 tools/text_norm.py。
+#   - 不碰结构、模板、行数、文件名与 OPF/NCX/nav 引用，因此不影响中日行数对齐。
+#   - 无命中时完全不提交，不制造空 commit。
+#   - 用 GITHUB_TOKEN 推送，GitHub 的防递归机制使该 push 不会触发
+#     build-epub-release.yml；即修复进仓库但不会自动发版，需要发版时手动
+#     workflow_dispatch 触发 Build EPUB Release。
+
+on:
+  schedule:
+    - cron: "30 20 * * *" # UTC+8 04:30
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 只报告，不写盘
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: normalize-epub-text-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  normalize:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          show-progress: false
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 只读预检
+        run: python tools/text_norm.py --report /tmp/text-norm-report.md
+
+      - name: 应用替换
+        if: ${{ inputs.dry_run != true }}
+        run: |
+          python tools/text_norm.py --apply \
+            --report /tmp/text-norm-report.md \
+            --summary /tmp/text-norm-summary.txt
+
+      - name: 写入 job summary
+        if: always()
+        run: |
+          if [ -f /tmp/text-norm-report.md ]; then
+            cat /tmp/text-norm-report.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: 检查是否有实际修改
+        id: diff
+        if: ${{ inputs.dry_run != true }}
+        run: |
+          git add -N EPUB/
+          if [ -n "$(git status --porcelain EPUB/)" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "检测到修改："
+            git diff --stat EPUB/
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "无命中，未修改任何文件，不提交。"
+          fi
+
+      - name: 组装提交信息
+        id: msg
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          {
+            cat /tmp/text-norm-summary.txt
+            echo ""
+            echo "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          } > /tmp/text-norm-commit.txt
+          echo "message<<__DSH_EOF__" >> "$GITHUB_OUTPUT"
+          cat /tmp/text-norm-commit.txt >> "$GITHUB_OUTPUT"
+          echo "__DSH_EOF__" >> "$GITHUB_OUTPUT"
+
+      - name: 提交并推送
+        if: steps.diff.outputs.changed == 'true'
+        uses: actions-js/push@master
+        with:
+          rebase: true
+          branch: ${{ github.ref }}
+          message: "${{ steps.msg.outputs.message }}"
+          github_token: ${{ secrets.GITHUB_TOKEN }}
