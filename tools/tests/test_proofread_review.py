@@ -8,10 +8,13 @@ TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 
 from proofread_review import (  # noqa: E402
+    clip,
+    core_of,
     grade,
     minimal_diff,
     parse_diff_file,
     parse_word_diff,
+    spec_kind,
     unquote_git_path,
 )
 
@@ -34,6 +37,11 @@ index 2222222..3333333 100644
 [-<p>而这一切的元凶就站在那里。</p>-]
 [-<p>多余的整段。</p>-]{+<p>而这一切的元凶。</p>+}
 '''
+
+
+def g(old, new):
+    """按 grade 接口取级别（row 只需 old/new）。"""
+    return grade({"old": old, "new": new})
 
 
 class ParseWordDiffTests(unittest.TestCase):
@@ -77,17 +85,88 @@ class PathTests(unittest.TestCase):
         self.assertEqual(unquote_git_path("\\345\\210\\233"), "创")
 
 
+class SpecKindTests(unittest.TestCase):
+    """规范确定性改动：产出物遵循 docs/translation-spec.md，这类改动不需要回原文。"""
+
+    def test_punctuation_only(self):
+        self.assertEqual(spec_kind("但是。", "但是——"), "punct")
+
+    def test_halfwidth_to_fullwidth_punctuation(self):
+        # 半角标点必须被规范改写；旧口径只剥全角标点，会把它误判成 local
+        self.assertEqual(spec_kind("他说,你好.", "他说，你好。"), "punct")
+
+    def test_quote_style_change(self):
+        self.assertEqual(spec_kind("「喵？！」", "『喵？！』"), "quote")
+
+    def test_curly_quote_to_corner_quote(self):
+        self.assertEqual(spec_kind("“你好”", "「你好」"), "quote")
+
+    def test_fullwidth_digits_are_glyph(self):
+        self.assertEqual(spec_kind("第３位", "第3位"), "glyph")
+
+    def test_erhua_removal(self):
+        self.assertEqual(spec_kind("不加把劲儿", "不加把劲"), "erhua")
+
+    def test_spec_particle(self):
+        self.assertEqual(spec_kind("切！", "啧！"), "particle")
+
+    def test_erhua_with_other_change_is_not_spec(self):
+        # 「块儿」->「起」不是去掉儿化音，是改词，必须留给人工
+        self.assertEqual(spec_kind("一块儿", "一起"), "")
+
+    def test_semantic_change_is_not_spec(self):
+        self.assertEqual(spec_kind("念动力", "念动能力"), "")
+        self.assertEqual(spec_kind("一把椅子", "两把椅子"), "")
+
+    def test_digit_change_is_not_punctuation(self):
+        # 数字不是标点：删掉/改掉数字必须留下来复核，不能被 punct 静默放行
+        self.assertNotEqual(spec_kind("第10位", "第位"), "punct")
+        # 也不能降级成虚词微调（数字不在虚词白名单里）
+        self.assertEqual(g("第10位", "第位")[0], "local")
+
+
 class GradeTests(unittest.TestCase):
     def test_punctuation_only_change(self):
-        self.assertEqual(grade({"old": "但是。", "new": "但是——"}), "punct")
+        self.assertEqual(g("但是。", "但是——"), ("spec", "punct"))
+
+    def test_tiny_uses_minimal_diff_not_fragment_length(self):
+        # 整片段是长句、差异只有一个虚词，属于虚词级微调（旧口径用整片段长度，恒不触发）
+        old = "「我说御坂小姐，这里可是学园都市。」他笑着说的。"
+        new = "「我说御坂小姐，这里可是学园都市。」他笑着说。"
+        self.assertEqual(g(old, new), ("tiny", ""))
+
+    def test_term_change_of_two_chars_is_not_tiny(self):
+        # 术语改动只差 2 字也不能算虚词微调，否则复核者会直接跳过
+        old = "「这里可是科学阵营的大本营学园都市。」"
+        new = "「这里可是科学侧的大本营学园都市。」"
+        self.assertEqual(g(old, new), ("local", ""))
 
     def test_local_substitution(self):
-        self.assertEqual(grade({"old": "念动力", "new": "念动能力"}), "local")
+        self.assertEqual(g("念动力", "念动能力"), ("local", ""))
 
     def test_rewrite(self):
         old = "所有人都在期待平安夜的到来。" * 3
         new = "大家都盼着平安夜。" * 3
-        self.assertEqual(grade({"old": old, "new": new}), "rewrite")
+        self.assertEqual(g(old, new)[0], "rewrite")
+
+
+class ClipTests(unittest.TestCase):
+    def test_only_diff_context_is_kept(self):
+        old = "甲" * 40 + "儿" + "乙" * 40
+        out = clip(old, "儿")
+        self.assertLess(len(out), 40)
+        self.assertIn("儿", out)
+        self.assertTrue(out.startswith("…"))
+        self.assertTrue(out.endswith("…"))
+
+    def test_short_text_is_untouched(self):
+        self.assertEqual(clip("不加把劲", ""), "不加把劲")
+
+
+class CoreOfTests(unittest.TestCase):
+    def test_digits_are_not_punctuation(self):
+        self.assertIn("5", core_of("等级5"))
+        self.assertNotIn("，", core_of("你好，世界"))
 
 
 class MinimalDiffTests(unittest.TestCase):
