@@ -37,7 +37,7 @@ description: index-X（某系列 EPUB 档案）译名／术语统一工作流。
 
 ### 3.2 检索时的三个必守口径
 
-- **剥离标签先剥 `<rt>`**：`<ruby>魔術<rt>まじゆつ</rt></ruby>サイド` 若只去标签会变成 `魔ま術じゆつサイド` 而**漏检**。这个口径 bug 曾导致「科学阵营」改完而「魔法阵营」漏改 31 处。
+- **剥离标签先剥 `<rt>`**：`<ruby>魔術<rt>まじゆつ</rt></ruby>サイド` 若只去标签会变成 `魔ま術じゆつサイド` 而**漏检**（`epub_audit.text_of` 就是只去标签的那种，用它之前必须先剥注音）。这个口径 bug 曾导致「科学阵营」改完而「魔法阵营」漏改 31 处。
 - **2 字词不当强证据**：「時代」「科学」这类在正文里常以普通词义出现，只有达到门槛的长别名才可作为「译名不一致」的强证据（`docs/translation-spec.md` 五.5）。
 - **风格化行默认跳过**：带「符号 + ruby 注音」的段落（如 `<ruby>〼<rt>是</rt></ruby>`、`<ruby>◎<rt>若</rt></ruby>`）繁简混用与符号是风格的一部分，不得当错字／繁体残留处理，术语判定跳过后交人工。
 
@@ -140,7 +140,11 @@ rg -n --no-heading "サイド" .cache/epub-work/japanese-text --glob "*.xhtml" |
 rg -n --no-heading "科学势力|科学侧|科学方" EPUB --glob "*.xhtml"
 
 # 剥标签后比对（务必先剥 <rt>）
-# 复用 tools/epub_audit.py 的 text_of，不要另写一套剥离逻辑
+# `epub_audit.text_of` 只剥标签、**不剥注音**，直接用它检索会把「魔術サイド」拆成「魔術 まじゆつ サイド」
+# 现成实现（先剥 <rt> 再 text_of，已封装路径与内容序）：见 proofread-review skill 的 references/lookup_source.py
+# 逐行取纯文本时的最小写法（复用既有口径，不另写一套剥离逻辑）：
+#   stripped = re.sub(r"<(rt|rp)\b[^>]*>.*?</\1>", "", raw, flags=re.S)
+#   lines = [epub_audit.text_of(ln.encode("utf-8")) for ln in stripped.split("\n")]
 
 # 只读审计
 python tools/epub_audit.py                      # 术语审计：中日译法差异报告 → .cache/epub-work/report.json|md
@@ -215,7 +219,7 @@ python tools/proofread_review.py <commit>       # 产物 .cache/epub-work/proofr
 | 坑 | 规避 |
 | --- | --- |
 | 全局替换误伤真实义项 | 必须逐点显式映射；先测冲突率 |
-| 剥标签忘剥 `<rt>` 导致漏检 | 复用 `epub_audit.text_of` |
+| 剥标签忘剥 `<rt>` 导致漏检 | **先剥 `<rt>` 再** `epub_audit.text_of`（`text_of` 不去注音）；或直接用 proofread-review skill 的 `lookup_source.py` |
 | 把风格化 ruby 行当错字 | 跳过（§3.2） |
 | 把口癖按单句语感各译各的 | 口癖优先；同一台词跨卷必须逐字相同 |
 | 只改正文，漏了 OPF 简介／nav／Introduction | 一并判定并同步（§五 末） |
