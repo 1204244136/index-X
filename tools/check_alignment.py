@@ -343,6 +343,13 @@ def main() -> int:
             bad.append(row)
 
     def content_index(paths: list[Path], side: str, book: str) -> dict[str, Path]:
+        """按表头索引配对单元。
+
+        刻意**不**在这里按「有无正文」过滤：纯图片页也是合法的配对单元，而
+        「一侧有正文另一侧无」正是要报告的差异。是否跳过留给调用点的
+        `has_body(jl) and has_body(cl)`（两侧都无正文）与 `TEXTUAL_IMAGE_HEADERS`
+        （已确认的文本化图片例外）判定。
+        """
         index: dict[str, Path] = {}
         duplicates: set[str] = set()
         for path in paths:
@@ -358,7 +365,7 @@ def main() -> int:
                 )
                 seen.add(path)
                 continue
-            if not header or header in duplicates or not has_body(read_lines(path)):
+            if not header or header in duplicates:
                 continue
             if header in index:
                 first = index.pop(header)
@@ -406,8 +413,20 @@ def main() -> int:
                 continue
             jp_p, cn_p = jp_by[h], cn_by[h]
             jl, cl = read_lines(jp_p), read_lines(cn_p)
-            if not has_body(jl) or not has_body(cl):
-                continue  # 纯图片页/无正文页
+            if not has_body(jl) and not has_body(cl):
+                continue  # 两侧都是纯图片页/无正文页：不适用
+            if has_body(jl) != has_body(cl) and h not in TEXTUAL_IMAGE_HEADERS:
+                # 只有一侧有正文：这是真实的结构差异，不能默默跳过。
+                # 曾经这里写的是 `if not has_body(jl) or not has_body(cl): continue`，
+                # 于是「日文整页图片 ↔ 中文正文页」这类配对既不做模板检查也不报差异，
+                # S5 全部 7 部作品的扉页就这样在报告里完全消失。
+                add("对", cn_id,
+                    f"JP:{jp_p.relative_to(cache)} | CN:{cn_p.relative_to(cache)}",
+                    h, True,
+                    ["一侧有正文另一侧无：日文 %d 行（正文 %s）/ 中文 %d 行（正文 %s）"
+                     % (len(jl), has_body(jl), len(cl), has_body(cl))],
+                    "结构差异")
+                continue
             checked += 1
             for p_, side_, lines_ in ((jp_p, "日", jl), (cn_p, "中", cl)):
                 if p_ in seen:

@@ -10,6 +10,7 @@
 | 1 | `epub_ids.japanese_book_id()` 把 `S5_AA_BB` 折叠成 `S5_AA`（合订卷号） | 8 部 S5 作品的日文目录查不到，被当成「无日文对应」静默跳过 |
 | 2 | `check_alignment.py` 的「未配对 CN」循环嵌在 `for … in pairs:` **内部** | 没进 pairs 的书连单侧模板检查也拿不到 |
 | 3 | 缺陷 2 掩盖了缺陷 1：S5 既没配对、也没单侧检查，两层都不报错 | 只有把配对修好才看得到单侧检查的缺口 |
+| 4 | 配对循环里 `if not has_body(jl) or not has_body(cl): continue` | 「一侧纯图片页 ↔ 一侧正文页」的配对既不检查也不报差异，S5 全部 7 部作品的扉页在报告里消失 |
 
 修正后：中日配对作品 **67 → 74**，检查文件 **913 → 1105**。
 
@@ -48,6 +49,39 @@
 修正为：配对循环只做配对检查；**新增独立的「未配对书籍」段**放在配对循环之外，对没有对应作品的
 一侧照常做单侧模板检查，并在报告里留一行 `无日文对应作品，仅单侧模板检查` / `无中文对应作品，仅单侧模板检查`。
 `NON_PAIR_WORK_IDS` 仍用于「已知非同一作品」的常态跳过（不像未译卷那样值得每天提示）。
+
+## 缺陷 4：一侧纯图片页被静默跳过
+
+配对循环里原本写的是 `if not has_body(jl) or not has_body(cl): continue`
+（「纯图片页/无正文页不适用」）。但这里比较的是**两侧**，只要**任一侧**没有正文就整对跳过——
+于是「日文整页图片 ↔ 中文正文页」这类配对既不做模板检查、也不报差异。实测有 7 对，全部是 S5 各作品
+的首个内容单元 `S5_*_*-01`：
+
+| 作品 | 日文 `-01` | 中文 `-01` |
+| --- | --- | --- |
+| `S5_01_01` | 整页图片 `<img … -m-001.jpg alt="神裂火織 編"/>`（7 行，无正文） | `-01_Introduction.xhtml` 简介（12 行） |
+| `S5_01_02` | 同上（`-m-002.jpg`） | 简介（11 行） |
+| `S5_01_03` | 同上（`-m-003.jpg`） | 简介（13 行） |
+| `S5_02_01` | 同上（`-m-001.jpg`） | 简介（10 行） |
+| `S5_02_02` | 同上（`-m-002.jpg`） | 简介（12 行） |
+| `S5_03_02` | 同上（SVG + image） | 简介（21 行） |
+| `S5_04_01` | 同上（SVG + image） | 简介（10 行） |
+
+日文侧是「外典书库」合订卷里每部作品的作品扉页（整张宣传图），中文侧没有这个图片页，
+改为一张文本化的「简介」页。这与 `TEXTUAL_IMAGE_HEADERS` 已有的 `S2_14-*` 是**同一族**例外
+（`S2_14` 是「中文把整页材料图排成文本行」，这里是「中文把整页扉页图换成简介页」），
+因此按同一口径登记进 `TEXTUAL_IMAGE_HEADERS`（整表头豁免）。
+
+配套改动：
+
+- `content_index()` 不再按「有无正文」过滤——纯图片页也是合法配对单元，「一侧有正文另一侧无」
+  正是要报告的差异；是否跳过留给调用点判定；
+- 配对循环改为：两侧都无正文才 `continue`；只有一侧有正文时**默认报告**
+  （`一侧有正文另一侧无：日文 N 行（正文 False）/ 中文 M 行（正文 True）`），
+  只有登记在 `TEXTUAL_IMAGE_HEADERS` 里的表头才豁免。
+
+验证：临时清空 `check_alignment.TEXTUAL_IMAGE_HEADERS` 后重跑，报告的正是上表这 7 条
+（另加 `S2_14` 那 5 条），说明豁免是唯一的抑制来源，且负向自检能证明这一点。
 
 ## 修正后新暴露的 4 项问题与处置
 
@@ -103,20 +137,26 @@ chinese-text/[S5_02_03]某科学的超电磁炮 ColdGameX/
 
 ### `S5_03_02-08`：后记 `<br/>` 边界不同（待裁定）
 
-两侧都是 25 行，独占 `<br/>` 各 7 个，但位置不同（段 2 之后 1→2、段 3 之后 1→2 互换）：
+两侧都是 25 行，独占 `<br/>` 各 7 个，但位置不同：
 
-```
-JP  9 <br/>     CN  9 <br/>
-JP 10 <br/>     CN 10 <p>雅妮丝那边…</p>
-JP 11 <p>アニェーゼ…   CN 11 <br/>
-JP 12 <br/>     CN 12 <p>上条这边…</p>
-JP 13 <p>上条…       CN 13 <p>……顺便说一下…</p>
-JP 14 <p>……ちなみに…  CN 14 <br/>
-```
+| | 段落边界处的 `<br/>` 连段长度 |
+| --- | --- |
+| 日文 | 段2 后 **2**、段3 后 **1**、段4 后 **2**、段6 后 1、段7 后 1 |
+| 中文 | 段2 后 **1**、段3 后 1、段4 后 **1**、段6 后 1、段7 后 1、段8 后 1 |
 
-既不是「中文多出遗留 `<br/>`」（数量相同），也不是「日文更长」（行数相同），
-`fix_legacy_pagebreak_br.py` 的判定条件不适用。按「宁愿不改，也不乱改」保留报告，
-不作自动处置；**这是当前该工具在全库唯一剩下的配对问题**。
+段落**一一对应**（6↔6、7↔7、8↔8、11↔10、13↔12、14↔13、15↔15、18↔17、19↔19、21↔21、23↔23、24↔24），
+行数相同，连段长度之和都是 7——即纯粹的**视觉间隔分布**不同：日文在段 2、段 4 之后各留 2 个 `<br/>`，
+中文把这两个改写成了段 3 之后与段 8 之后的各 1 个；`段8 <br/> 段9` 边界上中文有、日文无。
+
+全库范围核对过：**只有这一个文件**出现「行数相同但独占 `<br/>` 位置不同」（其余全部一致）。
+全库「独占 `<br/>` 连段长度」分布两侧几乎相同（JP `{1:7681, 2:824, …}` vs CN `{1:7713, 2:818, …}`），
+说明「两个连续 `<br/>`」是两侧共有的既有约定，不是某一侧的污染。本作品另外 7 个文件
+（`-02`…`-07`）的两侧连段序列逐项一致，可见这是 `-08` 单点的差异。
+
+判定口径：`AGENTS.md`「中日两侧同一位置的换页标记与视觉间隔数量一致」。
+由于两侧行数与连段总数都相同，`fix_legacy_pagebreak_br.py`（只在中文多出 `<br/>` 时删）与
+「日文 h2 前后 `<br/>` 只删等于行数差的数量」两条机械规则都不适用，需要人工决定按哪一侧对齐。
+**当前处置：保留报告，不自动修改**（这是全库唯一剩下的配对问题）。
 
 ## 例外机制
 
@@ -134,7 +174,7 @@ JP 14 <p>……ちなみに…  CN 14 <br/>
 ## 验证
 
 ```powershell
-python -m unittest discover -s tools/tests -p "test_*.py" -v   # 187 通过
+python -m unittest discover -s tools/tests -p "test_*.py" -v   # 189 通过
 python tools/check_alignment.py                                 # 1105 文件 / 1 问题
 python tools/check_epub_health.py --strict                      # 0 问题
 python tools/normalize_paired.py --dry-run                      # 跳过项含 S5_01_03-06（行数不对称）
@@ -147,6 +187,8 @@ python tools/normalize_paired.py --dry-run                      # 跳过项含 S
 - `test_books_without_a_japanese_counterpart_are_still_checked`：无日文对应的中文书仍被检查（缺陷 2）；
 - `test_japanese_only_books_are_still_checked`：日文独有作品（`S3_12` 之后的新卷、`S6_24.06.07`）仍被检查；
 - `test_template_exempt_books_skip_only_template_problems`：豁免只作用于模板项；
+- `test_one_sided_body_is_reported_not_silently_skipped`：一侧有正文另一侧无必须报告（缺陷 4）；
+- `test_s5_frontispiece_headers_are_documented_exceptions`：7 部作品扉页是已登记例外；
 - `test_pair_rules_only_cancel_the_problem_they_explain`、`test_afterword_rule_requires_an_afterword`、
   `test_section_order_rule_requires_a_pure_swap`、`test_pair_rules_table_only_lists_reviewed_headers`、
   `test_fixed_layout_work_is_not_paired`。

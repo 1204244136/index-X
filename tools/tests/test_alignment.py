@@ -108,16 +108,19 @@ class AlignmentTests(unittest.TestCase):
             self.assertIn("同一物理行包含多个正文块", report)
 
     def test_s5_pairs_by_the_same_work_id(self):
-        """S5 按同一作品号配对，不再折叠成合订卷号。"""
+        """S5 按同一作品号配对，不再折叠成合订卷号。
+
+        用 `-02` 而非 `-01`：`-01` 是各作品扉页，已登记为文本化图片例外（整表头豁免）。
+        """
         with tempfile.TemporaryDirectory() as tmp:
             cache = Path(tmp)
             cn = cache / "chinese-text" / "[S5_01_03]中" / "OEBPS" / "Text"
             jp = cache / "japanese-text" / "[S5_01_03]日" / "OEBPS" / "Text"
             cn.mkdir(parents=True)
             jp.mkdir(parents=True)
-            (cn / "S5_01_03-01_Chapter1.xhtml").write_text(
+            (cn / "S5_01_03-02_Chapter1.xhtml").write_text(
                 xhtml(["<p>一</p>"]), encoding="utf-8")
-            (jp / "S5_01_03-01_p-001.xhtml").write_text(
+            (jp / "S5_01_03-02_p-010.xhtml").write_text(
                 xhtml(["<p>一</p>", "<p>二</p>"]), encoding="utf-8")
             with patch.object(sys, "argv", ["check_alignment.py", "--cache", str(cache)]):
                 self.assertEqual(check_alignment.main(), 0)
@@ -205,6 +208,48 @@ class AlignmentTests(unittest.TestCase):
     def test_fixed_layout_work_is_not_paired(self):
         """S5_02_03 日文是一页式固定版式，与中文文本化重排无法逐行对应。"""
         self.assertIn("S5_02_03", alignment_rules.NON_PAIR_WORK_IDS)
+
+    def test_one_sided_body_is_reported_not_silently_skipped(self):
+        """只有一侧有正文时是真实结构差异，必须报告。
+
+        这里曾经写的是 `if not has_body(jl) or not has_body(cl): continue`，
+        于是「日文整页图片 ↔ 中文正文页」的配对既不做模板检查也不报差异——
+        S5 全部 7 部作品的扉页在报告里完全消失。现在默认报告，只有登记在
+        TEXTUAL_IMAGE_HEADERS 里的已确认表头才豁免。
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            cache = Path(tmp)
+            cn = cache / "chinese-text" / "[S1_01]中" / "OEBPS" / "Text"
+            jp = cache / "japanese-text" / "[S1_01]日" / "OEBPS" / "Text"
+            cn.mkdir(parents=True)
+            jp.mkdir(parents=True)
+            # 日文：整页图片，无正文
+            image_page = [
+                "<?xml version='1.0' encoding='utf-8'?>",
+                "<!DOCTYPE html>",
+                "<html><head></head><body>",
+                "",
+                "",
+                '<p id="toc-001"><img class="fit" src="../image/x.jpg" alt="扉页"/></p>',
+                "</body></html>",
+            ]
+            (jp / "S1_01-01_p-001.xhtml").write_text(
+                "\n".join(image_page) + "\n", encoding="utf-8")
+            (cn / "S1_01-01_Introduction.xhtml").write_text(
+                xhtml(["<p>简介正文</p>"]) + "\n", encoding="utf-8")
+            with patch.object(sys, "argv", ["check_alignment.py", "--cache", str(cache)]):
+                self.assertEqual(check_alignment.main(), 0)
+            report = (cache / "alignment-check.tsv").read_text(encoding="utf-8-sig")
+            self.assertIn("一侧有正文另一侧无", report)
+
+    def test_s5_frontispiece_headers_are_documented_exceptions(self):
+        """S5 各作品扉页（日文整页图片 ↔ 中文简介页）是已确认的同一族例外。"""
+        for work in ("S5_01_01", "S5_01_02", "S5_01_03", "S5_02_01",
+                     "S5_02_02", "S5_03_02", "S5_04_01"):
+            self.assertIn(work + "-01", alignment_rules.TEXTUAL_IMAGE_HEADERS)
+        # 该豁免是整表头豁免：任意内容都不报配对差异
+        self.assertEqual(check_alignment.pair_problems(
+            "S5_01_01-01", ["a"] * 7, ["b"] * 12), [])
 
     def test_pair_difference_is_a_problem_record(self):
         with tempfile.TemporaryDirectory() as tmp:
