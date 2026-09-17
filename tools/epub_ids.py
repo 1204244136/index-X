@@ -38,13 +38,22 @@ def book_id(name: str) -> str | None:
 
 
 def japanese_book_id(chinese_id: str) -> str:
-    """Map a Chinese independent work id to its Japanese collected-volume id."""
-    value = chinese_id.upper()
-    if value.startswith("S5_"):
-        parts = value.split("_")
-        if len(parts) == 3:
-            return f"S5_{parts[1]}"
-    return value
+    """Chinese and Japanese sides use the same work id; this is the identity map.
+
+    It used to collapse ``S5_AA_BB`` (Chinese independent work) to ``S5_AA``
+    (Japanese collected volume, ``[S5_01]外典書庫(1)``). That intermediate form
+    is not what the archive holds: ``tools/split_s5_epubs.py`` splits each
+    collected volume into independent works and **names each output with the
+    two-part id**, e.g. ``[S5_01_01]とある魔術の禁書目録SS 神裂火織編``. So both
+    sides key on the same ``S5_AA_BB``.
+
+    The old collapse did not fail loudly: lookup simply missed, and every caller
+    silently treated the book as unpaired — eight S5 works were skipped by the
+    pairing checks and by the paired normalization/repair tools. Keep this
+    identity; if a real collected-volume directory ever appears, declare it as an
+    explicit alias rather than deriving it.
+    """
+    return chinese_id.upper()
 
 
 def header_of(name: str) -> str | None:

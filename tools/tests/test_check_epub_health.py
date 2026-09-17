@@ -170,22 +170,40 @@ class HealthCheckNegativeTests(unittest.TestCase):
 
     # ---- 豁免与 --only ----
     def test_exempt_books_suppress_template_only(self):
-        """豁免按「书 + 检查项」：豁免 template 不等于豁免这本书的全部检查。"""
+        """豁免按「书 + 检查项」：豁免 template 不等于豁免这本书的全部检查。
+
+        名单本体在 `alignment_rules.TEMPLATE_EXEMPT_WORK_IDS`（与 check_alignment
+        共用），所以这里直接改那个集合，验证两边确实是同一份。
+        """
+        import alignment_rules
+
         book = self.build("S1_01", {
             "OEBPS/Text/S1_01-01_Chapter1.xhtml": GOOD[:3] + ["", "", "<p>a</p><p>b</p>",
                                                              "</body></html>"],
         })
-        with patch.dict(check_epub_health.EXEMPT_BOOKS, {"S1_01": frozenset({"template"})}):
+        with patch.object(alignment_rules, "TEMPLATE_EXEMPT_WORK_IDS",
+                          frozenset({"S1_01"})):
             findings, counts, exempted, _cov = audit_book(book, {"template"})
             self.assertEqual(findings, [])
             self.assertEqual(exempted.get("template"), 1)
-            # 同一本书的其它检查项不受影响
-            book2 = self.build("S1_01", {
-                "OEBPS/Text/S1_01-02_Chapter2.xhtml": body("<p><b>住手，你</b>听我说。</p>"),
-            })
-            findings2, counts2, _e2, _c2 = audit_book(book2, {"bold-punct"})
-            self.assertEqual(counts2.get("bold-punct"), 1)
-            self.assertTrue(findings2)
+        # 同一本书的其它检查项不受豁免影响
+        book2 = self.build("S1_01", {
+            "OEBPS/Text/S1_01-02_Chapter2.xhtml": body("<p><b>住手，你</b>听我说。</p>"),
+        })
+        findings2, counts2, _e2, _c2 = audit_book(book2, {"bold-punct"})
+        self.assertEqual(counts2.get("bold-punct"), 1)
+        self.assertTrue(findings2)
+
+    def test_real_exempt_works_are_the_reviewed_three(self):
+        """名单是「已裁定不纳入模板检查」的三本，不是随手积累的忽略项。"""
+        import alignment_rules
+        self.assertEqual(
+            alignment_rules.TEMPLATE_EXEMPT_WORK_IDS,
+            frozenset({"S0_00", "S6_10.06.26", "S6_24.12.10"}))
+        self.assertTrue(alignment_rules.template_exempt("S0_00"))
+        self.assertTrue(alignment_rules.template_exempt("s6_10.06.26"))
+        self.assertFalse(alignment_rules.template_exempt("S1_01"))
+        self.assertFalse(alignment_rules.template_exempt(None))
 
     def test_only_restricts_checks(self):
         book = self.build("S1_01", {

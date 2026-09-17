@@ -45,10 +45,12 @@
   换行符      `AGENTS.md` 明确「换行符不作为修改对象」，CRLF 属仓库容忍的既有态，
              不是问题，因此不做检查也不报告。
 
-豁免名单（`EXEMPT_BOOKS`）
-------------------------
+豁免名单（`alignment_rules.TEMPLATE_EXEMPT_WORK_IDS`）
+--------------------------------------------------
 `S0_00`（读前必看，非正文）、`S6_10.06.26`、`S6_24.12.10`——后两本没有 BW 分页源，
-已明确不处理。豁免粒度按「书 + 检查项」，`S0_00` 只豁免 template，其余照查。
+已明确不处理。豁免粒度按「书 + 检查项」，这三本只豁免 template，其余照查
+（如 `S0_00-00` 这类非法内容序仍会被 `check_alignment.py` 报出来）。名单本体放在
+`alignment_rules.py`，`check_alignment.py` 与 `check_epub_health.py` 共用一份。
 
 用法
 ----
@@ -68,6 +70,7 @@ import xml.etree.ElementTree as ET
 from collections import Counter, defaultdict
 from pathlib import Path
 
+from alignment_rules import TEMPLATE_EXEMPT_WORK_IDS, template_exempt  # noqa: F401
 from check_alignment import check_file as check_template
 from epub_ids import book_id, content_sequence, header_of, is_packaging_header, work_id
 from text_norm import split_bold_punct
@@ -75,20 +78,9 @@ from text_norm import split_bold_punct
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_ROOT = REPO_ROOT / "EPUB"
 
-# ---------------------------------------------------------------------------
-# 豁免名单：判定标准之外的**已确认合法例外**，不是「暂时忽略」。
-# 每条都要写清原因；往这里加条目等于放宽体检口径，必须同时说明依据。
-#
-# 这三本都不是待修的「问题书」，而是**已裁定不纳入正文模板检查**的文件：
-# 保持原始快照结构，改动它们不在当前任务范围内。
-# ---------------------------------------------------------------------------
-EXEMPT_BOOKS: dict[str, frozenset[str]] = {
-    # 读前必看，非正文作品，结构本身与正文模板无关
-    "S0_00": frozenset({"template"}),
-    # 无 BW 分页源（用户明示「3 本漏检书不处理，因为没有 bw 源文件」）
-    "S6_10.06.26": frozenset({"template"}),
-    "S6_24.12.10": frozenset({"template"}),
-}
+# 豁免名单本体在 `alignment_rules.TEMPLATE_EXEMPT_WORK_IDS`——`check_alignment.py`
+# 和本工具都从那里取。两处各放一份必然漂移：一边放宽了、另一边还在报。
+# 粒度是「作品 + 检查项」：`S0_00` 这类只豁免 template，其余检查照跑。
 
 IMG_REF_RE = re.compile(r'(?:src|href)\s*=\s*["\']([^"\']+)["\']', re.I)
 IMG_TAG_RE = re.compile(r"<img\b[^>]*>", re.I)
@@ -293,7 +285,8 @@ def iter_books(root: Path, pattern: str | None):
 
 
 def exempt(bid: str | None, check: str) -> bool:
-    return bool(bid) and check in EXEMPT_BOOKS.get(bid, ())
+    """只有 template 项有豁免名单，其余检查项对所有作品一律生效。"""
+    return check == "template" and template_exempt(bid)
 
 
 def audit_book(book_dir: Path, only: set[str] | None) -> tuple[list[tuple], Counter, Counter, Counter]:
@@ -454,7 +447,7 @@ def main() -> int:
             "severity": {"error": errors, "warning": warnings},
             "by_check": {c: counts.get(c, 0) for c in CHECK_ORDER},
             "exempted": dict(exempted),
-            "exempt_books": {k: sorted(v) for k, v in EXEMPT_BOOKS.items()},
+            "template_exempt_works": sorted(TEMPLATE_EXEMPT_WORK_IDS),
             "findings": [
                 {"check": c, "book": b, "file": r, "line": l, "severity": s, "message": m}
                 for c, b, r, l, s, m in findings
