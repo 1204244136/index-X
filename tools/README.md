@@ -864,6 +864,37 @@ python tools/epub_audit.py
 
 定位命中内容时，直接打开 `japanese-text/<卷>/` 下对应的原始 XHTML 文件。报告中的上下文仅用于快速检索，不替代原始文件行号。
 
+### 译文校对复核（提交级，只读）
+
+```powershell
+python tools/proofread_review.py b7515335 2d44cb26     # 复核指定提交
+python tools/proofread_review.py --worktree            # 复核未提交的工作区改动
+python tools/proofread_review.py b7515335 --path EPUB --out 输出目录/
+```
+
+复核「重新校对」这类批量提交时，先把改动从 git 里片段化，再按重要度分级，便于判断哪些必须逐条回原文、哪些可以批量放行。只读，不修改 `EPUB/` 与缓存正文。
+
+产物（默认 `.cache/epub-work/proofread-review/`）：
+
+- `changes.tsv`：`commit / 作品 / 文件 / 行号 / 级别 / 旧 / 新`
+- `semantic.tsv`：语义级片段（已剔除纯标点与虚词改动）
+- `groups.txt`：语义级按「最小差异」聚类，重复出现的改动模式一眼可见
+
+分级口径：
+
+| 级别 | 判定 | 处置 |
+|---|---|---|
+| `rewrite` | 最小差异 > 12 字，或某处整段增删（两侧片段数不等） | 整句/整段重写，抽查 |
+| `local` | 最小差异 ≤ 12 字 | 术语、用词、数字等局部替换，逐条看 |
+| `punct` | 去掉标点/空白后两侧相同 | 只动了标点排版，可批量放行 |
+| `tiny` | 两侧都不超过 2 字 | 虚词级微调 |
+
+输出同时给出「明显增补」「明显删减」统计；**删减是误删实义成分的高发区**，应重点抽查。
+
+回查原文：`semantic.tsv` / `groups.txt` 只给「旧 => 新」，判定对错必须回日文原文。日文缓存 `S3_01-NN.xhtml` 与中文 `S3_01-NN_*.xhtml` 按内容序 `NN` 一一对应（01=序章 / 02=行间一 / 03=第一章 … 11=终章）；文件内部不是逐行对齐，按关键字检索。需要把日文抽成纯文本时复用 `epub_audit.text_of`，本工具不重复实现。
+
+依赖：`epub_ids.work_id`（作品号解析）、`epub_audit.text_of`（XHTML → 纯文本）。
+
 ### 字数统计与页数换算（只读）
 
 ```powershell

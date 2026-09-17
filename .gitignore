@@ -1,4 +1,5 @@
 .cache/
+.workbuddy/
 __pycache__/
 *.py[cod]
 .dsh-filess/
