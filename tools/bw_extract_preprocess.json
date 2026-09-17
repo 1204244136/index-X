@@ -28,6 +28,22 @@
     {
       "case_sensitive": false,
       "dot_all": false,
+      "find": "<span class=\"(?=[^\"]*\\bbold\\b)[^\"]*\">(.*?)</span>",
+      "mode": "regex",
+      "name": "加粗span转b标签（含组合class）",
+      "replace": "<b>\\1</b>"
+    },
+    {
+      "case_sensitive": false,
+      "dot_all": false,
+      "find": "<span class=\"(?=[^\"]*\\bem-sesame\\b)[^\"]*\">(.*?)</span>",
+      "mode": "regex",
+      "name": "着重号span转b标签（含组合class）",
+      "replace": "<b>\\1</b>"
+    },
+    {
+      "case_sensitive": false,
+      "dot_all": false,
       "find": "<span class=\"tcy\">(.*?)</span>",
       "mode": "regex",
       "name": "纵中横span解包",
@@ -212,14 +228,6 @@
     {
       "case_sensitive": false,
       "dot_all": false,
-      "find": "<span class=\"em-sesame\">(.*?)</span>",
-      "mode": "regex",
-      "name": "着重号span转b标签",
-      "replace": "<b>\\1</b>"
-    },
-    {
-      "case_sensitive": false,
-      "dot_all": false,
       "find": "<p class=\"line-break-loose\">(.*?)</p>",
       "mode": "regex",
       "name": "行宽松样式解包",
@@ -250,6 +258,6 @@
       "replace": "\\1"
     }
   ],
-  "version": 6,
-  "_comment": "恢复分页合并所需的固定行模板契约：正文页折叠 L1-L3，章节标题转 h1（含跨行 h1 折叠为单行），数字小节转 h2，无标题页保留 L4/L5 空槽；同时清理 BookWalker 排版噪声（含 h2 前后填充 br 清理）。v6：单段排版 div 容器折叠从 align-end 推广到 align-center/align-right/gfont/h-indent-*/start-*/font-1em30 start-2em 白名单，并改为行锚定匹配，杜绝把多段容器吞成一行。"
+  "version": 7,
+  "_comment": "恢复分页合并所需的固定行模板契约：正文页折叠 L1-L3，章节标题转 h1（含跨行 h1 折叠为单行），数字小节转 h2，无标题页保留 L4/L5 空槽；同时清理 BookWalker 排版噪声（含 h2 前后填充 br 清理）。v6：单段排版 div 容器折叠从 align-end 推广到 align-center/align-right/gfont/h-indent-*/start-*/font-1em30 start-2em 白名单，并改为行锚定匹配，杜绝把多段容器吞成一行。v7：加粗/着重号 span 转 b 改为按 class token 匹配（前瞻 (?=[^\"]*\\bbold\\b) / (?=[^\"]*\\bem-sesame\\b)），修掉旧版精确匹配 <span class=\"em-sesame\"> 漏掉组合 class 的缺陷（S4_02-06 的 bold em-sesame / tcy bold 曾原样残留）；纯 tcy 仍按原规则解包，含 bold 的组合由前置的加粗规则先转 b，避免丢掉强调语义。"
 }
