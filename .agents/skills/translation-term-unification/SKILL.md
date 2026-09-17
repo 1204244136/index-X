@@ -112,12 +112,12 @@ python .agents/skills/translation-term-unification/references/test_unify_terms_t
 ### S6 门禁
 
 ```powershell
-python tools/check_alignment.py --strict        # 中日行数 / 模板 / h2 / 图片行；当前基线 913 正文文件 0 问题
+python tools/check_alignment.py --strict        # 中日行数 / 模板 / h2 / 图片行；当前基线 1105 正文文件 0 问题
 python tools/check_epub_health.py --strict      # 单侧结构（XML、ruby、加粗、悬空引用等）
 python tools/check_translation_spec.py          # 涉及标点／注音／单位时跑；报告在 .cache/epub-work/
 ```
 
-`check_alignment.py` 的输出行数异常（如「913 个正文文件」变成别的数字）要先解释再继续，不得当成噪声跳过。
+`check_alignment.py` 的输出行数异常（如「1105 个正文文件」变成别的数字）要先解释再继续，不得当成噪声跳过。（913 是 S5 配对修复前的旧基线，见 `cn-jp-pairing-fix-s5-works-2026-09-17.md`。）
 
 ### S7 写后同步、留档、提交
 
@@ -174,6 +174,7 @@ python tools/proofread_review.py <commit>       # 产物 .cache/epub-work/proofr
 | `benizome-zerifish-catchphrase-translation-consistency-2026-09-16.md` | 红染·洁莉菲修口癖 `やめてよね` → 可别啦（口癖优先于单句语感） |
 | `air-disintegration-semantic-rails-2026-09-14.md` | `空中分解` 按语义分轨，不一律同译 |
 | （提交 `defc1b50`） | 白鸟炽媚口癖 `当方` → 本人（自称，不得与「我方／阵营」串层） |
+| `sephira-term-unification-2026-09-17.md` | `セフィラ`（术语层）→ 源质；`一〇の球`／`球体` → 球体（不与源质混用）；角色名「逆源质拼图545」保留；「位阶」只对应 `位階`／`レベル`，不得回填 `セフィラ` |
 
 ## 七、留档模板
 
@@ -207,7 +208,7 @@ python tools/proofread_review.py <commit>       # 产物 .cache/epub-work/proofr
 
 - 修订前 / 修订后：<译法分布与残留数>
 - 全部为行内替换，不增删物理行：<各文件 行数/行数 中日一致>
-- `python tools/check_alignment.py --strict`：913 个正文文件，0 个问题
+- `python tools/check_alignment.py --strict`：1105 个正文文件，0 个问题
 - `python tools/publish_auto.py`：<哪些书已上传并回流缓存>
 - 回退：`git revert <commit>`
 ```
