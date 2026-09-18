@@ -195,13 +195,19 @@ class HealthCheckNegativeTests(unittest.TestCase):
         self.assertTrue(findings2)
 
     def test_real_exempt_works_are_the_reviewed_three(self):
-        """名单是「已裁定不纳入模板检查」的三本，不是随手积累的忽略项。"""
+        """名单是「已裁定不纳入模板检查」的两本，不是随手积累的忽略项。
+
+        `S6_24.12.10` 曾在名单里（日文侧画集无 BW 分页源）；该作品补齐日文侧、
+        恢复常规配对后登记已移除（见 `alignment_rules` 中该条注释与提交
+        `cd2b7012`），因此这里只断言现存的两本。
+        """
         import alignment_rules
         self.assertEqual(
             alignment_rules.TEMPLATE_EXEMPT_WORK_IDS,
-            frozenset({"S0_00", "S6_10.06.26", "S6_24.12.10"}))
+            frozenset({"S0_00", "S6_10.06.26"}))
         self.assertTrue(alignment_rules.template_exempt("S0_00"))
         self.assertTrue(alignment_rules.template_exempt("s6_10.06.26"))
+        self.assertFalse(alignment_rules.template_exempt("S6_24.12.10"))
         self.assertFalse(alignment_rules.template_exempt("S1_01"))
         self.assertFalse(alignment_rules.template_exempt(None))
 
