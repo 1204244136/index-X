@@ -3,7 +3,7 @@
 
 Workflow:
   1. ./tools/pull.ps1           -- extract changed OneDrive EPUBs to cache + update manifest
-  2. (agent modifies cache)
+  2. (tool-produced cache changes; agent text edits belong in EPUB/)
   3. python tools/publish.py     -- detect changes, sync EPUB/, package, upload
 
 Only books with changed files (vs the manifest) are processed, and only the
@@ -42,13 +42,12 @@ from sync_core import (  # noqa: E402
     SIDE_DIRECTORIES,
     SIDE_LABELS,
     STATUS_LABELS,
-    UNIX_TO_DOTNET_TICKS_OFFSET,
     detect_changes,
     missing_baseline_sides,
     remove_pull_state_record,
     sync_file_changes,
     update_manifest_for_book,
-    update_pull_state_record,
+    upload_book,
 )
 
 REPO_ROOT = TOOLS_DIR.parent
@@ -213,16 +212,9 @@ def publish_book(
         if onedrive_dir:
             dest = onedrive_dir / f"{book}.epub"
             try:
-                shutil.copy2(packed_epub, dest)
+                upload_book(packed_epub, dest, cache_root, book_key)
             except OSError as exc:
                 return False, f"上传失败 {book_key}: {exc}"
-            st = dest.stat()
-            update_pull_state_record(
-                cache_root,
-                book_key,
-                st.st_mtime_ns // 100 + UNIX_TO_DOTNET_TICKS_OFFSET,
-                st.st_size,
-            )
             print(f"  [上传] -> {dest}")
 
     return True, ""

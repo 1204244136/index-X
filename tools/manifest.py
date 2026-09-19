@@ -49,6 +49,26 @@ def scan_cache(cache_root: Path) -> dict[str, str]:
     return files
 
 
+def scan_epub(epub_root: Path) -> dict[str, str]:
+    """Walk EPUB/ and return {manifest-style key: sha256}.
+
+    EPUB/ stores one directory per (Chinese) book, so every file maps to the
+    'chinese-text/<book>/<rel>' key used by manifest.json / publish.py.
+    """
+    files: dict[str, str] = {}
+    for book_dir in sorted(p for p in epub_root.iterdir() if p.is_dir()):
+        if is_extract_artifact(book_dir, root=epub_root):
+            continue
+        for path in book_dir.rglob("*"):
+            if not path.is_file():
+                continue
+            if is_extract_artifact(path, root=epub_root):
+                continue
+            rel = path.relative_to(epub_root).as_posix()
+            files[f"chinese-text/{rel}"] = compute_hash(path)
+    return files
+
+
 def save_manifest(cache_root: Path, files: dict[str, str] | None = None) -> tuple[int, Path]:
     if files is None:
         files = scan_cache(cache_root)

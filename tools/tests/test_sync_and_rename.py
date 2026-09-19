@@ -10,17 +10,71 @@ TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 
 from fix_empty_placeholders import apply_candidate  # noqa: E402
-from manifest import compute_hash, scan_cache  # noqa: E402
+from manifest import compute_hash, scan_cache, scan_epub  # noqa: E402
 from publish import alignment_preflight, publish_book  # noqa: E402
-from publish_epub import find_conflicts, publish_book_reverse, scan_epub  # noqa: E402
+from publish_epub import publish_book_reverse  # noqa: E402
 from sync_core import (  # noqa: E402
+    UNIX_TO_DOTNET_TICKS_OFFSET,
     detect_changes,
+    find_conflicts,
     missing_baseline_sides,
+    read_pull_state,
     sync_file_changes,
+    upload_book,
 )
 
 
 class SyncCoreTests(unittest.TestCase):
+    def test_upload_records_destination_and_preserves_other_books(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            packed, destination = root / "packed.epub", root / "uploaded.epub"
+            packed.write_bytes(b"packaged book")
+            (root / "pull-state.tsv").write_text(
+                "\ufeffjapanese-text\tother\t123\t456\ninvalid\n",
+                encoding="utf-8",
+            )
+            upload_book(packed, destination, root, "chinese-text/book")
+            self.assertEqual(destination.read_bytes(), packed.read_bytes())
+            stat = destination.stat()
+            self.assertEqual(read_pull_state(root), {
+                "japanese-text/other": ("123", "456"),
+                "chinese-text/book": (
+                    str(stat.st_mtime_ns // 100 + UNIX_TO_DOTNET_TICKS_OFFSET),
+                    str(stat.st_size),
+                ),
+            })
+
+    def test_failed_upload_does_not_advance_pull_state(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            state = root / "pull-state.tsv"
+            original = b"chinese-text\tbook\t123\t456\n"
+            state.write_bytes(original)
+            with self.assertRaises(OSError):
+                upload_book(root / "missing.epub", root / "dest.epub", root,
+                            "chinese-text/book")
+            self.assertEqual(state.read_bytes(), original)
+
+    def test_reverse_upload_state_failure_stops_cache_mirror(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            epub, cache, onedrive = root / "epub", root / "cache", root / "onedrive"
+            (epub / "book").mkdir(parents=True)
+            (cache / "chinese-text/book").mkdir(parents=True)
+            onedrive.mkdir()
+            target = cache / "chinese-text/book/a.txt"
+            target.write_bytes(b"old")
+            (epub / "book/a.txt").write_bytes(b"new")
+            with patch("publish_epub.package_book", return_value=3), \
+                    patch("publish_epub.upload_book", side_effect=OSError("state failed")):
+                ok, message = publish_book_reverse(
+                    "chinese-text/book", {"a.txt": "modified"}, epub, cache, onedrive,
+                )
+            self.assertFalse(ok)
+            self.assertIn("state failed", message)
+            self.assertEqual(target.read_bytes(), b"old")
+
     def test_alignment_preflight_uses_strict_mode(self):
         with patch("publish.subprocess.run") as run:
             run.return_value.returncode = 1

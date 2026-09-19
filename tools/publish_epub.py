@@ -28,101 +28,28 @@ from __future__ import annotations
 
 import argparse
 import fnmatch
-import shutil
 import sys
 from pathlib import Path
 
 TOOLS_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(TOOLS_DIR))
-from manifest import compute_hash, load_manifest, save_manifest, scan_cache  # noqa: E402
+from manifest import load_manifest, save_manifest, scan_cache, scan_epub  # noqa: E402
 from package_cache_epubs import package_book, PackageError  # noqa: E402
-from path_safety import is_extract_artifact  # noqa: E402
 from sync_core import (  # noqa: E402
     ONEDRIVE_DEFAULTS,
     SIDE_LABELS,
     STATUS_LABELS,
-    UNIX_TO_DOTNET_TICKS_OFFSET,
     detect_changes,
+    find_conflicts,
     missing_baseline_sides,
     sync_file_changes,
     update_manifest_for_book,
-    update_pull_state_record,
+    upload_book,
 )
 
 REPO_ROOT = TOOLS_DIR.parent
 DEFAULT_CACHE = REPO_ROOT / ".cache" / "epub-work"
 DEFAULT_EPUB = REPO_ROOT / "EPUB"
-
-
-def scan_epub(epub_root: Path) -> dict[str, str]:
-    """Walk EPUB/ and return {manifest-style key: sha256}.
-
-    EPUB/ stores one directory per (Chinese) book, so every file maps to the
-    'chinese-text/<book>/<rel>' key used by manifest.json / publish.py.
-    """
-    files: dict[str, str] = {}
-    for book_dir in sorted(p for p in epub_root.iterdir() if p.is_dir()):
-        if is_extract_artifact(book_dir, root=epub_root):
-            continue
-        for path in book_dir.rglob("*"):
-            if not path.is_file():
-                continue
-            if is_extract_artifact(path, root=epub_root):
-                continue
-            rel = path.relative_to(epub_root).as_posix()
-            files[f"chinese-text/{rel}"] = compute_hash(path)
-    return files
-
-
-def find_conflicts(
-    book_key: str,
-    cache_current: dict[str, str],
-    epub_current: dict[str, str],
-    baseline: dict[str, str],
-) -> list[str]:
-    """List cache edits that would be lost by an EPUB/ -> cache overwrite.
-
-    A cache-vs-baseline change is not a conflict when EPUB/ already contains
-    the same bytes. That happens when a one-off fix was applied to both copies
-    without advancing manifest.json first.
-    """
-    prefix = book_key + "/"
-    cache_book = {
-        path.removeprefix(prefix): digest
-        for path, digest in cache_current.items()
-        if path.startswith(prefix)
-    }
-    epub_book = {
-        path.removeprefix(prefix): digest
-        for path, digest in epub_current.items()
-        if path.startswith(prefix)
-    }
-    baseline_book = {
-        path.removeprefix(prefix): digest
-        for path, digest in baseline.items()
-        if path.startswith(prefix)
-    }
-    conflicts: list[str] = []
-    for file_in_book in sorted(cache_book.keys() | baseline_book.keys()):
-        cache_hash = cache_book.get(file_in_book)
-        baseline_hash = baseline_book.get(file_in_book)
-        if cache_hash == baseline_hash:
-            continue
-        if cache_hash == epub_book.get(file_in_book):
-            continue
-        if baseline_hash is None:
-            status = "added"
-        elif cache_hash is None:
-            status = "deleted"
-        else:
-            status = "modified"
-        suffix = {
-            "added": "（缓存有未发布新增）",
-            "deleted": "（缓存有未发布删除）",
-            "modified": "（缓存有未发布修改）",
-        }[status]
-        conflicts.append(f"{file_in_book} {suffix}")
-    return conflicts
 
 
 def publish_book_reverse(
@@ -165,16 +92,9 @@ def publish_book_reverse(
         if onedrive_dir:
             dest = onedrive_dir / f"{book}.epub"
             try:
-                shutil.copy2(packed_epub, dest)
+                upload_book(packed_epub, dest, cache_root, book_key)
             except OSError as exc:
                 return False, f"上传失败 {book_key}: {exc}"
-            st = dest.stat()
-            update_pull_state_record(
-                cache_root,
-                book_key,
-                st.st_mtime_ns // 100 + UNIX_TO_DOTNET_TICKS_OFFSET,
-                st.st_size,
-            )
             print(f"  [上传] -> {dest}")
 
     # 3. Overwrite the changed files into the cache (EPUB/ -> cache).

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Pure change detection, tree mirroring and pull-state helpers."""
+"""Change detection, tree mirroring, upload and pull-state helpers."""
 from __future__ import annotations
 
 import shutil
@@ -20,20 +20,46 @@ SIDE_DIRECTORIES = ("chinese-text", "japanese-text")
 SIDE_LABELS = {"chinese-text": "中文", "japanese-text": "日文"}
 
 
+def read_pull_state(cache_root: Path) -> dict[str, tuple[str, str]]:
+    state_path = cache_root / PULL_STATE_FILENAME
+    records: dict[str, tuple[str, str]] = {}
+    if not state_path.is_file():
+        return records
+    for line in state_path.read_text(encoding="utf-8-sig").splitlines():
+        parts = line.split("\t")
+        if len(parts) == 4:
+            records[f"{parts[0]}/{parts[1]}"] = (parts[2], parts[3])
+    return records
+
+
 def update_pull_state_record(
     cache_root: Path, book_key: str, mtime_ticks: int, size: int
 ) -> None:
     state_path = cache_root / PULL_STATE_FILENAME
-    records: dict[str, str] = {}
-    if state_path.is_file():
-        for line in state_path.read_text(encoding="utf-8-sig").splitlines():
-            parts = line.split("\t")
-            if len(parts) == 4:
-                records[f"{parts[0]}\t{parts[1]}"] = f"{parts[2]}\t{parts[3]}"
-    records[book_key.replace("/", "\t", 1)] = f"{mtime_ticks}\t{size}"
+    records = read_pull_state(cache_root)
+    records[book_key] = (str(mtime_ticks), str(size))
+    lines = []
+    for key, (ticks, length) in sorted(records.items()):
+        side, book = key.split("/", 1)
+        lines.append(f"{side}\t{book}\t{ticks}\t{length}\n")
     state_path.write_text(
-        "".join(f"{key}\t{value}\n" for key, value in sorted(records.items())),
+        "".join(lines),
         encoding="utf-8",
+    )
+
+
+def upload_book(packed_epub: Path, destination: Path, cache_root: Path, book_key: str) -> None:
+    """Copy a packaged book, then record the uploaded file's timestamp and size.
+
+    The caller owns direction, preflight checks and logging. Failed copies must
+    never advance pull-state; errors propagate so the manifest is not advanced.
+    """
+    shutil.copy2(packed_epub, destination)
+    stat = destination.stat()
+    update_pull_state_record(
+        cache_root, book_key,
+        stat.st_mtime_ns // 100 + UNIX_TO_DOTNET_TICKS_OFFSET,
+        stat.st_size,
     )
 
 
@@ -117,6 +143,57 @@ def detect_changes(
         side, book, file_in_book = parsed
         changes.setdefault(f"{side}/{book}", {})[file_in_book] = "deleted"
     return changes
+
+
+def find_conflicts(
+    book_key: str,
+    cache_current: dict[str, str],
+    epub_current: dict[str, str],
+    baseline: dict[str, str],
+) -> list[str]:
+    """List cache edits that would be lost by an EPUB/ -> cache overwrite.
+
+    A cache-vs-baseline change is not a conflict when EPUB/ already contains
+    the same bytes. That happens when a one-off fix was applied to both copies
+    without advancing manifest.json first.
+    """
+    prefix = book_key + "/"
+    cache_book = {
+        path.removeprefix(prefix): digest
+        for path, digest in cache_current.items()
+        if path.startswith(prefix)
+    }
+    epub_book = {
+        path.removeprefix(prefix): digest
+        for path, digest in epub_current.items()
+        if path.startswith(prefix)
+    }
+    baseline_book = {
+        path.removeprefix(prefix): digest
+        for path, digest in baseline.items()
+        if path.startswith(prefix)
+    }
+    conflicts: list[str] = []
+    for file_in_book in sorted(cache_book.keys() | baseline_book.keys()):
+        cache_hash = cache_book.get(file_in_book)
+        baseline_hash = baseline_book.get(file_in_book)
+        if cache_hash == baseline_hash:
+            continue
+        if cache_hash == epub_book.get(file_in_book):
+            continue
+        if baseline_hash is None:
+            status = "added"
+        elif cache_hash is None:
+            status = "deleted"
+        else:
+            status = "modified"
+        suffix = {
+            "added": "（缓存有未发布新增）",
+            "deleted": "（缓存有未发布删除）",
+            "modified": "（缓存有未发布修改）",
+        }[status]
+        conflicts.append(f"{file_in_book} {suffix}")
+    return conflicts
 
 
 def sync_file_changes(

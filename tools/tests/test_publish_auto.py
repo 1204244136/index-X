@@ -12,8 +12,7 @@ TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 
 import publish_auto  # noqa: E402
-from manifest import save_manifest, scan_cache  # noqa: E402
-from publish_epub import scan_epub  # noqa: E402
+from manifest import save_manifest, scan_cache, scan_epub  # noqa: E402
 from sync_core import UNIX_TO_DOTNET_TICKS_OFFSET  # noqa: E402
 
 BOOK_CN = "[S1_01]某书"

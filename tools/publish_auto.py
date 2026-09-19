@@ -36,17 +36,17 @@ from pathlib import Path
 TOOLS_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(TOOLS_DIR))
 
-from manifest import load_manifest, scan_cache  # noqa: E402
-from publish_epub import find_conflicts, scan_epub  # noqa: E402
+from manifest import load_manifest, scan_cache, scan_epub  # noqa: E402
 from sync_core import (  # noqa: E402
     ONEDRIVE_DEFAULTS,
-    PULL_STATE_FILENAME,
     SIDE_DIRECTORIES,
     SIDE_LABELS,
     STATUS_LABELS,
     UNIX_TO_DOTNET_TICKS_OFFSET,
     detect_changes,
+    find_conflicts,
     missing_baseline_sides,
+    read_pull_state,
 )
 
 REPO_ROOT = TOOLS_DIR.parent
@@ -185,18 +185,6 @@ def newline_only_diffs(
 
 
 # ------------------------------------------------------------ OneDrive 侧检测
-
-
-def read_pull_state(cache_root: Path) -> dict[str, tuple[str, str]]:
-    state_path = cache_root / PULL_STATE_FILENAME
-    records: dict[str, tuple[str, str]] = {}
-    if not state_path.is_file():
-        return records
-    for line in state_path.read_text(encoding="utf-8-sig").splitlines():
-        parts = line.split("\t")
-        if len(parts) == 4:
-            records[f"{parts[0]}/{parts[1]}"] = (parts[2], parts[3])
-    return records
 
 
 def detect_onedrive_drift(
