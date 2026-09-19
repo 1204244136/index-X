@@ -32,9 +32,9 @@
 回查原文：`semantic.tsv` / `groups.txt` 只给「旧 => 新」，判定对错要回日文原文。
 日文缓存 `S3_01-NN.xhtml` 与中文 `S3_01-NN_*.xhtml` 按内容序 NN 一一对应
 （01=序章 / 02=行间一 / 03=第一章 … 11=终章）；文件内部不是逐行对齐，按关键字检索。
-需要把日文抽成纯文本时用 `epub_audit.text_of`，本工具不重复实现。
+需要把日文抽成纯文本时用 `xhtml_text.text_of`，本工具不重复实现。
 
-依赖：`epub_ids.work_id`（作品号解析）、`epub_audit.text_of`（XHTML -> 纯文本）。
+依赖：`epub_ids.work_id`（作品号解析）、`xhtml_text.text_of`（XHTML -> 纯文本）。
 """
 from __future__ import annotations
 
@@ -45,7 +45,7 @@ import subprocess
 import sys
 from collections import Counter, defaultdict
 
-from epub_audit import text_of
+from xhtml_text import text_of
 from epub_ids import work_id
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -136,7 +136,7 @@ def parse_diff_file(line: str) -> str:
 # --------------------------------------------------------------------------
 
 def to_text(fragment: str) -> str:
-    """XHTML 片段 -> 纯文本。复用 epub_audit.text_of，保持与既有工具同一口径。"""
+    """XHTML 片段 -> 纯文本。复用 xhtml_text.text_of，保持与既有工具同一口径。"""
     return text_of(fragment.encode("utf-8"))
 
 

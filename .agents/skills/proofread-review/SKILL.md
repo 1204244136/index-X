@@ -127,7 +127,7 @@ python tools/publish_auto.py            # 打包上传 OneDrive + 回流缓存
 中文：EPUB/[S3_01]创约 某魔法的禁书目录 01X/OEBPS/Text/S3_01-07_Chapter3.xhtml
 ```
 
-取纯文本要**先剥 `<rt>` 注音再 `text_of`**——`epub_audit.text_of` 只去标签，不剥注音，带注音的词会被拆成「魔術 まじゆつ」而检索不到。用本 skill 附带的查证脚本（已封装路径、内容序、剥注音）：
+取纯文本要**先剥 `<rt>` 注音再 `text_of`**——`xhtml_text.text_of` 只去标签，不剥注音，带注音的词会被拆成「魔術 まじゆつ」而检索不到。用本 skill 附带的查证脚本（已封装路径、内容序、剥注音）：
 
 ```powershell
 # 看日文某内容序里含某关键词的行及上下文（纯文本、已剥注音）

@@ -165,7 +165,7 @@
 
 ### 工具与记录的边界
 
-`tools/` 只放**会反复使用**的流程工具：拉取、解包、规范化、对齐检查、审计、打包发布，以及新书导入管线（`pull.ps1`、`normalize_paired.py`／`normalize_single.py`、`check_alignment.py`／`check_translation_spec.py`／`check_note_order.py`、`epub_audit.py`、`bw_preprocess.py`、`merge_bw_pages.py`、`publish_auto.py`／`publish.py`／`publish_epub.py` 等）。判断标准只有一条：**这个动作会不会在后续新拉取或新导入的书籍上再次发生？**
+`tools/` 只放**会反复使用**的流程工具：拉取、解包、规范化、对齐检查、审计、打包发布，以及新书导入管线（`pull.ps1`、`normalize_paired.py`／`normalize_single.py`、`check_alignment.py`／`check_translation_spec.py`／`check_note_order.py`、`bw_preprocess.py`、`merge_bw_pages.py`、`publish_auto.py`／`publish.py`／`publish_epub.py` 等）。判断标准只有一条：**这个动作会不会在后续新拉取或新导入的书籍上再次发生？**
 
 一次性的内容修订**不新增复用工具，也不保留其临时脚本与映射数据**，改完即删，只把结论落盘：
 

@@ -15,6 +15,7 @@ from proofread_review import (  # noqa: E402
     parse_diff_file,
     parse_word_diff,
     spec_kind,
+    to_text,
     unquote_git_path,
 )
 
@@ -45,6 +46,12 @@ def g(old, new):
 
 
 class ParseWordDiffTests(unittest.TestCase):
+    def test_extraction_preserves_readings_but_excludes_script_and_style(self):
+        self.assertEqual(to_text(
+            '<style>ignored</style><p>魔術<rt>まじゅつ</rt> &amp; 光</p>'
+            '<script>ignored</script>'
+        ), "魔術 まじゅつ & 光")
+
     def test_each_change_keeps_its_own_file(self):
         rows = parse_word_diff(DIFF, "abcdef12")
         by_line = {r["line"]: r for r in rows}
