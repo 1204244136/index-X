@@ -4,7 +4,20 @@
 
 ## 工作流程图（按处理阶段）
 
-本工具集按照明确的职责分工处理 EPUB 文件，每个工具负责一个独立的处理阶段：
+工具按“流程编排 → 共享能力 → 专项规则”分层。入口可以组合多个能力；同一规则只维护一份实现。
+
+| 工具组 | 职责边界 |
+| --- | --- |
+| `publish_auto.py` | 判别方向、冲突与执行计划；调用 A/B/C 入口 |
+| `pull.ps1`、`publish.py`、`publish_epub.py` | 分别编排 OneDrive、缓存、归档为准的同步顺序 |
+| `manifest.py`、`sync_core.py`、`package_cache_epubs.py` | 分别负责哈希快照、差异/镜像/上传状态、EPUB 验证与打包 |
+| `normalize_single.py`、`normalize_paired.py` | 文件选择与单侧/配对约束；共用 `xhtml_template.py` |
+| `bw_preprocess.py`、`merge_bw_pages.py` | 源分页预处理与跨页章节合并；不承担译文用词修改 |
+| `check_*.py`、修复工具 | 检查只报告；修复按专项条件写入，共享已有判定规则 |
+| `epub_char_count.py`、`epub_composition_metrics.py` | 字数与换算页数、增加插图锚点的印刷页估算；后者复用前者的文字量口径 |
+| `proofread_review.py`、`lookup_source.py` | 改动分级与原文查证；共用 `xhtml_text.py` 的纯文本提取 |
+
+下列阶段描述调用顺序，不要求把不同方向、输入格式或安全约束压成一个命令。
 
 ### 阶段 0：拉取与编辑准备
 ```
@@ -29,7 +42,7 @@ bw 原始 EPUB → bw_preprocess.py（清理噪声 + 建立 L1-L5 分页模板�
 预处理后分页 → merge_bw_pages.py（按 h1 合并 + 跨页衔接）→ 规范化章节文件 ✅
 ```
 - **工具**：`merge_bw_pages.py`
-- **职责**：按章节标题合并分页，处理跨页间隔（文本+文本插入 1 行换页标记 `<div style="break-after: page;"></div>`、跨图无缝）
+- **职责**：按章节标题合并分页，处理跨页间隔（文本+文本在前页末段追加 `class="pb"`；跨整页插图在图片段落加 `pb`，不新增空白行）
 - **输入**：`bw_preprocess` 处理后的分页目录
 - **输出**：`<book>-NN.xhtml` 规范化章节文件（已套用 L1-L6 模板）✨
 - **检测**：页首/页尾残留 `<br/>`（若有则报告警告）
@@ -38,8 +51,8 @@ bw 原始 EPUB → bw_preprocess.py（清理噪声 + 建立 L1-L5 分页模板�
 ### 阶段 3：模板规范化
 
 ```
-临时文件/缓存文件 → normalize_single.py（单文件规范化）→ 规范化缓存
-                   → normalize_paired.py（配对批量处理）→ 规范化缓存
+指定文件/目录 → normalize_single.py（单侧编排）→ 固定行模板
+中日配对目录 → normalize_paired.py（配对编排）→ 固定行模板
 ```
 
 #### normalize_single.py - 定向单文件/目录规范化
@@ -51,7 +64,7 @@ bw 原始 EPUB → bw_preprocess.py（清理噪声 + 建立 L1-L5 分页模板�
 python tools/normalize_single.py 文件.xhtml
 
 # 批量处理目录
-python tools/normalize_single.py --dir .cache/epub-work/japanese-text/某书/OEBPS/Text/
+python tools/normalize_single.py --dir EPUB/某书/OEBPS/Text/
 python tools/normalize_single.py --dir 目录/ --pattern "*.xhtml" --dry-run
 
 ```
@@ -64,13 +77,12 @@ python tools/normalize_single.py --dir 目录/ --pattern "*.xhtml" --dry-run
   - ✅ 适用于新导入日文书、修复手动编辑、历史文件处理
   - ✅ 可用于 `merge_bw_pages` 输出的兜底规范化
 
-#### normalize_paired.py - 中日配对批量规范化（缓存主入口）
+#### normalize_paired.py - 中日配对批量规范化
 
 **用途**：中日配对批量规范化，依赖配对关系
 
 ```powershell
-python tools/normalize_paired.py --dry-run
-python tools/normalize_paired.py
+python tools/normalize_paired.py --cache <临时中日目录> --dry-run
 ```
 
 - **职责**：遍历 `.cache/epub-work/` 下的中日配对书籍，批量规范化
@@ -90,7 +102,7 @@ python tools/normalize_paired.py
 阶段 4：规范化文件 → check_alignment.py（质检）
 ```
 
-两个入口共享 `xhtml_template.py` 的同一套模板重建规则；差别只在编排策略，避免规则漂移。
+两个入口共享 `xhtml_template.py` 的同一套模板重建规则；差别只在编排策略，避免规则漂移。Agent 不得将 `.cache/epub-work` 作为规范化写入目标；归档修改只落到 `EPUB/`，配对导入使用显式临时目录并按仓库规约将最终结果落到归档。
 
 ### 阶段 4：中日对齐与重命名（人工）
 ```
@@ -151,7 +163,9 @@ X版 EPUB → epub2docx.py（<ruby> → |基文[注音]）→ 交稿 docx
 - `alignment_rules.py`：人工确认的配对例外——非配对作品、手工对齐表头、文本化图片、SP 标题、已确认的配对差异规则（`PAIR_RULES`）与模板检查豁免名单（`TEMPLATE_EXEMPT_WORK_IDS`）。
 - `xhtml_template.py`：固定行模板的纯重建规则；由两个 normalize 入口共同调用。
 - `notes_core.py`：Note 条目解析、正文引用收集和阅读顺序。
-- `sync_core.py`：清单差异、文件增量镜像和 `pull-state.tsv` 更新。
+- `manifest.py`：缓存与归档的哈希扫描、清单读写。
+- `sync_core.py`：清单差异、冲突判定、文件增量镜像、打包产物上传与 `pull-state.tsv` 读写；不选择发布方向。
+- `xhtml_text.py`：复核片段的纯文本提取，保留注音以便识别注音改动；原文检索由调用方先剥注音。
 - `path_safety.py`：解包路径安全（拒绝绝对路径、`..`、反斜杠与盘符的 ZIP 条目）和 `.extract-*` 残留目录识别。
 
 修改上述共享规则或其调用方后运行：
@@ -331,9 +345,9 @@ python tools/publish_epub.py             # 执行
 - `-Pattern '*S2_14*'`：按书名筛选
 - `-ChineseSourceDirectory` / `-JapaneseSourceDirectory` / `-CacheDirectory` / `-EpubDirectory`：覆盖路径
 
-### 2. 修改缓存（Agent 或手动）
+### 2. 编辑归档与准备同步
 
-使用 agent 或手动修改 `.cache/epub-work/` 中的文件。中日配对缓存使用 `python tools/normalize_paired.py`；只处理明确指定文件时使用 `python tools/normalize_single.py`。随后用 `python tools/check_alignment.py` 检查模板与中日对齐。
+Agent 的正文修改只写入 `EPUB/`，写入前后运行 `python tools/publish_auto.py`。`.cache/epub-work/` 作为只读参考；工具运行产生的缓存变更按流程 B 回流。配对导入使用显式临时目录，定向归档规范化使用 `normalize_single.py`，并用 `check_alignment.py` 检查模板与中日对齐。
 
 ### 3. 发布（缓存 -> 打包 + OneDrive + EPUB/）
 
@@ -991,23 +1005,11 @@ python -m unittest discover -s tools/tests -p "test_check_epub_health.py" -v
 
 ### 术语审计
 
-```powershell
-python tools/epub_audit.py
-```
-
-读取中日工作缓存，对比中日译法差异，报告写入 `.cache/epub-work/report.json` 与 `report.md`。只读，不提供重建或覆盖缓存的功能。
-
-默认读取 `.cache/epub-work/japanese-text/` 和 `.cache/epub-work/chinese-text/`；其中日文缓存只有在刚运行 `pull.ps1` 后才是原样解压快照，规范化或校对后以工作源状态为准。如需保留原样快照，请先拉取到临时缓存；如需读取其他中文目录，使用 `--cn`。
-
-生成内容位于 `.cache/epub-work/`：
-
-- `japanese-text/`：日文 EPUB 工作缓存；刚由 `pull.ps1` 生成时保留 EPUB 原样目录、文件名、标签和换行，规范化后允许按规约折叠排版包装
-- `report.json`：机器可读的逐条命中记录
-- `report.md`：按卷汇总的中文译法差异及上下文
-
-`.cache/epub-work/` 已加入 `.gitignore`，不会提交到 GitHub。
-
-定位命中内容时，直接打开 `japanese-text/<卷>/` 下对应的原始 XHTML 文件。报告中的上下文仅用于快速检索，不替代原始文件行号。
+术语分析以日文锚点为准，使用 `rg` 检索和项目 skill
+`.agents/skills/translation-term-unification/SKILL.md` 的对照流程；
+原文查证可使用 `.agents/skills/proofread-review/references/lookup_source.py`。
+只读分析优先读取中日缓存，单点术语任务不保留专用扫描脚本。
+`xhtml_text.text_of` 仅负责剥标签与解实体，查找基文前须先剥除 `rt/rp` 注音。
 
 ### 译文校对复核（提交级，只读）
 
@@ -1046,9 +1048,9 @@ python tools/proofread_review.py b7515335 --path EPUB --out 输出目录/
 
 输出同时给出「明显增补」「明显删减」统计（按整片段净长度变化，规范级不计入）；**删减是误删实义成分的高发区**，应重点抽查。
 
-回查原文：`semantic.tsv` / `groups.txt` 只给「旧 => 新」，判定对错必须回日文原文。日文缓存 `S3_01-NN.xhtml` 与中文 `S3_01-NN_*.xhtml` 按内容序 `NN` 一一对应（01=序章 / 02=行间一 / 03=第一章 … 11=终章）；文件内部不是逐行对齐，按关键字检索。需要把日文抽成纯文本时复用 `epub_audit.text_of`，本工具不重复实现。
+回查原文：`semantic.tsv` / `groups.txt` 只给「旧 => 新」，判定对错必须回日文原文。日文缓存 `S3_01-NN.xhtml` 与中文 `S3_01-NN_*.xhtml` 按内容序 `NN` 一一对应（01=序章 / 02=行间一 / 03=第一章 … 11=终章）；文件内部不是逐行对齐，按关键字检索。需要把日文抽成纯文本时复用 `xhtml_text.text_of`，本工具不重复实现。
 
-依赖：`epub_ids.work_id`（作品号解析）、`epub_audit.text_of`（XHTML → 纯文本）。
+依赖：`epub_ids.work_id`（作品号解析）、`xhtml_text.text_of`（XHTML → 纯文本）。
 
 ### 字数统计与页数换算（只读）
 
