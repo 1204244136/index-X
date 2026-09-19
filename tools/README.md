@@ -705,6 +705,39 @@ python tools/check_alignment.py
 
 **已裁定不纳入模板检查的作品**在 `alignment_rules.TEMPLATE_EXEMPT_WORK_IDS`（`S0_00`、`S6_10.06.26`），`check_alignment.py` 与 `check_epub_health.py` 共用这一份；豁免只作用于模板项，`-00`、重复表头等仍会报告。（`S6_24.12.10` 曾在名单内，该作品补齐日文侧、恢复常规配对后登记已移除。）
 
+### 中日逐行对齐诊断（只读）
+
+```powershell
+python tools/diff_paired_lines.py S1_01-02              # 单文件：按表头自动定位中日配对
+python tools/diff_paired_lines.py S1_01-02 --only-diff  # 只显示漂移行及其上下文
+python tools/diff_paired_lines.py S1_01-02 --html r.html # 导出左右双栏 HTML
+python tools/diff_paired_lines.py                       # 批量：全部配对单元
+python tools/diff_paired_lines.py --work "S1_*" --work "S2_01"   # 批量：只查指定作品
+python tools/diff_paired_lines.py --tsv r.tsv           # 批量报告落盘（默认 .cache/epub-work/diff-paired-lines.tsv）
+```
+
+`check_alignment.py` 的**互补工具**，用来回答「差在第几行、差在哪一类」。批量模式默认写 `.cache/epub-work/diff-paired-lines.tsv`，列为：书 / 表头 / 日文文件 / 中文文件 / 日文行数 / 中文行数 / 问题 / 译文DRIFT数 / 备注；有问题时返回非零状态。`--work` 支持 `*` 通配且可重复，用于按批次分次深检。
+
+**两类输出的分工**：
+
+- **结构锚点冲突**（`问题` 列）：行号对齐下逐行比较图片 / h1 / h2 / 独立 `<br/>` 槽位。`check_alignment.py` 比较的是两侧**集合**，两侧各有错位而集合相同时它发现不了；本工具按行号逐行比较类型，能抓到真正的槽位错位。`alignment_rules.PAIR_RULES` 的已确认例外（`afterword-moved`、`section-order`）同样生效。
+- **译文 DRIFT**（`译文DRIFT数` 列）：启发式相似度低于阈值的行，**仅作人工复核的导航，不是错误判定**。它跨语言比较字符重合率与长度，无法判断译文对错——`インデックス`→`茵蒂克丝` 这类专名音译、以及补充主语的正常扩写都会命中。
+
+**DRIFT 口径的假阳性边界**（四类已排除，均为脚本自身产物而非文件问题）：
+
+| 类别 | 成因 | 处理 |
+| --- | --- | --- |
+| `<rt>` 注音 | 日文读音在 `<rt>` 内、中文放拼音或英文，两侧不同源；计入可见文本会同时污染长度与字符重合率 | 比较前整段剥离 `<rt>`（与 `check_translation_spec` / `epub_char_count` 同口径） |
+| 固定行模板 L1-L3 | 两侧 `<title>` 内容不同源（日文填书名、中文留空），曾让**每个**文件的 L3 恒判漂移 | 按内容形态识别模板行并视为等价；判定放在结构冲突**之后**，篇首插图缺失仍照报 |
+| 短行比例噪声 | `と、`(2 字)→`接着……`(4 字) 比例 2.0，但只差 2 字 | 长度改用**绝对差** `> max(8, 0.6×日文字数)`，不再用纯比例 |
+| 纯标点行 | 两侧都无 CJK/字母数字（省略号个数差异属排印差异） | 无可比内容时视为等价 |
+
+口径修定前后全库实测：DRIFT 8811 → 约 1500（−83%），结构问题仍为 0；命中里「日文不足 10 字」的占比由 51.6% 降到 13.5%，长行的大段合并/拆分（差 100+ 字）反而更醒目。剩余 DRIFT 属启发式上限，需回原文人工判断。
+
+**性能**：全库 761 个配对单元、73 个作品约 5 秒（纯 CPU、零外部依赖）。行数相等时按行号 1:1 对齐（O(n)）；只有两侧行数确实不等时才回退 Needleman-Wunsch 序列比对——本库当前仅 14 个单元走该分支（最大约 1.7M 格）。行数相等时**不**跑序列比对是刻意的：DP 在行数相等时仍可能用「一个 gap + 一处错位匹配」换到更高总分，凭空造出成对 gap。
+
+**回归测试**：`python -m unittest discover -s tools/tests -p "test_diff_paired_lines.py"`，其中四类假阳性各有一个反例，另有一个「长行差 100+ 字仍要报出」的正向用例，防止放宽口径把真信号一起吞掉。
+
 ### 中日图片内容对应检查（只读）
 
 ```powershell
