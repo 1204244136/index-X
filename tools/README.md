@@ -937,6 +937,7 @@ python tools/text_norm.py --apply --report r.md --summary s.txt
 | 规则 | 替换 | 依据 |
 | --- | --- | --- |
 | `interrobang` | `！？`/`！?` → `？！` | translation-spec 一.4 |
+| `fullwidth-ampersand` | 正文全角 `＆` → 半角 `&`（XHTML 源码写作 `&amp;`） | translation-spec 一.1 |
 | `ellipsis-period` | 删省略号后的句号（`(?!…)` 排除「……。……」两段独立停顿） | 一.5 |
 | `ellipsis-ascii-dot` | 删省略号后的半角句点（`(?!\d)` 避开 `….5`） | 一.5 |
 | `dash-codepoint` | `─`(U+2500) → `—`(U+2014) | 一.1 |

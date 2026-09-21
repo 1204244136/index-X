@@ -217,7 +217,7 @@
     </navPoint>
     <navPoint id="num_35" playOrder="35">
       <navLabel>
-        <text>第四章 异世界交流，其之始点 “R＆C OCCULTICS Co.Ltd.”</text>
+        <text>第四章 异世界交流，其之始点 “R&amp;C OCCULTICS Co.Ltd.”</text>
       </navLabel>
       <content src="OEBPS/Text/S3_01-09_Chapter4.xhtml"/>
       <navPoint id="num_36" playOrder="36">
