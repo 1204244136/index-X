@@ -1,9 +1,13 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+html,
 body {
   padding: 0%;
   margin-top: 0%;
   margin-bottom: 0%;
-  margin-left: 1%;
-  margin-right: 1%;
+  margin-left: 0%;
+  margin-right: 0%;
   line-height: 120%;
   text-align: justify;
 }
@@ -406,11 +410,35 @@ td {
   font-size: 1.2em;
 }
 
+p:has(> img), p.fit, p.center {
+  text-indent: 0;
+  text-align: center;
+}
+
 .fit {
-  display: inline-block;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  text-indent: 0;
+  break-inside: avoid;
+  -webkit-column-break-inside: avoid;
   page-break-inside: avoid;
   max-height: 100%;
   max-width: 100%;
+  box-sizing: border-box;
+}
+.pb,
+p:has(> img) + p:has(> img) {
+  page-break-before: always;
+  -webkit-column-break-before: always;
+  break-before: column;
+}
+svg {
+  display: block;
+  margin: 0 auto;
+  break-after: column;
+  -webkit-column-break-after: always;
+  page-break-after: always;
 }
 .left {
   text-indent: 0;

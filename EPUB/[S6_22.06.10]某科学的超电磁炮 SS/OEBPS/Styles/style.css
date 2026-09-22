@@ -427,7 +427,8 @@ p:has(> img), p.fit, p.center {
   max-width: 100%;
   box-sizing: border-box;
 }
-.pb {
+.pb,
+p:has(> img) + p:has(> img) {
   page-break-before: always;
   -webkit-column-break-before: always;
   break-before: column;

@@ -92,12 +92,16 @@ _CN_DIGITS = {
 }
 
 _CSS = """\
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+html,
 body {
   padding: 0%;
   margin-top: 0%;
   margin-bottom: 0%;
-  margin-left: 1%;
-  margin-right: 1%;
+  margin-left: 0%;
+  margin-right: 0%;
   line-height: 120%;
   text-align: justify;
 }
@@ -142,11 +146,34 @@ ruby {
   text-indent: 0;
   text-align: center;
 }
+p:has(> img), p.fit, p.center {
+  text-indent: 0;
+  text-align: center;
+}
 .fit {
-  display: inline-block;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  text-indent: 0;
+  break-inside: avoid;
+  -webkit-column-break-inside: avoid;
   page-break-inside: avoid;
   max-height: 100%;
   max-width: 100%;
+  box-sizing: border-box;
+}
+.pb,
+p:has(> img) + p:has(> img) {
+  page-break-before: always;
+  -webkit-column-break-before: always;
+  break-before: column;
+}
+svg {
+  display: block;
+  margin: 0 auto;
+  break-after: column;
+  -webkit-column-break-after: always;
+  page-break-after: always;
 }
 .center {
   text-indent: 0;
@@ -662,11 +689,11 @@ def render_content(ch: dict, names: dict, body_illus: dict | None = None) -> str
             for rid in payload:
                 name = names.get(rid)
                 if name:
-                    lines.append(f'<p><img alt="图片" class="fit" src="../Images/{name}"/></p>')
+                    lines.append(f'<p class="center"><img alt="图片" class="fit" src="../Images/{name}"/></p>')
         elif kind == "illus":
             name = body_illus.get(payload)
             if name:
-                lines.append(f'<p><img alt="图片" class="fit" src="../Images/{name}"/></p>')
+                lines.append(f'<p class="center"><img alt="图片" class="fit" src="../Images/{name}"/></p>')
             else:
                 lines.append(f"<p>{esc('【插图-{}】'.format(payload))}</p>")
     lines.append("</body></html>")
@@ -686,7 +713,7 @@ def render_cover(name: str) -> str:
         "<title></title>",
         "</head>",
         '<body epub:type="cover">',
-        f'<p><img alt="图片" class="fit" src="../Images/{name}"/></p>',
+        f'<p class="center"><img alt="图片" class="fit" src="../Images/{name}"/></p>',
         "</body></html>",
         "",
     ])
@@ -701,9 +728,10 @@ def render_illustrations(name_list: list[str]) -> str:
          '<link href="../Styles/style.css" rel="stylesheet" type="text/css"/>'
          "<title></title></head><body><h1>彩页</h1>"),
     ]
-    for name in name_list:
+    for idx, name in enumerate(name_list):
         if name:
-            lines.append(f'<p><img alt="图片" class="fit" src="../Images/{name}"/></p>')
+            cls = "center" if idx == 0 else "center pb"
+            lines.append(f'<p class="{cls}"><img alt="图片" class="fit" src="../Images/{name}"/></p>')
     lines.append("</body></html>")
     return "\n".join(lines) + "\n"
 

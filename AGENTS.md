@@ -152,6 +152,14 @@
 - 中文侧表达同一分页边界的 1~2 个独占 `<br/>` 是**旧合页写法**，已被日文侧 `class="pb"`（不占行）取代，属多余物理行，用 `tools/fix_legacy_pagebreak_br.py` 删除。判定必须逐边界比较两侧的 `<br/>` 连段数量：数量一致的是真场景分隔，不得删；只有中文侧多出的部分才是遗留。日文侧本来就更长、或遗留数超过该文件总行数差时，工具必须拒绝删除并交人工，不得为凑行数删掉真分隔符。
 - 分页源的稳定表头不能仅按 `h1` 或页码机械推导。无标题的新语义单元（尤其后记作者署名之后的「尾声」）、正文插图与作品级图片包装页必须先按内容确认；工具应使用逐页显式映射保存确认结果，实际分页与映射不一致时阻断，不得让插图或包装页无条件沿用上一正文表头。
 - 判定著者介绍/版权包装页只允许用「短页 + 标记位于页首两段之内」的条件：长正文页（如尾声）中叙述性出现「プロフィール」「著者紹介」等词不得被整页判为包装页而丢弃，必须先按正文段数与标记位置确认。
+
+### 移动端多列分页与插图排版规范
+
+- **全局盒模型与边距归零**：全库书籍主样式表（`style.css`）必须包含 `*, *::before, *::after { box-sizing: border-box; }`；`html, body` 左右边距必须归零（`margin-left: 0%; margin-right: 0%; padding: 0%;`），严禁在 `body` 上硬编码非零百分比左右边距（避免在 Reasily 等移动端 WebView 多列分页模式下因容器超出 100vw 产生逐页线性累加漂移）。外层页面留白由阅读器自适应管理。
+- **插图块级居中与缩进清除**：插图类 `.fit` 必须使用块级居中与列断点保护：`display: block; margin-left: auto; margin-right: auto; text-indent: 0; break-inside: avoid; -webkit-column-break-inside: avoid; page-break-inside: avoid; max-height: 100%; max-width: 100%; box-sizing: border-box;`。同时必须包含 `p:has(> img), p.fit, p.center { text-indent: 0; text-align: center; }`，彻底阻断全局 `p { text-indent: 2em; }` 污染图片导致横向溢出 2em（约 32px）撑破列宽、图片跨列劈裂切片等故障。
+- **分页类 `.pb` 强声明与连续插图隔离**：全库样式表必须显式声明 `.pb`（`page-break-before: always; -webkit-column-break-before: always; break-before: column;`），并配套声明 `p:has(> img) + p:has(> img)` 规则，保证彩页集中页（`Illustrations.xhtml`）等连续多图场景下每图自动独占一整页/整列，杜绝翻页露边；正文中的跨整页插图、章尾插图应配合 `class="center pb"` 使用。
+- **篇首 `<svg>` 独立分列**：使用篇首矢量插图的文件，样式表必须包含 `svg { display: block; margin: 0 auto; break-after: column; -webkit-column-break-after: always; page-break-after: always; }`，保证篇首图片独占首屏，后续标题与正文干净地在新一列开始。
+- 门禁检查：`check_epub_health.py` 包含 `css-layout` 检查项，对全库样式表的盒模型、`body` 边距、`.pb` 和 `.fit` 保护规则实施自动化门禁阻断，防止旧版样式回流。
 - 处理外部目录时使用显式路径，并避免把 OneDrive、临时目录或个人环境信息写入仓库文件。
 - 译名／术语统一（异译收敛、角色口癖、专名与敬称、术语分层等一切需要日文锚点才能判定的译文用词修订）按项目级 skill `.agents/skills/translation-term-unification/SKILL.md` 执行：以日文写法为锚、显式映射逐条预检、只改 `EPUB/` 行内文字、跑门禁后留档提交。分层口径、`<rt>` 注音剥离、风格化行跳过、注音义务以 BookWalker 源特殊读音为锚等判定条款与「已裁定结论索引」都在该 skill，本文件不重复。
 

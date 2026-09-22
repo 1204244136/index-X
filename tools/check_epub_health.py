@@ -90,6 +90,7 @@ RUBY_BLOCK_RE = re.compile(r"<ruby\b[^>]*>(.*?)</ruby\s*>", re.S | re.I)
 CHECK_ORDER = (
     "XML", "template", "bold-punct", "bold-empty", "bold-pair",
     "ruby", "seq-00", "dup-header", "seq-gap", "img-prefix", "dangling",
+    "css-layout",
 )
 CHECK_DESC = {
     "XML": "XHTML 不是合法 XML 或 `<img>` 缺 src",
@@ -103,12 +104,13 @@ CHECK_DESC = {
     "seq-gap": "同作品内容序缺号",
     "img-prefix": "图片文件名缺作品号前缀",
     "dangling": "悬空资源/锚点引用",
+    "css-layout": "样式表缺盒模型/分页类或含破坏性边距",
 }
 SEVERITY = {
     "XML": "error", "template": "error", "bold-punct": "error",
     "bold-empty": "warning", "bold-pair": "error", "ruby": "error", "seq-00": "error",
     "dup-header": "error", "seq-gap": "warning", "img-prefix": "error",
-    "dangling": "error",
+    "dangling": "error", "css-layout": "error",
 }
 
 
@@ -270,6 +272,29 @@ def find_dangling(book_dir: Path, xhtmls: list[Path]) -> list[tuple[str, str]]:
     return out
 
 
+def find_css_layout_problems(book_dir: Path) -> list[tuple[str, str]]:
+    """检查书籍样式表是否符合现代多列分页与防溢出排版规范。"""
+    out: list[tuple[str, str]] = []
+    css_path = book_dir / "OEBPS" / "Styles" / "style.css"
+    if not css_path.is_file():
+        candidates = list(book_dir.rglob("*.css"))
+        if not candidates:
+            return out
+        css_path = candidates[0]
+
+    content = read_text(css_path)
+    rel = css_path.relative_to(book_dir).as_posix()
+    if "box-sizing" not in content:
+        out.append(("css-layout", f"`{rel}` 缺失 `box-sizing: border-box` 全局盒模型声明"))
+    if re.search(r"body\s*\{[^}]*margin-(?:left|right)\s*:\s*[1-9]", content, re.I):
+        out.append(("css-layout", f"`{rel}` 的 `body` 包含硬编码非零百分比左右边距，会导致移动端分页漂移"))
+    if not re.search(r"\.pb\b", content):
+        out.append(("css-layout", f"`{rel}` 缺失关键分页类 `.pb` 声明"))
+    if ".fit" in content and "break-inside" not in content:
+        out.append(("css-layout", f"`{rel}` 的 `.fit` 缺少 `break-inside: avoid` 防切断声明"))
+    return out
+
+
 # ---------------------------------------------------------------------------
 # 主流程
 # ---------------------------------------------------------------------------
@@ -322,6 +347,9 @@ def audit_book(book_dir: Path, only: set[str] | None) -> tuple[list[tuple], Coun
             add(check, "-", 0, msg)
     if want("dangling"):
         for check, msg in find_dangling(book_dir, xhtmls):
+            add(check, "-", 0, msg)
+    if want("css-layout"):
+        for check, msg in find_css_layout_problems(book_dir):
             add(check, "-", 0, msg)
 
     for path in xhtmls:

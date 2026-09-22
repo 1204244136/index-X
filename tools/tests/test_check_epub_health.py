@@ -246,6 +246,28 @@ class HealthCheckNegativeTests(unittest.TestCase):
         self.assertEqual(counts.get("XML"), 1)
         self.assertEqual(counts.get("bold-punct", 0), 0)
 
+    def test_css_layout_negative_tests(self):
+        # 1. 缺失 box-sizing
+        hit1 = self.assert_detects("css-layout", "S1_01", {
+            "OEBPS/Text/S1_01-01_Chapter1.xhtml": GOOD,
+            "OEBPS/Styles/style.css": ["body { margin: 0; }", ".pb {}", ".fit { display: block; break-inside: avoid; }"],
+        })
+        self.assertIn("box-sizing", hit1[5])
+
+        # 2. 包含破坏性左右百分比边距
+        hit2 = self.assert_detects("css-layout", "S1_01", {
+            "OEBPS/Text/S1_01-01_Chapter1.xhtml": GOOD,
+            "OEBPS/Styles/style.css": ["* { box-sizing: border-box; }", "body { margin-left: 1%; }", ".pb {}", ".fit { display: block; break-inside: avoid; }"],
+        })
+        self.assertIn("百分比左右边距", hit2[5])
+
+        # 3. 缺失 .pb 声明
+        hit3 = self.assert_detects("css-layout", "S1_01", {
+            "OEBPS/Text/S1_01-01_Chapter1.xhtml": GOOD,
+            "OEBPS/Styles/style.css": ["* { box-sizing: border-box; }", "body { margin: 0; }", ".fit { display: block; break-inside: avoid; }"],
+        })
+        self.assertIn(".pb", hit3[5])
+
     def test_unknown_check_name_is_rejected(self):
         with patch.object(sys, "argv", ["check_epub_health.py", "--only", "nope"]):
             with self.assertRaises(SystemExit):

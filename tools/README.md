@@ -687,7 +687,7 @@ nav.xhtml / toc.ncx / style.css 全套骨架。
 - 卷首目录/注意事项与卷末奥付等非正文样式段落自动丢弃并在输出中报告（含其中的
   ruby 记号，属预期）；正文字样（含 Para 02 等）完整保留。
 - 输出 `.epub` 在 `--out` 目录（默认输入同目录）；`--unpacked` 额外写解包目录，
-  `--no-pack` 只写解包目录。内置精简 style.css，可用 `--css FILE` 换成成品同款。
+  `--no-pack` 只写解包目录。内置现代标准 style.css（含盒模型重置、body 边距归零与 `.fit`/`.pb`/`svg` 移动端多列排版防溢出保护），可用 `--css FILE` 换成自定义样式。
 
 ### 对齐检查（只读）
 
@@ -988,6 +988,7 @@ python tools/check_epub_health.py --tsv r.tsv --json r.json
 | `seq-gap` | 同一作品内内容序缺号 |
 | `img-prefix` | 图片文件名缺完整作品号前缀 |
 | `dangling` | XHTML/OPF/CSS 引用的资源或锚点不存在 |
+| `css-layout` | 样式表缺盒模型/分页类或含破坏性边距（避免移动端多列排版累积漂移） |
 
 与 `text_norm.py` 同源是有意的：体检报告说「有 N 处 `<b>` 含标点」时，规范化 CI 一定会去改同样这 N 处；两个工具的判定不会漂移。
 
