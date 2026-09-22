@@ -22,6 +22,18 @@ on:
   schedule:
     - cron: "0 22 * * *" # UTC+8 06:00，排在每日规范化（04:30）之后看结果
   workflow_dispatch:
+  push:
+    branches: [main, master]
+    paths:
+      - "EPUB/**"
+      - "tools/**"
+      - ".github/workflows/check-epub-health.yml"
+  pull_request:
+    branches: [main, master]
+    paths:
+      - "EPUB/**"
+      - "tools/**"
+      - ".github/workflows/check-epub-health.yml"
 
 permissions:
   contents: read

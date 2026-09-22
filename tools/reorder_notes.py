@@ -118,15 +118,21 @@ def process_book(book, text_dir, nf, dry_run, backup_dir):
 
 def main():
     ap = argparse.ArgumentParser(description="按正文出现顺序重排 Note 文件并重编号（可 --dry-run）")
-    ap.add_argument("--cache", default=DEFAULT_CACHE)
-    ap.add_argument("--backup", default=DEFAULT_BACKUP)
+    ap.add_argument("--root", default=None, help="EPUB 或中文缓存根目录（若指定则优先使用）")
+    ap.add_argument("--cache", default=DEFAULT_CACHE, help="中文缓存根目录（默认 .cache/epub-work/chinese-text）")
+    ap.add_argument("--backup", default=DEFAULT_BACKUP, help="备份目录")
+    ap.add_argument("--no-backup", action="store_true", help="不生成备份文件（CI 或自动化环境推荐）")
     ap.add_argument("--pattern", default=None, help="按书名子串筛选，如 *S1_01*")
     ap.add_argument("--dry-run", action="store_true", help="只预览不写盘")
     args = ap.parse_args()
 
-    root = args.cache
+    root = args.root or args.cache
+    backup_dir = None if args.no_backup else args.backup
     results = []
     skipped = []
+    if not os.path.exists(root):
+        print("目录不存在：%s" % root)
+        return 0
     books = sorted(d for d in os.listdir(root) if os.path.isdir(os.path.join(root, d)))
     if args.pattern:
         pat = args.pattern.replace("*", ".*")
@@ -139,7 +145,7 @@ def main():
         for nf in os.listdir(text_dir):
             if not NOTEFILE_RE.match(nf):
                 continue
-            r, msg = process_book(book, text_dir, nf, args.dry_run, args.backup)
+            r, msg = process_book(book, text_dir, nf, args.dry_run, backup_dir)
             if msg:
                 skipped.append((book, nf, msg))
             elif r:

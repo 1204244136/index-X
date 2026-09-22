@@ -1,10 +1,13 @@
 name: Normalize EPUB Text
 
-# 每日对 EPUB/ 做字符级规范化（docs/translation-spec.md 的可机械执行子集）。
+# 每日对 EPUB/ 做字符级规范化与机械结构自愈（docs/translation-spec.md 的可机械执行子集）。
 #
 # 设计口径（「宁愿不改，也不乱改」）：
-#   - 只做替换值唯一、1:1、全量核对无例外的字符替换；规则表见 tools/text_norm.py。
-#   - 不碰结构、模板、行数、文件名与 OPF/NCX/nav 引用，因此不影响中日行数对齐。
+#   - 字符替换：只做替换值唯一、1:1、全量核对无例外的字符替换；规则表见 tools/text_norm.py。
+#   - 标签清理：安全移除空 <b> 标签，加粗内标点外移。
+#   - 译注自愈：在定义与引用完全一致的前提下，按正文首次引用顺序自愈 Note 编号与正文引用（tools/reorder_notes.py）。
+#   - 裸图包裹：单行独占裸 <img> 包裹 <p>，严格禁止删除任何结构行（tools/wrap_cn_image_lines.py --wrap-only）。
+#   - 不改变物理行数、不改模板、不改文件名、不动未引用的结构，因此不影响中日行数对齐。
 #   - 无命中时完全不提交，不制造空 commit。
 #   - 用 GITHUB_TOKEN 推送，GitHub 的防递归机制使该 push 不会触发
 #     build-epub-release.yml；即修复进仓库但不会自动发版，需要发版时手动
@@ -43,15 +46,34 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: 工具测试
+        run: python -m unittest discover -s tools/tests -p "test_*.py"
+
       - name: 只读预检
         run: python tools/text_norm.py --report /tmp/text-norm-report.md
 
-      - name: 应用替换
+      - name: 应用文本规范化
         if: ${{ inputs.dry_run != true }}
         run: |
           python tools/text_norm.py --apply \
             --report /tmp/text-norm-report.md \
             --summary /tmp/text-norm-summary.txt
+
+      - name: 译注顺序与编号自愈
+        run: |
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            python tools/reorder_notes.py --root EPUB --no-backup --dry-run
+          else
+            python tools/reorder_notes.py --root EPUB --no-backup
+          fi
+
+      - name: 裸图行包裹自愈（纯包裹，不删行）
+        run: |
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            python tools/wrap_cn_image_lines.py --root EPUB --wrap-only
+          else
+            python tools/wrap_cn_image_lines.py --root EPUB --wrap-only --apply
+          fi
 
       - name: 写入 job summary
         if: always()
@@ -79,7 +101,11 @@ jobs:
         if: steps.diff.outputs.changed == 'true'
         run: |
           {
-            cat /tmp/text-norm-summary.txt
+            if [ -f /tmp/text-norm-summary.txt ] && [ -s /tmp/text-norm-summary.txt ]; then
+              cat /tmp/text-norm-summary.txt
+            else
+              echo "style(epub): 自动规范化 EPUB 文本与自愈结构"
+            fi
             echo ""
             echo "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           } > /tmp/text-norm-commit.txt

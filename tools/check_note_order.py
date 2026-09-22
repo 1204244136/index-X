@@ -90,6 +90,8 @@ def check_book(book, text_dir, nf):
 
 def main():
     ap = argparse.ArgumentParser(description="检查中文缓存 Note 注释顺序/编号是否与正文首次出现顺序一致（只读）")
+    ap.add_argument("--root", default=None,
+                    help="EPUB 根目录或中文缓存根目录（若指定则优先使用）")
     ap.add_argument("--cache", default=DEFAULT_CACHE,
                     help="中文缓存根目录（默认 .cache/epub-work/chinese-text）")
     ap.add_argument("--output", default=DEFAULT_OUTPUT,
@@ -98,7 +100,7 @@ def main():
                     help="按书名子串筛选要检查的书，如 '*S1_01*'")
     args = ap.parse_args()
 
-    root = args.cache
+    root = args.root or args.cache
     problems = []
     per_book = {}
     books = sorted(d for d in os.listdir(root) if os.path.isdir(os.path.join(root, d)))
@@ -137,34 +139,42 @@ def main():
         print("所有 Note 文件的顺序与 ID 均与正文首次出现顺序一致。")
     print("\n共检查 %d 本书。" % len(per_book))
 
-    # JSON 详细结果
-    json_path = os.path.join(args.output, "note-order-check.json")
-    with open(json_path, "w", encoding="utf-8") as f:
-        json.dump(per_book, f, ensure_ascii=False, indent=2)
-    print("详细结果已写入: %s" % json_path)
+    # 报告写入
+    if args.output:
+        try:
+            os.makedirs(args.output, exist_ok=True)
+            # JSON 详细结果
+            json_path = os.path.join(args.output, "note-order-check.json")
+            with open(json_path, "w", encoding="utf-8") as f:
+                json.dump(per_book, f, ensure_ascii=False, indent=2)
+            print("详细结果已写入: %s" % json_path)
 
-    # Markdown 文本报告
-    md_path = os.path.join(args.output, "note-order-check.md")
-    lines = ["# 中文 Note 注释顺序/ID 检查报告\n"]
-    if problems:
-        lines.append("发现 **%d** 本存在 Note 顺序/ID 问题：\n" % len(problems))
-        for book, nf, issues in problems:
-            lines.append("## %s（%s）\n" % (book, nf))
-            for it in issues:
-                lines.append("- " + it)
-            data = per_book[book]
-            lines.append("\n- Note 文件定义顺序：`%s`" % ", ".join(data["defined_order"]))
-            lines.append("- 正文首次出现顺序：`%s`" % ", ".join(data["appearance_order"]))
-            lines.append("\n首次出现位置：")
-            for k, v in data["first_appearance"].items():
-                lines.append("- %s → `%s:%s`" % (k, v["file"], v["line"]))
-            lines.append("")
-    else:
-        lines.append("所有 Note 文件的顺序与 ID 均与正文首次出现顺序一致。\n")
-    lines.append("\n共检查 %d 本书。\n" % len(per_book))
-    with open(md_path, "w", encoding="utf-8") as f:
-        f.write("\n".join(lines))
-    print("文本报告已写入: %s" % md_path)
+            # Markdown 文本报告
+            md_path = os.path.join(args.output, "note-order-check.md")
+            lines = ["# 中文 Note 注释顺序/ID 检查报告\n"]
+            if problems:
+                lines.append("发现 **%d** 本存在 Note 顺序/ID 问题：\n" % len(problems))
+                for book, nf, issues in problems:
+                    lines.append("## %s（%s）\n" % (book, nf))
+                    for it in issues:
+                        lines.append("- " + it)
+                    data = per_book[book]
+                    lines.append("\n- Note 文件定义顺序：`%s`" % ", ".join(data["defined_order"]))
+                    lines.append("- 正文首次出现顺序：`%s`" % ", ".join(data["appearance_order"]))
+                    lines.append("\n首次出现位置：")
+                    for k, v in data["first_appearance"].items():
+                        lines.append("- %s → `%s:%s`" % (k, v["file"], v["line"]))
+                    lines.append("")
+            else:
+                lines.append("所有 Note 文件的顺序与 ID 均与正文首次出现顺序一致。\n")
+            lines.append("\n共检查 %d 本书。\n" % len(per_book))
+            with open(md_path, "w", encoding="utf-8") as f:
+                f.write("\n".join(lines))
+            print("文本报告已写入: %s" % md_path)
+        except OSError as e:
+            print("跳过写入报告文件（%s）" % e)
+
+    return 1 if problems else 0
 
 
 if __name__ == "__main__":

@@ -125,7 +125,10 @@ def check_xml(lines: list[str]) -> str:
 
 def jp_headers(cache: Path) -> set[str]:
     out = set()
-    for d in (cache / "japanese-text").iterdir():
+    jp_dir = cache / "japanese-text"
+    if not jp_dir.is_dir():
+        return out
+    for d in jp_dir.iterdir():
         if not d.is_dir():
             continue
         for p in d.rglob("*.xhtml"):
@@ -139,7 +142,9 @@ def jp_headers(cache: Path) -> set[str]:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="中文侧裸图片行包 <p>")
-    ap.add_argument("--cache", type=Path, default=Path(".cache/epub-work"))
+    ap.add_argument("--root", type=Path, default=None, help="EPUB 根目录或中文缓存根目录（若指定则优先使用）")
+    ap.add_argument("--cache", type=Path, default=Path(".cache/epub-work"), help="缓存根目录（默认 .cache/epub-work）")
+    ap.add_argument("--wrap-only", action="store_true", help="仅包装裸 <img> 行，禁止删除任何结构行（保证物理行数 100% 不变）")
     ap.add_argument("--book", default=None, help="只处理指定作品号（如 S1_25）")
     ap.add_argument("--apply", action="store_true", help="写盘（默认只预览）")
     args = ap.parse_args()
@@ -147,9 +152,14 @@ def main() -> int:
     jph = jp_headers(args.cache)
     total_wrapped = total_dropped = total_files = 0
     refused = []
-    for cn_dir in sorted((args.cache / "chinese-text").iterdir()):
-        if not cn_dir.is_dir():
-            continue
+    
+    if args.root:
+        cn_dirs = [d for d in sorted(args.root.iterdir()) if d.is_dir()]
+    else:
+        cn_text_dir = args.cache / "chinese-text"
+        cn_dirs = [d for d in sorted(cn_text_dir.iterdir()) if d.is_dir()] if cn_text_dir.is_dir() else []
+
+    for cn_dir in cn_dirs:
         bid = book_id(cn_dir.name)
         if bid is None or bid in NON_PAIR_WORK_IDS:
             continue
@@ -168,6 +178,8 @@ def main() -> int:
                 continue
             header = (pairing_header_of(path.name) or "").upper()
             issue = check_xml(new)
+            if not issue and args.wrap_only and dropped:
+                issue = f"wrap-only 模式禁止删除结构行（涉及 {dropped} 行）"
             if not issue and dropped and header in jph:
                 issue = f"该表头在日文侧有对应文件，删除 {dropped} 行会改变行数"
             if not issue and len(new) - sum(1 for x in new if x == "") != len(lines):

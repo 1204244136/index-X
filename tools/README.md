@@ -880,21 +880,22 @@ python tools/check_note_order.py --pattern "*S1_01*"   # 按书名筛选
 
 报告以下问题：Note 列表顺序 != 正文首次出现顺序、正文引用但 Note 未定义、Note 已定义但正文未引用（孤儿注释）、id 数值顺序乱序（含 `note2.1` 这类补充编号）。报告写入 `.cache/epub-work/note-order-check.md` 与 `note-order-check.json`。只读，不修改缓存。
 
-可用参数：`--cache` 指定中文缓存根目录（默认 `.cache/epub-work/chinese-text`）、`--output` 指定报告输出目录、`--pattern` 按书名子串筛选（支持 `*` 通配）。
+可用参数：`--root` 指定 EPUB 或中文缓存根目录、`--cache` 指定中文缓存根目录（默认 `.cache/epub-work/chinese-text`）、`--output` 指定报告输出目录、`--pattern` 按书名子串筛选（支持 `*` 通配）。
 
-### Note 注释顺序重排（写缓存，自动备份）
+### Note 注释顺序重排（写缓存/EPUB，自动备份）
 
 ```powershell
 python tools/reorder_notes.py --dry-run          # 预览
-python tools/reorder_notes.py                    # 执行
+python tools/reorder_notes.py                    # 执行（默认作用于缓存）
+python tools/reorder_notes.py --root EPUB --no-backup  # 作用于 EPUB 且不落盘备份（CI 模式）
 python tools/reorder_notes.py --pattern "*S2_07*" # 按书名筛选
 ```
 
-按正文 `epub:type="noteref"` 首次出现顺序重排 `*-Note.xhtml` 的 `<li>` 条目并重编号为 `note1..noteN`，同时单遍映射更新正文所有引用。写盘前会把涉及文件备份到 `.cache/reorder-backup/`；`--dry-run` 只打印旧顺序/新顺序/映射，不写盘。
+按正文 `epub:type="noteref"` 首次出现顺序重排 `*-Note.xhtml` 的 `<li>` 条目并重编号为 `note1..noteN`，同时单遍映射更新正文所有引用。写盘前默认会把涉及文件备份到 `.cache/reorder-backup/`（传入 `--no-backup` 时跳过备份）；`--dry-run` 只打印旧顺序/新顺序/映射，不写盘。
 
 自动跳过两类情况（需人工处理）：Note 文件含非注释 `<li>`（如 S0_00 的说明条目）、定义集合与引用集合不一致（孤儿/悬空引用）。可与 `tools/check_note_order.py` 配合：先用检查工具确认问题，再用本工具重排。
 
-可用参数：`--cache` 指定中文缓存根目录、`--backup` 指定备份目录、`--pattern` 按书名子串筛选（支持 `*` 通配）。
+可用参数：`--root` 指定 EPUB 或中文缓存根目录、`--cache` 指定中文缓存根目录、`--backup` 指定备份目录、`--no-backup` 跳过备份（CI 推荐）、`--pattern` 按书名子串筛选（支持 `*` 通配）。
 
 ### 翻译与修嵌规范检查（只读）
 
@@ -940,11 +941,15 @@ python tools/text_norm.py --apply --report r.md --summary s.txt
 | `fullwidth-ampersand` | 正文全角 `＆` → 半角 `&`（XHTML 源码写作 `&amp;`） | translation-spec 一.1 |
 | `ellipsis-period` | 删省略号后的句号（`(?!…)` 排除「……。……」两段独立停顿） | 一.5 |
 | `ellipsis-ascii-dot` | 删省略号后的半角句点（`(?!\d)` 避开 `….5`） | 一.5 |
+| `consecutive-periods` | 连续中文句号 `。{2,}` → `……`（省略号规范化） | 一.5 |
 | `dash-codepoint` | `─`(U+2500) → `—`(U+2014) | 一.1 |
 | `halfwidth-comma` | 中文后半角逗号 → `，`（吞 ASCII 空格；前导须为中文，故千分位不匹配） | 一.1 |
+| `halfwidth-colon` | 中文语境半角冒号 → `：`（前后严格紧邻 CJK 表意字符，排除 URL/时间） | 一.1 |
+| `halfwidth-tilde` | 中文语境半角波浪号 → `～`（前后严格紧邻 CJK 表意字符） | 一.1 |
 | `bold-punct` | 把 `<b>` 段内的标点移到加粗外（在该处闭合 `</b>`、写出标点、另起 `<b>`） | 一.8 |
+| `bold-empty` | 移除无文本内容的空 `<b>` 段（`<b></b>` 或 `<b> </b>`） | 一.8 / 健康检查 |
 
-`bold-punct` 是唯一的**行级**规则，不进 `RULES` 表（它处理的是整行内的 `<b>` 段，而不是标签外文本），但和其它规则共用同一套报告口径。判定标准取自**日文傍点自身的字符构成**（实测日文 8397 个傍点段）：允许留在加粗内的是汉字假名、`ー`、`＝`、`〇`、`々`、全角英数字、`％＆♯＃×`、`/` 与空白，中文侧对应保留 `·`（≈`＝`）和 `～`（≈`ー`）；`，。、？！：；「」『』（）…—` 及半角 `,.;:?!()[]`、弯引号等标点一律移出。文字（含中文增译）一律留在加粗内——对齐的是**含义**而不是逐字，一句情感强烈的话不因中日段数对不上就把增译晾在加粗外。
+`bold-punct` 与 `bold-empty` 是行级规则，不进 `RULES` 表（处理的是整行内的 `<b>` 段，而不是标签外文本），但和其它规则共用同一套报告口径。判定标准取自**日文傍点自身的字符构成**（实测日文 8397 个傍点段）：允许留在加粗内的是汉字假名、`ー`、`＝`、`〇`、`々`、全角英数字、`％＆♯＃×`、`/` 与空白，中文侧对应保留 `·`（≈`＝`）和 `～`（≈`ー`）；`，。、？！：；「」『』（）…—` 及半角 `,.;:?!()[]`、弯引号等标点一律移出。文字（含中文增译）一律留在加粗内——对齐的是**含义**而不是逐字，一句情感强烈的话不因中日段数对不上就把增译晾在加粗外。若 `<b>` 内部无实质文字，则彻底移除该空加粗标签。
 
 三条保护片段整体保留、不参与切分：XML 实体（`&amp;` 的分号若被拆开会得到非法的 `&amp`，XML 直接报废）、作品号（`[S5_01_01]` 是中文项目的本地化标识，方括号属标识符一部分）、缩写点与小数字（`Mr.`、`A.A.A.`、`.50`）。该规则会增删 `<b>` 标签但**不增删物理行**，可见文字与标点顺序完全不变；执行后纯文本与执行前逐字节相同。
 

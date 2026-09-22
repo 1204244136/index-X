@@ -16,8 +16,9 @@
 规则表 RULES 是唯一事实来源，每条标注 `translation-spec.md` 条款；改动规范时需
 同步本文件与 `tools/check_translation_spec.py` 的检查项。
 
-另有一条行级规则不放进 RULES（它的处理单位是整行内的 `<b>` 段，不是标签外文本）：
+另有两条行级规则不放进 RULES（它的处理单位是整行内的 `<b>` 段，不是标签外文本）：
   bold-punct    把 `<b>` 段内的标点移到加粗外（一.8「加粗落在标点上」）
+  bold-empty    移除空 `<b>` 标签（一.8 / 健康检查）
 判定标准取自日文傍点自身的字符构成，见下方 BOLD_* 常量。所有规则都只做字符
 级重写——`bold-punct` 会增删 `<b>` 标签，但绝不增删物理行、不改变可见文字与标点
 顺序（移动后去掉标签，纯文本完全一致）。
@@ -61,12 +62,20 @@ RULES: tuple[tuple[str, re.Pattern[str], str, str, str], ...] = (
     ("ellipsis-period", re.compile(r"(…+)。(?!…)"), r"\1", "一.5", "删省略号后的句号"),
     # 同上，半角句点变体。(?!\d) 避开「….5」这类。
     ("ellipsis-ascii-dot", re.compile(r"(…+)\.(?!\d)"), r"\1", "一.5", "删省略号后的半角句点"),
+    # 连续中文句号转省略号（P4）。
+    ("consecutive-periods", re.compile(r"。{2,}"), "……", "一.5", "连续句号 → ……"),
     # U+2500 BOX DRAWINGS LIGHT HORIZONTAL 被误用作破折号，与全书 U+2014 同形异码。
     ("dash-codepoint", re.compile("\u2500"), "\u2014", "一.1", "─ (U+2500) → — (U+2014)"),
     # 中文语境半角逗号全角化。限「中文后、中文或省略号前」，只吞 ASCII 空格；
     # 前导字符必须是中文，故千分位「1,000」天然不匹配。
     ("halfwidth-comma", re.compile(r"([%s]), *(?=[%s…])" % (CJK, CJK)), r"\1，", "一.1",
      "中文后半角逗号 → ，"),
+    # 中文语境半角冒号全角化。限前后紧邻 CJK 表意/符号字符。
+    ("halfwidth-colon", re.compile(r"([%s]): *(?=[%s])" % (CJK, CJK)), r"\1：", "一.1",
+     "中文语境半角冒号 → ："),
+    # 中文语境半角波浪号全角化。限前后紧邻 CJK 表意/符号字符。
+    ("halfwidth-tilde", re.compile(r"([%s])~ *(?=[%s])" % (CJK, CJK)), r"\1～", "一.1",
+     "中文语境半角波浪号 → ～"),
 )
 
 # ---------------------------------------------------------------------------
@@ -123,6 +132,10 @@ _BOLD_PLACEHOLDER = "\u0001%d\u0002"
 BOLD_RULE_ID = "bold-punct"
 BOLD_RULE_SPEC = "一.8"
 BOLD_RULE_DISPLAY = "加粗段内标点移到加粗外"
+
+BOLD_EMPTY_RULE_ID = "bold-empty"
+BOLD_EMPTY_SPEC = "一.8"
+BOLD_EMPTY_DISPLAY = "移除空 <b> 标签"
 
 
 def split_bold_punct(line: str):
@@ -184,11 +197,18 @@ def split_bold_punct(line: str):
         return "".join(out), changed
 
     def _repl(m):
-        new, changed = _rebuild(m.group(1), m.group(2))
+        full = m.group(0)
+        attrs = m.group(1)
+        inner = m.group(2)
+        if not re.sub(r"<[^>]*>", "", inner).strip():
+            text_inside = re.sub(r"<[^>]*>", "", inner)
+            hits.append((BOLD_EMPTY_RULE_ID, full, text_inside))
+            return text_inside
+        new, changed = _rebuild(attrs, inner)
         if changed:
-            hits.append(("bold-punct", m.group(0), new))
+            hits.append((BOLD_RULE_ID, full, new))
             return new
-        return m.group(0)
+        return full
 
     work = B_BLOCK_RE.sub(_repl, work)
     for i, s in enumerate(prot):
@@ -358,9 +378,10 @@ def main() -> int:
     spots = len(line_hits)
     mode = "已写盘" if args.apply else "只读"
 
-    # 报告口径统一到一张表：RULES（标签外文本替换）+ 行级 bold-punct
+    # 报告口径统一到一张表：RULES（标签外文本替换）+ 行级 bold-punct / bold-empty
     report_rules = [(rid, disp, spec) for rid, _rx, _rep, spec, disp in RULES]
     report_rules.append((BOLD_RULE_ID, BOLD_RULE_DISPLAY, BOLD_RULE_SPEC))
+    report_rules.append((BOLD_EMPTY_RULE_ID, BOLD_EMPTY_DISPLAY, BOLD_EMPTY_SPEC))
 
     def rule_lines(rid: str) -> int:
         return len([k for k in line_hits if "|%s|" % rid in k])
