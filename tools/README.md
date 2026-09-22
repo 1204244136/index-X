@@ -15,7 +15,7 @@
 | `bw_preprocess.py`、`merge_bw_pages.py` | 源分页预处理与跨页章节合并；不承担译文用词修改 |
 | `check_*.py`、修复工具 | 检查只报告；修复按专项条件写入，共享已有判定规则 |
 | `epub_char_count.py`、`epub_composition_metrics.py` | 字数与换算页数、增加插图锚点的印刷页估算；后者复用前者的文字量口径 |
-| `proofread_review.py`、`lookup_source.py` | 改动分级与原文查证；共用 `xhtml_text.py` 的纯文本提取 |
+| `proofread_review.py`、`japanese_lookup.py`、`audit_risk.py` | 译文改动片段分级、日文原文提取与语义/规范风险启发式诊断；模块化独立调用或集成复核 |
 
 下列阶段描述调用顺序，不要求把不同方向、输入格式或安全约束压成一个命令。
 
@@ -1024,14 +1024,16 @@ python -m unittest discover -s tools/tests -p "test_check_epub_health.py" -v
 python tools/proofread_review.py b7515335 2d44cb26     # 复核指定提交
 python tools/proofread_review.py --worktree            # 复核未提交的工作区改动
 python tools/proofread_review.py b7515335 --path EPUB --out 输出目录/
+python tools/proofread_review.py --worktree --no-jp    # 跳过日文原文提取
+python tools/proofread_review.py --worktree --no-audit # 跳过风险标记诊断
 ```
 
-复核「重新校对」这类批量提交时，先把改动从 git 里片段化，再按重要度分级，便于判断哪些必须逐条回原文、哪些可以批量放行。只读，不修改 `EPUB/` 与缓存正文。
+复核「重新校对」这类批量提交时，先把改动从 git 里片段化，再按重要度分级，并**模块化关联日文原文对应行与启发式风险标记**，便于判断哪些必须逐条回原文、哪些可以批量放行。只读，不修改 `EPUB/` 与缓存正文。
 
 产物（默认 `.cache/epub-work/proofread-review/`）：
 
-- `changes.tsv`：`commit / 作品 / 文件 / 行号 / 级别 / 子类 / 旧 / 新`
-- `semantic.tsv`：需要回原文判断的片段（`tiny` / `local` / `rewrite`）
+- `changes.tsv`：`commit / 作品 / 文件 / 行号 / 级别 / 子类 / 风险标记 / 旧 / 新 / 日文原文`
+- `semantic.tsv`：需要回原文判断的片段（`tiny` / `local` / `rewrite`，含日文原文与风险标记）
 - `spec.tsv`：规范确定性改动（`spec`），可批量放行，不进 `semantic.tsv`
 - `groups.txt`：语义级按「最小差异」聚类，样例只给**差异前后各 14 字**的上下文
 
@@ -1046,6 +1048,21 @@ python tools/proofread_review.py b7515335 --path EPUB --out 输出目录/
 
 `spec` 子类（`kind` 列）：`punct`（只动标点/空白）、`quote`（引号体例 `「」`/`『』`/弯引号互转）、`glyph`（数字或字母的全半角写法）、`erhua`（去儿化音）、`particle`（规范点名的语气词替换，如 `チッ`→「啧」）。
 
+**启发式风险诊断标记（`flags` 列）**：
+- `negation`：中日否定状态不一致（捕获如 `似て非なる` 翻成“很像”、`暴発ではない` 翻成肯定句等正反反转）；
+- `number`：数字或量词改变（捕获如 `一二` 误作“一两”等数值错误）；
+- `question`：反问/疑问句式变更（`？` 增删或句尾反问语气丢失）；
+- `kanji`：检测到未简化日文新字体汉字残留（如 `浜`、`黒`、`沢` 等）；
+- `bold_punct`：`<b>` 加粗标签内嵌标点符号（违背 `check_epub_health.py` 门禁）；
+- `quote_nest`：对话「」内同级嵌套「」（应使用二级『』）；
+- `controlled_term`：命中已知受控术语违规（如 `Saintium`、`和服裤裙`、`警备员驻所` 等）；
+- `del_large` / `add_large`：明显删减（`old - new >= 5` 字，漏译高发区）与明显增补（`new - old >= 8` 字，过度脑补高发区）。
+
+**模块化原子工具**：
+- `tools/japanese_lookup.py`：独立提取日文缓存中对应行纯文本（自动剥除 `<rt>` 注音）。CLI 用法：`python tools/japanese_lookup.py S3_03 S3_03-04_Chapter2.xhtml 55` 或 `python tools/japanese_lookup.py S3_03 04 55`。
+- `tools/audit_risk.py`：独立对单处改动进行语义与规范风险诊断。CLI 用法：`python tools/audit_risk.py --old "..." --new "..." --jp "..."`。
+- `proofread_review.py`：作为上层编排器，通过内部模块化调用上述两工具，无缝组合日文提取与风险标注。
+
 **规范级是这一层的关键前提**：校对产出物本身遵循 `docs/translation-spec.md`，所以「旧文本的不规范写法 → 规范写法」（半角标点、弯引号、儿化音、非规范语气词）是规范化的必然结果，不是语义改动；把它们混进 `semantic.tsv` 会让真正需要人工判断的改动被淹没。判据只认规范里能确定性判定的形状，且要求**最小差异整体**落在条款内——差异里只要掺着语义成分就交回 `local` / `rewrite`，不做宽松猜测。
 
 两条容易踩的口径：
@@ -1055,9 +1072,9 @@ python tools/proofread_review.py b7515335 --path EPUB --out 输出目录/
 
 输出同时给出「明显增补」「明显删减」统计（按整片段净长度变化，规范级不计入）；**删减是误删实义成分的高发区**，应重点抽查。
 
-回查原文：`semantic.tsv` / `groups.txt` 只给「旧 => 新」，判定对错必须回日文原文。日文缓存 `S3_01-NN.xhtml` 与中文 `S3_01-NN_*.xhtml` 按内容序 `NN` 一一对应（01=序章 / 02=行间一 / 03=第一章 … 11=终章）；文件内部不是逐行对齐，按关键字检索。需要把日文抽成纯文本时复用 `xhtml_text.text_of`，本工具不重复实现。
+回查原文：`changes.tsv` 与 `semantic.tsv` 已自动通过 `japanese_lookup` 填入对应的日文纯文本（`jp` 列），复核时无需手动翻查。日文缓存 `S3_01-NN.xhtml` 与中文 `S3_01-NN_*.xhtml` 按内容序 `NN` 一一对应（01=序章 / 02=行间一 / 03=第一章 … 11=终章）。需要把日文抽成纯文本时复用 `xhtml_text.text_of` 与 `japanese_lookup.strip_rt_and_tags`。
 
-依赖：`epub_ids.work_id`（作品号解析）、`xhtml_text.text_of`（XHTML → 纯文本）。
+依赖：`epub_ids.work_id`（作品号解析）、`xhtml_text.text_of`（XHTML → 纯文本）、`japanese_lookup`（日文原文提取）、`audit_risk`（风险诊断）。
 
 ### 字数统计与页数换算（只读）
 

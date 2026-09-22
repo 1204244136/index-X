@@ -47,6 +47,8 @@ from collections import Counter, defaultdict
 
 from xhtml_text import text_of
 from epub_ids import work_id
+from japanese_lookup import JapaneseSourceLookup, DEFAULT_JP_BASE
+from audit_risk import audit_risk_flags
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_OUT_DIR = os.path.join(REPO_ROOT, ".cache", "epub-work", "proofread-review")
@@ -306,8 +308,41 @@ def render_groups(rows: list[dict]) -> str:
 # --------------------------------------------------------------------------
 # 输出
 # --------------------------------------------------------------------------
+# 输出与模块化增强（日文提取 + 风险审计）
+# --------------------------------------------------------------------------
 
-COLUMNS = ["commit", "work", "file", "line", "grade", "kind", "old", "new"]
+COLUMNS = ["commit", "work", "file", "line", "grade", "kind", "flags", "old", "new", "jp"]
+
+
+def enrich_rows(
+    rows: list[dict],
+    repo_root: str = REPO_ROOT,
+    jp_base_dir: str = DEFAULT_JP_BASE,
+    enable_jp: bool = True,
+    enable_audit: bool = True,
+) -> None:
+    """模块化增强：自动关联日文原文对应行，并执行启发式语义与规范风险诊断。"""
+    lookup = JapaneseSourceLookup(repo_root, jp_base_dir) if enable_jp else None
+    for r in rows:
+        # 1. 日文原文提取（自动剥除注音）
+        jp_text = ""
+        if lookup and r.get("work") and r.get("work") != "-" and r.get("file"):
+            line_str = str(r.get("line", "")).strip()
+            if line_str.isdigit():
+                line_num = int(line_str)
+                val = lookup.get_line(r["work"], r["file"], line_num, strip_ruby=True)
+                if val:
+                    jp_text = val
+        r["jp"] = jp_text
+
+        # 2. 启发式风险标记
+        flags_str = ""
+        if enable_audit:
+            # 规范级（spec）通常由体例决定，但若有加粗标点或日文新字体残留依然可测
+            fl = audit_risk_flags(r.get("old", ""), r.get("new", ""), jp_text)
+            if fl:
+                flags_str = ",".join(fl)
+        r["flags"] = flags_str
 
 
 def write_tsv(path: str, rows: list[dict]) -> None:
@@ -315,15 +350,13 @@ def write_tsv(path: str, rows: list[dict]) -> None:
     with open(path, "w", encoding="utf-8") as f:
         f.write("\t".join(COLUMNS) + "\n")
         for r in rows:
-            cells = [str(r[k]).replace("\t", " ").replace("\n", " ") for k in COLUMNS]
+            cells = [str(r.get(k, "")).replace("\t", " ").replace("\n", " ") for k in COLUMNS]
             f.write("\t".join(cells) + "\n")
 
 
 def summarize(rows: list[dict], out_dir: str) -> None:
     grades = Counter(r["grade"] for r in rows)
     kinds = Counter(r["kind"] for r in rows if r["grade"] == "spec")
-    # 增删统计看**净长度变化**（整片段），并把规范级排除在外：
-    # 规范级改动（去儿化音、标点宽度）本来就会带来 1-2 字长度变化，算进实义增删是噪音。
     semantic = [r for r in rows if r["grade"] != "spec"]
     grown = [r for r in semantic if len(r["new"]) - len(r["old"]) >= 5]
     shrunk = [r for r in semantic if len(r["old"]) - len(r["new"]) >= 5]
@@ -335,6 +368,20 @@ def summarize(rows: list[dict], out_dir: str) -> None:
     print("  明显增补(new-old>=5) %d" % len(grown))
     print("  明显删减(old-new>=5) %d  <- 误删实义成分的高发区" % len(shrunk))
     print("  需要回原文的片段 %d（semantic.tsv）" % len(semantic))
+
+    # 日文原文覆盖统计
+    jp_hits = sum(1 for r in rows if r.get("jp"))
+    if jp_hits:
+        print("  已配对日文原文 %d/%d (%.1f%%)" % (jp_hits, len(rows), jp_hits / len(rows) * 100))
+
+    # 高危风险标签统计
+    all_flags = [f for r in rows for f in r.get("flags", "").split(",") if f]
+    if all_flags:
+        flag_counts = Counter(all_flags)
+        print("  风险标记检出:")
+        for fl, cnt in flag_counts.most_common():
+            print("    %-16s %d" % (fl, cnt))
+
     print("按作品：")
     for name, n in Counter(r["work"] for r in rows).most_common():
         print("  %-10s %d" % (name, n))
@@ -348,6 +395,9 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--path", default="EPUB", help="限制 diff 路径（默认 EPUB）")
     p.add_argument("--repo", default=REPO_ROOT, help="仓库根目录")
     p.add_argument("--out", default=DEFAULT_OUT_DIR, help="产物输出目录")
+    p.add_argument("--no-jp", action="store_true", help="禁用日文原文自动提取")
+    p.add_argument("--no-audit", action="store_true", help="禁用启发式风险诊断")
+    p.add_argument("--jp-base", default=DEFAULT_JP_BASE, help="日文解包缓存基础路径")
     args = p.parse_args(argv)
 
     if not args.worktree and not args.commits:
@@ -357,6 +407,15 @@ def main(argv: list[str] | None = None) -> int:
     for r in rows:
         r["work"] = work_id(r["file"]) or "-"
         r["grade"], r["kind"] = grade(r)
+
+    # 模块化增强：关联日文并打上风险标记
+    enrich_rows(
+        rows,
+        repo_root=args.repo,
+        jp_base_dir=args.jp_base,
+        enable_jp=not args.no_jp,
+        enable_audit=not args.no_audit,
+    )
 
     os.makedirs(args.out, exist_ok=True)
     write_tsv(os.path.join(args.out, "changes.tsv"), rows)
