@@ -10,6 +10,7 @@ sys.path.insert(0, str(TOOLS))
 from proofread_review import (  # noqa: E402
     clip,
     core_of,
+    enrich_rows,
     grade,
     minimal_diff,
     parse_diff_file,
@@ -183,6 +184,28 @@ class MinimalDiffTests(unittest.TestCase):
 
     def test_identical(self):
         self.assertEqual(minimal_diff("相同", "相同"), ("", ""))
+
+
+class EnrichRowsTests(unittest.TestCase):
+    def test_enrich_adds_jp_and_flags(self):
+        rows = [{
+            "commit": "test",
+            "work": "S3_03",
+            "file": "S3_03-04_Chapter2.xhtml",
+            "line": "55",
+            "old": "它由圣金属制成",
+            "new": "它由Saintium制成"
+        }]
+        enrich_rows(rows, enable_jp=False, enable_audit=True)
+        self.assertIn("flags", rows[0])
+        self.assertIn("controlled_term", rows[0]["flags"])
+        self.assertEqual(rows[0]["jp"], "")
+
+    def test_enrich_with_disabled_options(self):
+        rows = [{"old": "a", "new": "b"}]
+        enrich_rows(rows, enable_jp=False, enable_audit=False)
+        self.assertEqual(rows[0]["jp"], "")
+        self.assertEqual(rows[0]["flags"], "")
 
 
 if __name__ == "__main__":
