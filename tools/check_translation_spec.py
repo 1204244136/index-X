@@ -22,6 +22,7 @@ docx 交稿格式、漫画修嵌），那些在 EPUB 成品中已转换为 ruby 
   P12 单个省略号 …（非 …… 连用）
   P13 连续 ASCII 空格（交稿残留或断断续续，需人工确认）
   P14 小数应使用阿拉伯数字（0.7），不得写成汉字数字+小数点（〇.七、三·五）
+  P15 淘汰异形词残留（规范推荐《第一批异形词整理表》及《现汉》推荐词形，如「想象」不作「想像」）
 
 报告写入 .cache/epub-work/translation-spec-check.tsv / .json / .md。
 只读，不修改缓存。
@@ -131,6 +132,9 @@ CHECK_TEXT = [
     # 小数用阿拉伯数字：汉字数字+小数点+汉字数字 不符合中文数字写法
     (re.compile(r"[〇零一二三四五六七八九][.．・·][〇零一二三四五六七八九]+"), "P14", "error",
      "小数应使用阿拉伯数字（如 0.7），不得写成汉字数字+小数点（如 〇.七、三·五），"),
+    # 淘汰异形词残留（规范推荐使用《第一批异形词整理表》及《现代汉语词典》推荐词形）
+    (re.compile(r"(?<!想)想像(?!(?:这|那)(?:样|般))"), "P15", "warning",
+     "淘汰异形词「想像」，规范建议统一为「想象」（若为动词“想”＋“像……”等句法组合可忽略），"),
 ]
 
 # 假名残留（仅 content 文件）
@@ -274,8 +278,8 @@ def main():
     # ---- 终端摘要 ----
     print("共检查 %d 本书。命中 %d 条（按类别：%s）。" % (
         len(books_checked), len(findings),
-        ", ".join("%s=%d" % (c, n) for c, n in sorted(category_counts.items()))))
-    for cat in ["P1", "P3", "P4", "P5", "P6", "P7", "P8"]:
+        ", ".join("%s=%d" % (c, n) for c, n in sorted(category_counts.items(), key=lambda x: int(x[0][1:])))))
+    for cat in ["P1", "P3", "P4", "P5", "P6", "P7", "P8", "P15"]:
         if category_counts.get(cat):
             print("  类别 %s 命中 %d 条" % (cat, category_counts[cat]))
 
@@ -328,8 +332,9 @@ def main():
         "P12": "单个省略号…",
         "P13": "连续 ASCII 空格",
         "P14": "小数应使用阿拉伯数字（非汉字数字+小数点）",
+        "P15": "淘汰异形词残留（规范推荐词形，如「想象」不作「想像」）",
     }
-    for cat in sorted(cat_desc):
+    for cat in sorted(cat_desc, key=lambda x: int(x[1:])):
         lines.append("| %s | %s | %d |" % (cat, cat_desc[cat], category_counts.get(cat, 0)))
     lines.append("")
 
