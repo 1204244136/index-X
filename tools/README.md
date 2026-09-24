@@ -752,6 +752,43 @@ python tools/diff_paired_lines.py --tsv r.tsv           # 批量报告落盘（�
 
 **回归测试**：`python -m unittest discover -s tools/tests -p "test_diff_paired_lines.py"`，其中四类假阳性各有一个反例，另有一个「长行差 100+ 字仍要报出」的正向用例，防止放宽口径把真信号一起吞掉。
 
+### 中日语义逐行对齐检验与漂移诊断（基于 BetweenLines 矢量化引擎）
+
+```powershell
+# 1. 极速全库初筛（数秒完成，纯 CPU，零外部依赖）
+python tools/check_semantic_alignment.py --l1-only
+
+# 2. 单个表头矢量化深度诊断（支持 GPU 加速，自动调用 BetweenLines 环境）
+python tools/check_semantic_alignment.py S5_01_02-06 --vector
+
+# 3. 指定作品卷或系列进行深度诊断（分批推进，避免超长周期）
+python tools/check_semantic_alignment.py --work "S5_01_02" --vector
+python tools/check_semantic_alignment.py --work "S1_*" --top 10 --vector
+
+# 4. 自动全景体检：先跑 L1 找出可疑单元，再对前 N 个最严重单元跑 L2 深度矢量分析
+python tools/check_semantic_alignment.py --auto-audit --top 25
+
+# 5. 自动化质量门禁（发现任何未消除错位窗口即非零退出阻断）
+python tools/check_semantic_alignment.py --strict
+```
+
+`diff_paired_lines.py` 的**高阶语义升级版**。解决形式上行数相等但内部段落合并/拆分导致的「真实语义错位（Semantic Drift）」，以及纯假名/意译造成的启发式误报。
+
+**核心能力**：
+- **两级漏斗检测架构**：
+  - **Level 1（极速初筛）**：基于字符集、结构锚点与长度宽容度，3 秒扫描全库 761 个单元（25.3 万行），快速定位 0 漂移绿区与候选可疑单元。
+  - **Level 2（矢量化精检）**：接入 BetweenLines 的 `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` 跨语言向量模型，支持 ROCm/CUDA GPU 批量加速。计算中日文本行余弦相似度，自动消除假名/意译造成的假阳性（实测消除率 > 70%）。
+- **局部位移滑动窗口算法（Sliding Window Drift Detector）**：
+  在段落序列空间内探测相邻段落的局部最优匹配，精准识别连续 $\ge 2$ 段由于漏译、多句、扩写或分合导致的结构性偏移窗口（如 `L111~L119 连续 9 行中文超前 1 个段落`，直连相似度 0.24 $\to$ 偏移相似度 0.79）。
+- **环境自适应（Self-Bootstrapping）**：
+  当前 Python 环境无 `torch` / `sentence_transformers` 时，自动探测并无缝切换至 `C:\Users\12042\Documents\GitHub\BetweenLines\.venv`，无需手动切环境。
+- **规范豁免与质量门禁**：
+  - 默认遵循 `alignment_rules.TEXTUAL_IMAGE_HEADERS` 豁免文本化图片页面（如 `S2_14-02/04/07/10/13` 等材料图排版单元），可传 `--include-exempt` 显式包含；
+  - 配合 `--strict` 参数作为日常发布与 CI 门禁：检出任何真实结构错位窗口时输出 `[门禁阻断]` 并以退出码 1 阻断流程；0 错位窗口输出 `[门禁通过]`（退出码 0）。全库当前保持 0 错位窗口通过态。
+- **输出产物**：
+  - 汇总报告：`.cache/epub-work/semantic-alignment-summary.tsv`（每单元包含 L1 漂移数、语义均分、健康评分、真实错位数、假阳性消除数、错位窗口数）。
+  - 明细清单：`.cache/epub-work/semantic-drift-windows.tsv`（具体到起止行、偏移步长、直连与偏移相似度、错位方向说明）。
+
 ### 中日图片内容对应检查（只读）
 
 ```powershell
