@@ -121,11 +121,13 @@ python tools/normalize_paired.py --cache <临时中日目录> --dry-run
             → check_note_order.py（注释顺序检查）→ 报告
 
 归档目录   → check_epub_health.py（EPUB/ 单侧机械体检）→ 报告（CI 每日，只读）
+
+归档或成品 → check_epub_validity.py（calibre Check Book 合法性校验）→ 报告（本地，只读）
 ```
-- **工具**：`check_alignment.py`、`check_translation_spec.py`、`check_note_order.py`、`check_epub_health.py` 等
+- **工具**：`check_alignment.py`、`check_translation_spec.py`、`check_note_order.py`、`check_epub_health.py`、`check_epub_validity.py` 等
 - **职责**：只读检查，不修改文件
-- **输出**：`.cache/epub-work/` 下的检查报告（TSV/JSON/Markdown）；`check_epub_health.py` 只写 `--tsv`/`--json` 指定路径，默认不落盘
-- **两侧分工**：前三个读中日缓存、需要对照；`check_epub_health.py` 只读 `EPUB/` 中文侧、只判「不需要对照就能判定」的机械问题，因此可以放进 CI
+- **输出**：`.cache/epub-work/` 下的检查报告（TSV/JSON/Markdown）；`check_epub_health.py` 与 `check_epub_validity.py` 只写 `--tsv`/`--json`/`--report` 指定路径，默认不落盘
+- **两侧分工**：前三个读中日缓存、需要对照；`check_epub_health.py` 只读 `EPUB/` 中文侧、只判「不需要对照就能判定」的机械问题，因此可以放进 CI；`check_epub_validity.py` 可读 `EPUB/` 或打包成品（中日两侧都可），依赖本机 calibre，因此只在本地定期跑
 
 ### 阶段 6：发布
 ```
@@ -1047,6 +1049,93 @@ python -m unittest discover -s tools/tests -p "test_check_epub_health.py" -v
 ```
 
 `.github/workflows/check-epub-health.yml` 每日 06:00（UTC+8，排在每日规范化之后）跑全量测试与 `--strict` 体检，只报告不修复，发现 error 级问题时让 workflow 变红；完整 TSV/JSON 作为 artifact 上传 30 天。`permissions` 只有 `contents: read`。
+
+### EPUB 合法性校验（calibre Check Book，只读）
+
+```powershell
+python tools/check_epub_validity.py                                   # 默认校验 EPUB/ 全部解包书籍
+python tools/check_epub_validity.py EPUB --structural                 # 只报结构性合法性问题
+python tools/check_epub_validity.py .cache/epub-work/packed-epubs --recursive
+python tools/check_epub_validity.py --pattern "*S3_*" --jobs 1
+python tools/check_epub_validity.py --report r.txt --json r.json --tsv r.tsv --strict
+python tools/check_epub_validity.py --list-categories
+```
+
+调用 calibre 编辑器「Check book」用的同一套检查器（`calibre.ebooks.oeb.polish.check`），
+把容器/OPF 解析、XML 良构性、清单与 spine 一致性、内部链接与锚点、字体与图片、文件名、
+ID 唯一性、编码声明、CSS 语法这些检查批量跑在整库上。
+
+它**不自己实现第二套 EPUB 规范检查器**：判定口径全部来自 calibre，本工具只负责收集目标、
+控制并行、把 calibre 的原始错误归类分级、输出报告与退出码。它与 `check_epub_health.py`
+互为补充——后者只看中文侧、只判「不需要对照就能判定的机械问题」，前者是第三方完整口径，
+且能覆盖 ZIP/OPF 容器层与 CSS 语法这两块前者不看的范围。
+
+**校验对象**（两种都可只读直接校验，不需要先打包）：
+
+- `.epub` 成品：`.cache/epub-work/packed-epubs/` 下的分发副本；
+- 解包书籍目录：`EPUB/` 下每本书（含 `mimetype` 与 `META-INF/container.xml`）——
+  calibre 能直接把这种目录当容器打开。
+
+传普通目录时按一层扫描其中的 `.epub` 与书籍目录，`--recursive` 递归更深层级；
+不传路径时默认 `EPUB/`。目录名不被当作目标（缺 `mimetype` 的目录会被提示并跳过）。
+
+**类别**：calibre 的原始类型名（`CSSError`、`DanglingLink`……）不足以判断轻重，报告会再归
+一层类别；`--list-categories` 打印完整表：
+
+| 类别 | 范围 | 判定 |
+| --- | --- | --- |
+| `container` | 结构性 | 容器打不开或解析失败（打包损坏、OPF 缺失等硬失败） |
+| `xml` | 结构性 | XHTML/XML 不是良构文档 |
+| `opf` | 结构性 | OPF 清单、spine、metadata 或 idref 不一致 |
+| `nav` | 结构性 | 导航文档缺失或无效 |
+| `link` | 结构性 | 链接指向不存在的文件或锚点（DanglingLink、BadDestinationFragment） |
+| `resource` | 结构性 | 文件没有被清单或正文引用（UnreferencedResource） |
+| `font`、`image` | 结构性 | 字体、图片缺失或声明错误 |
+| `encoding`、`filename`、`ids`、`markup`、`mimetype`、`empty-file` | 结构性 | 对应类别的规范问题 |
+| `css-syntax` | 结构性 | CSS 真语法错误（无效声明、括号不配对） |
+| `other` | 结构性 | 未归类；出现即说明需要补映射 |
+| `css-order` | 样式风格 | 选择器书写顺序建议（"Expected selector … to come before …"） |
+| `css-duplicate` | 样式风格 | 重复选择器（"Unexpected duplicate selector …"） |
+| `css-empty-block` | 样式风格 | 空规则块（"Unexpected empty block"） |
+| `html-size` | 样式风格 | 单个 XHTML 体积过大 |
+
+类别映射以 calibre 的**类名**为准（`DanglingLink`、`BadDestinationFragment`……），不匹配
+本地化后的消息文本，因此换 calibre 语言或版本不会改变归类结果；`other` 是兜底而不是静默
+丢弃，命中它会照常出现在报告与门禁里。
+
+`--structural` 排除上表四个「样式风格」类别。口径依据：整库样式表由本仓库自建，空块、重复
+与选择器顺序都不影响阅读器行为，而它们在本库占命中总数的九成九以上，混在一起会把真信号
+淹没。默认**不**过滤——先看分类汇总，再决定要不要收窄；`--min-severity` 可按级别再收一道。
+
+**并行与超时**：默认按目标数自动分片（最多 4 个），每个分片内 calibre 的检查线程数为 1
+（`--calibre-threads` 可调，`0` 表示用 calibre 默认），避免「进程数 × 线程数」把 CPU 打满。
+单个分片默认 900 秒超时（`--timeout`）；超时只终止该分片，且已完成的结果会保留（子进程
+逐本增量写结果），未完成的目标标记为 `container` 失败而不是静默丢失。
+
+**输出**：终端给全局汇总（按类别、按消息模式、有问题书籍列表）。报告只在显式给出
+`--report`/`--json`/`--tsv` 时写盘，内容与终端一致（同样受过滤开关影响）；JSON 里每本书额外
+保留未过滤的 `total_issue_count`，便于回看原始规模。
+
+退出码：`0` 正常结束；`1` 是 `--strict` 且过滤后仍有问题（含单本检查失败）；`2` 是输入路径
+或 calibre 环境等运行前提有误。
+
+**只读**：不修改、不修复、不重新打包任何输入，不写 `EPUB/`、不写 `.cache/`；`.epub` 的解包
+临时目录落在系统临时目录并在检查后删除。
+
+**依赖与兼容性**：需要本机装有 calibre。入口解释器不必是 calibre 自带的 Python——校验统一在
+子进程里做，非 calibre 环境会自动用 `calibre-debug` 拉起（`--calibre-debug` 可指定路径），
+因此 `python tools/check_epub_validity.py` 与 `calibre-debug tools/check_epub_validity.py`
+都能用。用的是 calibre **内部** API，升级 calibre 后模块位置或签名可能变化：
+`load_calibre_api()` 是唯一兼容层，导入失败给明确提示而不是抛栈；`run_checkers.cpu_count`
+这类内部旋钮拿不到时降级为警告，不阻断校验。
+
+负向自检：`tools/tests/test_calibre_validity.py` 不依赖 calibre，覆盖目标收集（含解包目录与
+`--recursive` 的区别）、类别映射、级别与位置解析、过滤与 `--strict` 语义、报告写出、
+单本失败收敛与入口退出码：
+
+```powershell
+python -m unittest discover -s tools/tests -p "test_calibre_validity.py" -v
+```
 
 ### 术语审计
 
