@@ -14,6 +14,10 @@
 - **<ruby>主神之枪<rt>Gungnir</rt></ruby>（日文：<ruby>主神の槍<rt>グングニル</rt></ruby>）**：写成 **<ruby>主神之枪<rt>冈格尼尔</rt></ruby>**。
 - **<ruby>投掷之锤<rt>Mjölnir</rt></ruby>（日文：<ruby>投擲の槌<rt>ミョルニル</rt></ruby>）**：写成 **<ruby>投掷之锤<rt>妙尔尼尔</rt></ruby>**（**<ruby>雷神之锤<rt>妙尔尼尔</rt></ruby>**）。
 - **<ruby>潜伏地底的恶龙<rt>Níðhǫggr</rt></ruby>（日文：<ruby>地の底這う悪竜<rt>ニーズヘッグ</rt></ruby>）**：写成 **<ruby>潜伏地底的恶龙<rt>尼德霍格</rt></ruby>**。
+- **<ruby>破灭之枝<rt>Lævateinn</rt></ruby>（日文：<ruby>破滅の枝<rt>レーヴァテイン</rt></ruby>）**：写成 **<ruby>破灭之枝<rt>雷瓦汀</rt></ruby>**。
+- **<ruby>战乱之剑<rt>Dáinsleif</rt></ruby>（日文：<ruby>戦乱の剣<rt>ダインスレーヴ</rt></ruby>）**：写成 **<ruby>战乱之剑<rt>丹因斯莱夫</rt></ruby>**。
+- **<ruby>万象之金<rt>Draupnir</rt></ruby>（日文：<ruby>万象の金<rt>ドラウプニル</rt></ruby>）**：写成 **<ruby>万象之金<rt>德罗普尼尔</rt></ruby>**。
+- **<ruby>黑侏儒<rt>Dvergr</rt></ruby>（日文：<ruby>黒小人<rt>ドヴェルグ</rt></ruby>）**：写成 **<ruby>黑侏儒<rt>矮人</rt></ruby>**。
 
 ### 三、翻译专名
 
