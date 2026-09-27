@@ -226,8 +226,8 @@ class RoutingTests(ToolTestCase):
         self.assertEqual(code, 0)
         self.assertEqual(calls, [])
 
-    def test_newline_only_epub_diff_is_flagged(self):
-        """归档目录被换行转换时给出警告，避免误当成真实编辑反向覆盖缓存。"""
+    def test_newline_diff_has_no_warning(self):
+        """换行符差异不输出任何警告，项目对换行符不敏感。"""
         cache_file = self.fx.cache / "chinese-text" / BOOK_CN / "OEBPS" / "a.xhtml"
         epub_file = self.fx.epub / BOOK_CN / "OEBPS" / "a.xhtml"
         cache_file.write_bytes(b"<p>x</p>\r\n")
@@ -236,7 +236,8 @@ class RoutingTests(ToolTestCase):
         save_manifest(self.fx.cache, scan_cache(self.fx.cache))
         code, _, output = self.run_tool("--dry-run")
         self.assertEqual(code, 0)
-        self.assertIn("只差换行符", output)
+        self.assertNotIn("只差换行符", output)
+        self.assertNotIn("换行", output)
 
     def test_force_requires_explicit_direction(self):
         code, calls, output = self.run_tool("--force")

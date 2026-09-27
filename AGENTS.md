@@ -67,7 +67,7 @@
 3. **修改文本**：`.cache/` 仅用于读取、核对和审计，不得直接编辑、规范化、修复或删除其中文件。所有文本内容写入 `EPUB/`；中日成对批量处理运行 `python tools/normalize_paired.py --cache <临时目录>` 等入口时，也必须把最终结果写入 `EPUB/`，不得把 `.cache/epub-work` 当作写入目标。只处理明确指定的单文件/目录时可运行 `python tools/normalize_single.py`，目标必须位于 `EPUB/`。
 4. **文本同步的底层单方向流程**（统一入口内部调用；只改了一处、方向明确时也可直接运行）：
    - 流程 B（缓存为准）：`python tools/publish.py --dry-run` 预览变更，确认后运行 `python tools/publish.py`。脚本会对比 `manifest.json` 只处理被改动的书籍：中文变更只把发生变更的文件写入 `EPUB/`（含删除传播），中日两侧分别打包并上传到 OneDrive（每本一个 `.epub`），上传后同步更新 `pull-state.tsv` 避免下次拉取重复解压。发布成功后自动更新清单。`--sync-only` 只同步 `EPUB/` 不打包上传。发布前做基线前置检查：本次处理范围内某一侧在缓存里有书、而清单基线里该侧一条记录都没有时直接报错并给出 `manifest.py --update-books` 重建命令（`--force` 跳过该检查），避免把整侧当成「全部新增」重新打包上传。
-   - 流程 C（`EPUB/` 为准，内容写入后的默认方向）：`python tools/publish_epub.py --dry-run` 预览，确认后运行 `python tools/publish_epub.py`。对比 `manifest.json` 只处理 `EPUB/` 中变化的（中文）书：从 `EPUB/` 打包 `.epub` 上传到 OneDrive，并把变化文件增量覆盖回缓存（含删除传播），成功后更新清单与 `pull-state.tsv`。默认会跳过缓存中仍有未发布修改的冲突书籍（用 `--overwrite-cache` 强制覆盖）。运行前务必 `--dry-run` 确认变更范围（按字节哈希比较，换行差异也会算变更；归档目录因换行转换产生的差异由统一入口额外警告）。反向发布同样做上一条的基线前置检查（作用于中文侧）。
+   - 流程 C（`EPUB/` 为准，内容写入后的默认方向）：`python tools/publish_epub.py --dry-run` 预览，确认后运行 `python tools/publish_epub.py`。对比 `manifest.json` 只处理 `EPUB/` 中变化的（中文）书：从 `EPUB/` 打包 `.epub` 上传到 OneDrive，并把变化文件增量覆盖回缓存（含删除传播），成功后更新清单与 `pull-state.tsv`。默认会跳过缓存中仍有未发布修改的冲突书籍（用 `--overwrite-cache` 强制覆盖）。运行前可通过 `--dry-run` 预览确认变更范围。反向发布同样做上一条的基线前置检查（作用于中文侧）。
    - 流程 A（OneDrive 为准）：`./tools/pull.ps1 -SyncToEpub`，只解压 OneDrive 中变化的书并同步 `EPUB/`，不打包上传。
 5. **文本写入后同步**：文本内容写入 `EPUB/` 后立即再次运行 `python tools/publish_auto.py`，把本次写入发布到 OneDrive，并让缓存与清单回到最新一致状态。
 6. **文本同步冲突处理**：若同步报冲突，先逐书、逐文件分析差异，再尝试自行合并。两边都有需要保留的有用改动时，必须把双方最新有效内容合并到 `EPUB/` 后重新同步，不得直接选边覆盖。只有依据内容、文件差异和项目规约仍无法可靠判断时，才询问用户。
@@ -106,7 +106,7 @@
 - 跨 EPUB 的文本修改（一次修改落在两本及以上书籍；中日两侧的同一作品算一本）必须将长期留档写入 `docs/maintenance-records/`，只保留结论、范围、统计和必要样例，不复制整个缓存；单本 EPUB 内部的修改不留档，复核与回退以该次提交为准。
 - 禁止编辑 `docs/changelog.md`；该文件已冻结并归档为 `docs/archive/legacy-changelog.md`。
 - 不要为了格式化而批量改写 EPUB；保持文件名、目录结构、编码和换行行为稳定。
-- 换行符不作为修改对象：`EPUB/` 出现 CRLF 属仓库容忍的既有态（Windows 文本模式写入、OneDrive 回流解包自带 CRLF），`.gitattributes` 已在入库时统一归一化为 LF，行尾差异不进 diff 与提交内容，也不影响阅读和中日行数对齐。不得为了「统一换行」改写 `EPUB/` 文本——CRLF→LF 与 LF→CRLF 两个方向都不做；`publish_auto.py` 对「只差换行符」的变化只给警告，确认属检出/回流转换时用 `git restore EPUB/` 还原，不得按真实编辑发布。确需改变某文件的换行风格时，作为独立任务处理并在本节补充口径。
+- 对换行符不敏感：`.gitattributes` 已统一声明文本文件出口为 LF（`text eol=lf`），由 Git 在入库与检出时管理，行尾差异不进版本控制 diff，也不影响阅读和中日行数对齐。项目内部及脚本对换行符（CRLF/LF）不敏感，不作无谓的换行符检查，脚本也不对换行符差异输出任何警告；日常修改文本时无需关心或刻意还原行尾格式，禁止为了「统一换行」而专门批量改写文件。
 
 ## Agent 操作边界
 

@@ -157,33 +157,6 @@ def display_command(cmd: list[str]) -> str:
     return " ".join(f'"{part}"' if " " in part else part for part in cmd)
 
 
-def newline_only_diffs(
-    epub_changes: dict[str, dict[str, str]], epub_root: Path, cache: Path
-) -> list[str]:
-    """找出「EPUB/ 与缓存只差换行符」的文件（疑似归档检出的换行转换）。
-
-    manifest.json 按字节哈希比较，Windows 上的 core.autocrlf 等设置会让归档目录
-    相对基线整体变成 CRLF，从而被误判成真实编辑并触发反向覆盖缓存。
-    """
-    suspects: list[str] = []
-    for book_key, files in epub_changes.items():
-        side, book = book_key.split("/", 1)
-        for file_in_book, status in sorted(files.items()):
-            if status == "deleted":
-                continue
-            epub_file = epub_root / book / file_in_book
-            cache_file = cache / side / book / file_in_book
-            if not epub_file.is_file() or not cache_file.is_file():
-                continue
-            epub_bytes = epub_file.read_bytes()
-            cache_bytes = cache_file.read_bytes()
-            if epub_bytes == cache_bytes:
-                continue
-            if epub_bytes.replace(b"\r\n", b"\n") == cache_bytes.replace(b"\r\n", b"\n"):
-                suspects.append(f"{book_key}/{file_in_book}")
-    return suspects
-
-
 # ------------------------------------------------------------ OneDrive 侧检测
 
 
@@ -462,18 +435,6 @@ def main(argv: list[str] | None = None) -> int:
             print(f"    {describe_book(book_key)}")
     for note in drift_notes:
         print(f"  提示: {note}")
-
-    suspects = newline_only_diffs(epub_changes, epub_root, cache)
-    if suspects:
-        print(
-            f"\n  警告: EPUB/ 的 {len(suspects)} 个变化文件与缓存只差换行符（CRLF/LF），"
-            "可能是归档检出时的换行转换而非真实编辑："
-        )
-        for item in suspects[:5]:
-            print(f"    {item}")
-        if len(suspects) > 5:
-            print(f"    …（另有 {len(suspects) - 5} 个）")
-        print("  若只是换行转换，请先还原归档（git restore EPUB/）再重跑。")
 
     # 冲突：同一本书两侧都有改动，且缓存侧仍有 EPUB/ 未包含的内容。
     if conflicts and args.source == "auto":
