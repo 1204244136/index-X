@@ -103,7 +103,7 @@
     </navPoint>
     <navPoint id="num_16" playOrder="16">
       <navLabel>
-        <text>第二章 超绝者姆特·忒拜 the_Death_Penality_WH.</text>
+        <text>第二章 超绝者姆特·底比斯 the_Death_Penality_WH.</text>
       </navLabel>
       <content src="OEBPS/Text/S3_08-06_Chapter2.xhtml"/>
       <navPoint id="num_17" playOrder="17">
