@@ -126,6 +126,7 @@
 | `フォークダンス` | 民俗舞 | 土风舞（台湾用语，成品旧译 2 处；地域词不构成保留理由） | 本批落地；同上记录 |
 | `ピナーカ`（湿婆之弓，Type＝灵装） | 毗那迦 | 比那卡（表内原值；也是中文维基「湿婆」条目的写法）／皮纳卡（中文维基「皮纳卡多管火箭炮」的军械译名，与神话层不同轨）／毕那卡·毕那神弓（成品自拟音译，检索无外部用例）。**「毗那迦」与佛教术语「毗那夜迦／毗那迦夜」（Vinayaka，象头神·障碍者）首二字同、词形不同（缺「夜」）** | 本批落地（单作品 S5_01_03：9 处／8 行，成品「毕那卡」6 处＋「毕那神弓」1 处＋译注基文 1 处；表侧 `data!D108` 同改，改前留副本 `Data_Translation.tabx.xlsx.bak_before-pinaka-fix`）；网上查证来源见本条提交信息 |
 | `【正体不明】`（当て字 `<ruby>正体不明<rt>カウンターストップ</rt></ruby>`，Type＝能力/别名） | 【身份不明】 | 真相不明（成品旧译 5 处，S1_06：把「正体（真面目·本体）」误作「真相」）／依日文用字直录「正体不明」（表侧不取——该词形在库内同形兼作普通词义「正体不明の〜」，直录会与普通用法混同） | 本批**按表改成品**（单作品 S1_06：当て字基文 5 处，`<rt>Counter Stop</rt>` 与成品原有引号结构不动）；[blue-research-counter-stop-table-alignment-2026-09-28.md](maintenance-records/blue-research-counter-stop-table-alignment-2026-09-28.md) |
+| `セイズ魔術`（＝ `セイズ`，古诺斯语 **seiðr**，Type＝术语） | **塞德尔魔法**（裸形作「塞德尔」） | 赛尔魔法（表内原值；中文维基「北欧神话」有此用例，但丢 ð）／赛德魔法·塞德（成品旧译；中文维基「雷瓦汀」「史爾特爾」有此用例，走英语简写形 `seid`，**缺尾 -r**）／塞兹·赛兹（＝ 日文 `セイズ` 的**日语中转**，规范明令禁止）。**中文无通行定译**：中文维基同一部百科的「北欧神话」「雷瓦汀」「史爾特爾」「斯堪的纳维亚历史」四篇文章分别用赛尔／赛德·塞德／塞德尔，另有「渥爾娃女巫」保留拉丁 `seiðr`；「塞伊德」北欧语境零用例 | 本批**两侧同改**（4 本／5 文件／5 处；表侧 `data!D2090` 赛尔魔法→塞德尔魔法，改前留副本 `Data_Translation.tabx.xlsx.bak_before-seizr-fix`）。**同形专名「赛德路亚」（`data!262` `セートルア`）不得误伤**，映射按行号＋上下文指定。查证与音理见 [seizr-magic-term-unification-2026-09-28.md](maintenance-records/seizr-magic-term-unification-2026-09-28.md) 与本条提交信息 |
 
 ## 六、人物、专名与角色口癖
 
@@ -355,6 +356,7 @@
 - [b-group-otsu-10-product-convergence-2026-09-28.md](maintenance-records/b-group-otsu-10-product-convergence-2026-09-28.md)（成品差异清单 B 组乙档「改成品」10 条：919／956／1192／1241／1716／1843／2060／2061／2368／2489）
 - [mitsuami-braid-term-unification-2026-09-28.md](maintenance-records/mitsuami-braid-term-unification-2026-09-28.md)（`三つ編み` 词族全库统一为「麻花辫」：26 本／34 文件／46 处；为该词补登记的译名表裸形条目**已于同日删除**，见该记录文首「更正」）
 - [blue-research-counter-stop-table-alignment-2026-09-28.md](maintenance-records/blue-research-counter-stop-table-alignment-2026-09-28.md)（台账 `132` `ブルーリサーチ` → 蓝色搜查、`1718` 【正体不明】 → 【身份不明】，均按表改成品：2 本／5 文件／40 处，含 `content.opf` 简介同步）
+- [seizr-magic-term-unification-2026-09-28.md](maintenance-records/seizr-magic-term-unification-2026-09-28.md)（`セイズ魔術` ＝古诺斯语 seiðr，网上查证无中文通行定译后按严式原语还原定「塞德尔」：4 本／5 文件／5 处 ＋ 表侧 `data!D2090`）
 
 ### 14.2 由提交承载的裁定（原单本记录已按留档判据删除）
 
