@@ -16,6 +16,8 @@
 | `check_*.py`、修复工具 | 检查只报告；修复按专项条件写入，共享已有判定规则 |
 | `epub_char_count.py`、`epub_composition_metrics.py` | 字数与换算页数、增加插图锚点的印刷页估算；后者复用前者的文字量口径 |
 | `proofread_review.py`、`japanese_lookup.py`、`audit_risk.py` | 译文改动片段分级、日文原文提取与语义/规范风险启发式诊断；模块化独立调用或集成复核 |
+| `read_xlsx.py` | Excel (.xlsx) 表格解析与预览；转 Markdown/TSV/CSV/JSON，支持行列切片与关键词搜索 |
+| `search_text.py` | 全库文本与术语检索；注音保全、三轨匹配（基文/注音/综合）、假名折叠与中日双向联动 |
 
 下列阶段描述调用顺序，不要求把不同方向、输入格式或安全约束压成一个命令。
 
@@ -1235,3 +1237,44 @@ python tools/epub_composition_metrics.py <目录或epub> [--csv OUT.csv] [--page
 输出列：`成分 / 子成分 / 全字符 / 页数（换算）/ 印刷页区间 / 印刷页数`（合计行给出全书正文印刷页推算区间）。成分名规范化（序章/第N章/终章、行间、后记、引子/尾声位置规则）与 `epub_char_count` 完全一致；正文按 `<h2>` 展开子成分，`--chars-only` 只按成分输出。
 
 **估算边界**：锚点页本身是实测的，锚点之间按字数比例分配；书首（首个插图之前，通常 30~50 页）无锚点、只能靠密度外推，误差最大，单成分页数约 ±10%。页区间是推算值，不是书内页码标记。默认只读，不修改输入；CSV 默认写到 `.cache/epub-work/composition-metrics/<书目录名>.csv`，不落进书籍目录，避免被 `package_cache_epubs.py` 打进 EPUB。
+
+### Excel 解析与预览（只读）
+
+```powershell
+python tools/read_xlsx.py <file.xlsx> [--list-sheets] [--sheet <NAME/IDX>] [--cols <COLS>]
+python tools/read_xlsx.py <file.xlsx> [-q <KEYWORD>] [--head <N>] [--format <markdown|tsv|csv|json>]
+```
+
+用于快速查看、过滤、提取并转换 `.xlsx` 格式文件（如术语表、人名对照表、校对任务表）为模型友好或易读的格式，避免在对话交互中重复临时编写一次性解析脚本。只读，不修改原始文件。
+
+- **工作表查看与选择**：`--list-sheets`（`-l`）列出所有 Sheet 及其行/列规模；`-s` / `--sheet` 按名称或 0-based 序号指定 Sheet（默认读取首个 Sheet）。
+- **格式转换**：`--format markdown`（默认，精美 Markdown 表格，自动转义内部竖线与换行符）、`tsv`、`csv`、`json`（支持 `--json-mode records` 字典列表或 `rows` 二维数组）。
+- **上下文截取与分页**：`--head N`（`-n N`）取前 N 行；`--tail N` 取后 N 行；`--offset N --limit M` 分页切片，防止大表格撑爆大模型上下文。
+- **列提取**：`--cols`（或 `-c`）仅提取指定列，支持逗号分隔的列名（如 `"Base_Ori,Base_Trans,Type"`）、列字母（如 `"A,B,D"`）或 1-based 数字（如 `"1,2,4"`）。
+- **行关键词搜索**：`-q` / `--search` 直接在选定列中全文匹配关键词，仅输出包含该关键词的行（默认不区分大小写，`--match-case` 区分大小写）。
+- **文件导出与摘要**：`-o` / `--out` 导出结果到文件；`--info` 打印当前工作表、总匹配行数、展示行数与列数摘要。
+
+### 全库文本与术语检索（注音保全 + 中日联动，只读）
+
+```powershell
+python tools/search_text.py <query> [-s both|cn|jp] [-w <WORK_ID>] [-m <MAX>]
+python tools/search_text.py "レールガン" --side jp
+python tools/search_text.py "超电磁炮" --side cn -w "S1_*" -C 1
+python tools/search_text.py "カリキュラム" --format markdown
+```
+
+用于在 EPUB 工作缓存（`.cache/epub-work/`）及归档中进行精准的全文与术语检索，支持注音假名搜索、汉字长词跨标签搜索、BW 源假名妥协折叠与中日双向对齐联动。只读，不修改文件。
+
+- **注音完整保全（绝不丢失读音信息）**：自动将 HTML 中冗长的 `<ruby>基文<rt>注音</rt></ruby>` 解析并转化为精炼的 `基文(注音)` 纯文本展示（如 `超電磁砲(レールガン)`），彻底清除 `<p>`/`<div>`/`<span>` 排版标签，同时汉字基文与特殊读音假名一个不漏。
+- **三轨匹配引擎**：
+  - **基文轨（base）**：消除假名与 `<rt>` 标签打断汉字的问题，搜纯汉字「超電磁砲」「超能力者」「上条当麻」100% 稳稳命中，展示时依然完整保留注音；
+  - **注音轨（ruby）**：专门匹配 `<rt>` 内的假名/英文，搜「レールガン」「イマジンブレイカー」「カリキユラム」直接命中读音；
+  - **综合轨（formatted）**：直接匹配格式化后的整句或整词。
+- **假名与英数折叠归一化**：
+  - 自动打通小字假名（`ゃゅょっ` 等）与大字假名（`ヤユヨツ` 等），完美兼容 BookWalker 源注音 99.8% 写作大字的排印妥协，输入《译名表》不妥协小字写法亦可命中源文；
+  - 自动归一化全角英数与半角 ASCII（如 `５` ↔ `5`，`＝` ↔ `=`）。
+- **中日双向自动联动（Bilingual Pair Linkage）**：
+  - 搜中文行时，自动关联展示日文对应文件的同一行原文及其注音（`= [JP] Lxx: ...`）；
+  - 搜日文行时，自动关联展示中文对应文件的成品译文（`= [CN] Lxx: ...`）；
+  - 术语统一、异译排查、对齐核验一步到位；若无需联动可传 `--no-pair`。
+- **作用域过滤与上下文**：`-w` / `--work` 按作品号通配过滤（如 `"S1_*"`, `"S3_01"`）；`-s` / `--side` 指定检索侧（`both` / `cn` / `jp`）；`-C N`（或 `--context N`）显示前后 N 行上下文；`-m N` 限制最大匹配数（默认 50）；`-f` 输出为 `text`（高亮终端）、`markdown`、`json` 或 `tsv`。
