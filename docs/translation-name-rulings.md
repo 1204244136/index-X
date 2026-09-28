@@ -120,6 +120,10 @@
 | `ネームレス` | 无名祭祀书 | 无名之书（字面意译；实指克苏鲁神话虚构魔道书 Nameless Cults，从俗取通行汉译） | 单作品（S1_01）修订，由提交承载 |
 | `<ruby>偽装能力<rt>ダミースキル</rt></ruby>` | `<ruby>类超能力<rt>Dummy Skill</rt></ruby>` | 伪装能力（日文汉字照搬易产生「用于隐匿伪装的超能力」之歧义；此处指下意识运算模拟的虚假超能力，意译为「类超能力」以符 Dummy Skill 本义） | 单作品（S1_02）修订，由提交承载 |
 | `ギンヤンマ` | 碧伟蜓 | 银蜻蜓（日文口语通名直译，偏通俗口语；蜓科标准中文名及美军UAV装备代号定译取「碧伟蜓」） | 单作品（S2_03）修订，由提交承载 |
+| `共通トーン` | 共通语调 | 通用音调（成品旧译 9 处，集中在 S3_06／S3_07；成品自身另有 4 处已作「共通语调」） | 本批落地（全库 13 处，与日文 13 处一一对应）；[b-group-otsu-10-product-convergence-2026-09-28.md](maintenance-records/b-group-otsu-10-product-convergence-2026-09-28.md) |
+| `トータルコートシップ` | 全面求爱 | 万象求偶（成品旧译 3 处；total 意译为「万象」、求爱改作偏生物学的「求偶」，与台词亲密语域更远） | 本批落地；同上记录 |
+| `【我が身の全ては亡き友のために】`（`<rt>Intimus115</rt>`，魔法名） | 【为亡友献上吾之一切】 | 为亡友献上我的一切（同为通顺译文，仅文白之分；取本系列魔法名的文言腔） | 本批落地；同上记录 |
+| `フォークダンス` | 民俗舞 | 土风舞（台湾用语，成品旧译 2 处；地域词不构成保留理由） | 本批落地；同上记录 |
 
 ## 六、人物、专名与角色口癖
 
@@ -164,6 +168,9 @@
 | `前兆の感知` | 前兆感知 | 感应前兆／前兆预知 | 同上 |
 | `ブリテン・ザ・ハロウィン` | 不列颠万圣夜政变 | 补回「政变」定性 | 同上 |
 | 圣乔治大教堂、詹姆斯一世／洪诺留三世、处刑塔七道具、创作魔法阵、热源探知、神戮、开朗的女神、幽灵狩猎、安卡、萨瑟克大教堂、水路作成、派阀、圣吉尔斯的庇护、海流操作魔法、开发官、项圈式电极、学园都市统括理事会、铁人三项、成山烟灰缸、现象管理缩小再现设施、铃山高等学校、演算铳器、避暑地、对战车导弹、超导电线性两轮、欧帕兹历史资料馆、Ω密码、高维接触协会、黄道连接线路普及委员会、精密微小信仰会、特殊能量研究所、通往未来之翼中心核、缪塞、凡尔赛的圣女、电动辅助式吹箭、免费复眼、死者军势、载人火星探查计划、蒙布朗、筒仓型质量加速器、灵体投射、火焰剑 等 | 见记录逐条 | 各条候选见记录 | `6a0f77c0`；[term-unification-batch4-2026-09-27.md](maintenance-records/term-unification-batch4-2026-09-27.md) |
+| `三つ編みの少女` | 麻花辫少女 | 三股辫少女（成品并存写法 2 处，S4_01-06；**裸形 `三つ編み` 不在本裁定范围**，见第十二节） | 本批落地；[b-group-otsu-10-product-convergence-2026-09-28.md](maintenance-records/b-group-otsu-10-product-convergence-2026-09-28.md) |
+| `ドスケベ女医` | 色情女医生 | 淫荡女医生（成品并存写法 1 处，S4_02-06；两侧色彩相当，差异只在选词。同词根的其他词形如 `ドスケベニットワンピ`／`ドスケベ悪女` 不在本裁定范围） | 本批落地；同上记录 |
+| `破滅屋` | 破灭屋 | 破坏分子（成品旧译 3 处，S2_07-04；汉语现成词，把绰号改写成身份描述，且丢掉与下文 `『破滅屋』として` 的同一性依托） | 本批落地；同上记录 |
 
 ### 6.2 角色口癖、自称与固定语尾
 
@@ -198,6 +205,9 @@
 | `暴走能力の法則解析用誘爆実験` | 暴走能力法则解析用诱爆实验 | 失控能力的法则解析用诱爆实验／失控能力法则解析用诱爆实验（「暴走」在日文轻小说及专名中较为常见，且特装短篇已定型；普通叙述中的失控义项保留） | 本批落地；[boso-noryoku-experiment-term-unification-2026-09-28.md](maintenance-records/boso-noryoku-experiment-term-unification-2026-09-28.md) |
 | `国立夢占い解析所` | 国立梦境占卜解析所 | 国立占梦解析所（成品旧译；2026-09-28 甲档曾把方向做反、据此改表，已回改，见第十一节） | 单作品（S1_18）修订，由提交承载 |
 | `〜班`（编制单位名后缀：`特別例外処理班`、`回収班`、`迎撃班`、`処理班`、`ＡからＦ班` 等） | `〜小队`（特别例外处理小队／小规模处理小队／回收小队……）；**不照搬日文「班」**，同锚点的「小组／组／队／人马」等异译一并收敛。**例外：军队／军事编制保留「班」**——正规军队·军方、骑士团作战部队、PMC 军事承包（`ＡからＦ班`＝「A班到F班」、`リンディ回収班`＝「琳迪回收班」）；**警备·巡逻勤务不算军队**（`城内警備班`＝「城内警备小队」）；普通词义（学校分组 `班を作る`、班次 `三ローテーション制`、`班単位`）不属本锚点 | 照搬日文「班」（表侧 `2633` 旧值「小规模对应班」）；「小组／组／队／人马」等并存写法 | `03c5e6b4` 首例（S2_19）；[ban-squad-term-unification-2026-09-28.md](maintenance-records/ban-squad-term-unification-2026-09-28.md) 全库落地 |
+| `全世界覚醒連合` | 全世界觉醒联合 | 全世界觉醒联盟（成品旧译 1 处，S1_18-20:33） | 本批落地（同页专名统一）；[b-group-otsu-10-product-convergence-2026-09-28.md](maintenance-records/b-group-otsu-10-product-convergence-2026-09-28.md) |
+| `人類の英知総本山` | 人类才智总管辖处 | 人类智慧大本营（成品旧译 1 处，S1_18-20:11；合理意译，但换掉了「総」与「英知」的用字，同页专名应统一到表内） | 本批落地；同上记录 |
+| `アローヘッド彗星` | 阿洛海德彗星 | 箭首彗星（成品意译 19 处，分布 S2_13／S2_14／S2_15；`アローヘッド`＝Arrowhead＝箭头／箭镞，与表内音译是同一客观天体的两个名字，不得并存） | 本批落地；同上记录 |
 
 ### 7.1 X 版与译名表的人为固有差异
 
@@ -287,6 +297,7 @@
 - `S2_18-05:533` 的 `セフィロト` ruby 层汉字写法（源作 `セフイロト`）；`ダアト`／`チャネル` 三种写法。[sephira 记录](maintenance-records/sephira-term-unification-2026-09-17.md)
 - 译注语境中「主义／学派」的分工（`S3_05-Note:8`、`S5_04_01-Note:29` 保留「赫耳墨斯主义」）。[hermes 记录](maintenance-records/hermes-gaku-term-unification-2026-09-20.md)
 - `941`「人材表示」表内译名与日文原词不符。[batch2 记录](maintenance-records/term-table-drift-batch2-2026-09-26.md)
+- **裸形 `三つ編み`（表内未登记）是否随 `三つ編みの少女` 一并作「麻花辫」**：成品全库「三股辫」20 处对「麻花辫」3 处，「三股辫」是压倒性多数，且译名表只登记 `三つ編みの少女` 一行。本批按锚点粒度只收敛登记的 2 处，导致 `S4_01-06_Chapter2` 内两形并存；要改为「麻花辫」须先定口径（表是否补登记裸形、成品 20 处是否同改）。[b-group-otsu-10-product-convergence-2026-09-28.md](maintenance-records/b-group-otsu-10-product-convergence-2026-09-28.md)
 
 ## 十三、不算裁定的事项（纠错与规范执行）
 
@@ -338,6 +349,7 @@
 - [maria-alchemy-instruments-translation-unification-2026-09-27.md](maintenance-records/maria-alchemy-instruments-translation-unification-2026-09-27.md)｜[maria-name-vessel-terms-unification-2026-09-27.md](maintenance-records/maria-name-vessel-terms-unification-2026-09-27.md)｜[regardie-name-unification-2026-09-27.md](maintenance-records/regardie-name-unification-2026-09-27.md)｜[ruby-spurious-creation-fix-2026-09-27.md](maintenance-records/ruby-spurious-creation-fix-2026-09-27.md)｜[shibu-term-unification-2026-09-27.md](maintenance-records/shibu-term-unification-2026-09-27.md)｜[shonen-in-term-unification-2026-09-27.md](maintenance-records/shonen-in-term-unification-2026-09-27.md)｜[term-unification-batch4-2026-09-27.md](maintenance-records/term-unification-batch4-2026-09-27.md)｜[term-unification-batch4-foreign-names-2026-09-27.md](maintenance-records/term-unification-batch4-foreign-names-2026-09-27.md)｜[term-unification-batch4-residual-allowance-2026-09-27.md](maintenance-records/term-unification-batch4-residual-allowance-2026-09-27.md)｜[term-unification-batch4-true-positives-2026-09-27.md](maintenance-records/term-unification-batch4-true-positives-2026-09-27.md)
 - [kokkuri-san-term-unification-2026-09-28.md](maintenance-records/kokkuri-san-term-unification-2026-09-28.md)｜[nijugonen-ho-term-unification-2026-09-28.md](maintenance-records/nijugonen-ho-term-unification-2026-09-28.md)｜[theme-park-term-unification-2026-09-28.md](maintenance-records/theme-park-term-unification-2026-09-28.md)
 - [screen-term-unification-2026-02-14.md](maintenance-records/screen-term-unification-2026-02-14.md)｜[term-table-drift-batch1-2026-10-14.md](maintenance-records/term-table-drift-batch1-2026-10-14.md)（文件名日期为 2026-10-14，实际提交于 2026-09-26）
+- [b-group-otsu-10-product-convergence-2026-09-28.md](maintenance-records/b-group-otsu-10-product-convergence-2026-09-28.md)（成品差异清单 B 组乙档「改成品」10 条：919／956／1192／1241／1716／1843／2060／2061／2368／2489）
 
 ### 14.2 由提交承载的裁定（原单本记录已按留档判据删除）
 
