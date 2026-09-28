@@ -80,19 +80,19 @@
 | --- | --- | --- | --- |
 | `サイド`（术语层） | 阵营 | 势力／侧／方／世界 | `e013f486`；[science-magic-side-translation-consistency-2026-09-12.md](maintenance-records/science-magic-side-translation-consistency-2026-09-12.md) |
 | `側`（指示层，带 `こちら／あちら／むこう` 等注音） | 侧／那边 | 不得升格为「阵营」 | 同上 |
-| `<ruby>大画面<rt>エキシビジョン</rt></ruby>` | `<ruby>大屏幕<rt>Exhibition</rt></ruby>` | 大画面／巨大荧幕／大银幕／巨型屏幕／显示器 | `8bca1055`；[screen-term-unification-2026-02-14.md](maintenance-records/screen-term-unification-2026-02-14.md) |
+| `<ruby>大画面<rt>エキシビジヨン</rt></ruby>` | `<ruby>大屏幕<rt>Exhibition</rt></ruby>` | 大画面／巨大荧幕／大银幕／巨型屏幕／显示器 | `8bca1055`；[screen-term-unification-2026-02-14.md](maintenance-records/screen-term-unification-2026-02-14.md) |
 | 超能力者排名 | 第X位 | 第X名（比赛名次等 32 处非术语用法保留） | `f0ddcfe8`；[esper-rank-term-unification-2026-09-13.md](maintenance-records/esper-rank-term-unification-2026-09-13.md) |
 | `魔術`／`魔術師`（术语层） | 魔法／魔法师 | 魔术／魔术师 | `1cd11570`；[magic-vs-trick-term-unification-2026-09-17.md](maintenance-records/magic-vs-trick-term-unification-2026-09-17.md) |
 | `手品`／`奇術`／`マジック`（手技义） | 魔术／魔术师 | 保留，不并入术语层 | 同上 |
 | 塔罗牌大阿尔卡那 I `魔術師` | 魔术师 | 牌名例外 | 同上 |
-| `人払い`（术式层） | 闲人驱散 | 驱散闲人（台角官译）／屏退／驱逐闲人／驱除闲人 | `14008976`；[hitoharai-term-unification-2026-09-23.md](maintenance-records/hitoharai-term-unification-2026-09-23.md) |
+| `<ruby>人払い<rt>Opila</rt></ruby>`（术式层） | 闲人驱散 | 驱散闲人（台角官译）／屏退／驱逐闲人／驱除闲人 | `14008976`；[hitoharai-term-unification-2026-09-23.md](maintenance-records/hitoharai-term-unification-2026-09-23.md) |
 | `人払い`（世俗执法清场） | 人群疏散等自然表述 | 不套术式译法 | 同上 |
 | `セフィラ`（术式／结构层） | 源质 | 质点（中文卡巴拉文献常用，库内仅 3 处孤例）／位阶（撞 `位階`／`レベル`） | `e02f7ff1`；[sephira-term-unification-2026-09-17.md](maintenance-records/sephira-term-unification-2026-09-17.md) |
 | `一〇の球`／`球体` | 球体 | 不与「源质」混用 | 同上 |
-| `セフイロト` | `<ruby>生命之树<rt>Sephiroth</rt></ruby>` | ruby 层写汉字（`S2_18-05:533` 另案） | 同上 |
-| `ダアト` | 知识源质 | 知识／`<ruby>知识<rt>Da'at</rt></ruby>` 分层并存 | 同上 |
+| `<ruby>生命の樹<rt>セフイロト</rt></ruby>` | `<ruby>生命之树<rt>Sephiroth</rt></ruby>` | ruby 层写汉字（`S2_18-05:533` 作 `<ruby>そんなもの<rt>セフイロト</rt></ruby>`，另案） | 同上 |
+| `<ruby>知力<rt>ダアト</rt></ruby>` | `<ruby>知识源质<rt>Da’at</rt></ruby>` | 知识（裸写）／`<ruby>知识<rt>Da’at</rt></ruby>` 分层并存 | 同上 |
 | `ヘルメス学` | 赫耳墨斯学派 | 赫耳墨斯主义（成品侧旧译；译注语境另案） | `e02e9911`、`8086aaa1`；[hermes-gaku-term-unification-2026-09-20.md](maintenance-records/hermes-gaku-term-unification-2026-09-20.md) |
-| `<ruby>物質世界<rt>オーラムアッシャー</rt></ruby>` | 行动世界 | 物质世界（**两说各有依据**：Action 是名称本义、物质是其所指） | `fed9b68a`；[term-unification-batch3-2026-09-26.md](maintenance-records/term-unification-batch3-2026-09-26.md) |
+| `<ruby>物質世界<rt>オーラムアツシヤー</rt></ruby>` | `<ruby>行动世界<rt>Olam Assiah</rt></ruby>` | 物质世界（**两说各有依据**：Action 是名称本义、物质是其所指） | `fed9b68a`；[term-unification-batch3-2026-09-26.md](maintenance-records/term-unification-batch3-2026-09-26.md) |
 | `原形世界`（Atziluth） | 流溢世界 | 原形世界 | `fed9b68a` |
 | `ラージウェポン` | 巨大兵器 | 保留英文 Large Weapon | `17ce2340`；[term-table-drift-batch1-2026-10-14.md](maintenance-records/term-table-drift-batch1-2026-10-14.md) |
 | `王室派` | 王室派 | 皇室派 | 同上 |
@@ -111,11 +111,11 @@
 | `ファイブオーバー` | `FIVE_Over` | `Five_Over`（大小写是表内硬规定，不随原文变） | `5da0bc5f`；[five-over-spelling-unification-2026-09-26.md](maintenance-records/five-over-spelling-unification-2026-09-26.md) |
 | `風力発電のプロペラ` | 风力发电螺旋桨 | 风力发电机螺旋桨（机械拼合词见第十三节） | `be29a5d7`；[wind-power-propeller-term-unification-and-fix-2026-09-14.md](maintenance-records/wind-power-propeller-term-unification-and-fix-2026-09-14.md) |
 | `風力発電のプロペラの柱（支柱）` | 风力发电机支柱／风力发电螺旋桨支柱 | 并存，按指代选 | 同上 |
-| `レギオン` | `<ruby>恶灵军团<rt>Legion</rt></ruby>` | 雷格恩（音译）／恶灵 | `d4ace134` |
+| `レギオン`（裸写，无注音） | 恶灵军团（裸写） | 雷格恩（音译）／恶灵 | `d4ace134` |
 | `<ruby>お姉様<rt>オリジナル</rt></ruby>` | `<ruby>姐姐大人<rt>本体</rt></ruby>` | 注音 `Original`（拉丁）；御坂美琴／普通人／究极的 `<rt>Original</rt>` 保留 | `537816d3` |
-| カバラ四界 `アインソフ` 等 | 无限光／无限／无 | 罗马字写法 | `6a0f77c0` |
+| `<ruby>アインソフオウル<rt>０００</rt></ruby>`／`<ruby>アインソフ<rt>００</rt></ruby>`／`<ruby>アイン<rt>０</rt></ruby>`（卡巴拉三层无） | 无限光／无限／无 | 罗马字写法 | `6a0f77c0` |
 | `劇症型サンジェルマン`（省略名词时 `劇症型`） | 暴发型圣日耳曼／暴发型 | 急性圣日耳曼（中文现成说法，但 `劇症`＝fulminant 含严重与失控义，不只是发病急）／急症版 | `09ed178e`（原记录 `fulminant-saint-germain-terminology-2026-09-14.md` 已于 `22e147cc` 删除，结论由提交承载） |
-| `<ruby>落第防止<rt>Student Keeper</rt></ruby>`（当て字） | 防止落榜 | 照搬日文汉字「落第防止」（看似对等的现成说法，否决需理由） | `fed9b68a`；[term-unification-batch3-2026-09-26.md](maintenance-records/term-unification-batch3-2026-09-26.md) |
+| `<ruby>落第防止<rt>スチユーデントキーパー</rt></ruby>`（当て字） | `<ruby>防止落榜<rt>Student Keeper</rt></ruby>` | 照搬日文汉字「落第防止」（看似对等的现成说法，否决需理由） | `fed9b68a`；[term-unification-batch3-2026-09-26.md](maintenance-records/term-unification-batch3-2026-09-26.md) |
 | `テーマパーク`（通名） | 主题公园 | 主题乐园（台版为主体的行业词；与 X 版自述的「两岸差异词改大陆用法」及 GB/T 26992-2011《主题公园服务规范》、发改社会规〔2018〕400号 的规范术语不一致）。**本条只管通名，不得回填到专名** | 本批落地；[theme-park-term-unification-2026-09-28.md](maintenance-records/theme-park-term-unification-2026-09-28.md) |
 
 ## 六、人物、专名与角色口癖
@@ -140,7 +140,7 @@
 | `<ruby>姪龍<rt>メロン</rt></ruby>` | 姪龙 | 侄龙（不改部首、不补读音） | `d0c18830` |
 | 音译用字：`薇拉`／`洛德`／`席薇亚`／`特里斯墨吉斯忒斯` | 维拉／洛特／席薇娅／特利斯墨吉斯忒斯 | 旧写法（同为合理音译，按规范译音表与表内写法收敛） | `d0c18830` |
 | `シジル` | 魔符 | 印记／符印／咒符 | `f1b5df7a` |
-| `知の角杯` | `<ruby>智慧角杯<rt>Gjallarhorn</rt></ruby>` | 知之角杯 | `14de0fad`；[term-unification-batch4-true-positives-2026-09-27.md](maintenance-records/term-unification-batch4-true-positives-2026-09-27.md) |
+| `<ruby>知の角杯<rt>ギヤツラルホルン</rt></ruby>` | `<ruby>智慧角杯<rt>Gjallarhorn</rt></ruby>` | 知之角杯 | `14de0fad`；[term-unification-batch4-true-positives-2026-09-27.md](maintenance-records/term-unification-batch4-true-positives-2026-09-27.md) |
 | `カチューシャ女` | 发箍妹 | 描述句「戴发箍的女生」 | 同上 |
 | `カニバリゼーション`／`カニバリズム` | 同类相食／同类相食术式 | 竞食 | 同上 |
 | `パンダOS` | Panda OS | 熊猫系统 | 同上 |
@@ -198,11 +198,11 @@
 
 | 日文锚点 | X 版写法 | 备注 |
 | --- | --- | --- |
-| `<ruby>時間割り<rt>カリキュラム</rt></ruby>` | `<ruby>课程<rt>Curriculum</rt></ruby>` | 台版多按语境作「课程」 |
+| `<ruby>時間割り<rt>カリキユラム</rt></ruby>` | `<ruby>课程<rt>Curriculum</rt></ruby>` | 台版多按语境作「课程」 |
 | `<ruby>妹達<rt>シスターズ</rt></ruby>` | `<ruby>妹妹<rt>Sisters</rt></ruby>`／`<ruby>妹妹们<rt>Sisters</rt></ruby>` | 差异说明原文作「统一采用妹妹」，已被单复数裁定细化（见第八节） |
 | `<ruby>電撃使い<rt>エレクトロマスター</rt></ruby>` | `<ruby>电击使<rt>Electromaster</rt></ruby>` | 统一一切同注音词 |
-| `<ruby>絶対能力進化<rt>レベル6シフト</rt></ruby>` | `<ruby>绝对能力进化<rt>Level 6 Shift</rt></ruby>` | |
-| `<ruby>超電磁砲量産<rt>レディオノイズ</rt></ruby>` | `<ruby>量产型能力者<rt>Radio Noise</rt></ruby>` | |
+| `<ruby>絶対能力進化<rt>レベル６シフト</rt></ruby>` | `<ruby>绝对能力进化<rt>Level 6 Shift</rt></ruby>` | |
+| `<ruby>量産型能力者<rt>レデイオノイズ</rt></ruby>`（正文；章标题作 `レディオノイズ`） | `<ruby>量产型能力者<rt>Radio Noise</rt></ruby>` | |
 | `カラオケボックス`／`カラオケ`／`中華街`／`チャイナタウン` | KTV／卡拉OK／中华街／唐人街 | |
 | `アルカロイド`／`ウォー&セーフティ社`／`ハイウェイクレイドル`／`フィフティーンベルズ`／`チャネル`／`ガールブリーズ` 等原创词 | 安碱／战争与安全公司／高速摇篮号／十五钟／洽奈儿／微风少女 等 | 完整清单见差异说明「六、原创词」 |
 | 三件炼金术器具 | 见上 | 差异说明「七、炼金术器具专名」 |
@@ -212,7 +212,7 @@
 | 议题 | 裁定 | 被否决或并存的候选 | 出处 |
 | --- | --- | --- | --- |
 | `妹達（シスターズ）` 汉字写法 | 带数量·集合修饰→妹妹；单个个体→妹妹；其余复数→妹妹们 | 一律「妹妹」或一律「妹妹们」 | `56b74369`；[sisters-plural-number-ruling-2026-09-12.md](maintenance-records/sisters-plural-number-ruling-2026-09-12.md) |
-| 北欧神话灵装／种族名注音 | 一律汉译注音：`<ruby>破灭之枝<rt>雷瓦汀</rt></ruby>`、`<ruby>战乱之剑<rt>丹因斯莱夫</rt></ruby>`、`<ruby>万象之金<rt>德罗普尼尔</rt></ruby>`、`<ruby>黑侏儒<rt>矮人</rt></ruby>` | 拉丁注音（`Laevatain`／`Dáinsleif`／`Draupnir`／`Dvergr`）；基文意译不动 | `244bbb59`；[norse-arms-ruby-reading-unification-2026-09-26.md](maintenance-records/norse-arms-ruby-reading-unification-2026-09-26.md) |
+| 北欧神话灵装／种族名注音（日文侧 `<ruby>破滅の枝<rt>レーヴァテイン</rt></ruby>`、`<ruby>戦乱の剣<rt>ダインスレーヴ</rt></ruby>`、`<ruby>万象の金<rt>ドラウプニル</rt></ruby>`、`<ruby>黒小人<rt>ドヴェルグ</rt></ruby>`／`ドヴエルグ`） | 一律汉译注音：`<ruby>破灭之枝<rt>雷瓦汀</rt></ruby>`、`<ruby>战乱之剑<rt>丹因斯莱夫</rt></ruby>`、`<ruby>万象之金<rt>德罗普尼尔</rt></ruby>`、`<ruby>黑侏儒<rt>矮人</rt></ruby>` | 拉丁注音（`Laevatain`／`Dáinsleif`／`Draupnir`／`Dvergr`）；基文意译不动 | `244bbb59`；[norse-arms-ruby-reading-unification-2026-09-26.md](maintenance-records/norse-arms-ruby-reading-unification-2026-09-26.md) |
 
 > 注音有无（不得凭空创建）、当て字基文／读音分工、`<rt>` 拉丁保留范围、连接符 `·` 与 `-`、全角 `&`、加粗标点、标题英文保留等属**规范执行**，见[翻译规范](translation-spec.md)与第十三节。
 

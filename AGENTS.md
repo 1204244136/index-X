@@ -163,7 +163,7 @@
 - **篇首 `<svg>` 独立分列**：使用篇首矢量插图的文件，样式表必须包含 `svg { display: block; margin: 0 auto; break-after: column; -webkit-column-break-after: always; page-break-after: always; }`，保证篇首图片独占首屏，后续标题与正文干净地在新一列开始。
 - 门禁检查：`check_epub_health.py` 包含 `css-layout` 检查项，对全库样式表的盒模型、`body` 边距、`.pb` 和 `.fit` 保护规则实施自动化门禁阻断，防止旧版样式回流。
 - 处理外部目录时使用显式路径，并避免把 OneDrive、临时目录或个人环境信息写入仓库文件。
-- 译名／术语统一（异译收敛、角色口癖、专名与敬称、术语分层等一切需要日文锚点才能判定的译文用词修订）按项目级 skill `.agents/skills/translation-term-unification/SKILL.md` 执行：以日文写法为锚、显式映射逐条预检、只改 `EPUB/` 行内文字、跑门禁后留档提交。分层口径、`<rt>` 注音剥离、风格化行跳过、注音义务以 BookWalker 源特殊读音为锚等判定条款都在该 skill；已生效的译名裁定集中在 `docs/translation-name-rulings.md`（skill §六 只留入口，不重复维护），本文件不重复。
+- 译名／术语统一（异译收敛、角色口癖、专名与敬称、术语分层等一切需要日文锚点才能判定的译文用词修订）按项目级 skill `.agents/skills/translation-term-unification/SKILL.md` 执行：以日文写法为锚、显式映射逐条预检、只改 `EPUB/` 行内文字、跑门禁后留档提交。分层口径、`<rt>` 注音剥离、风格化行跳过、注音义务以 BookWalker 源特殊读音为锚、**引用日文原文照抄源的实际码位（BW 源注音里的小字假名 99.7% 写作大字、全角数字与省略的长音符亦照抄，不得按「标准日文」纠正）**等判定条款都在该 skill；已生效的译名裁定集中在 `docs/translation-name-rulings.md`（skill §六 只留入口，不重复维护），本文件不重复。
 
 - 代码结构问题取用 CodeGraph：符号在哪定义、谁调用它、改动会波及什么、相关测试在哪。MCP 面当前可用 `codegraph_explore`，另挂了 `codegraph_impact`、`codegraph_status`；CLI 等价入口为 `codegraph explore|impact|status|query|callers|callees`。索引覆盖 `tools/*.py` 的符号与 `EPUB/` 的 XHTML 文件节点。
 - 正文文本检索一律用 `rg` 或直读，不用 CodeGraph：日语原文、中文译法、术语出现位置、中日对照都属于字面文本，XHTML 正文不构成符号；分析源按「数据流与编辑边界」优先读 `.cache/`。
