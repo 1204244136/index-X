@@ -17,7 +17,7 @@
 
 | 情形 | 例 |
 | --- | --- |
-| 同一锚点多个译法都成立，必须选一个 | `ムト＝テーベ` 底比斯／忒拜；`レギオン` 恶灵军团／雷格恩 |
+| 同一锚点多个译法都成立，必须选一个 | `ムト=テーベ` 底比斯／忒拜；`レギオン` 恶灵军团／雷格恩 |
 | **中文里有看似对等的现成说法，但经原文或领域核查必须否决** | `少管所`（中国少管所属刑事设施，日本少年院是依《少年法》的教育·矫正设施）／`急性`（`劇症`＝fulminant，含严重与失控义） |
 | 角色口癖、自称、固定语尾的定形 | `やめてよね`→可别啦；`当方`→本人；`大体`→说起来 |
 | 敬称、虚词、注音取用等写法取舍 | `シュプレンゲル嬢` 小姐／女士；`神の祝福` 神之／神的；注音 `Original`／`本体` |
@@ -80,7 +80,7 @@
 | --- | --- | --- | --- |
 | `サイド`（术语层） | 阵营 | 势力／侧／方／世界 | `e013f486`；[science-magic-side-translation-consistency-2026-09-12.md](maintenance-records/science-magic-side-translation-consistency-2026-09-12.md) |
 | `側`（指示层，带 `こちら／あちら／むこう` 等注音） | 侧／那边 | 不得升格为「阵营」 | 同上 |
-| `<ruby>大画面<rt>エキシビジヨン</rt></ruby>` | `<ruby>大屏幕<rt>Exhibition</rt></ruby>` | 大画面／巨大荧幕／大银幕／巨型屏幕／显示器 | `8bca1055`；[screen-term-unification-2026-02-14.md](maintenance-records/screen-term-unification-2026-02-14.md) |
+| `<ruby>大画面<rt>エキシビジョン</rt></ruby>` | `<ruby>大屏幕<rt>Exhibition</rt></ruby>` | 大画面／巨大荧幕／大银幕／巨型屏幕／显示器 | `8bca1055`；[screen-term-unification-2026-02-14.md](maintenance-records/screen-term-unification-2026-02-14.md) |
 | 超能力者排名 | 第X位 | 第X名（比赛名次等 32 处非术语用法保留） | `f0ddcfe8`；[esper-rank-term-unification-2026-09-13.md](maintenance-records/esper-rank-term-unification-2026-09-13.md) |
 | `魔術`／`魔術師`（术语层） | 魔法／魔法师 | 魔术／魔术师 | `1cd11570`；[magic-vs-trick-term-unification-2026-09-17.md](maintenance-records/magic-vs-trick-term-unification-2026-09-17.md) |
 | `手品`／`奇術`／`マジック`（手技义） | 魔术／魔术师 | 保留，不并入术语层 | 同上 |
@@ -89,10 +89,10 @@
 | `人払い`（世俗执法清场） | 人群疏散等自然表述 | 不套术式译法 | 同上 |
 | `セフィラ`（术式／结构层） | 源质 | 质点（中文卡巴拉文献常用，库内仅 3 处孤例）／位阶（撞 `位階`／`レベル`） | `e02f7ff1`；[sephira-term-unification-2026-09-17.md](maintenance-records/sephira-term-unification-2026-09-17.md) |
 | `一〇の球`／`球体` | 球体 | 不与「源质」混用 | 同上 |
-| `<ruby>生命の樹<rt>セフイロト</rt></ruby>` | `<ruby>生命之树<rt>Sephiroth</rt></ruby>` | ruby 层写汉字（`S2_18-05:533` 作 `<ruby>そんなもの<rt>セフイロト</rt></ruby>`，另案） | 同上 |
+| `<ruby>生命の樹<rt>セフィロト</rt></ruby>` | `<ruby>生命之树<rt>Sephiroth</rt></ruby>` | ruby 层写汉字（`S2_18-05:533` 作 `<ruby>そんなもの<rt>セフイロト</rt></ruby>`，源写法，另案） | 同上 |
 | `<ruby>知力<rt>ダアト</rt></ruby>` | `<ruby>知识源质<rt>Da’at</rt></ruby>` | 知识（裸写）／`<ruby>知识<rt>Da’at</rt></ruby>` 分层并存 | 同上 |
 | `ヘルメス学` | 赫耳墨斯学派 | 赫耳墨斯主义（成品侧旧译；译注语境另案） | `e02e9911`、`8086aaa1`；[hermes-gaku-term-unification-2026-09-20.md](maintenance-records/hermes-gaku-term-unification-2026-09-20.md) |
-| `<ruby>物質世界<rt>オーラムアツシヤー</rt></ruby>` | `<ruby>行动世界<rt>Olam Assiah</rt></ruby>` | 物质世界（**两说各有依据**：Action 是名称本义、物质是其所指） | `fed9b68a`；[term-unification-batch3-2026-09-26.md](maintenance-records/term-unification-batch3-2026-09-26.md) |
+| `<ruby>物質世界<rt>オーラムアッシャー</rt></ruby>` | `<ruby>行动世界<rt>Olam Assiah</rt></ruby>` | 物质世界（**两说各有依据**：Action 是名称本义、物质是其所指）；源作 `オーラムアツシヤー` | `fed9b68a`；[term-unification-batch3-2026-09-26.md](maintenance-records/term-unification-batch3-2026-09-26.md) |
 | `原形世界`（Atziluth） | 流溢世界 | 原形世界 | `fed9b68a` |
 | `ラージウェポン` | 巨大兵器 | 保留英文 Large Weapon | `17ce2340`；[term-table-drift-batch1-2026-10-14.md](maintenance-records/term-table-drift-batch1-2026-10-14.md) |
 | `王室派` | 王室派 | 皇室派 | 同上 |
@@ -113,9 +113,9 @@
 | `風力発電のプロペラの柱` | 风力发电机支柱／风力发电螺旋桨支柱（`柱`＝支柱） | 并存，按指代选 | 同上 |
 | `レギオン`（裸写，无注音） | 恶灵军团（裸写） | 雷格恩（音译）／恶灵 | `d4ace134` |
 | `<ruby>お姉様<rt>オリジナル</rt></ruby>` | `<ruby>姐姐大人<rt>本体</rt></ruby>` | 注音 `Original`（拉丁）；御坂美琴／普通人／究极的 `<rt>Original</rt>` 保留 | `537816d3` |
-| `<ruby>アインソフオウル<rt>０００</rt></ruby>`／`<ruby>アインソフ<rt>００</rt></ruby>`／`<ruby>アイン<rt>０</rt></ruby>`（卡巴拉三层无） | 无限光／无限／无 | 罗马字写法 | `6a0f77c0` |
+| `<ruby>アインソフオウル<rt>000</rt></ruby>`／`<ruby>アインソフ<rt>00</rt></ruby>`／`<ruby>アイン<rt>0</rt></ruby>`（卡巴拉三层无） | 无限光／无限／无 | 罗马字写法（源注音里的数字是全角 `０００`） | `6a0f77c0` |
 | `劇症型サンジェルマン`（省略名词时 `劇症型`） | 暴发型圣日耳曼／暴发型 | 急性圣日耳曼（中文现成说法，但 `劇症`＝fulminant 含严重与失控义，不只是发病急）／急症版 | `09ed178e`（原记录 `fulminant-saint-germain-terminology-2026-09-14.md` 已于 `22e147cc` 删除，结论由提交承载） |
-| `<ruby>落第防止<rt>スチユーデントキーパー</rt></ruby>`（当て字） | `<ruby>防止落榜<rt>Student Keeper</rt></ruby>` | 照搬日文汉字「落第防止」（看似对等的现成说法，否决需理由） | `fed9b68a`；[term-unification-batch3-2026-09-26.md](maintenance-records/term-unification-batch3-2026-09-26.md) |
+| `<ruby>落第防止<rt>スチューデントキーパー</rt></ruby>`（当て字） | `<ruby>防止落榜<rt>Student Keeper</rt></ruby>` | 照搬日文汉字「落第防止」（看似对等的现成说法，否决需理由）；源作 `スチユーデントキーパー` | `fed9b68a`；[term-unification-batch3-2026-09-26.md](maintenance-records/term-unification-batch3-2026-09-26.md) |
 | `テーマパーク`（通名） | 主题公园 | 主题乐园（台版为主体的行业词；与 X 版自述的「两岸差异词改大陆用法」及 GB/T 26992-2011《主题公园服务规范》、发改社会规〔2018〕400号 的规范术语不一致）。**本条只管通名，不得回填到专名** | 本批落地；[theme-park-term-unification-2026-09-28.md](maintenance-records/theme-park-term-unification-2026-09-28.md) |
 
 ## 六、人物、专名与角色口癖
@@ -124,31 +124,31 @@
 
 | 日文锚点 | 裁定 | 被否决或并存的候选 | 出处 |
 | --- | --- | --- | --- |
-| `イスラエル＝リガルディ`／`リガルディ` | 伊斯瑞·雷加第／雷加第 | 雷加帝 | `b722c0e7`；[regardie-name-unification-2026-09-27.md](maintenance-records/regardie-name-unification-2026-09-27.md) |
-| `アンジュ＝カタコンベ` | 安吉·卡塔康贝 | 安茹 | `209fc67f` |
-| `オリーブ＝ホリデイ` | 奥利芙·霍利迪 | 奥利弗·霍利迪 | `42f1abab`（回滚 `fa38c3da`，见第十一节） |
+| `イスラエル=リガルディ`／`リガルディ` | 伊斯瑞·雷加第／雷加第 | 雷加帝 | `b722c0e7`；[regardie-name-unification-2026-09-27.md](maintenance-records/regardie-name-unification-2026-09-27.md) |
+| `アンジュ=カタコンベ` | 安吉·卡塔康贝 | 安茹 | `209fc67f` |
+| `オリーブ=ホリデイ` | 奥利芙·霍利迪 | 奥利弗·霍利迪 | `42f1abab`（回滚 `fa38c3da`，见第十一节） |
 | `シュプレンゲル嬢` | 施普伦格尔小姐 | 女士／少女／夫人／斯普伦格尔 | `cdfd97d4`；[sprengel-honorific-unification-2026-09-15.md](maintenance-records/sprengel-honorific-unification-2026-09-15.md) |
-| `アンナ＝シュプレンゲル` | 安娜·施普伦格尔 | 全名不带敬称 | 同上 |
+| `アンナ=シュプレンゲル` | 安娜·施普伦格尔 | 全名不带敬称 | 同上 |
 | `聖ブラシウス` | 圣伯拉削 | 圣布雷斯 | `1924d654`；[term-unification-batch4-foreign-names-2026-09-27.md](maintenance-records/term-unification-batch4-foreign-names-2026-09-27.md) |
 | `イネス` | 伊涅斯 | 伊妮丝（英语发音中转） | 同上 |
-| `テオドシア＝エレクトラ` | 西奥多西娅·伊莱克特拉 | 伊蕾翠（台角官译，丢 -tra 音节） | 同上 |
-| `エミリエ＝フォーディア` | 埃米莉·福迪亚 | 福耳狄亚／芙特亚 | 同上 |
-| `キュティア＝バージンロード` | 库缇亚·薇金罗德 | 喀提雅／芭金·洛德 | 同上 |
-| `ムト＝テーベ` | 姆特·底比斯 | 忒拜 | `6a0f77c0`；[term-unification-batch4-2026-09-27.md](maintenance-records/term-unification-batch4-2026-09-27.md) |
-| `マリアン＝スリンゲナイヤー` | 玛丽安·斯琳格奈亚 | 其他全名异译 | 同上 |
+| `テオドシア=エレクトラ` | 西奥多西娅·伊莱克特拉 | 伊蕾翠（台角官译，丢 -tra 音节） | 同上 |
+| `エミリエ=フォーディア` | 埃米莉·福迪亚 | 福耳狄亚／芙特亚 | 同上 |
+| `キュティア=バージンロード` | 库缇亚·薇金罗德 | 喀提雅／芭金·洛德 | 同上 |
+| `ムト=テーベ` | 姆特·底比斯 | 忒拜 | `6a0f77c0`；[term-unification-batch4-2026-09-27.md](maintenance-records/term-unification-batch4-2026-09-27.md) |
+| `マリアン=スリンゲナイヤー` | 玛丽安·斯琳格奈亚 | 其他全名异译 | 同上 |
 | `テスカトリポカ` | 特斯卡特利波卡 | 泰兹卡特利波卡 | 同上 |
 | `<ruby>姪龍<rt>メロン</rt></ruby>` | 姪龙 | 侄龙（不改部首、不补读音） | `d0c18830` |
 | 音译用字：`薇拉`／`洛德`／`席薇亚`／`特里斯墨吉斯忒斯` | 维拉／洛特／席薇娅／特利斯墨吉斯忒斯 | 旧写法（同为合理音译，按规范译音表与表内写法收敛） | `d0c18830` |
 | `シジル` | 魔符 | 印记／符印／咒符 | `f1b5df7a` |
-| `<ruby>知の角杯<rt>ギヤツラルホルン</rt></ruby>` | `<ruby>智慧角杯<rt>Gjallarhorn</rt></ruby>` | 知之角杯 | `14de0fad`；[term-unification-batch4-true-positives-2026-09-27.md](maintenance-records/term-unification-batch4-true-positives-2026-09-27.md) |
+| `<ruby>知の角杯<rt>ギャツラルホルン</rt></ruby>` | `<ruby>智慧角杯<rt>Gjallarhorn</rt></ruby>` | 知之角杯；源作 `ギヤツラルホルン` | `14de0fad`；[term-unification-batch4-true-positives-2026-09-27.md](maintenance-records/term-unification-batch4-true-positives-2026-09-27.md) |
 | `カチューシャの子` | 发箍妹 | 描述句「戴发箍的女生」 | 同上 |
 | `カニバリゼーション` | 同类相食／同类相食术式 | 竞食（`カニバリズム` 词形仅见于译名表，正文未出现） | 同上 |
-| `パンダＯＳ` | Panda OS | 熊猫系统 | 同上 |
+| `パンダOS` | Panda OS | 熊猫系统；源作 `パンダＯＳ` | 同上 |
 | `ブレイク警報` | break警报 | 越狱警报 | 同上 |
 | `救済条件` | 救济条件 | 救赎条件 | `6a0f77c0` |
 | `クイーンブリタニア号` | 女王不列颠尼亚号 | 不列颠女王号 | 同上 |
 | `ドレスソード` | 正装剑 | 仪典剑 | 同上 |
-| `メタルイーターＭ５` | 钢铁破坏者M5 | 保留英文 Metal Eater M5 | 同上 |
+| `メタルイーターM5` | 钢铁破坏者M5 | 保留英文 Metal Eater M5；源作 `メタルイーターＭ５` | 同上 |
 | `嗅覚センサー` | 嗅觉传感器 | 嗅觉感应器 | 同上 |
 | `防犯オリエンテーション` | 防犯罪教育活动 | 防犯演习 | 同上 |
 | `自律バス` | 自动巴士／自动巴士站 | 自动公交车 | 同上 |
@@ -186,7 +186,7 @@
 | `保温鍋バンマリ` | 保温锅贝恩玛丽 | 表侧「水浴器贝恩玛丽」；**固有差异，各自维持** | `3ec14a3d`、`96e58eeb`；[maria-alchemy-instruments-translation-unification-2026-09-27.md](maintenance-records/maria-alchemy-instruments-translation-unification-2026-09-27.md) |
 | `還流装置ケロタキス` | 回流装置凯罗塔基斯 | 表侧「回流装置分馏皿」；固有差异 | 同上 |
 | `蒸留器トリビコス` | 蒸馏器特里比科斯（裸用：特里比科斯） | 表侧「三臂蒸馏器」；固有差异 | 同上 |
-| `Ｒ＆Ｃオカルティクス` | R&C超自然公司 | 蔷薇十字超自然公司（仅 `note21` 释义） | `7a35121c`；[proofread-adjudication-unifications-2026-09-21.md](maintenance-records/proofread-adjudication-unifications-2026-09-21.md) |
+| `R&Cオカルティクス` | R&C超自然公司 | 蔷薇十字超自然公司（仅 `note21` 释义）；源作 `Ｒ＆Ｃオカルティクス` | `7a35121c`；[proofread-adjudication-unifications-2026-09-21.md](maintenance-records/proofread-adjudication-unifications-2026-09-21.md) |
 | `一二月` | 同书内统一作十二月 | 阿拉伯数字（书内本就只用阿拉伯数字的书自洽不改） | `7a35121c`、`0cb19ae5`；同上 |
 | `少年院` | 少年院（沿用日文） | 少管所／少年看守所／少年监狱（中国的少管所属刑事／行政处罚性质，日本少年院是依《少年法》的教育·矫正设施，所指不同） | `8d2abb9c`；[shonen-in-term-unification-2026-09-27.md](maintenance-records/shonen-in-term-unification-2026-09-27.md) |
 | `エディンバラ城` | 爱丁堡城堡 | 爱丁堡城（`城`＝castle，不是城市） | `d0c18830` |
@@ -198,13 +198,13 @@
 
 | 日文锚点 | X 版写法 | 备注 |
 | --- | --- | --- |
-| `<ruby>時間割り<rt>カリキユラム</rt></ruby>` | `<ruby>课程<rt>Curriculum</rt></ruby>` | 台版多按语境作「课程」 |
+| `<ruby>時間割り<rt>カリキュラム</rt></ruby>` | `<ruby>课程<rt>Curriculum</rt></ruby>` | 台版多按语境作「课程」；源作 `カリキユラム` |
 | `<ruby>妹達<rt>シスターズ</rt></ruby>` | `<ruby>妹妹<rt>Sisters</rt></ruby>`／`<ruby>妹妹们<rt>Sisters</rt></ruby>` | 差异说明原文作「统一采用妹妹」，已被单复数裁定细化（见第八节） |
 | `<ruby>電撃使い<rt>エレクトロマスター</rt></ruby>` | `<ruby>电击使<rt>Electromaster</rt></ruby>` | 统一一切同注音词 |
-| `<ruby>絶対能力進化<rt>レベル６シフト</rt></ruby>` | `<ruby>绝对能力进化<rt>Level 6 Shift</rt></ruby>` | |
-| `<ruby>量産型能力者<rt>レデイオノイズ</rt></ruby>`（正文；章标题作 `レディオノイズ`） | `<ruby>量产型能力者<rt>Radio Noise</rt></ruby>` | |
+| `<ruby>絶対能力進化<rt>レベル6シフト</rt></ruby>` | `<ruby>绝对能力进化<rt>Level 6 Shift</rt></ruby>` | 源作 `レベル６シフト` |
+| `<ruby>量産型能力者<rt>レディオノイズ</rt></ruby>` | `<ruby>量产型能力者<rt>Radio Noise</rt></ruby>` | 源作 `レデイオノイズ`（正文）／`レディオノイズ`（章标题） |
 | `カラオケボックス`／`カラオケ`／`中華街`／`チャイナタウン` | KTV／卡拉OK／中华街／唐人街 | |
-| `アルカロイド`／`ウォー＆セーフティ社`／`ハイウェイクレイドル`／`フィフティーンベルズ`／`チャネル`／`ガールブリーズ` 等原创词 | 安碱／战争与安全公司／高速摇篮号／十五钟／洽奈儿／微风少女 等 | 完整清单见差异说明「六、原创词」 |
+| `アルカロイド`／`ウォー&セーフティ社`／`ハイウェイクレイドル`／`フィフティーンベルズ`／`チャネル`／`ガールブリーズ` 等原创词 | 安碱／战争与安全公司／高速摇篮号／十五钟／洽奈儿／微风少女 等 | 完整清单见差异说明「六、原创词」（`ウォー&セーフティ社` 源作全角 `＆`） |
 | 三件炼金术器具 | 见上 | 差异说明「七、炼金术器具专名」 |
 
 ## 八、注音与体例
@@ -247,7 +247,7 @@
 | 条目 | 曾裁 | 最终 | 说明 | 出处 |
 | --- | --- | --- | --- | --- |
 | `旧き善きマリア` | 玛丽亚 | **玛利亚** | 原提交取少数派并改掉 219 处；改前「玛利亚」229 对「玛丽亚」22，22 处集中同一译校批次属局部漂移 | `b22c2843` → `3cf414e5` |
-| `オリーブ＝ホリデイ` | 奥利弗·霍利迪 | **奥利芙·霍利迪** | `fa38c3da` 系误判，`42f1abab` 完全反向回滚 | `fa38c3da` → `42f1abab` |
+| `オリーブ=ホリデイ` | 奥利弗·霍利迪 | **奥利芙·霍利迪** | `fa38c3da` 系误判，`42f1abab` 完全反向回滚 | `fa38c3da` → `42f1abab` |
 | `ヘルメス学` | 按成品频次回改为「赫耳墨斯主义」 | **赫耳墨斯学派** | 术语表早已裁定为「学派」，`984f54e9` 的回改本身是误改；教训：判定顺序为术语表／已裁定结论 → 日文锚点 → 成品一致性 | `984f54e9` → `e02e9911`、`8086aaa1` |
 | R&C 全角／半角 | 首轮按全库主流统一为半角 `&amp;` | **同书内一致**为准 | 口径由「全库一致」纠为「同书内一致」 | `19a3046c` → `28f648e7` |
 | `一二月` | 首轮只落 S3_02 | 按**同书内混用**口径在 S3_01／03／06 一并收口 | 缺陷判据是书内混用，不是与主流不同 | `7a35121c` → `0cb19ae5` |
@@ -273,7 +273,7 @@
 - `支部校`／`支部校長` 用字（`S1_02-05:533`「支部校长」）。[shibu 记录](maintenance-records/shibu-term-unification-2026-09-27.md)
 - 「闪光偏方三八面体」的**裸形「偏方三八面体」**是否统一为全称。[batch2 记录](maintenance-records/term-table-drift-batch2-2026-09-26.md)
 - `霧ヶ丘` 短形「雾丘」与全称「雾丘女子学院」并存。[batch2 记录](maintenance-records/term-table-drift-batch2-2026-09-26.md)
-- `S2_18-05:533` 的 `セフイロト` ruby 层汉字写法；`ダアト`／`チャネル` 三种写法。[sephira 记录](maintenance-records/sephira-term-unification-2026-09-17.md)
+- `S2_18-05:533` 的 `セフィロト` ruby 层汉字写法（源作 `セフイロト`）；`ダアト`／`チャネル` 三种写法。[sephira 记录](maintenance-records/sephira-term-unification-2026-09-17.md)
 - 译注语境中「主义／学派」的分工（`S3_05-Note:8`、`S5_04_01-Note:29` 保留「赫耳墨斯主义」）。[hermes 记录](maintenance-records/hermes-gaku-term-unification-2026-09-20.md)
 - `941`「人材表示」表内译名与日文原词不符。[batch2 记录](maintenance-records/term-table-drift-batch2-2026-09-26.md)
 
@@ -299,7 +299,8 @@
 | --- | --- |
 | 不得凭空创建注音；当て字基文照译、读音入 `<rt>` | [翻译规范](translation-spec.md) 三.1 |
 | `<rt>` 内拉丁形只保留给人名·能力名·组织名·装备名 | `e0c90619` |
-| 连接符：全角 `＝`→`·`；缝合类术式／三段神名／复合姓氏用半角 `-` | [term-table-drift-batch2-2026-09-26.md](maintenance-records/term-table-drift-batch2-2026-09-26.md) §5.1 |
+| 连接符：日文侧 `＝`→半角 `=`（源作全角）；中文侧 `=`→间隔号 `·`，缝合类术式／三段神名／复合姓氏用半角 `-` | [term-table-drift-batch2-2026-09-26.md](maintenance-records/term-table-drift-batch2-2026-09-26.md) §5.1 |
+| **日文写法一律用「不妥协写法」**：注音小字写小字、英数符号写半角（源为印刷妥协成大字／全角，规范／裁定表／留档／译名表都不照抄；检索时两侧折叠归一化，唯逐字引证源码位时照抄） | `.agents/skills/translation-term-unification/SKILL.md` §3.1；本机 `Data_Translation_九列口径裁定.md` §5.3 |
 | 全角 `＆`→半角 `&amp;`，同书内不得混用 | `19a3046c`、`28f648e7` |
 | 标点不得进入加粗 | [epub-bold-scope-alignment-2026-09-17.md](maintenance-records/epub-bold-scope-alignment-2026-09-17.md) |
 | 异形词规范词形：想象／规划／身份／震撼／坐镇 | [翻译规范](translation-spec.md) 一.9 |
@@ -334,9 +335,9 @@
 | 白鸟炽媚 `当方` → 本人 | `defc1b50` | — |
 | `<ruby>お姉様<rt>オリジナル</rt></ruby>` → `<ruby>姐姐大人<rt>本体</rt></ruby>` | `537816d3` | — |
 | `レギオン` → 恶灵军团 | `d4ace134` | — |
-| `イスラエル＝リガルディ` → 伊斯瑞·雷加第 | `b722c0e7` | 见 14.1 regardie 记录 |
-| アンジュ＝カタコンベ → 安吉·卡塔康贝 | `209fc67f` | — |
-| オリーブ＝ホリデイ → 奥利芙·霍利迪（回滚） | `42f1abab` | — |
+| `イスラエル=リガルディ` → 伊斯瑞·雷加第 | `b722c0e7` | 见 14.1 regardie 记录 |
+| アンジュ=カタコンベ → 安吉·卡塔康贝 | `209fc67f` | — |
+| オリーブ=ホリデイ → 奥利芙·霍利迪（回滚） | `42f1abab` | — |
 
 ### 14.3 未被识别为裁定的历史提交
 
