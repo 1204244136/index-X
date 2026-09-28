@@ -72,15 +72,15 @@
      - 按形式分：
        1. **以专名为主的读写相异**（咒语、能力名、魔法名、物品名等）→ **拉丁化**：
           - `<ruby>超電磁砲<rt>レールガン</rt></ruby>` → `<ruby>超电磁炮<rt>Railgun</rt></ruby>` ✔️
-          - `<ruby>四獣二命ヲ<rt>はたらけバカども</rt></ruby>。<ruby>北ノ黒式<rt>げんぶ</rt></ruby>、<ruby>西ノ白式<rt>びゃっ</rt></ruby>、<ruby>南ノ赤式<rt>すざく</rt></ruby>、<ruby>東ノ青式<rt>せいりゅう</rt></ruby>` → `<ruby>号令四兽<rt>你们这些家伙动作快</rt></ruby>。<ruby>北之黑式<rt>玄武</rt></ruby>、<ruby>西之白式<rt>白虎</rt></ruby>、<ruby>南之赤式<rt>朱雀</rt></ruby>、<ruby>东之青式<rt>青龙</rt></ruby>` ✔️
-          - `<ruby>世界を構築する五大元素の一つ<rt>ＭＴＷＯＴＦＦＴＯ</rt></ruby>、<ruby>偉大なる始まりの炎よ<rt>ＩＩＧＯＩＩＯＦ</rt></ruby>` → `<ruby>构筑世界五大元素之一<rt>ＭＴＷＯＴＦＦＴＯ</rt></ruby>、<ruby>伟大的始祖之炎啊<rt>ＩＩＧＯＩＩＯＦ</rt></ruby>` ✔️
-          - `<ruby>灰は灰に<rt>Ash To Ash</rt></ruby>、<ruby>塵は塵に<rt>Dust TO Dust</rt></ruby>、<ruby>吸血殺しの紅十字<rt>Squeamish Bloody Rood</rt></ruby>！` → `<ruby>尘归尘<rt>Ash To Ash</rt></ruby>，<ruby>土归土<rt>Dust TO Dust</rt></ruby>，<ruby>吸血猎杀十字<rt>Squeamish Bloody Rood</rt></ruby>！` ✔️
+          - `<ruby>四獣ニ命ヲ<rt>はたらけバカども</rt></ruby>。<ruby>北ノ黒式<rt>げんぶ</rt></ruby>、<ruby>西ノ白式<rt>びやつこ</rt></ruby>、<ruby>南ノ赤式<rt>すざく</rt></ruby>、<ruby>東ノ青式<rt>せいりゆう</rt></ruby>` → `<ruby>号令四兽<rt>你们这些家伙动作快</rt></ruby>。<ruby>北之黑式<rt>玄武</rt></ruby>、<ruby>西之白式<rt>白虎</rt></ruby>、<ruby>南之赤式<rt>朱雀</rt></ruby>、<ruby>东之青式<rt>青龙</rt></ruby>` ✔️
+          - `<ruby>世界を構築する五大元素の一つ<rt>MTWOTFFTO</rt></ruby>、<ruby>偉大なる始まりの炎よ<rt>IIGOIIOF</rt></ruby>` → `<ruby>构筑世界五大元素之一<rt>MTWOTFFTO</rt></ruby>、<ruby>伟大的始祖之炎啊<rt>IIGOIIOF</rt></ruby>` ✔️
+          - `<ruby>灰は灰に<rt>Ash To Ash</rt></ruby>、<ruby>塵は塵に<rt>Dust To Dust</rt></ruby>、<ruby>吸血殺しの紅十字<rt>Squeamish Bloody Rood</rt></ruby>！` → `<ruby>尘归尘<rt>Ash To Ash</rt></ruby>，<ruby>土归土<rt>Dust To Dust</rt></ruby>，<ruby>吸血猎杀十字<rt>Squeamish Bloody Rood</rt></ruby>！` ✔️
        2. **以非片假名转写的外来语为主的读写相异**，同时表达相近甚至相反等多重意思 → **汉译**：
-          - `<ruby>木原数多<rt>けんきゅうしゃ</rt></ruby>` → `<ruby>木原数多<rt>研究者</rt></ruby>` ✔️
-          - `<ruby>最強<rt>さいじゃく</rt></ruby>VS<ruby>最弱<rt>さいきょう</rt></ruby>` → `<ruby>最强<rt>最弱</rt></ruby>VS<ruby>最弱<rt>最强</rt></ruby>` ✔️
-          - `<ruby>三沢塾<rt>かがくすうはい</rt></ruby>` → `<ruby>三泽塾<rt>科学崇拜</rt></ruby>` ✔️
+          - `<ruby>木原数多<rt>けんきゅうしゃ</rt></ruby>` → `<ruby>木原数多<rt>研究者</rt></ruby>` ✔️（形式示意；BW 源中该词只注 `きはらあまた`）
+          - `<ruby>最強<rt>さいじやく</rt></ruby>VS<ruby>最弱<rt>さいきよう</rt></ruby>` → `<ruby>最强<rt>最弱</rt></ruby>VS<ruby>最弱<rt>最强</rt></ruby>` ✔️
+          - `<ruby>三沢塾<rt>かがくすうはい</rt></ruby>` → `<ruby>三泽塾<rt>科学崇拜</rt></ruby>` ✔️（形式示意；BW 源中该词只注 `ほんだい`／`ここ`）
           - `<ruby>処刑塔<rt>ロンドンとう</rt></ruby>` → `<ruby>处刑塔<rt>伦敦塔</rt></ruby>` ✔️
-          - 有时会出现符合本条、但恰好是外来语而**难以判断**属第 1 条还是第 2 条的情况，建议与管理员讨论后定，如：`<ruby>向き<rt>（ベクトル）</rt></ruby>` → `<ruby>方向<rt>矢量</rt></ruby>` ✔️
+          - 有时会出现符合本条、但恰好是外来语而**难以判断**属第 1 条还是第 2 条的情况，建议与管理员讨论后定，如：`<ruby>向き<rt>ベクトル</rt></ruby>` → `<ruby>方向<rt>矢量</rt></ruby>` ✔️
        3. **日语中常见的「把外来语配上含义完全相等的汉译」（类似熟字训）**，多见于非专有名词 → **不标**：
           - `<ruby>麦酒<rt>ビール</rt></ruby>` → `<ruby>啤酒<rt>Beer</rt></ruby>` ❌；`啤酒` ✔️
           - `<ruby>煙草<rt>タバコ</rt></ruby>` → `<ruby>烟草<rt>Tabacco</rt></ruby>` ❌；`烟草` ✔️
@@ -89,7 +89,7 @@
           - `アンチスキル＝アグレッサー` → `<ruby>警备员·假想敌<rt>Anti-Skill·Aggressor</rt></ruby>` ❌；`警备员·假想敌` ✔️
           - `ハイボルテージ＝カッティング法` → `<ruby>高压切割法<rt>High Voltage Cutting</rt></ruby>` ❌；`高压切割法` ✔️
           - `オーバーハンティング` → `<ruby>超量猎捕<rt>Overhunting</rt></ruby>` ❌；`超量猎捕` ✔️
-   - **假名注音的拉丁保留只限作品内专名**：人名·能力名·组织名·装备名等在全库统一用拉丁原文的词条，其注音写成拉丁形（`アクセラレータ`→`Accelerator`、`アンチスキル`→`Anti-Skill`、`シスターズ`→`Sisters`、`レベル5`→`Level 5`）。描述性外来语**普通词**不属于这一类，即便原文是片假名也要译为汉语（`グロテスク`→怪诞、`オカルト`→超自然、`チカラ`→力量、`ルール`→法则），不得为"洋味"保留拉丁。判据是可数事实：全库拉丁注音 15053 条全部落在专名清单内，中文注音对应片假名读音 495 条全部是普通词或强调读法。
+   - **假名注音的拉丁保留只限作品内专名**：人名·能力名·组织名·装备名等在全库统一用拉丁原文的词条，其注音写成拉丁形（`アクセラレータ`→`Accelerator`、`アンチスキル`→`Anti-Skill`、`シスターズ`→`Sisters`、`レベル５`→`Level 5`）。描述性外来语**普通词**不属于这一类，即便原文是片假名也要译为汉语（`グロテスク`→怪诞、`オカルト`→超自然、`チカラ`→力量、`ルール`→法则），不得为"洋味"保留拉丁。判据是可数事实：全库拉丁注音 15053 条全部落在专名清单内，中文注音对应片假名读音 495 条全部是普通词或强调读法。
    - **判定「原文是否带注音」必须回 BookWalker 分页源核对**，不能只看 `.cache/` 的日文缓存：缓存区的日文 XHTML 是 `bw_preprocess.py` 的预处理产物，只保留特殊注音（当て字/外来语），普通读音已被合并丢弃。原文里普通词的假名读音**不是**给成品补注音的理由，也不因成品未保留它而算缺陷。
 2. **译注**：稿件写作 `（*译注：…）` 跟在被注文本之后，成品表现为 EPUB 注释标记 `<a epub:type="noteref"><sup>㊟</sup></a>` 与对应 `-Note.xhtml` 条目页。译注条目的顺序由正文首次引用顺序决定，用 `tools/check_note_order.py` 检查、`tools/reorder_notes.py` 重排。
 3. **分页与空行**：
