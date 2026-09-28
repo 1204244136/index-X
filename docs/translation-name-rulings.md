@@ -170,7 +170,7 @@
 | `ブリテン・ザ・ハロウィン` | 不列颠万圣夜政变 | 补回「政变」定性 | 同上 |
 | 圣乔治大教堂、詹姆斯一世／洪诺留三世、处刑塔七道具、创作魔法阵、热源探知、神戮、开朗的女神、幽灵狩猎、安卡、萨瑟克大教堂、水路作成、派阀、圣吉尔斯的庇护、海流操作魔法、开发官、项圈式电极、学园都市统括理事会、铁人三项、成山烟灰缸、现象管理缩小再现设施、铃山高等学校、演算铳器、避暑地、对战车导弹、超导电线性两轮、欧帕兹历史资料馆、Ω密码、高维接触协会、黄道连接线路普及委员会、精密微小信仰会、特殊能量研究所、通往未来之翼中心核、缪塞、凡尔赛的圣女、电动辅助式吹箭、免费复眼、死者军势、载人火星探查计划、蒙布朗、筒仓型质量加速器、灵体投射、火焰剑 等 | 见记录逐条 | 各条候选见记录 | `6a0f77c0`；[term-unification-batch4-2026-09-27.md](maintenance-records/term-unification-batch4-2026-09-27.md) |
 | `三つ編みの少女` | 麻花辫少女 | 三股辫少女（成品并存写法 2 处，S4_01-06；裸形另见下一行） | 本批落地；[b-group-otsu-10-product-convergence-2026-09-28.md](maintenance-records/b-group-otsu-10-product-convergence-2026-09-28.md) |
-| `三つ編み`（裸形，含 `一本三つ編み`／`金髪三つ編み`／`三つ編み状` 等修饰与派生形） | 麻花辫 | 三股辫（成品 18 行）／三股编（1 行）／辫子·辫（25 行）；**同形旁词不改**——`お下げ`→辫子、`ポニーテール`→马尾辫、`ツインテール`→双尾辫、`二つ縛り`→两条辫子，中文成语「翘辫子」「小辫子」不属本锚点 | 本批落地（26 本／34 文件／46 处；全库 50 行与日文 50 行一一对应）；[mitsuami-braid-term-unification-2026-09-28.md](maintenance-records/mitsuami-braid-term-unification-2026-09-28.md) |
+| `三つ編み`（裸形，含 `一本三つ編み`／`金髪三つ編み`／`三つ編み状` 等修饰与派生形） | 麻花辫 | 三股辫（成品 18 行）／三股编（1 行）／辫子·辫（25 行）；**同形旁词不改**——`お下げ`→辫子、`ポニーテール`→马尾辫、`ツインテール`→双尾辫、`二つ縛り`→两条辫子，中文成语「翘辫子」「小辫子」不属本锚点 | 本批落地（26 本／34 文件／46 处；全库 50 行与日文 50 行一一对应；**译名表不为该词登记条目**——曾补登记的裸形条目已于同日删除，表内只有既有的 `三つ編みの少女`）；[mitsuami-braid-term-unification-2026-09-28.md](maintenance-records/mitsuami-braid-term-unification-2026-09-28.md) |
 | `ドスケベ女医` | 色情女医生 | 淫荡女医生（成品并存写法 1 处，S4_02-06；两侧色彩相当，差异只在选词。同词根的其他词形如 `ドスケベニットワンピ`／`ドスケベ悪女` 不在本裁定范围） | 本批落地；同上记录 |
 | `破滅屋` | 破灭屋 | 破坏分子（成品旧译 3 处，S2_07-04；汉语现成词，把绰号改写成身份描述，且丢掉与下文 `『破滅屋』として` 的同一性依托） | 本批落地；同上记录 |
 
@@ -351,7 +351,7 @@
 - [kokkuri-san-term-unification-2026-09-28.md](maintenance-records/kokkuri-san-term-unification-2026-09-28.md)｜[nijugonen-ho-term-unification-2026-09-28.md](maintenance-records/nijugonen-ho-term-unification-2026-09-28.md)｜[theme-park-term-unification-2026-09-28.md](maintenance-records/theme-park-term-unification-2026-09-28.md)
 - [screen-term-unification-2026-02-14.md](maintenance-records/screen-term-unification-2026-02-14.md)｜[term-table-drift-batch1-2026-10-14.md](maintenance-records/term-table-drift-batch1-2026-10-14.md)（文件名日期为 2026-10-14，实际提交于 2026-09-26）
 - [b-group-otsu-10-product-convergence-2026-09-28.md](maintenance-records/b-group-otsu-10-product-convergence-2026-09-28.md)（成品差异清单 B 组乙档「改成品」10 条：919／956／1192／1241／1716／1843／2060／2061／2368／2489）
-- [mitsuami-braid-term-unification-2026-09-28.md](maintenance-records/mitsuami-braid-term-unification-2026-09-28.md)（`三つ編み` 词族全库统一为「麻花辫」：26 本／34 文件／46 处；含译名表裸形条目登记）
+- [mitsuami-braid-term-unification-2026-09-28.md](maintenance-records/mitsuami-braid-term-unification-2026-09-28.md)（`三つ編み` 词族全库统一为「麻花辫」：26 本／34 文件／46 处；为该词补登记的译名表裸形条目**已于同日删除**，见该记录文首「更正」）
 
 ### 14.2 由提交承载的裁定（原单本记录已按留档判据删除）
 
