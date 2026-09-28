@@ -117,6 +117,7 @@
 | `劇症型サンジェルマン`（省略名词时 `劇症型`） | 暴发型圣日耳曼／暴发型 | 急性圣日耳曼（中文现成说法，但 `劇症`＝fulminant 含严重与失控义，不只是发病急）／急症版 | `09ed178e`（原记录 `fulminant-saint-germain-terminology-2026-09-14.md` 已于 `22e147cc` 删除，结论由提交承载） |
 | `<ruby>落第防止<rt>スチューデントキーパー</rt></ruby>`（当て字） | `<ruby>防止落榜<rt>Student Keeper</rt></ruby>` | 照搬日文汉字「落第防止」（看似对等的现成说法，否决需理由）；源作 `スチユーデントキーパー` | `fed9b68a`；[term-unification-batch3-2026-09-26.md](maintenance-records/term-unification-batch3-2026-09-26.md) |
 | `テーマパーク`（通名） | 主题公园 | 主题乐园（台版为主体的行业词；与 X 版自述的「两岸差异词改大陆用法」及 GB/T 26992-2011《主题公园服务规范》、发改社会规〔2018〕400号 的规范术语不一致）。**本条只管通名，不得回填到专名** | 本批落地；[theme-park-term-unification-2026-09-28.md](maintenance-records/theme-park-term-unification-2026-09-28.md) |
+| `ネームレス` | 无名祭祀书 | 无名之书（字面意译；实指克苏鲁神话虚构魔道书 Nameless Cults，从俗取通行汉译） | 单作品（S1_01）修订，由提交承载 |
 
 ## 六、人物、专名与角色口癖
 
