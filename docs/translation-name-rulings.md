@@ -125,6 +125,7 @@
 | `【我が身の全ては亡き友のために】`（`<rt>Intimus115</rt>`，魔法名） | 【为亡友献上吾之一切】 | 为亡友献上我的一切（同为通顺译文，仅文白之分；取本系列魔法名的文言腔） | 本批落地；同上记录 |
 | `フォークダンス` | 民俗舞 | 土风舞（台湾用语，成品旧译 2 处；地域词不构成保留理由） | 本批落地；同上记录 |
 | `ピナーカ`（湿婆之弓，Type＝灵装） | 毗那迦 | 比那卡（表内原值；也是中文维基「湿婆」条目的写法）／皮纳卡（中文维基「皮纳卡多管火箭炮」的军械译名，与神话层不同轨）／毕那卡·毕那神弓（成品自拟音译，检索无外部用例）。**「毗那迦」与佛教术语「毗那夜迦／毗那迦夜」（Vinayaka，象头神·障碍者）首二字同、词形不同（缺「夜」）** | 本批落地（单作品 S5_01_03：9 处／8 行，成品「毕那卡」6 处＋「毕那神弓」1 处＋译注基文 1 处；表侧 `data!D108` 同改，改前留副本 `Data_Translation.tabx.xlsx.bak_before-pinaka-fix`）；网上查证来源见本条提交信息 |
+| `【正体不明】`（当て字 `<ruby>正体不明<rt>カウンターストップ</rt></ruby>`，Type＝能力/别名） | 【身份不明】 | 真相不明（成品旧译 5 处，S1_06：把「正体（真面目·本体）」误作「真相」）／依日文用字直录「正体不明」（表侧不取——该词形在库内同形兼作普通词义「正体不明の〜」，直录会与普通用法混同） | 本批**按表改成品**（单作品 S1_06：当て字基文 5 处，`<rt>Counter Stop</rt>` 与成品原有引号结构不动）；[blue-research-counter-stop-table-alignment-2026-09-28.md](maintenance-records/blue-research-counter-stop-table-alignment-2026-09-28.md) |
 
 ## 六、人物、专名与角色口癖
 
@@ -210,6 +211,7 @@
 | `全世界覚醒連合` | 全世界觉醒联合 | 全世界觉醒联盟（成品旧译 1 处，S1_18-20:33） | 本批落地（同页专名统一）；[b-group-otsu-10-product-convergence-2026-09-28.md](maintenance-records/b-group-otsu-10-product-convergence-2026-09-28.md) |
 | `人類の英知総本山` | 人类才智总管辖处 | 人类智慧大本营（成品旧译 1 处，S1_18-20:11；合理意译，但换掉了「総」与「英知」的用字，同页专名应统一到表内） | 本批落地；同上记录 |
 | `アローヘッド彗星` | 阿洛海德彗星 | 箭首彗星（成品意译 19 处，分布 S2_13／S2_14／S2_15；`アローヘッド`＝Arrowhead＝箭头／箭镞，与表内音译是同一客观天体的两个名字，不得并存） | 本批落地；同上记录 |
+| `ブルーリサーチ`（Type＝科技/载具，英国的海洋资源调查船） | 蓝色搜查 | 蓝海探查（成品旧译 35 处，S1_25；表内按 Blue＋Research 逐词直译，成品按船名意图意译成「蓝海探查」，两侧都成立。**表侧 `Debuts` 标签本身即「番外 蓝色搜查」**） | 本批**按表改成品**（单作品 S1_25：正文 33 处＋`S1_25-Introduction` 1 处＋`content.opf` 简介 1 处，后者须与 Introduction 同步）；[blue-research-counter-stop-table-alignment-2026-09-28.md](maintenance-records/blue-research-counter-stop-table-alignment-2026-09-28.md) |
 
 ### 7.1 X 版与译名表的人为固有差异
 
@@ -352,6 +354,7 @@
 - [screen-term-unification-2026-02-14.md](maintenance-records/screen-term-unification-2026-02-14.md)｜[term-table-drift-batch1-2026-10-14.md](maintenance-records/term-table-drift-batch1-2026-10-14.md)（文件名日期为 2026-10-14，实际提交于 2026-09-26）
 - [b-group-otsu-10-product-convergence-2026-09-28.md](maintenance-records/b-group-otsu-10-product-convergence-2026-09-28.md)（成品差异清单 B 组乙档「改成品」10 条：919／956／1192／1241／1716／1843／2060／2061／2368／2489）
 - [mitsuami-braid-term-unification-2026-09-28.md](maintenance-records/mitsuami-braid-term-unification-2026-09-28.md)（`三つ編み` 词族全库统一为「麻花辫」：26 本／34 文件／46 处；为该词补登记的译名表裸形条目**已于同日删除**，见该记录文首「更正」）
+- [blue-research-counter-stop-table-alignment-2026-09-28.md](maintenance-records/blue-research-counter-stop-table-alignment-2026-09-28.md)（台账 `132` `ブルーリサーチ` → 蓝色搜查、`1718` 【正体不明】 → 【身份不明】，均按表改成品：2 本／5 文件／40 处，含 `content.opf` 简介同步）
 
 ### 14.2 由提交承载的裁定（原单本记录已按留档判据删除）
 
