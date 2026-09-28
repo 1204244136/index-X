@@ -6,18 +6,18 @@
 
 ### 一、符合语境
 
-- **<ruby>课程表<rt>Curriculum</rt></ruby>（日文：<ruby>時間割り<rt>カリキュラム</rt></ruby>）**：在台版通常根据上下文被翻译成“**课程**”，因此在 X 版中使用 **<ruby>课程<rt>Curriculum</rt></ruby>**。
+- **<ruby>课程表<rt>Curriculum</rt></ruby>（日文：<ruby>時間割り<rt>カリキユラム</rt></ruby>）**：在台版通常根据上下文被翻译成“**课程**”，因此在 X 版中使用 **<ruby>课程<rt>Curriculum</rt></ruby>**。
 - **<ruby>妹妹们<rt>Sisters</rt></ruby>（日文：<ruby>妹達<rt>シスターズ</rt></ruby>）**：由于可以表达单数或复数，因此台版根据语境翻译成“**<ruby>妹妹们<rt>Sisters</rt></ruby>**”或“**<ruby>妹妹<rt>Sisters</rt></ruby>**”，X 版中统一采用 **<ruby>妹妹<rt>Sisters</rt></ruby>**。
 
 ### 二、中文注音
 
 - **<ruby>主神之枪<rt>Gungnir</rt></ruby>（日文：<ruby>主神の槍<rt>グングニル</rt></ruby>）**：写成 **<ruby>主神之枪<rt>冈格尼尔</rt></ruby>**。
-- **<ruby>投掷之锤<rt>Mjölnir</rt></ruby>（日文：<ruby>投擲の槌<rt>ミョルニル</rt></ruby>）**：写成 **<ruby>投掷之锤<rt>妙尔尼尔</rt></ruby>**（**<ruby>雷神之锤<rt>妙尔尼尔</rt></ruby>**）。
+- **<ruby>投掷之锤<rt>Mjölnir</rt></ruby>（日文：<ruby>投擲の槌<rt>ミヨルニル</rt></ruby>，另有 `<rt>ミョルニル</rt>` 写法）**：写成 **<ruby>投掷之锤<rt>妙尔尼尔</rt></ruby>**（**<ruby>雷神之锤<rt>妙尔尼尔</rt></ruby>**）。
 - **<ruby>潜伏地底的恶龙<rt>Níðhǫggr</rt></ruby>（日文：<ruby>地の底這う悪竜<rt>ニーズヘッグ</rt></ruby>）**：写成 **<ruby>潜伏地底的恶龙<rt>尼德霍格</rt></ruby>**。
 - **<ruby>破灭之枝<rt>Lævateinn</rt></ruby>（日文：<ruby>破滅の枝<rt>レーヴァテイン</rt></ruby>）**：写成 **<ruby>破灭之枝<rt>雷瓦汀</rt></ruby>**。
 - **<ruby>战乱之剑<rt>Dáinsleif</rt></ruby>（日文：<ruby>戦乱の剣<rt>ダインスレーヴ</rt></ruby>）**：写成 **<ruby>战乱之剑<rt>丹因斯莱夫</rt></ruby>**。
 - **<ruby>万象之金<rt>Draupnir</rt></ruby>（日文：<ruby>万象の金<rt>ドラウプニル</rt></ruby>）**：写成 **<ruby>万象之金<rt>德罗普尼尔</rt></ruby>**。
-- **<ruby>黑侏儒<rt>Dvergr</rt></ruby>（日文：<ruby>黒小人<rt>ドヴェルグ</rt></ruby>）**：写成 **<ruby>黑侏儒<rt>矮人</rt></ruby>**。
+- **<ruby>黑侏儒<rt>Dvergr</rt></ruby>（日文：<ruby>黒小人<rt>ドヴェルグ</rt></ruby>，另有 `<rt>ドヴエルグ</rt>` 写法）**：写成 **<ruby>黑侏儒<rt>矮人</rt></ruby>**。
 
 ### 三、翻译专名
 
@@ -26,8 +26,8 @@
 ### 四、混乱统一
 
 - **<ruby>电击使<rt>Electromaster</rt></ruby>（日文：<ruby>電撃使い<rt>エレクトロマスター</rt></ruby>）**：和一切以 **エレクトロマスター** 为注音的词统一写成 **<ruby>电击使<rt>Electromaster</rt></ruby>**。
-- **<ruby>绝对能力进化<rt>Level 6 Shift</rt></ruby>计划（日文：<ruby>絶対能力進化<rt>レベル6シフト</rt></ruby>計画）**：和一切以 **レベル6シフト** 为注音的计划统一写成 **<ruby>绝对能力进化<rt>Level 6 Shift</rt></ruby>** 计划。
-- **<ruby>超电磁炮量产<rt>Radio Noise</rt></ruby>计划（日文：<ruby>超電磁砲量産<rt>レディオノイズ</rt></ruby>計画）**：和一切以 **レディオノイズ** 为注音的计划统一写成 **<ruby>量产型能力者<rt>Radio Noise</rt></ruby>** 计划。
+- **<ruby>绝对能力进化<rt>Level 6 Shift</rt></ruby>计划（日文：<ruby>絶対能力進化<rt>レベル６シフト</rt></ruby>計画）**：和一切以 **レベル６シフト** 为注音的计划统一写成 **<ruby>绝对能力进化<rt>Level 6 Shift</rt></ruby>** 计划。
+- **<ruby>超电磁炮量产<rt>Radio Noise</rt></ruby>计划（日文正文：<ruby>量産型能力者<rt>レデイオノイズ</rt></ruby>計画，章标题作 `レディオノイズ`）**：和一切以 **レディオノイズ**／**レデイオノイズ** 为注音的计划统一写成 **<ruby>量产型能力者<rt>Radio Noise</rt></ruby>** 计划。
 
 ### 五、杂项
 
@@ -39,7 +39,7 @@
 ### 六、原创词
 
 - **アルカロイド**（neta 安卓操作系统 Android）：写成 **安碱**
-- **ウォー&セーフティ社**（neta 史密斯&威森公司 Smith & Wesson）：写成 **战争与安全公司**
+- **ウォー＆セーフティ社**（neta 史密斯&威森公司 Smith & Wesson）：写成 **战争与安全公司**
 - **ハイウェイクレイドル**（イクレイドル neta 现实中的一款长途汽车座椅，这里被当成长途汽车班次或车型的名称）：写成 **高速摇篮号**
 - **フィフティーンベルズ**：写成 **十五钟**
 - **チャネル**（neta 香奈儿 Chanel）：写成 **洽奈儿**
