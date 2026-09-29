@@ -1247,6 +1247,8 @@ python tools/read_xlsx.py <file.xlsx> [-q <KEYWORD>] [--head <N>] [--format <mar
 
 用于快速查看、过滤、提取并转换 `.xlsx` 格式文件（如术语表、人名对照表、校对任务表）为模型友好或易读的格式，避免在对话交互中重复临时编写一次性解析脚本。只读，不修改原始文件。
 
+- **依赖**：需要 `openpyxl`（`python -m pip install openpyxl`）。该库是**可选依赖**：未安装时本工具只有在实际调用相关函数时才报错并提示安装命令，不影响 `tools/` 其余工具的导入与运行；对应的 `tools/tests/test_read_xlsx.py` 也在无该库的干净环境（如 CI）下整组跳过，而不是让测试采集失败。
+
 - **工作表查看与选择**：`--list-sheets`（`-l`）列出所有 Sheet 及其行/列规模；`-s` / `--sheet` 按名称或 0-based 序号指定 Sheet（默认读取首个 Sheet）。
 - **格式转换**：`--format markdown`（默认，精美 Markdown 表格，自动转义内部竖线与换行符）、`tsv`、`csv`、`json`（支持 `--json-mode records` 字典列表或 `rows` 二维数组）。
 - **上下文截取与分页**：`--head N`（`-n N`）取前 N 行；`--tail N` 取后 N 行；`--offset N --limit M` 分页切片，防止大表格撑爆大模型上下文。

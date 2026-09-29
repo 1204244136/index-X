@@ -9,7 +9,13 @@ from pathlib import Path
 TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 
-import openpyxl
+# openpyxl 与 read_xlsx.py 保持一致的**可选依赖**口径：CI 只用官方 Python 环境、
+# 不安装任何第三方包，此处若硬导入会在测试采集阶段就 ImportError，使整个
+# unittest discover 失败（而不是仅跳过 Excel 相关用例）。
+try:
+    import openpyxl
+except ImportError:  # pragma: no cover - 取决于运行环境是否装有 openpyxl
+    openpyxl = None  # type: ignore
 
 from read_xlsx import (
     _col_letter_to_index,
@@ -25,6 +31,7 @@ from read_xlsx import (
 )
 
 
+@unittest.skipUnless(openpyxl is not None, "未安装 openpyxl，跳过 Excel 工具测试")
 class ReadXlsxTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
