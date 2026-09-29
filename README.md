@@ -84,7 +84,7 @@ python tools/package_cache_epubs.py --source EPUB --output output/epubs --patter
 python tools/package_cache_epubs.py --source EPUB --output output/epubs --dry-run
 ```
 
-生成文件属于构建产物，不应复制回或提交到 `EPUB/`。
+生成文件属于构建产物，不应复制回或提交到 `EPUB/`。完整参数与数据流见 [`tools/README.md`](tools/README.md)「打包工具（CI 和手动使用）」。
 
 ## 反馈
 

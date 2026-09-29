@@ -1,6 +1,6 @@
 # EPUB 维护工具
 
-本文只说明工具入口、参数、数据流和可验证行为。作品编号、文件命名、固定行模板及 Agent 操作边界以仓库根目录 `AGENTS.md` 为唯一规范来源；下文出现的规则摘要用于解释命令效果，不另立一套规则。**本文不记录历次修订记录与验收结论**（每轮改动规模、通过哪些门禁、遗留项处置等）——这类内容记入 `docs/maintenance-records/`（长期保留的检查结论）。`docs/changelog.md` 已冻结并归档为 `docs/archive/legacy-changelog.md`，禁止继续编辑。
+本文只说明工具入口、参数、数据流和可验证行为。作品编号、文件命名、固定行模板及 Agent 操作边界以仓库根目录 `AGENTS.md` 为唯一规范来源；下文出现的规则摘要用于解释命令效果，不另立一套规则。**本文不记录历次修订记录与验收结论**（每轮改动规模、通过哪些门禁、遗留项处置等）——这类内容记入 `docs/maintenance-records/`（长期保留的检查结论）。`docs/changelog.md` 已冻结并归档为 `docs/archive/legacy-changelog.md`，两者均禁止继续编辑。
 
 ## 工作流程图（按处理阶段）
 
@@ -210,14 +210,14 @@ python -m unittest discover -s tools/tests -p "test_*.py" -v
 - 分隔主标题、副标题、英文题名或特殊编码的 `<br/>` 是视觉结构，不能简单删除。规范形式是在同一物理行内使用 `heading-main`、`heading-subtitle`、`heading-code` span 表达各层，并由 `.heading-lines > … { display: block; }` 在该书 CSS 中恢复视觉分行。
 - 迁移以整本书为原子：同步处理该书全部同类标题和 CSS，按层验证可见文本、顺序与字号语义，再检查阅读器显示。NCX/nav 现有标签不随 XHTML 格式化而改写。
 
-先预览，再显式写入中文缓存：
+先预览，再显式写入（目标由 `--cache` 指定；按「拉取与发布流程」的编辑边界，agent 主动发起的迁移必须指向 `EPUB/`）：
 
 ```powershell
 python tools/migrate_heading_breaks.py
 python tools/migrate_heading_breaks.py --apply
 ```
 
-- 可用重复的 `--book GLOB` 限定书籍，`--verbose` 展示逐书统计。默认缓存是 `.cache/epub-work/chinese-text`，也可用 `--cache` 显式指定。
+- 可用重复的 `--book GLOB` 限定书籍，`--verbose` 展示逐书统计。默认目标是 `.cache/epub-work/chinese-text`（工具默认值，不等于 agent 允许的写入落点）；agent 主动发起的迁移必须用 `--cache` 把目标指向 `EPUB/`（归档根目录）。
 - 工具只迁移审计确认的结构；任一书出现未知标题结构、越界 CSS 引用或缺失样式表时，整次预检不写入。写入前会同时生成该书的 XHTML/CSS 变更计划，单书写入失败时回滚已写文件。
 - `normalize_paired.py` 和 `normalize_single.py` 不承担历史语义分层；迁移完成后，`check_alignment.py --strict` 会阻断 h1/h2 内嵌 `<br/>`、`div`/`p` 块级包装和跨行标题，防止旧结构回流。
 - 2026-09-01 的数量、分类和迁移验收步骤见 `docs/maintenance-records/h1-inline-br-audit-2026-09-01.md`。
@@ -256,16 +256,18 @@ python tools/migrate_heading_breaks.py --apply
 
 三处中文文件副本各有固定角色，不得互相替代：
 
-- `.cache/epub-work/`（解包工作区，不提交）：唯一编辑点。`pull.ps1` 从 OneDrive 解包生成，可随时删除重建。
-- `EPUB/`（解包归档，提交到 git）：版本化归档基线，diff 友好；通常由 `publish.py` 从缓存同步，也可通过 `publish_epub.py` 反向回流。它不是日常编辑点。
+- `.cache/epub-work/`（解包工作区，不提交）：**只读参考副本**。`pull.ps1` 从 OneDrive 解包生成，可随时删除重建；仅供读取、核对和审计。
+- `EPUB/`（解包归档，提交到 git）：**唯一内容写入落点**，同时是版本化归档基线；内容写入后经 `publish_epub.py`（流程 C）或统一入口 `publish_auto.py` 发布到 OneDrive 并更新缓存。
 - OneDrive（打包 `.epub`，外部）：分发与阅读副本；是 `pull.ps1` 的输入，也是 `publish.py` / `publish_epub.py` 的上传目标。
 
-编辑边界：
+编辑边界（口径以 `AGENTS.md`「数据流与编辑边界」为准）：
 
-- 只在 `.cache/epub-work/` 中编辑。直接修改 `EPUB/` 不会同步回 OneDrive，因为 `publish.py` 只读取缓存。
-- 若确实直接改了 `EPUB/`，可用 `publish_epub.py`（流程 C）把改动打包上传 OneDrive 并增量覆盖回缓存；这是唯一把 `EPUB/` 改动回流到 OneDrive 与缓存的正规路径。运行前务必 `--dry-run` 预览。
-- 不得直接修改 OneDrive 中的 `.epub`。若已修改，切勿在发布前运行 `pull.ps1`，否则 OneDrive 的改动会被当作新基线拉入缓存，覆盖缓存中的编辑。
-- 缓存中的改动必须经 `publish.py` 才会同步到 `EPUB/` 和 OneDrive。发布后中文缓存与 `EPUB/` 逐字节一致属预期行为。
+- **agent 的正文修改只写入 `EPUB/`**，写入前后运行 `python tools/publish_auto.py`。`.cache/epub-work/` 只读：agent 不得在其中编辑、规范化、修复或删除文件，也不得把临时处理结果写在那里。
+- `EPUB/` 的改动经 `publish_auto.py`（或冲突分析明确后的 `publish_epub.py`，流程 C）打包上传 OneDrive 并增量覆盖回缓存。运行前可用 `--dry-run` 预览。
+- **「工具默认值」不等于「agent 允许的用法」**。多个工具的默认目标或写死路径都在缓存上（`normalize_paired.py`、`fix_legacy_pagebreak_br.py`、`restore_cn_scene_breaks.py` 默认 `--cache .cache/epub-work`；`migrate_heading_breaks.py`、`fix_empty_placeholders.py` 默认其下的 `chinese-text`／`japanese-text` 子目录；`sync_pb_tags.py` 的缓存根目录写死）。区分两类：
+  - **agent 主动发起的内容写入**（规范化、标题迁移、行内修复）必须落到 `EPUB/`：用 `--cache`／`--root` 把目标指到归档，`normalize_single.py` 的目标必须位于 `EPUB/`；不得把 `.cache/epub-work` 当作写入目标（`AGENTS.md`「维护流程」第 3 项）。
+  - **无法重定向、只能作用于缓存的工具**（`sync_pb_tags.py`）属 `AGENTS.md`「工具自身运行产生的更新按其门禁处理」：产物必须经 `publish.py` 回流到 `EPUB/` 与 OneDrive 后才算落地。
+- 不得直接修改 OneDrive 中的 `.epub`。若已修改，切勿在发布前运行 `pull.ps1`，否则 OneDrive 的改动会被当作新基线拉入缓存，覆盖尚未发布的本地内容。
 - `.cache/` 可丢弃：删除后运行 `./tools/pull.ps1` 即可完整重建。
 
 ### 统一发布入口（日常只需这一条命令）
@@ -466,12 +468,12 @@ python tools/package_cache_epubs.py --source EPUB --output output/epubs
 ### 缓存规范化（统一固定行模板）
 
 ```powershell
-python tools/normalize_paired.py --dry-run       # 中日成对预览（缓存主入口）
-python tools/normalize_paired.py                 # 中日成对应用
-python tools/normalize_single.py 文件.xhtml      # 定向处理单文件
+python tools/normalize_paired.py --cache <临时目录> --dry-run   # 中日成对预览
+python tools/normalize_paired.py --cache <临时目录>             # 中日成对应用
+python tools/normalize_single.py EPUB/某书/OEBPS/Text/文件.xhtml  # 定向处理单文件（目标须在 EPUB/）
 ```
 
-两个入口共享 `xhtml_template.py` 的重建实现。`normalize_paired.py` 只处理 `.cache/epub-work/` 中可确认的配对/单侧中文正文，并在成对写入前验证行数相等；`normalize_single.py` 只处理命令行明确指定的文件或目录，不保证中日对齐。两者都不修改 `EPUB/`。
+两个入口共享 `xhtml_template.py` 的重建实现。`normalize_paired.py` 按 `--cache` 指定的中日配对目录处理可确认的配对/单侧中文正文，并在成对写入前验证行数相等；`normalize_single.py` 只处理命令行明确指定的文件或目录，不保证中日对齐。**默认值 `.cache/epub-work` 只是工具默认，不是 agent 可用的写入落点**：按 `AGENTS.md`「维护流程」第 3 项，成对批量处理必须用 `--cache <临时目录>` 且最终结果写入 `EPUB/`，`normalize_single.py` 的目标必须位于 `EPUB/`。
 
 统一规则如下：
 
@@ -887,7 +889,7 @@ python tools/sync_pb_tags.py --apply     # 写盘
 - 中日缓存根目录写死为 `.cache/epub-work/{japanese-text,chinese-text}`，无 `--cache` 参数。
 - 写盘时按行重写**整个文件**（`"\n".join(lines) + "\n"`），且 Python 默认文本模式把 `\n` 落成平台换行——在 Windows 上即 CRLF。仓库 `.gitattributes` 对 `*.xhtml` 声明 `text eol=lf` 并在入库时归一化，所以行尾差异不进入 `git diff` 与提交内容（`git status` 只会提示「CRLF will be replaced by LF」）；但请留意它是整文件重写，不是逐处替换。
 - 行号配对以中日行数对齐为前提：行数不一致只会报「越界」而不会误改，但**两侧行数相同、内容错位**的情形本工具发现不了，需另跑 `check_alignment.py` 把关。
-- 只改中文缓存；产物需经 `publish.py` 才会同步到 `EPUB/` 与 OneDrive。
+- 只改中文缓存（缓存根目录写死、无法重定向）；本工具属 `AGENTS.md`「工具自身运行产生的更新按其门禁处理」，产物需经 `publish.py` 才会同步到 `EPUB/` 与 OneDrive。
 
 ### 段落级差异不做自动拆合
 
@@ -955,7 +957,7 @@ python tools/check_translation_spec.py --pattern "*S3_10*"   # 按书名筛选
 - `P6` 弯引号 `“”‘’`（中文语境应使用直角引号 `「」『』`）
 - `P7` 日文点号 `・`（与全书主导的间隔号 `·` 不一致；Note 页引用日文原文豁免）
 - `P8` 正文假名残留（需人工确认：形状描述 `コ字形`/`く字形`、原文引用、御坂电波噪音等属合法）
-- `P9` 单位（`公斤/公里`，规范建议 `千克/千米`）；**赛事项目名豁免**：`公里` 后紧跟赛事类型词（`长跑`/`赛跑`/`路跑`/`马拉松`/`竞走`/`接力`/`越野`/`健走`/`徒步`）时按中文体育定名惯例保留「公里」（如「十公里长跑」），只约束一般距离与时速（如「直径达十公里左右」）。词表是**封闭集合**，依据 `docs/translation-spec.md` §一.6 例外条与 `docs/translation-name-rulings.md` 的 `一〇キロ走` 裁定；新增赛事类型词须同步这三处
+- `P9` 单位（`公斤/公里`，规范建议 `千克/千米`）；**赛事项目名豁免**：`公里` 后紧跟赛事类型词时按中文体育定名惯例保留「公里」（如「十公里长跑」），只约束一般距离与时速（如「直径达十公里左右」）。词表是**封闭集合**，**唯一来源是本文件 `check_translation_spec.py` 的 `P9_EVENT_SUFFIXES`**；规范依据见 `docs/translation-spec.md` §一.6 例外条，`一〇キロ走` 的归属见 `docs/translation-name-rulings.md` §11.1（纠错，非裁定）。新增赛事类型词只改 `P9_EVENT_SUFFIXES`，另两处只留指针、不复制词表
 - `P10` 注音 ruby 问题（`<rt>` 内日文假名应译为汉语、空 `rt`、ruby 缺 `rt`）
 - `P11` 语气词/音译（`切！`、`啊啦`、`呀嘞呀嘞` 等规范示例词，提示级）
 - `P12` 单个省略号 `…`；`P13` 连续 ASCII 空格（3+，仅正文文件，标题行除外）
