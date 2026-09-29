@@ -363,6 +363,7 @@
 - [blue-research-counter-stop-table-alignment-2026-09-28.md](maintenance-records/blue-research-counter-stop-table-alignment-2026-09-28.md)（台账 `132` `ブルーリサーチ` → 蓝色搜查、`1718` 【正体不明】 → 【身份不明】，均按表改成品：2 本／5 文件／40 处，含 `content.opf` 简介同步）
 - [seizr-magic-term-unification-2026-09-28.md](maintenance-records/seizr-magic-term-unification-2026-09-28.md)（`セイズ魔術` ＝古诺斯语 seiðr，网上查证无中文通行定译后按严式原语还原定「塞德尔」：4 本／5 文件／5 处 ＋ 表侧 `data!D2090`）——**该裁定已于 2026-09-29 推翻**，见下一行
 - [table-halfwidth-restore-and-7-term-product-alignment-2026-09-29.md](maintenance-records/table-halfwidth-restore-and-7-term-product-alignment-2026-09-29.md)（① 译名表日文列全角回退折回不妥协写法：228 格／`＝`→`=` 267 处；② 7 个锚点按现表改成品：11 本／16 文件／27 处 —— 917 保险公司常务董事、992 情谊专家、2009 圣奥斯定大教堂、2090 赛尔魔法（推翻 2026-09-28 的「塞德尔」）、1980 便携式反坦克导弹、2163 `P.`、2633 小规模应对小队）
+- [latin-initial-connector-unification-2026-09-29.md](maintenance-records/latin-initial-connector-unification-2026-09-29.md)（西文单字母缩写的连接符统一：5 本／15 文件／25 处 —— `<中文>·<字母>·` → `<中文>·<字母>.`；含 `艾妮莉娅`→`艾妮莉亚`、`尼克诺西`→`尼切诺西` 两个同作品异译；属 §13.2 规范执行）
 
 ### 14.2 由提交承载的裁定（原单本记录已按留档判据删除）
 
