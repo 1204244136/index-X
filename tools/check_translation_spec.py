@@ -262,7 +262,8 @@ def main():
             fkind = classify(fn)
             path = os.path.join(text_dir, fn)
             try:
-                lines = open(path, encoding="utf-8-sig").read().splitlines()
+                with open(path, encoding="utf-8-sig") as f:
+                    lines = f.read().splitlines()
             except Exception:
                 continue
             per_book[book][fn] = OrderedDict()
@@ -361,7 +362,8 @@ def main():
             if not fn.endswith(".xhtml"):
                 continue
             try:
-                t = open(os.path.join(text_dir, fn), encoding="utf-8-sig").read()
+                with open(os.path.join(text_dir, fn), encoding="utf-8-sig") as f:
+                    t = f.read()
             except Exception:
                 continue
             cnt += strip_tags(html.unescape(t)).count("·")

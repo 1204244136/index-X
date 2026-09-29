@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Publish changed EPUB/ files to OneDrive and overwrite them into the cache.
+r"""Publish changed EPUB/ files to OneDrive and overwrite them into the cache.
 
 This is the reverse of tools/publish.py (Flow C): you edited files directly
 inside EPUB/ and now want to push those edits back out. For each affected
