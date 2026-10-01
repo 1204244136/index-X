@@ -124,12 +124,14 @@ python tools/normalize_paired.py --cache <临时中日目录> --dry-run
 
 归档目录   → check_epub_health.py（EPUB/ 单侧机械体检）→ 报告（CI 每日，只读）
 
+日文缓存＋归档 → check_translation_table.py（译名表落地核对，另需译名表）→ 报告（本地，只读）
+
 归档或成品 → check_epub_validity.py（calibre Check Book 合法性校验）→ 报告（本地，只读）
 ```
-- **工具**：`check_alignment.py`、`check_translation_spec.py`、`check_note_order.py`、`check_epub_health.py`、`check_epub_validity.py` 等
+- **工具**：`check_alignment.py`、`check_translation_spec.py`、`check_note_order.py`、`check_epub_health.py`、`check_translation_table.py`、`check_epub_validity.py` 等
 - **职责**：只读检查，不修改文件
 - **输出**：`.cache/epub-work/` 下的检查报告（TSV/JSON/Markdown）；`check_epub_health.py` 与 `check_epub_validity.py` 只写 `--tsv`/`--json`/`--report` 指定路径，默认不落盘
-- **两侧分工**：前三个读中日缓存、需要对照；`check_epub_health.py` 只读 `EPUB/` 中文侧、只判「不需要对照就能判定」的机械问题，因此可以放进 CI；`check_epub_validity.py` 可读 `EPUB/` 或打包成品（中日两侧都可），依赖本机 calibre，因此只在本地定期跑
+- **两侧分工**：前三个读中日缓存、需要对照；`check_epub_health.py` 只读 `EPUB/` 中文侧、只判「不需要对照就能判定」的机械问题，因此可以放进 CI；`check_translation_table.py` 读日文缓存与 `EPUB/` 中文侧、另需外部译名表，只在本地跑；`check_epub_validity.py` 可读 `EPUB/` 或打包成品（中日两侧都可），依赖本机 calibre，因此只在本地定期跑
 
 ### 阶段 6：发布
 ```
@@ -1148,6 +1150,50 @@ python -m unittest discover -s tools/tests -p "test_calibre_validity.py" -v
 原文查证可使用 `.agents/skills/proofread-review/references/lookup_source.py`。
 只读分析优先读取中日缓存，单点术语任务不保留专用扫描脚本。
 `xhtml_text.text_of` 仅负责剥标签与解实体，查找基文前须先剥除 `rt/rp` 注音。
+
+### 译名表 ↔ 成品落地核对（只读）
+
+```powershell
+python tools/check_translation_table.py --table <译名表.xlsx>               # 全库
+python tools/check_translation_table.py --table <译名表.xlsx> --book S3_06   # 限定单本
+python tools/check_translation_table.py --table <译名表.xlsx> --strict       # 有未落地项则非 0 退出
+python tools/check_translation_table.py --table <译名表.xlsx> --x-diff <清单.md>   # 换用别的 X 版差异清单
+python tools/check_translation_table.py --table <译名表.xlsx> --no-x-diff         # 跳过门禁（仅诊断）
+python tools/check_translation_table.py --table <译名表.xlsx> --audit-x-diff      # 只核对「清单 ↔ 译名表」
+```
+
+以**项目译名表**为权威，核对 `EPUB/` 中文成品是否按表落地。`AGENTS.md` 定「系列名、专有名词与术语以本项目译名表为准；台版、网翻或维基旧译名不要回改」，本工具把这条变成可复跑的检查，用于新书导入后的术语验收与日常审计。
+
+数据流：译名表 `Base_Ori`（日文锚点）× 日文缓存 `.cache/epub-work/japanese-text/<书>/item/xhtml/*.xhtml` → 命中后查 `Base_Trans` 是否出现在 `EPUB/<书>/OEBPS/Text/*.xhtml`。中日两侧按目录名方括号内的作品号配对，只比对两侧都存在的作品。
+
+**先过 X 版固有差异门禁**：默认加载 `docs/x-translation-differences.md`（该文档的差异清单是一张 Markdown 表格，列序 `日文锚点 | 表侧写法 | X 版写法 | 类别 | 说明`，同一锚点多个可接受写法用 `／` 分隔）。清单的锚点与 `<rt>` 注音按 §5.3 **不妥协写法**书写（与译名表同规范：`シープ&シープ` 而非 `シープ＆シープ`、`レベル6シフト` 而非 `レベル６シフト`），写法列**按项目惯例用 `<ruby>` 呈现注音**（如 `<ruby>主神之枪<rt>冈格尼尔</rt></ruby>`），工具解析时先删 `<rt>/<rp>` 再剥标签、**只取基文**参与比对——注音不参与匹配（成品侧文本同样已剥注音），因此清单可以照常读写注音而不影响判定。命中该清单的锚点按 **X 版写法**判定：成品用 X 版写法即算落地，退回表侧写法记为 `x_form=table`，两者都无才报未落地。这道门禁是必需的：该清单登记的是本项目与灰机 Wiki 译名表之间**人为制定的取舍**（`docs/translation-name-rulings.md` 明确「两侧各自维持自身写法，不计入待改、不得按表回改」），不过门禁就会把 `ハイウェイクレイドル`（X 版「高速摇篮号」／表侧 `Highway Cradle`）这类差异误报成术语未落地。
+
+**门禁顺序（不可颠倒）**：**先折叠归一化 → 再匹配 X 版差异清单 → 最后判落地**。折叠是码位层的基础处理（§5.3），差异清单是语义层的取舍判定；拿未折叠的锚点直接查清单，源侧的妥协码位（`＆`／`６`／大字假名）就对不上。
+
+判定口径：
+
+- 两侧文本一律**先剥 `<rt>/<rp>` 注音、再剥标签、最后反转义实体**，避免注音串入正文；锚点与译名都做归一化（折叠、去 `【】「」『』` 与空白），故表内 `アンナ=シュプレンゲル` 能匹配原文 `アンナ＝シュプレンゲル`。顺序不可颠倒：先剥标签再反转义，否则 `&lt;p&gt;` 反转义出的尖括号会被当标签吃掉。反转义是必需的——成品把 `&` 序列化成 `&amp;`（如 `R&amp;C超自然公司`），不还原就会把含 `&` 的术语全部误报未落地（译名表核验口径同样要求「反转义实体」）。
+- 归一化含**折叠**，依据是仓库外《Data_Translation 九列取值口径裁定》§5.3「不妥协写法」：译名表与差异清单写**不妥协形式**（注音小字假名、半角 ASCII、半角 `=`），而 BW 源为印刷做了两类妥协（注音小字假名写成大字占 99.8%、半角英数符号写成全角），该节因此要求检索时**对查询串与源串同时折叠**——本工具折叠两侧：**全角 ASCII → 半角**、**小字假名 → 大字**。不折叠会**静默漏检**：`ヒュドラ`（表）对 `ヒユドラ`（源）、`レベル6シフト` 对 `レベル６シフト`、`カリキュラム` 对 `カリキユラム`、`シープ&シープ` 对 `シープ＆シープ` 都会匹配失败（本工具补上折叠后，全库命中数由 11030 增至 11212）。
+- 日文中黑点 `・`（U+30FB）与中文间隔号 `·`（U+00B7）**不折叠**——§5.2 明确二者算不一致，须保持可检出。
+- `【】` 是**振假名范围标记**而非名称的一部分（§5／§6：主键 = `base_ori` 去 `【】`），归一化时去掉。
+- 只报「**日文有、中文无**」：反向无法用锚点定位，且中文侧普通词会大量命中表内短条目，噪音过大。
+- 命中处前后若是假名或汉字，标记 `suspect`（疑似更长词的子串，如表内 `ニック` 命中 `パニック`），默认不计入未落地，可用 `--include-suspect` 纳入。
+- X 版差异命中项在候选写法中**取最长者**判定来源，否则「妹妹」（X 版）会因是「妹妹们」（表侧）的子串而被误判成用了 X 版写法。
+- **译文归属映射**（`alignment_rules.TRANSLATION_HOST`）：某作品的**部分中文译文落在另一本书**时，只在本作品的中文侧找会误报未落地。工具在自己书未命中时**再到归属书找**，命中则在 TSV 的 `cn_host` 列与报告的「跨书归属命中」章节标出实际所在书。现登记一项：`S5_02_03`→`S5_02_01`（Cold Game 的中文后记归入学艺都市篇，中文侧末行自述「（后记在[S5_02_01]…中）」）。映射只登记**有书内自述或结构性依据**的归属，不凭检索猜测；中文侧归一化因此覆盖全部中文书，而非只覆盖两侧都有的书。
+- **已判定锚点**（`alignment_rules.SETTLED_ANCHORS`）：工具只做字符串命中，无法区分「专名」与「普通词」——表内是某个专名、正文里是同形普通词时必然误报。这类命中**逐条回日文原文判定过**后登记于此（键按**自然写法**维护，工具内部统一折叠，故 `ヒュドラ`／`ロッド` 这类含小字假名的锚点也能对上），命中时记为 `settled` 并单列「已判定锚点命中」章节，**不再计入待判**。判定说明写在登记表里（如「表内是术语『【白昼】』，正文是普通词『白天』」）。新出现的同类命中仍先按待判处理，判定后再登记。
+- `Base_Trans` 为空的条目跳过（表内尚未定译名，无从核对）。
+
+产物（默认 `.cache/epub-work/`）：`translation-table-check.tsv`（全部命中条目：作品/锚点/译名/类型/状态/是否疑似/是否 X 版差异/实际写法/日文上下文）、`.json`（结构化 + 统计）、`.md`（摘要 + X 版差异命中 + 待判清单 + 疑似子串清单）。
+
+**待判项不等于缺陷**：表内条目可能是某作品的能力或组织名，在本书里是普通词（同形不同义），报告逐条给出日文上下文供判断。真实缺陷形如拼写偏差（成品 `Miliphone` vs 表定 `Milliphone`）、术语未落地、卷内异译。
+
+**清单自身的门禁（`--audit-x-diff`）**：只核对「X 版差异清单 ↔ 译名表」，不跑成品核对，报四类问题——`table-missing`（表侧留空但译名表有值）、`table-mismatch`（表侧与 `Base_Trans` 不一致）、`ruby-mismatch`（`<rt>` 与 `Ruby_Ori`／`Ruby_Trans` 不一致）、`anchor-fullwidth`／`table-fullwidth`／`x-fullwidth`（写法含全角 ASCII，§5.3 应半角）。产物 `x-diff-audit.tsv` / `.md`。
+
+改完清单锚点后**必须重跑一次**：锚点归一化（改成不妥协写法）之后若不重查译名表，就会出现「锚点改对了、表侧却还空着」的漏项——本模式正是为兜住这类漏项而加。
+
+> 注音写法比较只折叠全角 ASCII、**保留假名大小字差异**：否则 `ミヨルニル`（源的大字）与 `ミョルニル`（不妥协小字）会被折叠成同一串，大小字问题就检不出来。
+
+退出码：`--strict` 下存在待判未落地项时返回 1；`--audit-x-diff` 检出问题时返回 1。只读，不修改 `EPUB/` 与缓存正文。
 
 ### 译文校对复核（提交级，只读）
 
