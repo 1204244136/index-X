@@ -229,7 +229,7 @@
     </navPoint>
     <navPoint id="num_37" playOrder="37">
       <navLabel>
-        <text>第三章 高速公路‧锁定目标 Speed_Freaks.</text>
+        <text>第三章 高速公路·锁定目标 Speed_Freaks.</text>
       </navLabel>
       <content src="OEBPS/Text/S2_21-07_Chapter3.xhtml"/>
       <navPoint id="num_38" playOrder="38">
