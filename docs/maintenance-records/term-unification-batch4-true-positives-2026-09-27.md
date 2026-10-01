@@ -1,9 +1,9 @@
 # 译名统一记录（第四批·5 条按表改成品全量落地，2026-09-27）
 
-本批依据 [译名选取规范](../translation-name-selection-spec.md) 与 [翻译规范](../translation-spec.md)，对 `Data_Translation_成品差异.md` 中经复核裁定为真阳性、按译名表统一中文成品的 **5 条专名与术语** 进行全量落地修订。
+本批依据 [译名选取规范](../translation-name-selection-spec.md) 与 [翻译规范](../translation-spec.md)，对成品差异清单中经复核裁定为真阳性、按译名表统一中文成品的 **5 条专名与术语** 进行全量落地修订。
 
 - 范围：`EPUB/` 中文归档（唯一内容写入落点）
-- 依据：译名表 `Data_Translation.tabx.xlsx`；差异台账 `Data_Translation_成品差异.md`；[译名选取规范](../translation-name-selection-spec.md)；[翻译规范](../translation-spec.md)
+- 依据：译名表 `Data_Translation.tabx.xlsx`；成品差异清单；[译名选取规范](../translation-name-selection-spec.md)；[翻译规范](../translation-spec.md)
 - 涉及书籍：**8 本**（S1_19、S1_22、S2_13、S2_14、S2_17、S3_04、S3_05、S5_02_02）
 - 修改文件：**15 个中文 XHTML**
 - 修改处数：**20 处**（纯行内替换与 ruby 规范化，中日物理行数严格保持一致）

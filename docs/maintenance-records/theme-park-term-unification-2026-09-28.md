@@ -45,5 +45,5 @@
 ## 工作区状态说明
 
 - 本次提交只含 `EPUB/` 下 7 个中文 XHTML、本记录与 `docs/translation-name-rulings.md` 的两条裁定登记。
-- 仓库根目录的 `Data_Translation_成品差异.md`、`Data_Translation_待改清单.md`、`Data_Translation_九列口径裁定.md`、`初出.csv` 均为**未跟踪**的工作清单，不纳入提交；其中差异清单第 139 行（本条 `パラレルスウィーツパーク`）本轮未改动，仍待按用户清单流程归档。
+- 仓库根目录的 `Data_Translation_待改清单.md`、`Data_Translation_九列口径裁定.md`、`初出.csv` 均为**未跟踪**的工作清单，不纳入提交；其中差异清单第 139 行（本条 `パラレルスウィーツパーク`）本轮未改动，仍待按用户清单流程归档。
 - 本机译名表改前留有一份副本（不入版本控制）。

@@ -1,6 +1,6 @@
 # 译名统一记录（第四批·外语人名与文娱角色专项统一落地，2026-09-27）
 
-本批依据 [译名选取规范](../translation-name-selection-spec.md)（含新增的「外文专名原语还原与防日语中转原则」及严式翻译准则）与 [翻译规范](../translation-spec.md)，对 `Data_Translation_成品差异.md` 与桌面《待改人名翻译专项调查与裁定报告》中经复核裁定的 **6 项外语人名／角色名差异** 进行全量落地修订。
+本批依据 [译名选取规范](../translation-name-selection-spec.md)（含新增的「外文专名原语还原与防日语中转原则」及严式翻译准则）与 [翻译规范](../translation-spec.md)，对成品差异清单与桌面《待改人名翻译专项调查与裁定报告》中经复核裁定的 **6 项外语人名／角色名差异** 进行全量落地修订。
 
 - 范围：`EPUB/` 中文归档（唯一内容写入落点）与 `Data_Translation.tabx.xlsx` 译名表（本地修改，不提交）
 - 依据：新华社《世界人名翻译大辞典》；国家标准 GB/T 17693.1《英语姓名译音表》；[译名选取规范](../translation-name-selection-spec.md)；[翻译规范](../translation-spec.md)

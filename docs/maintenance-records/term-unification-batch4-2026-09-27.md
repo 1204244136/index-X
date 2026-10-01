@@ -1,9 +1,9 @@
 # 译名统一记录（第四批·甲档改成品全量落地，2026-09-27）
 
-本批按 [译名选取规范](../translation-name-selection-spec.md) 与[翻译规范](../translation-spec.md)，全量落实 `Data_Translation_成品差异.md` 中 B 组甲档（可直接改）的全部「改成品」条目，以日文原文为锚点逐点统一收敛全库中文成品异译。
+本批按 [译名选取规范](../translation-name-selection-spec.md) 与[翻译规范](../translation-spec.md)，全量落实成品差异清单中 B 组甲档（可直接改）的全部「改成品」条目，以日文原文为锚点逐点统一收敛全库中文成品异译。
 
 - 范围：`EPUB/` 中文归档（写入落点）
-- 依据：译名表 `Data_Translation.tabx.xlsx`；差异清单 `Data_Translation_成品差异.md`；[译名选取规范](../translation-name-selection-spec.md)；[翻译规范](../translation-spec.md)
+- 依据：译名表 `Data_Translation.tabx.xlsx`；成品差异清单；[译名选取规范](../translation-name-selection-spec.md)；[翻译规范](../translation-spec.md)
 - 涉及书籍：**49 本**（S1_01、S1_02、S1_03、S1_04、S1_06、S1_07、S1_08、S1_09、S1_10、S1_12、S1_13、S1_14、S1_15、S1_16、S1_17、S1_18、S1_19、S1_20、S1_21、S1_22、S1_23、S1_24、S1_25、S2_01、S2_02、S2_03、S2_04、S2_06、S2_07、S2_08、S2_09、S2_10、S2_11、S2_12、S2_13、S2_17、S2_18、S2_20、S2_21、S2_22、S2_23、S3_01、S3_07、S3_08、S3_09、S3_10、S5_01_01、S5_02_01、S5_02_03）
 - 修改文件：**156 个中文 XHTML / 配置文件**
 - 行内替换：**829 处**（`git diff` 显示 829 insertions(+) / 829 deletions(-)，增删行严格相等）
@@ -40,7 +40,7 @@
 
 ## 工作区状态与脚手架文件说明
 
-- `Data_Translation_成品差异.md`、`Data_Translation_待改清单.md`、`Data_Translation_九列口径裁定.md` 属本地统一工作流的**脚手架台账文件**，用于追踪全表 2713 条词条与成品的排查进度。
+- `Data_Translation_待改清单.md`、`Data_Translation_九列口径裁定.md` 属本地统一工作流的**脚手架台账文件**，用于追踪全表 2713 条词条与成品的排查进度。
 - 该文件目前处于排查与分批执行过程中（A 组已全改完，B 组甲档改成品已全量落地，仍有改表项与乙/丙档待裁定项待续），尚未全量完工。
 - 依照规约，脚手架文件在全部条目收敛完毕并完成最终验收后应统一删除、不留仓库；因此该文件**保留在本地工作区，不纳入 git 提交**。
 - 本次 commit 仅暂存并提交实际生效的 156 个 `EPUB/` 内容归档文件及本维护记录。

@@ -69,4 +69,4 @@
 ## 工作区状态说明
 
 - 本次只提交 `EPUB/` 下 17 个中文 XHTML 与本记录。
-- 仓库根目录的 `Data_Translation_成品差异.md`、`Data_Translation_待改清单.md`、`Data_Translation_九列口径裁定.md`、`初出.csv` 均为**未跟踪**的工作清单，按用户要求不纳入本次提交。
+- 仓库根目录的 `Data_Translation_待改清单.md`、`Data_Translation_九列口径裁定.md`、`初出.csv` 均为**未跟踪**的工作清单，按用户要求不纳入本次提交。

@@ -1,9 +1,9 @@
 # 译名统一记录（第三批，2026-09-26）
 
-本批按 [译名选取规范](../translation-name-selection-spec.md) 与[翻译规范](../translation-spec.md) §三.1① 复核 `Data_Translation_成品差异.md` 的 A 组，**从原文（希伯来语词义／现实通行译名）入手、不经日语转述**，收敛全库一名多译。
+本批按 [译名选取规范](../translation-name-selection-spec.md) 与[翻译规范](../translation-spec.md) §三.1① 复核成品差异清单的 A 组，**从原文（希伯来语词义／现实通行译名）入手、不经日语转述**，收敛全库一名多译。
 
 - 范围：`EPUB/` 中文归档（写入落点）
-- 依据：译名表 `Data_Translation.tabx.xlsx`；差异清单 `Data_Translation_成品差异.md`；[译名选取规范](../translation-name-selection-spec.md)（从俗 → 从官 → 自拟）；[翻译规范](../translation-spec.md) §三.1①（当て字：基文照译、读音入 `<rt>`）
+- 依据：译名表 `Data_Translation.tabx.xlsx`；成品差异清单；[译名选取规范](../translation-name-selection-spec.md)（从俗 → 从官 → 自拟）；[翻译规范](../translation-spec.md) §三.1①（当て字：基文照译、读音入 `<rt>`）
 - 涉及书籍：**23 本**（S1_04、S1_17、S1_19、S1_20、S1_23、S1_24、S2_04、S2_05、S2_08、S2_09、S2_10、S2_14、S2_17、S2_18、S2_20、S2_21、S2_22、S2_23、S3_06、S3_09、S6_14.09.10、S6_18.04.10、S6_24.12.10）
 - 修改文件：**48 个中文 XHTML**
 - 行内替换：**218 处**（落在 210 个物理行上，`git diff` 增删行相等）
