@@ -23,6 +23,18 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Validate tools and publication source
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s tools/tests -p "test_*.py"
+          python tools/check_project_docs.py
+          python tools/publish_preflight.py --source EPUB
+
       - name: Prepare release metadata
         run: |
           set -euo pipefail

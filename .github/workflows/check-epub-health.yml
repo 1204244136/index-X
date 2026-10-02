@@ -27,12 +27,20 @@ on:
     paths:
       - "EPUB/**"
       - "tools/**"
+      - "docs/**"
+      - ".agents/**"
+      - "AGENTS.md"
+      - "README.md"
       - ".github/workflows/check-epub-health.yml"
   pull_request:
     branches: [main, master]
     paths:
       - "EPUB/**"
       - "tools/**"
+      - "docs/**"
+      - ".agents/**"
+      - "AGENTS.md"
+      - "README.md"
       - ".github/workflows/check-epub-health.yml"
 
 permissions:
@@ -62,6 +70,9 @@ jobs:
       # 对每个检查项注入一个能触发它的最小反例）。
       - name: 工具测试
         run: python -m unittest discover -s tools/tests -p "test_*.py"
+
+      - name: 文档职责与链接检查
+        run: python tools/check_project_docs.py
 
       - name: EPUB/ 单侧体检
         run: |

@@ -64,7 +64,7 @@ jobs:
           if [ "${{ inputs.dry_run }}" = "true" ]; then
             python tools/reorder_notes.py --root EPUB --no-backup --dry-run
           else
-            python tools/reorder_notes.py --root EPUB --no-backup
+            python tools/reorder_notes.py --root EPUB --no-backup --apply
           fi
 
       - name: 裸图行包裹自愈（纯包裹，不删行）
@@ -74,6 +74,9 @@ jobs:
           else
             python tools/wrap_cn_image_lines.py --root EPUB --wrap-only --apply
           fi
+
+      - name: 修改后发布预检
+        run: python tools/publish_preflight.py --source EPUB
 
       - name: 写入 job summary
         if: always()
