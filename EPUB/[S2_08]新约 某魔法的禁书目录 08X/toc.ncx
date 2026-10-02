@@ -97,7 +97,7 @@
     </navPoint>
     <navPoint id="num_15" playOrder="15">
       <navLabel>
-        <text>第二章 探査之内的箱庭 Area_NO.23.</text>
+        <text>第二章 探查之内的箱庭 Area_NO.23.</text>
       </navLabel>
       <content src="OEBPS/Text/S2_08-04_Chapter2.xhtml"/>
       <navPoint id="num_16" playOrder="16">
