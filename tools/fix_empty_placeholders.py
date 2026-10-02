@@ -7,6 +7,8 @@ import re
 from pathlib import Path
 
 from epub_ids import NUMBERED_BOOK, S6_DATE
+from edit_safety import (EditSafetyError, add_content_roots, add_edit_mode,
+                         content_roots, require_edit_target)
 
 NAME_RE = re.compile(
     rf"^({S6_DATE}|{NUMBERED_BOOK})-(\d+)(_p-(\d+)|_p-[^.]+)(\.xhtml)$",
@@ -155,14 +157,23 @@ def apply_candidate(path: Path) -> tuple[list[tuple[Path, Path]], int]:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--cache", type=Path, default=Path(".cache/epub-work/japanese-text"))
-    parser.add_argument("--apply", action="store_true")
+    add_content_roots(parser)
+    add_edit_mode(parser)
     args = parser.parse_args()
-    found = candidates(args.cache)
+    root, _ = content_roots(args, parser)
+    found = candidates(root)
     print(f"空占位候选：{len(found)}")
     for path in found:
         print(path)
     if args.apply:
+        try:
+            # Deletion also renames later pages and rewrites metadata throughout
+            # the book, so validate every possible destination before any write.
+            for book in {find_book_root(path) for path in found}:
+                for path in [book, *book.rglob("*")]:
+                    require_edit_target(path, args.staging)
+        except EditSafetyError as exc:
+            parser.error(str(exc))
         # Work from the highest sequence number down in each directory so that
         # renaming a later page cannot invalidate another candidate path.
         ordered = sorted(found, key=lambda path: (str(path.parent), -int(NAME_RE.match(path.name).group(2))))

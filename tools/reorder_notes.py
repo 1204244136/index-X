@@ -5,13 +5,16 @@
 - 对每本 *-Note.xhtml：计算正文 noteref 首次出现顺序；
 - 按该顺序重排 <li> 条目并重编号为 note1..noteN；
 - 单遍映射更新正文引用。
-只读检查/写盘前先备份。--dry-run 只预览。
+默认预览，--apply 才写盘；写前可备份，--no-backup 禁用备份。
+规范来源是 AGENTS.md 与 docs/translation-spec.md；CLI 合同见 tools/README.md。
 """
 import os
 import re
 import sys
 import shutil
 import argparse
+from edit_safety import (EditSafetyError, add_content_roots, add_edit_mode,
+                         content_roots, require_edit_target)
 
 from notes_core import (
     LI_FULL_RE,
@@ -118,15 +121,13 @@ def process_book(book, text_dir, nf, dry_run, backup_dir):
 
 def main():
     ap = argparse.ArgumentParser(description="按正文出现顺序重排 Note 文件并重编号（可 --dry-run）")
-    ap.add_argument("--root", default=None, help="EPUB 或中文缓存根目录（若指定则优先使用）")
-    ap.add_argument("--cache", default=DEFAULT_CACHE, help="中文缓存根目录（默认 .cache/epub-work/chinese-text）")
+    add_content_roots(ap)
     ap.add_argument("--backup", default=DEFAULT_BACKUP, help="备份目录")
     ap.add_argument("--no-backup", action="store_true", help="不生成备份文件（CI 或自动化环境推荐）")
     ap.add_argument("--pattern", default=None, help="按书名子串筛选，如 *S1_01*")
-    ap.add_argument("--dry-run", action="store_true", help="只预览不写盘")
+    add_edit_mode(ap)
     args = ap.parse_args()
-
-    root = args.root or args.cache
+    root, _ = content_roots(args, ap)
     backup_dir = None if args.no_backup else args.backup
     results = []
     skipped = []
@@ -138,6 +139,14 @@ def main():
         pat = args.pattern.replace("*", ".*")
         books = [b for b in books if re.search(pat, b)]
 
+    if args.apply:
+        try:
+            for book in books:
+                for path in (root / book).rglob("*.xhtml"):
+                    require_edit_target(path, args.staging)
+        except EditSafetyError as exc:
+            ap.error(str(exc))
+
     for book in books:
         text_dir = os.path.join(root, book, "OEBPS", "Text")
         if not os.path.isdir(text_dir):
@@ -145,13 +154,13 @@ def main():
         for nf in os.listdir(text_dir):
             if not NOTEFILE_RE.match(nf):
                 continue
-            r, msg = process_book(book, text_dir, nf, args.dry_run, backup_dir)
+            r, msg = process_book(book, text_dir, nf, not args.apply, backup_dir)
             if msg:
                 skipped.append((book, nf, msg))
             elif r:
                 results.append(r)
 
-    mode = "预览（未写盘）" if args.dry_run else "已写盘"
+    mode = "已写盘" if args.apply else "预览（未写盘）"
     print("%s，共 %d 本需要重排：\n" % (mode, len(results)))
     for r in results:
         print("=" * 70)
@@ -169,6 +178,7 @@ def main():
         for book, nf, msg in skipped:
             print("  %s（%s）: %s" % (book, nf, msg))
     print("\n共扫描 %d 本书。" % len(books))
+    return 0  # Non-note lists and unresolved references are reported, never guessed.
 
 
 if __name__ == "__main__":

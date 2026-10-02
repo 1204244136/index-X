@@ -45,13 +45,16 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import posixpath
 import re
 import shutil
 import sys
+import tempfile
 import zipfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
+from edit_safety import add_edit_mode, require_edit_target
 from urllib.parse import unquote, urlsplit
 
 # Windows 终端控制台编码自适应，防止 GBK 代码页打印日文与特殊字符乱码
@@ -564,120 +567,13 @@ def apply_entry_renames(entries: dict[str, bytes], renames: dict[str, str]) -> d
     return rewritten
 
 
-def _resolved_reference(source: str, value: str, *, root_relative: bool = False) -> str | None:
-    """把 EPUB 内部引用解析为 ZIP POSIX 路径；外部 URL/纯锚点返回 None。"""
-    value = unquote(value.strip()).replace("\\", "/")
-    if not value or value.startswith("#") or value.startswith("//"):
-        return None
-    parsed = urlsplit(value)
-    if parsed.scheme:
-        return None
-    path = parsed.path
-    if not path:
-        return None
-    if root_relative or path.startswith("/"):
-        return posixpath.normpath(path.lstrip("/"))
-    return posixpath.normpath(posixpath.join(posixpath.dirname(source), path))
-
-
-def artifact_contract_issues(entries: dict[str, bytes], book_id: str) -> list[tuple[str, str]]:
-    """校验 EPUB 容器、作品号表头、XML 语法和全部内部资源引用。"""
-    book_id = book_id.upper()
-    issues: list[tuple[str, str]] = []
-    names = set(entries)
-    manifest_targets: set[str] = set()
-
-    for name in entries:
-        basename = name.rsplit("/", 1)[-1]
-        if name.lower().endswith(XHTML_SUFFIXES):
-            if (basename.casefold() != "nav.xhtml"
-                    and not JP_WRAPPER_RE.match(basename)
-                    and not basename.upper().startswith(book_id + "-")):
-                issues.append((name, f"XHTML 缺少作品号表头 {book_id}-"))
-            sequence_match = re.match(
-                rf"^{re.escape(book_id)}-(\d+)(?:_|\.(?:xhtml|html|htm)$)",
-                basename,
-                re.IGNORECASE,
-            )
-            if sequence_match and int(sequence_match.group(1)) == 0:
-                issues.append((name, "内容序 -00 非法；数字内容序必须从 -01 开始"))
-        if name.lower().endswith(IMAGE_SUFFIXES) and not basename.upper().startswith(
-                book_id + "-"):
-            issues.append((name, f"图片缺少作品号表头 {book_id}-"))
-
-    if "META-INF/container.xml" not in entries:
-        issues.append(("EPUB", "缺少 META-INF/container.xml"))
-
-    for name, data in entries.items():
-        lower = name.lower()
-        if lower.endswith(XML_SUFFIXES):
-            try:
-                root = ET.fromstring(data)
-            except ET.ParseError as exc:
-                issues.append((name, f"XML 解析失败：{exc}"))
-                continue
-            for element in root.iter():
-                for raw_attr, raw_value in element.attrib.items():
-                    attr = raw_attr.rsplit("}", 1)[-1].casefold()
-                    if attr not in {"href", "src", "poster", "full-path"}:
-                        continue
-                    target = _resolved_reference(
-                        name, raw_value, root_relative=(attr == "full-path"))
-                    if target is not None and target not in names:
-                        issues.append((name, f"资源引用不存在：{raw_value} -> {target}"))
-            if lower.endswith(".opf"):
-                manifest_ids: dict[str, str] = {}
-                for element in root.iter():
-                    tag = element.tag.rsplit("}", 1)[-1].casefold()
-                    if tag != "item":
-                        continue
-                    item_id = element.attrib.get("id", "")
-                    href = element.attrib.get("href", "")
-                    if item_id in manifest_ids:
-                        issues.append((name, f"OPF manifest id 重复：{item_id}"))
-                    elif item_id:
-                        manifest_ids[item_id] = href
-                    target = _resolved_reference(name, href)
-                    if target is not None:
-                        manifest_targets.add(target)
-                for element in root.iter():
-                    tag = element.tag.rsplit("}", 1)[-1].casefold()
-                    if tag == "itemref":
-                        idref = element.attrib.get("idref", "")
-                        if idref not in manifest_ids:
-                            issues.append((name, f"OPF spine idref 不存在于 manifest：{idref}"))
-        if lower.endswith(".css"):
-            for match in CSS_URL_RE.finditer(data):
-                raw_value = match.group(2).decode("utf-8", errors="replace")
-                target = _resolved_reference(name, raw_value)
-                if target is not None and target not in names:
-                    issues.append((name, f"CSS 资源引用不存在：{raw_value} -> {target}"))
-    for image_name in sorted(
-            candidate for candidate in names
-            if candidate.lower().endswith(IMAGE_SUFFIXES)):
-        if image_name not in manifest_targets:
-            issues.append(("OPF", f"图片未在任何 manifest 声明：{image_name}"))
-    return issues
-
-
-def epub_zip_issues(infos: list[zipfile.ZipInfo], entries: dict[str, bytes]) -> list[tuple[str, str]]:
-    """校验 OCF 对 ZIP 容器的基本硬性要求。"""
-    issues: list[tuple[str, str]] = []
-    names = [info.filename for info in infos]
-    if len(names) != len(set(names)):
-        issues.append(("EPUB", "ZIP 中存在重复条目名"))
-    if not infos or infos[0].filename != "mimetype":
-        issues.append(("EPUB", "mimetype 必须是 ZIP 第一个条目"))
-    else:
-        if infos[0].compress_type != zipfile.ZIP_STORED:
-            issues.append(("mimetype", "mimetype 必须使用 ZIP_STORED，不得压缩"))
-        if infos[0].extra:
-            issues.append(("mimetype", "mimetype ZIP 条目不得带 extra field"))
-    if "mimetype" not in entries:
-        issues.append(("EPUB", "缺少 mimetype 条目"))
-    elif entries["mimetype"] != b"application/epub+zip":
-        issues.append(("mimetype", "内容必须严格为 application/epub+zip"))
-    return issues
+# Compatibility exports: importers share the same EPUB contract implementation.
+from epub_structure import (
+    resolve_reference as _resolved_reference,
+    artifact_contract_issues,
+    container_contract_issues,
+    epub_zip_issues,
+)
 
 
 PB_CSS_SNIPPET = b"""
@@ -687,14 +583,23 @@ PB_CSS_SNIPPET = b"""
   break-before: column;                /* \xe5\xbf\x85\xe9\xa1\xbb\xe6\x9c\x80\xe5\x90\x8e\xef\xbc\x9a\xe8\xa6\x86\xe7\x9b\x96\xe4\xb8\x8a\xe9\x9d\xa2\xe5\xb1\x95\xe5\xbc\x80\xe7\x9a\x84 page\xef\xbc\x8cChromium \xe5\xa4\x9a\xe6\xa0\x8f\xe7\x94\x9f\xe6\x95\x88 */
 }
 """
+SVG_PB_CSS_SNIPPET = b"""
+svg.pb {
+  display: block;
+}
+"""
 
 
 def inject_pb_css(entries: dict[str, bytes]) -> None:
-    """在 EPUB 的全部 CSS 文件末尾注入 .pb 换页样式规则。"""
+    """Ensure page breaks and block layout for SVGs carrying the pb token."""
     for name, data in list(entries.items()):
         if name.lower().endswith(".css"):
-            if b".pb" not in data:
-                entries[name] = data.rstrip() + b"\n" + PB_CSS_SNIPPET.lstrip()
+            css = re.sub(rb"/\*.*?\*/", b"", data, flags=re.S)
+            if not re.search(rb"(?m)^\s*\.pb\s*\{", css):
+                data = data.rstrip() + b"\n" + PB_CSS_SNIPPET.lstrip()
+            if not re.search(rb"svg\s*\.pb\s*\{[^}]*\bdisplay\s*:\s*block\s*(?:;|})", css, re.I):
+                data = data.rstrip() + b"\n" + SVG_PB_CSS_SNIPPET.lstrip()
+            entries[name] = data
 
 
 def merge_epub_pages(
@@ -930,38 +835,81 @@ def process_epub(epub_path: Path, rules: list[dict], out_path: Path,
         stats["merge_notes"] = merge_notes
         inject_pb_css(entries)
 
-    if book_id:
-        stats["issues"].extend(artifact_contract_issues(entries, book_id))
+    stats["issues"].extend(container_contract_issues(entries))
+    stats["issues"].extend(artifact_contract_issues(entries, book_id))
     if dry_run:
         return stats
     if stats["issues"]:
         stats["blocked"] = True
         return stats
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    with zipfile.ZipFile(out_path, "w") as zout:
-        for info in infos:
-            data = entries[info.filename]
-            new_info = zipfile.ZipInfo(info.filename, date_time=info.date_time)
-            new_info.compress_type = (
-                zipfile.ZIP_STORED
-                if info.filename == "mimetype" or info.compress_type == zipfile.ZIP_STORED
-                else zipfile.ZIP_DEFLATED)
-            new_info.external_attr = info.external_attr
-            new_info.comment = info.comment
-            new_info.extra = info.extra
-            zout.writestr(new_info, data)
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(prefix=".bw-preprocess-", dir=out_path.parent, delete=False) as handle:
+            temporary = Path(handle.name)
+        with zipfile.ZipFile(temporary, "w") as zout:
+            for info in infos:
+                data = entries[info.filename]
+                new_info = zipfile.ZipInfo(info.filename, date_time=info.date_time)
+                new_info.compress_type = (
+                    zipfile.ZIP_STORED
+                    if info.filename == "mimetype" or info.compress_type == zipfile.ZIP_STORED
+                    else zipfile.ZIP_DEFLATED)
+                new_info.external_attr = info.external_attr
+                new_info.comment = info.comment
+                new_info.extra = info.extra
+                zout.writestr(new_info, data)
+        os.replace(temporary, out_path)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
     if unpacked_dir:
-        if unpacked_dir.exists():
-            shutil.rmtree(unpacked_dir)
-        unpacked_dir.mkdir(parents=True, exist_ok=True)
-        for name, data in entries.items():
-            dest = archive_member_destination(unpacked_dir, name)
-            if name.endswith("/"):
-                dest.mkdir(parents=True, exist_ok=True)
-                continue
-            dest.parent.mkdir(parents=True, exist_ok=True)
-            dest.write_bytes(data)
+        _replace_unpacked_entries(entries, unpacked_dir)
     return stats
+
+
+def _replace_unpacked_entries(entries: dict[str, bytes], destination: Path) -> None:
+    """Build all extracted files before replacing an existing staging book."""
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    if destination.exists() and not destination.is_dir():
+        raise ValueError(f"解包输出不是目录：{destination}")
+    stage = Path(tempfile.mkdtemp(prefix=".bw-unpacked-", dir=destination.parent))
+    backup = stage.with_name(stage.name + ".old")
+    backed_up = False
+    try:
+        for name, data in entries.items():
+            target = archive_member_destination(stage, name)
+            if name.endswith("/"):
+                target.mkdir(parents=True, exist_ok=True)
+            else:
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(data)
+        if destination.exists():
+            os.replace(destination, backup)
+            backed_up = True
+        try:
+            os.replace(stage, destination)
+        except Exception:
+            if backed_up:
+                os.replace(backup, destination)
+            raise
+        if backed_up:
+            shutil.rmtree(backup)
+    finally:
+        if stage.exists():
+            shutil.rmtree(stage)
+
+
+def _atomic_write_bytes(destination: Path, data: bytes) -> None:
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(prefix=".bw-xhtml-", dir=destination.parent, delete=False) as handle:
+            temporary = Path(handle.name)
+            handle.write(data)
+        os.replace(temporary, destination)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
 
 
 def process_dir(dir_path: Path, rules: list[dict], dry_run: bool,
@@ -978,7 +926,7 @@ def process_dir(dir_path: Path, rules: list[dict], dry_run: bool,
                    if p.is_file() and p.suffix.lower() in XHTML_SUFFIXES)
     stats = {"total": 0, "changed": 0, "renamed": 0,
              "content": 0, "image_pages": 0, "issues": []}
-    pending: list[tuple[Path, bytes, bool]] = []
+    pending: list[tuple[Path, bytes, bool, bytes]] = []
     for p in files:
         stats["total"] += 1
         data = p.read_bytes()
@@ -988,18 +936,28 @@ def process_dir(dir_path: Path, rules: list[dict], dry_run: bool,
             stats["content"] += 1
         elif is_full_page_image(text):
             stats["image_pages"] += 1
-        pending.append((p, new_data, ch))
+        pending.append((p, new_data, ch, data))
         for it in verify_text(text, merged=merged):
             stats["issues"].append((p.name, it))
     if image_only_source(stats["content"], stats["image_pages"]) and not force_image_only:
         stats["image_only"] = {"xhtml": stats["total"],
                                "image_pages": stats["image_pages"]}
         return stats
-    for p, new_data, ch in pending:
-        if ch:
-            stats["changed"] += 1
-            if not dry_run:
-                p.write_bytes(new_data)
+    stats["changed"] = sum(ch for _, _, ch, _ in pending)
+    if stats["issues"]:
+        stats["blocked"] = not dry_run
+        return stats
+    changed = [(p, new_data, original) for p, new_data, ch, original in pending if ch]
+    if not dry_run:
+        written = []
+        try:
+            for path, data, original in changed:
+                _atomic_write_bytes(path, data)
+                written.append((path, original))
+        except Exception:
+            for path, original in reversed(written):
+                _atomic_write_bytes(path, original)
+            raise
     return stats
 
 
@@ -1082,8 +1040,8 @@ def check_epub(
             stats["merge_notes"] = merge_notes
             inject_pb_css(entries)
 
-        if book_id:
-            stats["issues"].extend(artifact_contract_issues(entries, book_id))
+        stats["issues"].extend(container_contract_issues(entries))
+        stats["issues"].extend(artifact_contract_issues(entries, book_id))
         return stats
 
 
@@ -1253,7 +1211,7 @@ def report_stats(label: str, stats: dict, dry_run: bool, check: bool,
             print(f"    …另有 {len(merge_notes) - 20} 条未列出")
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(
         description="按 BookWalker 提取预处理规则改写 .epub / 目录中的 XHTML")
     ap.add_argument("paths", nargs="+", help="一个或多个 .epub 文件或含 .xhtml 的目录")
@@ -1264,12 +1222,12 @@ def main() -> int:
     ap.add_argument("--header-map", type=Path, default=None,
                     help=f"已审计分页映射 JSON（默认 {DEFAULT_HEADER_MAP_JSON}）")
     ap.add_argument("--out", type=Path, default=None,
-                    help="epub 模式输出目录（默认写在源文件同目录）")
+                    help="epub 模式显式输出目录或 .epub 路径（写入时必填）")
     ap.add_argument("--unpacked", action="store_true",
                     help="同时在输出目录解包展开为书籍文件夹，便于直接对接下游 merge_bw_pages")
     ap.add_argument("--unpacked-dir", type=Path, default=None,
                     help="解包展开书籍文件夹的目标目录（默认与 --out 相同）")
-    ap.add_argument("--dry-run", action="store_true", help="只预览，不写文件")
+    add_edit_mode(ap)
     ap.add_argument("--check", action="store_true",
                     help="内存校验 L1-L6；配合 --book-id 检查完整 EPUB 产物契约")
     ap.add_argument("--merged", action="store_true",
@@ -1278,7 +1236,26 @@ def main() -> int:
     ap.add_argument("--force-image-only", action="store_true",
                     help="允许处理画集/纯图册源（整本无正文文本页、全为整页图片）；"
                          "默认整本跳过并说明原因")
-    args = ap.parse_args()
+    args = ap.parse_args(argv)
+    args.dry_run = not args.apply
+    if args.apply and args.check:
+        ap.error("--check 只读校验不能与 --apply 组合")
+    if args.apply:
+        try:
+            for raw in args.paths:
+                source = Path(raw)
+                if source.is_dir():
+                    require_edit_target(source, staging=args.staging)
+                elif source.suffix.lower() == ".epub":
+                    if args.out is None or not args.staging:
+                        ap.error(".epub 写入必须显式指定 --out 与 --staging 暂存输出")
+                    require_edit_target(args.out, staging=True)
+                    if args.unpacked_dir is not None:
+                        require_edit_target(args.unpacked_dir, staging=True)
+        except ValueError as exc:
+            ap.error(str(exc))
+    if args.out is not None and args.out.suffix.lower() == ".epub" and len(args.paths) > 1:
+        ap.error("多个输入不能共用单个 .epub 输出路径")
 
     if args.book_id and not BOOK_ID_RE.fullmatch(args.book_id):
         ap.error(f"--book-id 不是有效作品号：{args.book_id}")
@@ -1345,15 +1322,22 @@ def main() -> int:
                                    force_image_only=args.force_image_only)
                 report_stats(f"epub {p}", stats, False, True)
             else:
-                target_dir = args.out if args.out and args.out.is_dir() else (args.out.parent if args.out and not args.out.is_dir() else p.parent)
+                output_is_file = args.out is not None and args.out.suffix.lower() == ".epub"
+                target_dir = args.out.parent if output_is_file else (args.out or p.parent)
                 clean_title = clean_book_title(p.stem, cur_book_id)
-                if args.out is None or args.out.is_dir():
+                if not output_is_file:
                     if cur_book_id:
                         out = target_dir / f"[{cur_book_id}]{clean_title}.epub"
                     else:
                         out = target_dir / (p.stem + ".preprocessed" + p.suffix)
                 else:
                     out = args.out
+                if args.apply:
+                    require_edit_target(out, staging=True)
+                    if out.resolve() == p.resolve():
+                        print(f"[阻断] 输出不能覆盖输入 EPUB：{p}", file=sys.stderr)
+                        has_issues = True
+                        continue
                 unpacked_dir = None
                 if args.unpacked and not args.dry_run:
                     unpacked_target_dir = args.unpacked_dir if args.unpacked_dir else target_dir

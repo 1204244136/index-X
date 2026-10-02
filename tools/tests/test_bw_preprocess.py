@@ -6,6 +6,7 @@ import sys
 import tempfile
 import unittest
 import zipfile
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 
@@ -17,6 +18,7 @@ from bw_preprocess import (  # noqa: E402
     apply_rules,
     artifact_contract_issues,
     check_dir,
+    check_epub,
     epub_zip_issues,
     is_content,
     is_epilogue_story_page,
@@ -567,12 +569,44 @@ def image_page(image: str = "../image/i-001.jpg") -> str:
 
 
 def write_epub(path: Path, pages: dict[str, str]) -> None:
+    """A complete source container, including resources referenced by the pages."""
+    from epub_structure import resolve_reference
+    entries = {name: text.encode("utf-8") for name, text in pages.items()}
+    for name, data in list(entries.items()):
+        if not name.endswith(".xhtml"):
+            continue
+        document = ET.fromstring(data)
+        for element in document.iter():
+            for attr, value in element.attrib.items():
+                if attr.rsplit("}", 1)[-1] not in {"src", "href"}:
+                    continue
+                resolved = resolve_reference(name, value)
+                if resolved is not None:
+                    entries.setdefault(resolved, b"p { margin: 0; }" if resolved.endswith(".css") else b"image fixture")
+    entries.setdefault("META-INF/container.xml", (
+        b'<container xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles>'
+        b'<rootfile full-path="item/standard.opf" media-type="application/oebps-package+xml"/>'
+        b'</rootfiles></container>'
+    ))
+    manifest, spine = [], []
+    for index, name in enumerate(sorted(name for name in entries if not name.startswith("META-INF/"))):
+        media = "application/xhtml+xml" if name.endswith(".xhtml") else (
+            "text/css" if name.endswith(".css") else "image/jpeg")
+        href = name.removeprefix("item/")
+        manifest.append(f'<item id="item{index}" href="{href}" media-type="{media}"/>')
+        if name.endswith(".xhtml"):
+            spine.append(f'<itemref idref="item{index}"/>')
+    entries.setdefault("item/standard.opf", (
+        '<package xmlns="http://www.idpf.org/2007/opf" version="3.0"><metadata/>'
+        '<manifest>\n' + "\n".join(manifest) + '\n</manifest><spine>\n'
+        + "\n".join(spine) + '\n</spine></package>'
+    ).encode("utf-8"))
     with zipfile.ZipFile(path, "w") as archive:
         info = zipfile.ZipInfo("mimetype")
         info.compress_type = zipfile.ZIP_STORED
         archive.writestr(info, b"application/epub+zip")
-        for name, text in pages.items():
-            archive.writestr(name, text)
+        for name, data in entries.items():
+            archive.writestr(name, data)
 
 
 class ImageOnlySourceTests(unittest.TestCase):
@@ -680,6 +714,61 @@ class ImageOnlySourceTests(unittest.TestCase):
                 capture_output=True, text=True, encoding="utf-8", errors="replace")
             self.assertEqual(forced.returncode, 0, forced.stderr)
             self.assertNotIn("[跳过]", forced.stdout)
+
+
+class FinalEpubContractTests(unittest.TestCase):
+    def test_unknown_work_still_checks_a_complete_container_and_resources(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source, output = root / "unidentified.epub", root / "output.epub"
+            write_epub(source, {"item/xhtml/p-001.xhtml": raw_page(["<p>正文</p>"])})
+            stats = process_epub(source, RULES, output, False, book_id=None)
+            self.assertEqual(stats["issues"], [])
+            self.assertTrue(output.is_file())
+            self.assertEqual(check_epub(source, RULES, book_id=None)["issues"], [])
+
+    def test_unknown_work_with_invalid_container_cannot_write_or_pass_check(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source, output = root / "unidentified.epub", root / "output.epub"
+            write_epub(source, {"item/xhtml/p-001.xhtml": raw_page(["<p>正文</p>"]),
+                                "META-INF/container.xml": "<container/>"})
+            stats = process_epub(source, RULES, output, False, book_id=None)
+            self.assertTrue(stats["blocked"])
+            self.assertTrue(any("rootfile" in problem for _, problem in stats["issues"]))
+            self.assertFalse(output.exists())
+            self.assertTrue(check_epub(source, RULES, book_id=None)["issues"])
+
+    def test_unknown_work_with_dangling_resource_cannot_write_or_pass_check(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source, output = root / "unidentified.epub", root / "output.epub"
+            write_epub(source, {"item/xhtml/p-001.xhtml": raw_page(["<p>正文</p>"])})
+            with zipfile.ZipFile(source) as archive:
+                infos = archive.infolist()
+                entries = {info.filename: archive.read(info.filename) for info in infos}
+            del entries["item/style/book-style.css"]
+            with zipfile.ZipFile(source, "w") as archive:
+                for info in infos:
+                    if info.filename in entries:
+                        archive.writestr(info, entries[info.filename])
+            stats = process_epub(source, RULES, output, False, book_id=None)
+            self.assertTrue(stats["blocked"])
+            self.assertTrue(any("不存在" in problem for _, problem in stats["issues"]))
+            self.assertFalse(output.exists())
+            self.assertTrue(check_epub(source, RULES, book_id=None)["issues"])
+
+    def test_unknown_work_invalid_non_content_xml_is_still_blocked(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source, output = root / "unidentified.epub", root / "output.epub"
+            write_epub(source, {"item/xhtml/p-001.xhtml": raw_page(["<p>正文</p>"]),
+                                "item/broken.xml": "<broken>"})
+            stats = process_epub(source, RULES, output, False, book_id=None)
+            self.assertTrue(stats["blocked"])
+            self.assertTrue(any("XML 解析失败" in problem for _, problem in stats["issues"]))
+            self.assertFalse(output.exists())
+            self.assertTrue(check_epub(source, RULES, book_id=None)["issues"])
 
 
 if __name__ == "__main__":

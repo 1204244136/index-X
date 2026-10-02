@@ -784,7 +784,14 @@ def run_checks_parallel(
                 command += ["--calibre-threads", str(calibre_threads)]
             if not progress:
                 command.append("--quiet-worker")
-            running.append((subprocess.Popen(command), chunk, out_path, index))
+            # calibre initializes GUI preferences even for Check Book. Keep that
+            # state in this worker's temporary directory and do not load the
+            # user's plugins or write to their personal configuration.
+            config = work / f"calibre-config-{index}"
+            config.mkdir()
+            environment = os.environ.copy()
+            environment["CALIBRE_CONFIG_DIRECTORY"] = str(config)
+            running.append((subprocess.Popen(command, env=environment), chunk, out_path, index))
 
         for process, chunk, out_path, index in running:
             label = f"w{index}"

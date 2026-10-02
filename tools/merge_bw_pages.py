@@ -29,8 +29,14 @@ from __future__ import annotations
 
 import argparse
 import html
+import os
 import re
+import tempfile
 from pathlib import Path
+import xml.etree.ElementTree as ET
+
+from check_alignment import check_file
+from edit_safety import add_edit_mode, require_edit_target
 
 # 处理 p-001.xhtml 及 S4_05-01_p-001.xhtml / 历史的 -p-001 形式，
 # 跳过 p-fmatter/p-toc/p-cover 等包装页。
@@ -341,25 +347,53 @@ def check_edge_br(body: list[str], page_name: str, notes: list[str]) -> list[str
     return body[start:end]
 
 
+OUTER_BLOCK_OPEN_RE = re.compile(
+    r'\s*<(?P<tag>p|svg|img)\b(?P<attrs>(?:"[^"]*"|\'[^\']*\'|[^\'">])*)/?>', re.I,
+)
+OPEN_ATTRIBUTE_RE = re.compile(
+    r'\s+(?P<name>[^\s=/>]+)\s*(?:=\s*(?P<value>"[^"]*"|\'[^\']*\'|[^\s>]+))?'
+)
+
+
 def add_class_pb(line: str) -> str:
-    """在段落标签上追加 class="pb" 用于跨文件分页。"""
-    if re.search(r'\bclass\s*=\s*"([^"]*)"', line):
-        return re.sub(
-            r'\bclass\s*=\s*"([^"]*)"',
-            lambda m: f'class="{m.group(1)} pb"' if "pb" not in m.group(1).split() else m.group(0),
-            line,
-            count=1,
-        )
-    elif re.search(r"\bclass\s*=\s*'([^']*)'", line):
-        return re.sub(
-            r"\bclass\s*=\s*'([^']*)'",
-            lambda m: f"class='{m.group(1)} pb'" if "pb" not in m.group(1).split() else m.group(0),
-            line,
-            count=1,
-        )
-    else:
-        return re.sub(r"<p\b", '<p class="pb"', line, count=1, flags=re.I)
-    return []
+    """Add a pb token to the outer p/svg/img opening tag only."""
+    opening = OUTER_BLOCK_OPEN_RE.match(line)
+    if opening is None:
+        return line
+    # Parse complete attribute values so text such as title='class="inner"'
+    # cannot be mistaken for the outer class attribute.
+    attrs = opening.group("attrs")
+    for match in OPEN_ATTRIBUTE_RE.finditer(attrs):
+        if match.group("name").casefold() != "class":
+            continue
+        value = match.group("value")
+        if value is None or value[:1] not in {"'", '"'}:
+            raise ValueError("外层 class 属性必须使用引号")
+        tokens = value[1:-1]
+        if "pb" in tokens.split():
+            return line
+        replacement = value[0] + tokens + (" " if tokens and not tokens[-1].isspace() else "") + "pb" + value[-1]
+        start, end = (opening.start("attrs") + match.start("value"),
+                      opening.start("attrs") + match.end("value"))
+        return line[:start] + replacement + line[end:]
+    position = opening.end("tag")
+    return line[:position] + ' class="pb"' + line[position:]
+
+
+def preserve_image_page_anchor(line: str, anchor: str) -> str:
+    """Keep a removed source main wrapper's ID at the same image position."""
+    opening = OUTER_BLOCK_OPEN_RE.match(line)
+    if opening is None:
+        raise ValueError(f"无法把源图片页锚点 {anchor} 保留到图片块")
+    for match in OPEN_ATTRIBUTE_RE.finditer(opening.group("attrs")):
+        if match.group("name").casefold() != "id":
+            continue
+        value = match.group("value")
+        if value and value[:1] in {"'", '"'} and html.unescape(value[1:-1]) == html.unescape(anchor):
+            return line
+        raise ValueError(f"图片块已有不同 id，不能覆盖源锚点 {anchor}")
+    position = opening.end("tag")
+    return line[:position] + f' id="{html.escape(html.unescape(anchor), quote=True)}"' + line[position:]
 
 
 def leading_image_pages(unit: dict) -> list[int]:
@@ -409,6 +443,7 @@ def merge_unit(unit: dict, notes: list[str]) -> list[str] | None:
     lead = leading_image_pages(unit)
     text_first = next((i for i, pg in enumerate(pages) if pg["is_p_text"]), None)
     fold = bool(lead) and text_first is not None
+    folded_lead = set(lead) if fold else set()
     head_page = pages[text_first] if fold else pages[0]
     lines = head_page["lines"]
     # 固定模板 L1-L3；main 仅是分页源排版包装，不进入输出。
@@ -434,6 +469,12 @@ def merge_unit(unit: dict, notes: list[str]) -> list[str] | None:
     cleaned_bodies = []
     for i, pg in enumerate(pages):
         body = check_edge_br(pg["body"], pg["name"], notes)
+        if i in folded_lead and pg.get("main_id"):
+            image_index = next((j for j, line in enumerate(body) if is_image_line(line)), None)
+            if image_index is None:
+                raise ValueError(f"{pg['name']} 的源图片页锚点没有对应图片块")
+            body[image_index] = preserve_image_page_anchor(body[image_index], pg["main_id"])
+            notes.append(f"[保留图片页锚点] {pg['name']} 的 {pg['main_id']} 保留在 L3 图片块")
         if i > 0 and pg.get("header"):
             extra_headers = [
                 h for h in pg["header"] if h and HEADING_RE.match(h)
@@ -446,6 +487,22 @@ def merge_unit(unit: dict, notes: list[str]) -> list[str] | None:
         body = cleaned_bodies[i]
         prev_last = prev_body[-1] if prev_body else None
         next_first = body[0] if body else None
+        if i in folded_lead or i - 1 in folded_lead:
+            # Chapter title images are folded into L3, before the heading.
+            # Their first block must not receive an extra break-before marker.
+            continue
+        if pages[i]["is_image_page"]:
+            image_index = next((j for j, line in enumerate(body) if is_image_line(line)), None)
+            if image_index is not None:
+                body[image_index] = add_class_pb(body[image_index])
+                notes.append(
+                    f"[插图分页] {pages[i]['name']} 为独立整页插图，"
+                    '已在图片块追加 class="pb"')
+            continue
+        if pages[i - 1]["is_image_page"]:
+            # The preceding page was marked when it entered the unit. Leave
+            # following text untouched and do not mark that image twice.
+            continue
         if not (prev_last and next_first):
             continue
         if HEADING_RE.match(prev_last) or HEADING_RE.match(next_first):
@@ -457,11 +514,6 @@ def merge_unit(unit: dict, notes: list[str]) -> list[str] | None:
             notes.append(
                 f"[同段核对] {pages[i-1]['name']} → {pages[i]['name']} 边界为文本+文本，"
                 f"已在末段追加 class=\"pb\"；若为同一段落断续请按语义拼回（勿套换页标记）")
-        elif is_image_line(prev_last):
-            prev_body[-1] = add_class_pb(prev_last)
-            notes.append(
-                f"[插图跨页] {pages[i-1]['name']} → {pages[i]['name']} 边界前侧为图片，"
-                f"已在图片段落追加 class=\"pb\"")
 
     if fold:
         # 图片扉页并入 L3 头部行（body 开头、标题之前），不再于正文区占行。
@@ -494,18 +546,33 @@ def write_output(out_path: Path, lines: list[str], bom: bool, crlf: bool) -> Non
     data = (sep.join(lines) + sep).encode("utf-8")
     if bom:
         data = b"\xef\xbb\xbf" + data
-    out_path.write_bytes(data)
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(prefix=".merge-bw-", dir=out_path.parent, delete=False) as handle:
+            temporary = Path(handle.name)
+            handle.write(data)
+        os.replace(temporary, out_path)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(
         description="按换页衔接处理规则合并 bw_preprocess 处理后的分页为章节文件")
     ap.add_argument("dir", type=Path, help="分页目录（bw_preprocess 处理后）")
     ap.add_argument("--book", default="BOOK", help="作品号前缀，用于输出文件名（如 S4_05）")
     ap.add_argument("--out", type=Path, default=None,
                     help="输出目录（默认 = 输入目录同级 merge-out/）")
-    ap.add_argument("--dry-run", action="store_true", help="只预览，不写文件")
-    args = ap.parse_args()
+    add_edit_mode(ap)
+    args = ap.parse_args(argv)
+    if args.apply:
+        if args.out is None:
+            ap.error("写入必须显式指定 --out 目标目录")
+        try:
+            require_edit_target(args.out, staging=args.staging)
+        except ValueError as exc:
+            ap.error(str(exc))
 
     pages = collect_pages(args.dir)
     if not pages:
@@ -544,6 +611,9 @@ def main() -> int:
     if len(header_sequences) != len(set(header_sequences)):
         print("[错误] 多个合并单元使用了相同内容序；拒绝覆盖输出")
         return 1
+    if header_sequences and set(header_sequences) != set(range(1, max(header_sequences) + 1)):
+        print("[错误] 输入表头内容序必须从 01 连续；拒绝写入缺页/缺号的章节集")
+        return 1
     nav_text = None
     for cand in sorted(args.dir.rglob("*.xhtml")):
         if NAV_FILE_RE.match(cand.name):
@@ -552,27 +622,36 @@ def main() -> int:
     attach_nav_titles(units, nav_text, notes)
     out_dir = args.out or (args.dir.parent / "merge-out")
     written = 0
+    outputs = []
     for idx, unit in enumerate(units, 1):
         lines = merge_unit(unit, notes)
         if lines is None:
-            continue
+            print(f"[错误] 单元 {idx} 无法合并；没有写入任何输出")
+            return 1
         sequence = unit["sequence"] if unit["sequence"] is not None else idx
         name = f"{output_book}-{sequence:02d}.xhtml"
+        problems = check_file(lines)
+        try:
+            ET.fromstring("\n".join(lines))
+        except ET.ParseError as exc:
+            problems.append(f"XML 解析失败：{exc}")
+        if problems:
+            print(f"[错误] {name} 合并产物不满足模板/XML 契约：{problems}")
+            return 1
+        outputs.append((name, lines, unit["pages"][0]["bom"], unit["pages"][0]["crlf"]))
         body_paras = sum(1 for line in lines if re.match(r"^\s*<p\b", line))
         img_rows = sum(1 for line in lines if is_image_line(line))
         display_title = unit["title"] or ("引子" if idx == 1 else "无标题单元")
         print(f"[单元 {idx:02d}] {display_title}：页 {len(unit['pages'])}，"
               f"插图页 {unit['image_pages']}，正文段 {body_paras}，图片行 {img_rows} → {name}")
-        if args.dry_run:
-            continue
+    if args.apply:
         out_dir.mkdir(parents=True, exist_ok=True)
-        bom = unit["pages"][0]["bom"]
-        crlf = unit["pages"][0]["crlf"]
-        write_output(out_dir / name, lines, bom, crlf)
-        written += 1
+        for name, lines, bom, crlf in outputs:
+            write_output(out_dir / name, lines, bom, crlf)
+            written += 1
 
     print(f"分页 {len(pages)} 个 → 章节单元 {len(units)} 个"
-          + ("（预览，未写盘）" if args.dry_run else f"（输出：{out_dir}，已写 {written}）"))
+          + ("（预览，未写盘；加 --apply 写入）" if not args.apply else f"（输出：{out_dir}，已写 {written}）"))
     if notes:
         print("=== 待人工确认清单 ===")
         for n in notes:

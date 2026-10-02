@@ -44,6 +44,9 @@ class HealthCheckNegativeTests(unittest.TestCase):
         self.addCleanup(self._tmp.cleanup)
 
     def build(self, bid: str, files: dict[str, list[str]], root: Path | None = None) -> Path:
+        from docx2epub import _CSS
+        files = dict(files)
+        files.setdefault("OEBPS/Styles/style.css", [_CSS])
         book = (root or self.tmp) / ("[%s]测试书" % bid)
         for rel, lines in files.items():
             path = book / Path(rel)
@@ -53,6 +56,12 @@ class HealthCheckNegativeTests(unittest.TestCase):
             else:
                 path.write_text("\n".join(lines) + "\n", encoding="utf-8")
         return book
+
+    def test_book_without_css_fails_layout_gate(self):
+        book = self.build("S1_01", {"OEBPS/Text/S1_01-01_Chapter1.xhtml": GOOD})
+        (book / "OEBPS/Styles/style.css").unlink()
+        findings, *_ = audit_book(book, {"css-layout"})
+        self.assertTrue(any("缺少主样式表" in f[5] for f in findings))
 
     def assert_detects(self, check: str, bid: str, files: dict[str, list[str]]):
         book = self.build(bid, files)
@@ -266,7 +275,48 @@ class HealthCheckNegativeTests(unittest.TestCase):
             "OEBPS/Text/S1_01-01_Chapter1.xhtml": GOOD,
             "OEBPS/Styles/style.css": ["* { box-sizing: border-box; }", "body { margin: 0; }", ".fit { display: block; break-inside: avoid; }"],
         })
-        self.assertIn(".pb", hit3[5])
+        css_book = self.tmp / "[S1_01]测试书"
+        hits, *_ = audit_book(css_book, {"css-layout"})
+        self.assertTrue(any("`.pb`" in f[5] for f in hits))
+
+    def test_css_urls_imports_and_nav_links_are_checked(self):
+        book = self.build("S1_01", {
+            "OEBPS/Text/S1_01-01_Chapter1.xhtml": GOOD,
+            "OEBPS/nav.xhtml": ['<html><body><a href="missing.xhtml">目录</a></body></html>'],
+            "OEBPS/Styles/font.css": ['/* url(ignored.png) */',
+                                      '@import "missing.css";',
+                                      '@font-face {src:url("missing font.woff");}'],
+        })
+        hits = check_epub_health.find_dangling(book, check_epub_health.collect_xhtml(book))
+        self.assertEqual(len(hits), 3)
+        self.assertFalse(any("ignored.png" in message for _, message in hits))
+
+    def test_auxiliary_css_cannot_override_main_layout(self):
+        from docx2epub import _CSS
+        book = self.build("S1_01", {
+            "OEBPS/Text/S1_01-01_Chapter1.xhtml": GOOD,
+            "OEBPS/Styles/style.css": [_CSS],
+            "OEBPS/Styles/override.css": ['body {margin:0 1%;}'],
+        })
+        hits = check_epub_health.find_css_layout_problems(book)
+        self.assertTrue(any("override.css" in message for _, message in hits))
+        self.assertFalse(any("`OEBPS/Styles/style.css`" in message for _, message in hits))
+
+    def test_layout_checks_values_and_selector_scope(self):
+        from docx2epub import _CSS
+        book = self.build("S1_01", {"OEBPS/Styles/style.css": [_CSS]})
+        self.assertEqual(check_epub_health.find_css_layout_problems(book), [])
+        css = book / "OEBPS/Styles/style.css"
+        for old, new, marker in [
+            ("box-sizing: border-box", "box-sizing: content-box", "box-sizing"),
+            ("break-before: column", "break-before: auto", "break-before"),
+            ("break-inside: avoid", "break-inside: auto", "break-inside"),
+            ("text-indent: 0", "text-indent: 2em", "text-indent"),
+        ]:
+            with self.subTest(marker=marker):
+                css.write_text(_CSS.replace(old, new), encoding="utf-8")
+                hits = check_epub_health.find_css_layout_problems(book)
+                self.assertTrue(any(marker in message for _, message in hits))
 
     def test_unknown_check_name_is_rejected(self):
         with patch.object(sys, "argv", ["check_epub_health.py", "--only", "nope"]):

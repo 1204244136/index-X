@@ -46,8 +46,8 @@
 
 豁免名单（`alignment_rules.TEMPLATE_EXEMPT_WORK_IDS`）
 --------------------------------------------------
-`S0_00`（读前必看，非正文）、`S6_10.06.26`、`S6_24.12.10`——后两本没有 BW 分页源，
-已明确不处理。豁免粒度按「书 + 检查项」，这三本只豁免 template，其余照查
+`S0_00`（读前必看，非正文）、`S6_10.06.26`（无 BW 分页源，保持原始结构）。
+豁免粒度按「书 + 检查项」，这两本只豁免 template，其余照查
 （如 `S0_00-00` 这类非法内容序仍会被 `check_alignment.py` 报出来）。名单本体放在
 `alignment_rules.py`，`check_alignment.py` 与 `check_epub_health.py` 共用一份。
 
@@ -73,6 +73,8 @@ from alignment_rules import TEMPLATE_EXEMPT_WORK_IDS, template_exempt  # noqa: F
 from check_alignment import check_file as check_template
 from epub_ids import book_id, content_sequence, header_of, is_packaging_header, work_id
 from text_norm import split_bold_punct
+from epub_structure import resolve_reference, CSS_URL_RE
+from urllib.parse import unquote, urlsplit
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_ROOT = REPO_ROOT / "EPUB"
@@ -241,56 +243,118 @@ def find_image_prefix_problems(book_dir: Path, wid: str | None) -> list[tuple[st
 
 
 def find_dangling(book_dir: Path, xhtmls: list[Path]) -> list[tuple[str, str]]:
-    """XHTML/OPF/CSS 里的相对引用（含 `#frag`）必须真实存在。"""
+    """Check XML attributes, CSS url()/@import and destination anchors."""
     out: list[tuple[str, str]] = []
+    sources = sorted(p for p in book_dir.rglob("*") if p.is_file()
+                     and p.suffix.lower() in {".xhtml", ".html", ".opf", ".ncx", ".xml", ".svg", ".css"})
     anchors: dict[Path, set[str]] = {}
-    for path in xhtmls:
-        anchors[path] = set(re.findall(r'\bid\s*=\s*["\']([^"\']+)["\']', read_text(path)))
-    sources = list(xhtmls)
-    for pat in ("*.opf", "*.ncx", "*.css"):
-        sources.extend(sorted(book_dir.rglob(pat)))
+    refs: list[tuple[Path, str, bool]] = []
     for path in sources:
-        for ref in IMG_REF_RE.findall(read_text(path)):
-            if re.match(r"^(?:[a-z][a-z0-9+.-]*:|//|data:)", ref, re.I):
-                continue
-            target, _, frag = ref.partition("#")
-            if not target:
-                # 纯锚点：只在同文件内找
-                if frag and frag not in anchors.get(path, ()):
-                    out.append(("dangling", "`%s` 锚点 `#%s` 不存在" % (path.name, frag)))
-                continue
-            # EPUB 内部引用一律以 `/` 分隔且相对当前文件；用 `/` 解析
-            # 以免在 Windows 上把 `a/b.png` 当成字面文件名。
-            resolved = path.parent.joinpath(*target.split("/"))
-            if not resolved.exists():
-                out.append(("dangling", "`%s` 引用不存在的 `%s`" % (path.name, ref)))
-            elif frag and resolved.suffix.lower() in (".xhtml", ".html"):
-                if frag not in anchors.get(resolved, set()):
-                    out.append(("dangling", "`%s` 引用 `%s`，但锚点 `#%s` 不存在"
-                                % (path.name, target, frag)))
+        if path.suffix.lower() == ".css":
+            raw = re.sub(rb"/\*.*?\*/", b"", path.read_bytes(), flags=re.S)
+            values = [m.group(2).decode("utf-8") for m in CSS_URL_RE.finditer(raw)]
+            values += re.findall(r"@import\s+['\"]([^'\"]+)['\"]", raw.decode("utf-8"), re.I)
+            refs.extend((path, value, False) for value in values)
+            continue
+        try:
+            doc = ET.parse(path)
+        except ET.ParseError:
+            continue  # XML/OCF validation reports syntax failures separately.
+        anchors[path.resolve()] = {e.get("id") for e in doc.iter() if e.get("id")}
+        for element in doc.iter():
+            for key, value in element.attrib.items():
+                attr = key.rsplit("}", 1)[-1].lower()
+                if attr in {"href", "src", "poster", "full-path"}:
+                    refs.append((path, value, attr == "full-path"))
+    for path, value, root_relative in refs:
+        if re.match(r"^(?:[a-z][a-z0-9+.-]*:|//)", value, re.I):
+            continue
+        parsed = urlsplit(value)
+        target = resolve_reference(path.relative_to(book_dir).as_posix(), value,
+                                   root_relative=root_relative)
+        resolved = (book_dir / target).resolve() if target else path.resolve()
+        if not resolved.is_relative_to(book_dir.resolve()) or not resolved.is_file():
+            out.append(("dangling", f"`{path.name}` 引用不存在或越界的 `{value}`"))
+        elif parsed.fragment and resolved.suffix.lower() in {".xhtml", ".html", ".svg"}:
+            if unquote(parsed.fragment) not in anchors.get(resolved, set()):
+                out.append(("dangling", f"`{path.name}` 锚点 `#{parsed.fragment}` 不存在"))
     return out
 
 
-def find_css_layout_problems(book_dir: Path) -> list[tuple[str, str]]:
-    """检查书籍样式表是否符合现代多列分页与防溢出排版规范。"""
-    out: list[tuple[str, str]] = []
-    css_path = book_dir / "OEBPS" / "Styles" / "style.css"
-    if not css_path.is_file():
-        candidates = list(book_dir.rglob("*.css"))
-        if not candidates:
-            return out
-        css_path = candidates[0]
+def css_rules(text: str) -> dict[str, dict[str, str]]:
+    """Read ordinary declaration blocks; syntax validation remains calibre's job."""
+    text = re.sub(r"/\*.*?\*/", "", text, flags=re.S)
+    rules: dict[str, dict[str, str]] = {}
+    for match in re.finditer(r"([^{}]+)\{([^{}]*)\}", text):
+        declarations = {}
+        for declaration in match.group(2).split(";"):
+            key, separator, value = declaration.partition(":")
+            if separator:
+                declarations[key.strip().lower()] = re.sub(r"\s*!important\s*$", "", value.strip().lower())
+        for selector in match.group(1).split(","):
+            selector = re.sub(r"\s+", " ", selector.strip())
+            rules.setdefault(selector, {}).update(declarations)
+    return rules
 
-    content = read_text(css_path)
-    rel = css_path.relative_to(book_dir).as_posix()
-    if "box-sizing" not in content:
-        out.append(("css-layout", f"`{rel}` 缺失 `box-sizing: border-box` 全局盒模型声明"))
-    if re.search(r"body\s*\{[^}]*margin-(?:left|right)\s*:\s*[1-9]", content, re.I):
-        out.append(("css-layout", f"`{rel}` 的 `body` 包含硬编码非零百分比左右边距，会导致移动端分页漂移"))
-    if not re.search(r"\.pb\b", content):
-        out.append(("css-layout", f"`{rel}` 缺失关键分页类 `.pb` 声明"))
-    if ".fit" in content and "break-inside" not in content:
-        out.append(("css-layout", f"`{rel}` 的 `.fit` 缺少 `break-inside: avoid` 防切断声明"))
+
+def find_css_layout_problems(book_dir: Path) -> list[tuple[str, str]]:
+    """Validate the main layout contract and overrides in every stylesheet."""
+    out: list[tuple[str, str]] = []
+    paths = sorted(book_dir.rglob("*.css"))
+    main_paths = [p for p in paths if p.name.lower() == "style.css"]
+    if not paths:
+        return [("css-layout", "缺少主样式表 style.css，无法验证移动分页布局保护")]
+    # Only the main stylesheet owns required layout declarations. Auxiliary font
+    # and colour sheets may omit them, but may never override html/body margins.
+    if not main_paths:
+        out.append(("css-layout", "缺少主样式表 style.css；未将任意辅助 CSS 当作主样式表"))
+    zero = lambda value: bool(re.fullmatch(r"[-+]?0+(?:\.0+)?(?:%|px|em|rem|pt)?", value))
+    required = {
+        "*": {"box-sizing": "border-box"},
+        "*::before": {"box-sizing": "border-box"},
+        "*::after": {"box-sizing": "border-box"},
+        "html": {"margin-left": "0", "margin-right": "0", "padding": "0"},
+        "body": {"margin-left": "0", "margin-right": "0", "padding": "0"},
+        ".fit": {"display": "block", "margin-left": "auto", "margin-right": "auto", "text-indent": "0",
+                 "break-inside": "avoid", "-webkit-column-break-inside": "avoid", "page-break-inside": "avoid",
+                 "max-height": "100%", "max-width": "100%", "box-sizing": "border-box"},
+        ".pb": {"page-break-before": "always", "-webkit-column-break-before": "always", "break-before": "column"},
+        "p:has(> img) + p:has(> img)": {"page-break-before": "always", "-webkit-column-break-before": "always", "break-before": "column"},
+        "p:has(> img)": {"text-indent": "0", "text-align": "center"},
+        "p.fit": {"text-indent": "0", "text-align": "center"},
+        "p.center": {"text-indent": "0", "text-align": "center"},
+    }
+    # SVG pagination is required only for books using an SVG frontispiece.
+    if any("<svg" in read_text(p).lower() for p in book_dir.rglob("*.xhtml")):
+        required["svg"] = {"display": "block", "margin": "0 auto", "break-after": "column",
+                           "-webkit-column-break-after": "always", "page-break-after": "always"}
+    for path in paths:
+        rel = path.relative_to(book_dir).as_posix()
+        rules = css_rules(read_text(path))
+        for selector, declarations in rules.items():
+            if "box-sizing" in declarations and declarations["box-sizing"] != "border-box":
+                out.append(("css-layout", f"`{rel}` 的 `{selector}` 改回非标准盒模型 box-sizing"))
+            if not re.search(r"(?:^|\s)(?:html|body)(?:$|[.:#\s])", selector):
+                continue
+            for prop in ("margin-left", "margin-right", "padding-left", "padding-right", "margin-inline", "padding-inline", "margin-inline-start", "margin-inline-end", "padding-inline-start", "padding-inline-end"):
+                if prop in declarations and any(not zero(value) for value in declarations[prop].split()):
+                    out.append(("css-layout", f"`{rel}` 的 `{selector}` 含非零左右边距（包括百分比左右边距）：{prop}"))
+            for prop in ("margin", "padding"):
+                if prop in declarations:
+                    parts = declarations[prop].split()
+                    horizontal = parts if len(parts) == 1 else [parts[1], parts[3] if len(parts) == 4 else parts[1]]
+                    if any(not zero(v) for v in horizontal):
+                        out.append(("css-layout", f"`{rel}` 的 `{selector}` 含非零左右边距：{prop}"))
+        for selector, declarations in required.items():
+            actual = rules.get(selector, {})
+            if path not in main_paths:
+                # Auxiliary sheets may omit the main contract, but explicit
+                # overrides of its protected declarations must retain values.
+                declarations = {p: v for p, v in declarations.items() if p in actual}
+            missing = [prop for prop, value in declarations.items()
+                       if actual.get(prop) != value and not (value == "0" and zero(actual.get(prop, "")))]
+            if missing:
+                out.append(("css-layout", f"`{rel}` 的 `{selector}` 缺少或写错声明：{', '.join(missing)}"))
     return out
 
 

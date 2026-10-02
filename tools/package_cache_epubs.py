@@ -10,6 +10,10 @@ import sys
 import zipfile
 from pathlib import Path
 
+from epub_ids import book_id
+from epub_structure import artifact_contract_issues, container_contract_issues
+from path_safety import is_extract_artifact
+
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_CACHE = REPO_ROOT / ".cache" / "epub-work"
@@ -41,6 +45,16 @@ def validate_book(book: Path) -> None:
         raise PackageError("mimetype must contain exactly application/epub+zip")
     if not container.is_file():
         raise PackageError("missing META-INF/container.xml")
+    entries = {}
+    for path in book.rglob("*"):
+        if not path.is_file() or is_extract_artifact(path, root=book):
+            continue
+        if not path.resolve().is_relative_to(book.resolve()):
+            raise PackageError(f"resource escapes book directory: {path}")
+        entries[path.relative_to(book).as_posix()] = path.read_bytes()
+    issues = container_contract_issues(entries) + artifact_contract_issues(entries, book_id(book.name))
+    if issues:
+        raise PackageError("; ".join(f"{name}: {message}" for name, message in issues[:10]))
 
 
 def package_book(book: Path, destination: Path) -> int:
@@ -52,7 +66,8 @@ def package_book(book: Path, destination: Path) -> int:
         with zipfile.ZipFile(temporary, "w") as archive:
             archive.write(book / "mimetype", "mimetype", compress_type=zipfile.ZIP_STORED)
             files = sorted(
-                (path for path in book.rglob("*") if path.is_file() and path.name != "mimetype"),
+                (path for path in book.rglob("*") if path.is_file()
+                 and path != book / "mimetype" and not is_extract_artifact(path, root=book)),
                 key=lambda path: path.relative_to(book).as_posix().casefold(),
             )
             for path in files:

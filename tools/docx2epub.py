@@ -37,14 +37,22 @@ from __future__ import annotations
 import argparse
 import fnmatch
 import hashlib
+import os
 import re
+import shutil
 import sys
+import tempfile
 import uuid
 import zipfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from epub_ids import book_id
+from check_alignment import check_file
+from edit_safety import add_edit_mode, require_edit_target
+from epub_structure import artifact_contract_issues, container_contract_issues
+from package_cache_epubs import package_book, validate_book
+from path_safety import archive_member_destination
 
 _W = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
 _A = "{http://schemas.openxmlformats.org/drawingml/2006/main}"
@@ -914,9 +922,19 @@ def build_book_files(book: dict) -> dict[str, str | bytes]:
     return files
 
 
-def write_unpacked(book: dict, dest_dir: Path) -> None:
+def validate_generated_book(book: dict) -> None:
+    entries = {name: content if isinstance(content, bytes) else content.encode("utf-8")
+               for name, content in book["files"].items()}
+    issues = container_contract_issues(entries) + artifact_contract_issues(entries, book["header"])
+    for name, content in book["text_files"].items():
+        issues.extend((name, issue) for issue in check_file(content.splitlines(), name.endswith("-Note.xhtml")))
+    if issues:
+        raise ValueError("成品契约不满足：" + "; ".join(f"{name}: {issue}" for name, issue in issues[:10]))
+
+
+def _write_files(book: dict, dest_dir: Path) -> None:
     for relpath, content in book["files"].items():
-        target = dest_dir / relpath
+        target = archive_member_destination(dest_dir, relpath)
         target.parent.mkdir(parents=True, exist_ok=True)
         if isinstance(content, bytes):
             target.write_bytes(content)
@@ -925,21 +943,39 @@ def write_unpacked(book: dict, dest_dir: Path) -> None:
             target.write_bytes(content.encode("utf-8"))
 
 
+def write_unpacked(book: dict, dest_dir: Path) -> None:
+    """Validate a temporary complete book before replacing an unpacked output."""
+    validate_generated_book(book)
+    dest_dir.parent.mkdir(parents=True, exist_ok=True)
+    stage = Path(tempfile.mkdtemp(prefix=".docx2epub-", dir=dest_dir.parent))
+    backup = stage.with_name(stage.name + ".old")
+    backed_up = False
+    try:
+        _write_files(book, stage)
+        validate_book(stage)
+        if dest_dir.exists():
+            os.replace(dest_dir, backup)
+            backed_up = True
+        try:
+            os.replace(stage, dest_dir)
+        except Exception:
+            if backed_up:
+                os.replace(backup, dest_dir)
+            raise
+        if backed_up:
+            shutil.rmtree(backup)
+    finally:
+        if stage.exists():
+            shutil.rmtree(stage)
+
+
 def write_epub(book: dict, dest_path: Path) -> int:
-    """按 EPUB 规范打包：mimetype 首项不压缩，其余按路径排序压缩。"""
-    dest_path.parent.mkdir(parents=True, exist_ok=True)
-    with zipfile.ZipFile(dest_path, "w") as zout:
-        zout.writestr("mimetype", book["files"]["mimetype"], zipfile.ZIP_STORED)
-        for relpath in sorted(
-            (p for p in book["files"] if p != "mimetype"),
-            key=lambda p: p.casefold(),
-        ):
-            content = book["files"][relpath]
-            if isinstance(content, bytes):
-                zout.writestr(relpath, content, zipfile.ZIP_DEFLATED)
-            else:
-                zout.writestr(relpath, content.encode("utf-8"), zipfile.ZIP_DEFLATED)
-    return dest_path.stat().st_size
+    """Use the shared container/resource gate and atomic EPUB packager."""
+    validate_generated_book(book)
+    with tempfile.TemporaryDirectory(prefix="docx2epub-") as tmp:
+        stage = Path(tmp) / book["stem"]
+        _write_files(book, stage)
+        return package_book(stage, dest_path)
 
 
 # ---------------------------------------------------------------------------
@@ -947,6 +983,14 @@ def write_epub(book: dict, dest_path: Path) -> int:
 # ---------------------------------------------------------------------------
 
 def process_one(docx_path: Path, args: argparse.Namespace) -> int:
+    try:
+        return _process_one(docx_path, args)
+    except Exception as exc:
+        print(f"[失败] {docx_path}：{exc}", file=sys.stderr)
+        return 1
+
+
+def _process_one(docx_path: Path, args: argparse.Namespace) -> int:
     label = str(docx_path)
     stem = docx_path.stem
     out_dir = (args.out if args.out else docx_path.parent).resolve()
@@ -964,6 +1008,9 @@ def process_one(docx_path: Path, args: argparse.Namespace) -> int:
             return 1
         header = f"{args.series}_{args.volume}"
         title = stem
+    header = header.upper()
+    if book_id(f"[{header}]") != header:
+        raise ValueError(f"无效作品号：{header}")
 
     title = args.title or title
     creator = args.author or ""
@@ -1011,13 +1058,15 @@ def process_one(docx_path: Path, args: argparse.Namespace) -> int:
     illu_before: list[str] = []
     for f in args.illustrations_before or []:
         p = Path(f)
-        src["images"][p.name] = p.read_bytes()
-        illu_before.append(p.name)
+        name = p.name if p.name.upper().startswith(header.upper() + "-") else f"{header}-{p.name}"
+        src["images"][name] = p.read_bytes()
+        illu_before.append(name)
     illu_after: list[str] = []
     for f in args.illustrations_after or []:
         p = Path(f)
-        src["images"][p.name] = p.read_bytes()
-        illu_after.append(p.name)
+        name = p.name if p.name.upper().startswith(header.upper() + "-") else f"{header}-{p.name}"
+        src["images"][name] = p.read_bytes()
+        illu_after.append(name)
     src["illustrations"] = illu_before + src["illustrations"] + illu_after
     image_bytes.update(src["images"])
     if not cover_name:
@@ -1116,10 +1165,12 @@ def process_one(docx_path: Path, args: argparse.Namespace) -> int:
         "opf": render_opf(meta, text_file_order, sorted(image_bytes), cover_name, uid),
     }
     book["files"] = build_book_files(book)
+    validate_generated_book(book)
 
     # 输出
     if not args.no_pack:
         epub_path = out_dir / f"{out_stem}.epub"
+        require_edit_target(epub_path, staging=args.staging)
         try:
             size = write_epub(book, epub_path)
         except OSError as exc:
@@ -1129,6 +1180,7 @@ def process_one(docx_path: Path, args: argparse.Namespace) -> int:
             print(f"[{label}] -> {epub_path}（{size:,} bytes）")
     if args.unpacked:
         dest = args.unpacked.resolve() / out_stem
+        require_edit_target(dest, staging=args.staging)
         try:
             write_unpacked(book, dest)
         except OSError as exc:
@@ -1167,12 +1219,12 @@ def expand_inputs(paths: list[str], pattern: str) -> list[Path]:
     return out
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(
         description="把交稿 .docx 转成 X 版特色 EPUB，|基文[注音] 还原为 <ruby>")
     ap.add_argument("paths", nargs="+", help="一个或多个 .docx 文件或目录")
     ap.add_argument("--out", type=Path, default=None,
-                    help="epub 输出目录（默认与输入同目录）")
+                    help="epub 显式输出目录（写入打包产物时必填）")
     ap.add_argument("--pattern", default="*",
                     help="目录输入时按文件名 glob 筛选（大小写不敏感）")
     ap.add_argument("--series", default=None, help="系列号（如 S4；文件名不含 [S..] 时需要）")
@@ -1193,12 +1245,22 @@ def main() -> int:
     ap.add_argument("--unpacked", type=Path, default=None,
                     help="额外输出解包书籍目录（每本一个子目录）")
     ap.add_argument("--no-pack", action="store_true", help="只输出解包目录，不打包 .epub")
-    ap.add_argument("--dry-run", action="store_true", help="只统计与预览，不写文件")
+    add_edit_mode(ap)
     ap.add_argument("--quiet", action="store_true", help="只打印错误与汇总")
-    args = ap.parse_args()
+    args = ap.parse_args(argv)
+    args.dry_run = not args.apply
 
     if args.no_pack and args.unpacked is None:
         ap.error("--no-pack 需要配合 --unpacked 使用")
+    if args.apply:
+        if not args.no_pack and args.out is None:
+            ap.error("打包写入必须显式指定 --out 输出目录")
+        try:
+            for destination in (args.out, args.unpacked):
+                if destination is not None:
+                    require_edit_target(destination, staging=args.staging)
+        except ValueError as exc:
+            ap.error(str(exc))
 
     inputs = expand_inputs(args.paths, args.pattern)
     if not inputs:

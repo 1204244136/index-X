@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from epub_ids import is_list_packaging_path
+from epub_ids import is_list_packaging_path, LIST_PACKAGING_SUFFIXES, header_of, header_suffix
 
 
 TAG_RE = re.compile(r"<[^>]*>")
@@ -43,7 +43,7 @@ BODY_CLOSE_RE = re.compile(r"^\s*</body\b", re.I)
 def read_lines(path: Path) -> tuple[list[str], bool, bool]:
     raw = path.read_bytes()
     bom = raw.startswith(b"\xef\xbb\xbf")
-    text = raw.decode("utf-8-sig", errors="ignore")
+    text = raw.decode("utf-8-sig")
     return text.splitlines(), bom, "\r\n" in text
 
 
@@ -102,9 +102,14 @@ def _fold_multiline_headings(lines: list[str]) -> list[str]:
     return merged
 
 
-def rebuild(path: Path, jp_h1: str | None = None) -> tuple[list[str] | None, str]:
+def rebuild(path: Path, jp_h1: str | None = None, side: str | None = None) -> tuple[list[str] | None, str]:
     """Return normalized lines without writing, or ``(None, reason)``."""
     lines, _, _ = read_lines(path)
+    if side not in (None, "cn", "jp"):
+        raise ValueError(f"未知语言侧：{side}")
+    chinese = side == "cn" or (side is None and "chinese-text" in {part.casefold() for part in path.parts})
+    list_packaging = (is_list_packaging_path(path) if side is None else
+                      chinese and header_suffix(header_of(path.name)) in LIST_PACKAGING_SUFFIXES)
     original_count = len(lines)
     head_end = next((i for i, line in enumerate(lines, 1) if BODY_RE.search(line)), 0)
     if head_end != 3:
@@ -201,7 +206,7 @@ def rebuild(path: Path, jp_h1: str | None = None) -> tuple[list[str] | None, str
             if TAG_RE.sub("", line).strip():
                 return None, f"第{i + 1}行图片行有文字"
             continue
-        if LIST_WRAP_RE.match(line) and h2_slot is None and is_list_packaging_path(path):
+        if LIST_WRAP_RE.match(line) and h2_slot is None and list_packaging:
             h2_slot = line
             continue
         if BR_LINE_RE.match(line):
@@ -218,7 +223,7 @@ def rebuild(path: Path, jp_h1: str | None = None) -> tuple[list[str] | None, str
 
     new = lines[:2] + [line3_new + "".join(images), h1_slot or "", h2_slot or ""]
     body = lines[first_body:]
-    if is_list_packaging_path(path):
+    if list_packaging:
         body = [P_LI_WRAP_RE.sub(r"\1", line) for line in body]
     # Preserve classed body wrappers. If their closing tag occupied a source-only
     # line, fold it into </body> so the fixed line model stays valid and stable.
@@ -232,7 +237,7 @@ def rebuild(path: Path, jp_h1: str | None = None) -> tuple[list[str] | None, str
                 body[i + 1] = body[i].strip() + body[i + 1].lstrip()
                 del body[i]
                 break
-    elif "chinese-text" in {part.casefold() for part in path.parts}:
+    elif chinese:
         # Chinese layout-only bare wrappers may be removed only as balanced pairs;
         # a lone closing tag can belong to a semantic/classed wrapper in L3.
         bare_opens = sum(bool(BARE_DIV_OPEN_RE.match(line)) for line in body)

@@ -32,11 +32,12 @@ import csv
 import fnmatch
 import os
 import re
+import subprocess
 import sys
 import time
+import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import NamedTuple
 
 # 解决 Windows 控制台与管道 UTF-8 编码问题
 for stream in (sys.stdout, sys.stderr):
@@ -46,38 +47,39 @@ for stream in (sys.stdout, sys.stderr):
         except OSError:
             pass
 
-# 屏蔽 torchvision 冲突（若在 BetweenLines 环境中运行）
-if "torchvision" not in sys.modules:
-    try:
-        import torchvision  # noqa: F401
-    except Exception:
-        sys.modules["torchvision"] = None
-
 ROOT_DIR = Path(__file__).resolve().parent.parent
 TOOLS_DIR = Path(__file__).resolve().parent
 CACHE_DEFAULT = ROOT_DIR / ".cache" / "epub-work"
-BETWEENLINES_DIR = Path(r"C:\Users\12042\Documents\GitHub\BetweenLines")
-BETWEENLINES_VENV_PYTHON = BETWEENLINES_DIR / ".venv" / "Scripts" / "python.exe"
+VECTOR_REEXEC_MARKER = "INDEX_X_SEMANTIC_VECTOR_REEXEC"
 
 try:
     from alignment_rules import (
         MANUAL_ALIGNMENT_HEADERS,
         NON_PAIR_WORK_IDS,
-        PAIR_RULES,
         TEXTUAL_IMAGE_HEADERS,
         pairing_header_of,
+        template_exempt,
     )
-    from epub_ids import book_id, japanese_book_id
+    from epub_ids import book_id, is_packaging_header, japanese_book_id, work_id as header_work_id
 except ImportError:
     sys.path.insert(0, str(TOOLS_DIR))
     from alignment_rules import (
         MANUAL_ALIGNMENT_HEADERS,
         NON_PAIR_WORK_IDS,
-        PAIR_RULES,
         TEXTUAL_IMAGE_HEADERS,
         pairing_header_of,
+        template_exempt,
     )
-    from epub_ids import book_id, japanese_book_id
+    from epub_ids import book_id, is_packaging_header, japanese_book_id, work_id as header_work_id
+
+from check_alignment import (
+    afterword_offset, allowed_pair_differences, check_file, order_swap_offset,
+    pair_problems,
+)
+
+
+class SemanticStructureError(ValueError):
+    """The declared strict scope cannot form trustworthy paired inputs."""
 
 TAG_RE = re.compile(r"<[^>]+>")
 RT_RE = re.compile(r"<rt\b[^>]*>.*?</rt\s*>", re.S | re.I)
@@ -201,6 +203,7 @@ class UnitSemanticResult:
     avg_similarity: float = 0.0
     health_score: float = 1.0
     execution_time_sec: float = 0.0
+    structural_note: str = ""
 
 
 def index_by_header(paths: list[Path]) -> tuple[dict[str, Path], list[Path]]:
@@ -209,6 +212,8 @@ def index_by_header(paths: list[Path]) -> tuple[dict[str, Path], list[Path]]:
     for p in paths:
         h = pairing_header_of(p.name)
         if h:
+            if h in by_header:
+                raise ValueError(f"同侧重复表头 {h}: {by_header[h]} / {p}")
             by_header[h] = p
         else:
             unmatched.append(p)
@@ -429,21 +434,52 @@ def run_vector_analysis(
 # ===========================================================================
 
 def collect_pairing_units(
-    cache: Path, works: list[str] | None = None, include_exempt: bool = False
+    cache: Path, works: list[str] | None = None, include_exempt: bool = False,
+    strict: bool = False, target_header: str | None = None,
 ) -> list[tuple[str, str, Path, Path]]:
     cn_root = cache / "chinese-text"
     jp_root = cache / "japanese-text"
     if not cn_root.is_dir() or not jp_root.is_dir():
         raise FileNotFoundError(f"缓存目录不存在或未解包: {cache}")
 
-    cn_books = {book_id(d.name): d for d in cn_root.iterdir() if d.is_dir()}
-    jp_books = {book_id(d.name): d for d in jp_root.iterdir() if d.is_dir()}
+    def index_books(root: Path) -> dict[str, Path]:
+        books: dict[str, Path] = {}
+        for directory in sorted(root.iterdir()):
+            if not directory.is_dir():
+                continue
+            work = book_id(directory.name)
+            if work is None:
+                continue
+            if work in books:
+                raise ValueError(f"同侧重复作品号 {work}: {books[work]} / {directory}")
+            books[work] = directory
+        return books
+
+    cn_books = index_books(cn_root)
+    jp_books = index_books(jp_root)
+    works = [pattern.upper() for pattern in works] if works else None
+    target_work = header_work_id(target_header.upper()) if target_header else None
+    if target_header and target_work is None:
+        return []
+    def selected_work(work: str) -> bool:
+        return (not works or any(fnmatch.fnmatch(work, pattern) for pattern in works)) and (
+            target_work is None or work == target_work
+        )
+    if strict:
+        for work in sorted(set(cn_books) | set(jp_books)):
+            if not selected_work(work):
+                continue
+            if work in NON_PAIR_WORK_IDS:
+                print(f"[范围排除] {work}: 已确认非配对作品")
+                continue
+            if work not in cn_books or work not in jp_books:
+                raise SemanticStructureError(f"所选作品 {work} 缺少{'中文' if work not in cn_books else '日文'}对应作品")
 
     units = []
     for cn_id, cn_dir in sorted(cn_books.items()):
         if cn_id is None or cn_id in NON_PAIR_WORK_IDS:
             continue
-        if works and not any(fnmatch.fnmatch(cn_id, pat) for pat in works):
+        if not selected_work(cn_id):
             continue
         jp_dir = jp_books.get(japanese_book_id(cn_id))
         if jp_dir is None:
@@ -452,13 +488,64 @@ def collect_pairing_units(
         jp_all = [p for p in jp_dir.rglob("*.xhtml") if p.name.lower() != "nav.xhtml"]
         cn_by, _ = index_by_header(cn_all)
         jp_by, _ = index_by_header(jp_all)
+        if strict:
+            missing = [h for h in sorted(set(cn_by) ^ set(jp_by))
+                       if not is_packaging_header(h)
+                       and (not target_header or h.upper() == target_header.upper())
+                       and (include_exempt or h not in TEXTUAL_IMAGE_HEADERS)
+                       and h not in MANUAL_ALIGNMENT_HEADERS]
+            if missing:
+                raise SemanticStructureError(f"所选作品 {cn_id} 正文表头缺少对应侧：{', '.join(missing)}")
         for h in sorted(set(cn_by) & set(jp_by)):
+            if target_header and h.upper() != target_header.upper():
+                continue
             if h in MANUAL_ALIGNMENT_HEADERS:
+                if strict:
+                    print(f"[范围排除] {h}: 已确认人工对齐特例")
                 continue
             if not include_exempt and h in TEXTUAL_IMAGE_HEADERS:
+                if strict:
+                    print(f"[范围排除] {h}: 已确认文本化图片，同行语义不可比")
                 continue
             units.append((cn_id, h, jp_by[h], cn_by[h]))
     return units
+
+
+def strict_pair_lines(
+    work: str, header: str, japanese: list[str], chinese: list[str],
+) -> tuple[list[str], list[str], list[str], str]:
+    """Validate the shared structure contract, then apply confirmed pair rules."""
+    problems = []
+    for side, lines in (("JP", japanese), ("CN", chinese)):
+        try:
+            ET.fromstring("\n".join(lines))
+        except ET.ParseError as exc:
+            problems.append(f"{side}: XML 解析失败：{exc}")
+        if not template_exempt(work):
+            problems.extend(f"{side}: {problem}" for problem in check_file(
+                lines, side == "CN" and is_packaging_header(header),
+            ))
+    problems.extend(pair_problems(header, japanese, chinese))
+    if problems:
+        return japanese, chinese, problems, ""
+    rules = allowed_pair_differences(header, japanese, chinese) or ()
+    note = ""
+    if "afterword-moved" in rules:
+        start = afterword_offset(japanese, chinese)
+        assert start is not None
+        japanese = japanese[:start - 1] + japanese[-1:]
+        note = "已确认后记迁出；L2 同行范围只含两侧共同正文，迁出后记不参与"
+    if "section-order" in rules:
+        start = order_swap_offset(japanese, chinese)
+        assert start is not None
+        chinese = list(chinese)
+        chinese[start - 1], chinese[start] = chinese[start], chinese[start - 1]
+        note = f"已确认图片/小节互换；L2 比较前仅归位 CN L{start}/L{start + 1}"
+    # Textual-image exceptions can be included for diagnostics, but their differing
+    # physical lines cannot establish a complete strict semantic gate.
+    if len(japanese) != len(chinese):
+        problems.append(f"L2 同行范围行数不等：JP {len(japanese)} / CN {len(chinese)}")
+    return japanese, chinese, problems, note
 
 
 def run_pipeline(
@@ -472,32 +559,75 @@ def run_pipeline(
     include_exempt: bool = False,
     strict: bool = False,
 ) -> int:
+    """Run a diagnostic or a complete L2 gate; operational failures return 2."""
+    if strict and l1_only:
+        print("错误: --strict 必须执行 L2，不能与 --l1-only 组合。", file=sys.stderr)
+        return 2
+    if strict and top_n is not None:
+        print("错误: --strict 必须检完所选范围，不能使用 --top 截断。", file=sys.stderr)
+        return 2
+    if top_n is not None and top_n < 1:
+        print("错误: --top 必须是正整数。", file=sys.stderr)
+        return 2
+    try:
+        return _run_pipeline(
+            cache, works, target_header, run_vector, l1_only, top_n,
+            output_dir, include_exempt, strict,
+        )
+    except SemanticStructureError as exc:
+        print(f"[结构阻断] {exc}", file=sys.stderr)
+        return 1
+    except Exception as exc:
+        print(f"错误: 语义对齐检查未完成：{exc}", file=sys.stderr)
+        return 2
+
+
+def _run_pipeline(
+    cache: Path,
+    works: list[str] | None,
+    target_header: str | None,
+    run_vector: bool,
+    l1_only: bool,
+    top_n: int | None,
+    output_dir: Path | None,
+    include_exempt: bool,
+    strict: bool,
+) -> int:
     start_time = time.time()
     if output_dir is None:
         output_dir = cache
-    output_dir.mkdir(parents=True, exist_ok=True)
 
-    units = collect_pairing_units(cache, works, include_exempt=include_exempt)
+    units = collect_pairing_units(cache, works, include_exempt=include_exempt, strict=strict,
+                                  target_header=target_header)
     if target_header:
         units = [u for u in units if u[1].upper() == target_header.upper()]
 
     if not units:
         print(f"未找到匹配的配对单元（works={works}, header={target_header}）")
-        return 0
+        return 2
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     print("=" * 95)
-    print(f"中日语义逐行对齐检验引擎 | 配对单元: {len(units)} 个 | 模式: {'L1极速初筛' if l1_only else ('L2深度矢量化' if run_vector else 'L1+L2自适应')}")
+    mode = "L1极速初筛" if l1_only else ("L2完整门禁" if strict else ("L2深度矢量化" if run_vector else "L1+L2自适应"))
+    print(f"中日语义逐行对齐检验引擎 | 配对单元: {len(units)} 个 | 模式: {mode}")
     print("=" * 95)
 
     results: list[UnitSemanticResult] = []
+    parsed_units: dict[str, tuple[list[LineData], list[LineData]]] = {}
+    structural_failures: list[str] = []
 
     # 阶段 1: Level 1 启发式初筛
     print("\n>>> [阶段 1/2] 执行 Level 1 结构与启发式初筛...")
     for idx, (work_id, h, jp_p, cn_p) in enumerate(units, 1):
-        jp_raw = jp_p.read_text(encoding="utf-8", errors="ignore").splitlines()
-        cn_raw = cn_p.read_text(encoding="utf-8", errors="ignore").splitlines()
+        jp_raw = jp_p.read_text(encoding="utf-8-sig").splitlines()
+        cn_raw = cn_p.read_text(encoding="utf-8-sig").splitlines()
+        structural_note = ""
+        if strict:
+            jp_raw, cn_raw, problems, structural_note = strict_pair_lines(work_id, h, jp_raw, cn_raw)
+            structural_failures.extend(f"{h}: {problem}" for problem in problems)
         jl = [parse_line(x) for x in jp_raw]
         cl = [parse_line(x) for x in cn_raw]
+        parsed_units[h] = jl, cl
 
         tot = min(len(jl), len(cl))
         l1_drift = 0
@@ -512,8 +642,11 @@ def run_pipeline(
             cn_path=cn_p,
             total_lines=tot,
             l1_drift_count=l1_drift,
+            structural_note=structural_note,
         )
         results.append(res)
+        if structural_note:
+            print(f"  - {h}: {structural_note}")
         if idx % 100 == 0 or idx == len(units):
             print(f"  - 初筛进度: {idx}/{len(units)} ({idx/len(units)*100:.1f}%)")
 
@@ -523,34 +656,35 @@ def run_pipeline(
 
     print(f"\n初筛完成：共 {len(results)} 个单元，{len(results) - len(drift_units)} 个单元为 0 漂移绿区。")
     print(f"发现 {len(drift_units)} 个单元存在潜在漂移信号。")
+    if structural_failures:
+        for problem in structural_failures:
+            print(f"[结构阻断] {problem}", file=sys.stderr)
+        return 1
 
-    if l1_only or not (run_vector or top_n is not None):
+    if l1_only or not (strict or run_vector or top_n is not None):
         _write_summary_tsv(results, output_dir / "semantic-alignment-summary.tsv")
         print(f"\n报告已写入: {output_dir / 'semantic-alignment-summary.tsv'}")
-        return
+        return 0
 
     # 阶段 2: Level 2 矢量化深度检验
-    vector_targets = drift_units
+    vector_targets = results if strict else drift_units
     if top_n is not None:
         vector_targets = drift_units[:top_n]
-    elif not run_vector:
+    elif not strict and not run_vector:
         # 默认只对 L1 DRIFT >= 5 的疑似严重单元精检
         vector_targets = [r for r in drift_units if r.l1_drift_count >= 5]
 
-    print(f"\n>>> [阶段 2/2] 载入 SentenceTransformer 对 {len(vector_targets)} 个高疑似单元执行语义矢量精检...")
+    print(f"\n>>> [阶段 2/2] 载入 SentenceTransformer 对 {len(vector_targets)} 个{'所选' if strict else '候选'}单元执行语义矢量精检...")
     model = get_embedding_model()
     if model is None:
         print("错误: 无法载入 SentenceTransformer 矢量模型。请确认 PyTorch/SentenceTransformers 环境可用。")
-        return
+        return 2
 
     all_windows: list[dict] = []
 
     for idx, r in enumerate(vector_targets, 1):
         t0 = time.time()
-        jp_raw = r.jp_path.read_text(encoding="utf-8", errors="ignore").splitlines()
-        cn_raw = r.cn_path.read_text(encoding="utf-8", errors="ignore").splitlines()
-        jl = [parse_line(x) for x in jp_raw]
-        cl = [parse_line(x) for x in cn_raw]
+        jl, cl = parsed_units[r.header]
 
         avg_sim, matches, real_drifts, fps, windows, details = run_vector_analysis(jl, cl, model)
         r.l2_checked = True
@@ -588,10 +722,15 @@ def run_pipeline(
     print("=" * 95)
 
     if strict:
+        if any(not result.l2_checked for result in results):
+            print("\n[门禁阻断] 所选范围尚有单元未完成 L2 检查。", file=sys.stderr)
+            return 2
         if all_windows:
             print(f"\n[门禁阻断] 检测到 {len(all_windows)} 处真实结构错位窗口未消除，语义对齐门禁失败！", file=sys.stderr)
             return 1
-        print("\n[门禁通过] 所有被测单元均为 0 错位窗口，语义逐行对齐检验通过！")
+        print(f"\n[门禁通过] 所选范围 {len(results)} 个单元全部完成 L2，均为 0 错位窗口。")
+    else:
+        print(f"\n[诊断范围] L2 已检查 {len(vector_targets)}/{len(results)} 个所选单元；诊断不代表完整语义门禁。")
     return 0
 
 
@@ -600,7 +739,7 @@ def _write_summary_tsv(results: list[UnitSemanticResult], path: Path):
         w = csv.writer(f, delimiter="\t")
         w.writerow([
             "书号", "表头", "总行数", "L1漂移数", "L2精检", "语义均分",
-            "健康评分", "真实错位行数", "假阳性消除数", "错位窗口数", "耗时(秒)"
+            "健康评分", "真实错位行数", "假阳性消除数", "错位窗口数", "耗时(秒)", "结构范围说明"
         ])
         for r in results:
             w.writerow([
@@ -615,6 +754,7 @@ def _write_summary_tsv(results: list[UnitSemanticResult], path: Path):
                 r.false_positives if r.l2_checked else "",
                 len(r.drift_windows) if r.l2_checked else "",
                 f"{r.execution_time_sec:.2f}" if r.l2_checked else "",
+                r.structural_note,
             ])
 
 
@@ -629,8 +769,33 @@ def _write_windows_tsv(windows: list[dict], path: Path):
             ])
 
 
-def ensure_vector_environment(args):
-    """如果需要跑向量分析但当前环境无 torch/sentence_transformers，自动切换到 BetweenLines venv。"""
+def vector_python_candidates(args: argparse.Namespace) -> list[Path]:
+    """Explicit configuration takes precedence over a neighbouring checkout."""
+    explicit_python = args.vector_python or os.environ.get("BETWEENLINES_PYTHON")
+    if explicit_python:
+        return [Path(explicit_python).expanduser().resolve()]
+    explicit_directory = args.betweenlines_dir or os.environ.get("BETWEENLINES_DIR")
+    directory = (
+        Path(explicit_directory).expanduser().resolve()
+        if explicit_directory else ROOT_DIR.parent / "BetweenLines"
+    )
+    return [
+        directory / ".venv" / "Scripts" / "python.exe",
+        directory / ".venv" / "bin" / "python",
+    ]
+
+
+def vector_dependencies_available() -> bool:
+    try:
+        import torch  # noqa: F401
+        import sentence_transformers  # noqa: F401
+    except Exception:
+        return False
+    return True
+
+
+def ensure_vector_environment(args: argparse.Namespace, argv: list[str]) -> int | None:
+    """Return a delegated exit code or None when this process can continue."""
     needs_vector = (
         args.vector
         or args.auto_audit
@@ -638,23 +803,43 @@ def ensure_vector_environment(args):
         or (not args.l1_only and args.top is not None)
     )
     if not needs_vector:
-        return
-
+        return None
+    explicit = args.vector_python or os.environ.get("BETWEENLINES_PYTHON")
+    candidates = vector_python_candidates(args)
+    if explicit and not candidates[0].is_file():
+        print(f"错误: 显式矢量化 Python 不存在：{candidates[0]}", file=sys.stderr)
+        return 2
+    current_ready = vector_dependencies_available()
+    explicit_selected = bool(explicit or args.betweenlines_dir or os.environ.get("BETWEENLINES_DIR"))
+    if current_ready and (not explicit_selected or os.environ.get(VECTOR_REEXEC_MARKER)):
+        return None
+    if os.environ.get(VECTOR_REEXEC_MARKER):
+        print("错误: 指定矢量化环境仍缺少 PyTorch/SentenceTransformers，检查未执行。", file=sys.stderr)
+        return 2
+    python = next((path for path in candidates if path.is_file()), None)
+    if python is None:
+        print(
+            "错误: 当前 Python 缺少矢量化依赖；使用 --vector-python/--betweenlines-dir "
+            "或 BETWEENLINES_PYTHON/BETWEENLINES_DIR 指定可用环境。",
+            file=sys.stderr,
+        )
+        return 2
+    print(f"[环境适配] 切换至矢量化 Python：{python}")
+    environment = os.environ.copy()
+    environment[VECTOR_REEXEC_MARKER] = "1"
     try:
-        import torch  # noqa: F401
-        import sentence_transformers  # noqa: F401
-    except ImportError:
-        if BETWEENLINES_VENV_PYTHON.is_file():
-            print(f"[环境适配] 检测到当前 Python 缺少矢量化依赖，自动切换至 BetweenLines 矢量化环境:\n  {BETWEENLINES_VENV_PYTHON}")
-            cmd = [str(BETWEENLINES_VENV_PYTHON), str(Path(__file__).resolve())] + sys.argv[1:]
-            import subprocess
-            res = subprocess.run(cmd)
-            sys.exit(res.returncode)
-        else:
-            print("警告: 当前环境无 sentence_transformers 且未找到 BetweenLines 虚拟环境，回退为 L1 纯启发式模式。", file=sys.stderr)
+        return subprocess.run(
+            [str(python), str(Path(__file__).resolve()), *argv],
+            env=environment,
+            check=False,
+        ).returncode
+    except OSError as exc:
+        print(f"错误: 无法启动矢量化环境：{exc}", file=sys.stderr)
+        return 2
 
 
-def main():
+def main(argv: list[str] | None = None) -> int:
+    arguments = list(sys.argv[1:] if argv is None else argv)
     parser = argparse.ArgumentParser(description="中日 XHTML 语义逐行对齐检验与漂移诊断")
     parser.add_argument("target", nargs="?", help="指定单个表头（如 S5_01_02-06）")
     parser.add_argument("--work", action="append", help="作品筛选（如 S5_01_02、S1_*，可重复传入）")
@@ -666,27 +851,37 @@ def main():
     parser.add_argument("--include-exempt", action="store_true", help="包含文本化图片等已确认豁免的页面（默认跳过）")
     parser.add_argument("--cache", type=Path, default=CACHE_DEFAULT, help="缓存目录")
     parser.add_argument("--out", type=Path, default=None, help="报告输出目录")
-    args = parser.parse_args()
+    parser.add_argument("--vector-python", type=Path, help="可用的矢量化 Python（或 BETWEENLINES_PYTHON）")
+    parser.add_argument("--betweenlines-dir", type=Path, help="BetweenLines 仓库目录（或 BETWEENLINES_DIR；默认探测相邻仓库）")
+    args = parser.parse_args(arguments)
+    if args.strict and args.l1_only:
+        parser.error("--strict 必须执行 L2，不能与 --l1-only 组合")
+    if args.strict and args.top is not None:
+        parser.error("--strict 必须检完所选范围，不能使用 --top 截断")
+    if args.top is not None and args.top < 1:
+        parser.error("--top 必须是正整数")
+    if args.l1_only and (args.vector or args.auto_audit or args.top is not None):
+        parser.error("--l1-only 不能与 L2 参数 --vector/--auto-audit/--top 组合")
+    try:
+        code = ensure_vector_environment(args, arguments)
+    except Exception as exc:
+        print(f"错误: 无法准备矢量化环境：{exc}", file=sys.stderr)
+        return 2
+    if code is not None:
+        return code
 
-    if args.strict and not (args.vector or args.l1_only or args.auto_audit or args.top is not None or args.target or args.work):
-        args.auto_audit = True
-
-    ensure_vector_environment(args)
-
-    code = run_pipeline(
+    return run_pipeline(
         cache=args.cache,
         works=args.work,
         target_header=args.target,
         run_vector=args.vector,
         l1_only=args.l1_only,
-        top_n=args.top or (20 if args.auto_audit else None),
+        top_n=args.top if args.top is not None else (20 if args.auto_audit and not args.strict else None),
         output_dir=args.out,
         include_exempt=args.include_exempt,
         strict=args.strict,
     )
-    if args.strict and code != 0:
-        sys.exit(code)
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

@@ -11,7 +11,7 @@ sys.path.insert(0, str(TOOLS))
 
 from fix_empty_placeholders import apply_candidate  # noqa: E402
 from manifest import compute_hash, scan_cache, scan_epub  # noqa: E402
-from publish import alignment_preflight, publish_book  # noqa: E402
+from publish import publish_book  # noqa: E402
 from publish_epub import publish_book_reverse  # noqa: E402
 from sync_core import (  # noqa: E402
     UNIX_TO_DOTNET_TICKS_OFFSET,
@@ -74,12 +74,6 @@ class SyncCoreTests(unittest.TestCase):
             self.assertFalse(ok)
             self.assertIn("state failed", message)
             self.assertEqual(target.read_bytes(), b"old")
-
-    def test_alignment_preflight_uses_strict_mode(self):
-        with patch("publish.subprocess.run") as run:
-            run.return_value.returncode = 1
-            self.assertFalse(alignment_preflight(Path("cache")))
-            self.assertIn("--strict", run.call_args.args[0])
 
     def test_detect_and_apply_delta(self):
         current = {"chinese-text/book/a.txt": "new", "chinese-text/book/b.txt": "b"}

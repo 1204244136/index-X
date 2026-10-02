@@ -1,27 +1,18 @@
 #!/usr/bin/env python3
 """把中文侧「独占一行的裸 <img/>」规范为 <p> 包裹的图片行（只读预览，--apply 写盘）。
 
-只处理**图片专用**的 div 容器，其它 div 一律不碰：
-
-  1. `<img …/>` 独占行 → `<p><img …/></p>`；
-  2. 连续的「图片行 + div 标签」区段（区段内除 `<img/>` 与 `<div>`/`</div>` 外无任何
-     其它内容，且 div 开闭在区段内配平）→ 逐图输出 `<p class="X"><img …/></p>`，
-     div 去掉；class 取自包裹它的那层 div，以保留居中语义（中文 CSS 有 `.center`）。
-  3. 解包装后只剩结构标签的行才删除，且**只允许发生在日文侧无同名表头的作品级包装页**；
-     配对文件一旦发生行数变化即拒绝写入。漫画跨页块的 div 开标签行与闭标签行本来就
-     承载着图片行，因此那类转换行数不变。
-
-不处理：已包在 `<p>` 内的图片、`<svg>` 内的 `<image>`、篇首插图（已在 L3 头部行内）、
-`nav.xhtml`。
+规范来源是 AGENTS.md；CLI 合同与安全前提见 tools/README.md。
+--wrap-only 保证不删除物理行；允许清理容器时必须提供 --jp-root 日文参考。
 
 用法：
-    python tools/wrap_cn_image_lines.py                    # 预览
-    python tools/wrap_cn_image_lines.py --book S1_25       # 指定卷预览
-    python tools/wrap_cn_image_lines.py --apply            # 写盘
+    python tools/wrap_cn_image_lines.py --wrap-only
+    python tools/wrap_cn_image_lines.py --jp-root 日文参考目录 --book S1_25 --apply
 """
 from __future__ import annotations
 
 import argparse
+from edit_safety import (EditSafetyError, add_content_roots, add_edit_mode,
+                         content_roots, require_edit_target)
 import re
 import sys
 import xml.etree.ElementTree as ET
@@ -123,9 +114,9 @@ def check_xml(lines: list[str]) -> str:
     return ""
 
 
-def jp_headers(cache: Path) -> set[str]:
+def jp_headers(cache: Path, *, direct: bool = False) -> set[str]:
     out = set()
-    jp_dir = cache / "japanese-text"
+    jp_dir = cache if direct else cache / "japanese-text"
     if not jp_dir.is_dir():
         return out
     for d in jp_dir.iterdir():
@@ -142,22 +133,30 @@ def jp_headers(cache: Path) -> set[str]:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="中文侧裸图片行包 <p>")
-    ap.add_argument("--root", type=Path, default=None, help="EPUB 根目录或中文缓存根目录（若指定则优先使用）")
-    ap.add_argument("--cache", type=Path, default=Path(".cache/epub-work"), help="缓存根目录（默认 .cache/epub-work）")
+    add_content_roots(ap)
+    ap.add_argument("--jp-root", type=Path, default=None, help="日文只读参考根；允许删除结构行时必须指定")
     ap.add_argument("--wrap-only", action="store_true", help="仅包装裸 <img> 行，禁止删除任何结构行（保证物理行数 100% 不变）")
     ap.add_argument("--book", default=None, help="只处理指定作品号（如 S1_25）")
-    ap.add_argument("--apply", action="store_true", help="写盘（默认只预览）")
+    add_edit_mode(ap)
     args = ap.parse_args()
+    root, _ = content_roots(args, ap)
+    if not args.wrap_only and (args.jp_root is None or not args.jp_root.is_dir()):
+        ap.error("非 --wrap-only 模式必须显式指定 --jp-root 日文参考目录")
 
-    jph = jp_headers(args.cache)
+    jph = jp_headers(args.jp_root, direct=True) if args.jp_root is not None else set()
     total_wrapped = total_dropped = total_files = 0
     refused = []
     
-    if args.root:
-        cn_dirs = [d for d in sorted(args.root.iterdir()) if d.is_dir()]
-    else:
-        cn_text_dir = args.cache / "chinese-text"
-        cn_dirs = [d for d in sorted(cn_text_dir.iterdir()) if d.is_dir()] if cn_text_dir.is_dir() else []
+    cn_dirs = [d for d in sorted(root.iterdir()) if d.is_dir()]
+    if args.apply:
+        try:
+            for cn_dir in cn_dirs:
+                if args.book and book_id(cn_dir.name) != args.book.upper():
+                    continue
+                for path in cn_dir.rglob("*.xhtml"):
+                    require_edit_target(path, args.staging)
+        except EditSafetyError as exc:
+            ap.error(str(exc))
 
     for cn_dir in cn_dirs:
         bid = book_id(cn_dir.name)

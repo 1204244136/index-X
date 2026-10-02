@@ -32,6 +32,7 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+from publish_preflight import validate_publication
 
 TOOLS_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(TOOLS_DIR))
@@ -58,21 +59,6 @@ SIDE_MAP = {
     "chinese": "chinese-text",
     "japanese": "japanese-text",
 }
-
-
-def alignment_preflight(cache_root: Path) -> bool:
-    """Run the strict alignment audit before mutating EPUB/ or OneDrive."""
-    result = subprocess.run(
-        [
-            sys.executable,
-            str(TOOLS_DIR / "check_alignment.py"),
-            "--cache",
-            str(cache_root),
-            "--strict",
-        ],
-        check=False,
-    )
-    return result.returncode == 0
 
 
 def sync_book_changes(
@@ -372,10 +358,12 @@ def main() -> int:
         print("\n[dry-run] 未执行任何操作。")
         return 0
 
-    print("\n== 发布前严格对齐检查 ==")
-    if not alignment_preflight(cache):
+    print("\n== 发布前只读预检 ==")
+    if not validate_publication(cache / "chinese-text", cache / "japanese-text", list(changes),
+                                allow_removed=all(all(v == "deleted" for v in files.values())
+                                                  for files in changes.values())):
         print(
-            "错误: 对齐检查未通过，已停止发布；请修复 alignment-check.tsv 中的问题。",
+            "错误: 发布预检未通过，已停止同步、打包与上传。",
             file=sys.stderr,
         )
         return 1

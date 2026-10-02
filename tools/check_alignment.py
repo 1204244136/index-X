@@ -38,6 +38,7 @@ from alignment_rules import (
     template_exempt,
 )
 from epub_ids import book_id, content_sequence, is_packaging_header, japanese_book_id
+from xhtml_structure import line_kind, PB_RE, books_by_id
 
 TAG_RE = re.compile(r"<[^>]*>")
 H_OPEN_RE = re.compile(r"<(h1|h2)\b", re.I)
@@ -108,6 +109,14 @@ def check_file(lines: list[str], allow_list_wrap_slot: bool = False) -> list[str
             errs.append("L5 非 h2/列表包装独占行")
     if not l6.strip():
         errs.append("L6 为空")
+    elif not re.match(r"^\s*<p\b[^>]*>.*</p>\s*$", l6, re.I):
+        list_item = LIST_WRAP_RE.match(l5) and re.match(r"^\s*<li\b[^>]*>.*</li>\s*$", l6, re.I)
+        # Chinese packaging pages may retain a multi-paragraph display container.
+        # Its opening tag shares L6 with a complete first paragraph; a bare
+        # container, text or image is still rejected.
+        wrapped_paragraph = re.match(r"^\s*(?:<div\b[^>]*>\s*)+<p\b[^>]*>.*</p>\s*(?:</div>\s*)*$", l6, re.I)
+        if not (allow_list_wrap_slot and (list_item or wrapped_paragraph)):
+            errs.append("L6 非独占 p 正文行/列表项")
     for idx, line in ((4, l4), (5, l5)):
         if line.strip() and not re.match(r"^\s*<h[12]\b", line):
             if idx == 5 and allow_list_wrap_slot and LIST_WRAP_RE.match(line):
@@ -208,19 +217,8 @@ def order_swap_offset(japanese: list[str], chinese: list[str]) -> int | None:
     if len(img_lines(japanese)) != len(img_lines(chinese)):
         return None
 
-    def kind(line: str) -> str:
-        if not line.strip():
-            return "blank"
-        if re.search(r"<h2\b", line):
-            return "h2"
-        if re.search(r"<img\b", line):
-            return "img"
-        if BR_LINE_RE.match(line):
-            return "br"
-        return "text"
-
-    jp_kinds = [kind(line) for line in japanese]
-    cn_kinds = [kind(line) for line in chinese]
+    jp_kinds = [line_kind(line) for line in japanese]
+    cn_kinds = [line_kind(line) for line in chinese]
     for i in range(len(jp_kinds) - 1):
         if jp_kinds[i] != "img" or jp_kinds[i + 1] != "h2":
             continue
@@ -288,6 +286,22 @@ def pair_problems_raw(header: str, japanese: list[str], chinese: list[str]) -> l
     chinese_br = standalone_br_lines(chinese)
     if japanese_br != chinese_br:
         problems.append(f"<br/> 位置 JP{japanese_br} vs CN{chinese_br}")
+    # Evaluate new anchors over the reviewed common range/order, so exceptions
+    # cannot hide unrelated differences or report intentional moved backmatter.
+    jp_common, cn_common = japanese, chinese
+    rules = allowed_pair_differences(header, japanese, chinese) or ()
+    if "afterword-moved" in rules:
+        offset = afterword_offset(japanese, chinese)
+        jp_common = japanese[:offset - 1] + japanese[-1:]
+    if "section-order" in rules:
+        offset = order_swap_offset(japanese, chinese)
+        cn_common = list(chinese)
+        cn_common[offset - 1], cn_common[offset] = cn_common[offset], cn_common[offset - 1]
+    for label, matcher in (("h1 位置", re.compile(r"<h1\b", re.I)), ("pb 位置", PB_RE)):
+        jp_positions = [i for i, line in enumerate(jp_common, 1) if matcher.search(line)]
+        cn_positions = [i for i, line in enumerate(cn_common, 1) if matcher.search(line)]
+        if jp_positions != cn_positions:
+            problems.append(f"{label} JP{jp_positions} vs CN{cn_positions}")
     return problems
 
 
@@ -298,32 +312,31 @@ def pair_problems(header: str, japanese: list[str], chinese: list[str]) -> list[
     return remaining
 
 
-def main() -> int:
-    import argparse
-    ap = argparse.ArgumentParser(description="检查中日缓存统一固定行模板与对齐")
-    ap.add_argument("--cache", type=Path, default=Path(".cache/epub-work"))
-    ap.add_argument(
-        "--strict",
-        action="store_true",
-        help="发现任何问题时返回非零状态，供发布前质量门禁使用",
-    )
-    args = ap.parse_args()
-    cache = args.cache
+def audit_roots(cn_root: Path, jp_root: Path, work_ids: set[str] | None = None):
+    """Read current Chinese/Japanese roots without copying or updating either."""
+    cache = cn_root.parent
 
-    cn_root = cache / "chinese-text"
-    jp_root = cache / "japanese-text"
+    def relative(path: Path) -> str:
+        try:
+            return path.relative_to(cache).as_posix()
+        except ValueError:
+            return path.as_posix()
+
     cn_books = (
-        {book_id(d.name): d for d in cn_root.iterdir() if d.is_dir()}
+        books_by_id(cn_root, work_ids)
         if cn_root.is_dir()
         else {}
     )
     jp_books = (
-        {book_id(d.name): d for d in jp_root.iterdir() if d.is_dir()}
+        books_by_id(jp_root, work_ids)
         if jp_root.is_dir()
         else {}
     )
+    if work_ids is not None:
+        cn_books = {k: v for k, v in cn_books.items() if k in work_ids}
+        jp_books = {k: v for k, v in jp_books.items() if k in work_ids}
     pairs = []
-    for cn_id, cn_dir in sorted(cn_books.items()):
+    for cn_id, cn_dir in sorted(cn_books.items(), key=lambda item: item[0] or ""):
         if cn_id is None or cn_id in NON_PAIR_WORK_IDS:
             continue
         jp_dir = jp_books.get(japanese_book_id(cn_id))
@@ -358,7 +371,7 @@ def main() -> int:
                 add(
                     side,
                     book,
-                    str(path.relative_to(cache)),
+                    relative(path),
                     header,
                     False,
                     ["内容序 -00 非法；数字内容序必须从 -01 开始"],
@@ -373,7 +386,7 @@ def main() -> int:
                 add(
                     side,
                     book,
-                    f"{first.relative_to(cache)} | {path.relative_to(cache)}",
+                    f"{relative(first)} | {relative(path)}",
                     header,
                     False,
                     ["同侧重复表头，未自动选择配对文件"],
@@ -396,8 +409,9 @@ def main() -> int:
                 continue
             seen.add(path)
             checked += 1
-            problems = [] if template_exempt(book) else check_file(lines, allow_list)
-            add(side, book, str(path.relative_to(cache)), header, False, problems)
+            allow_packaging = bool(allow_list) and is_packaging_header(header)
+            problems = [] if template_exempt(book) else check_file(lines, allow_packaging)
+            add(side, book, relative(path), header, False, problems)
 
     paired_jp: set[str] = set()
     for cn_id, cn_dir, jp_dir in pairs:
@@ -421,7 +435,7 @@ def main() -> int:
                 # 于是「日文整页图片 ↔ 中文正文页」这类配对既不做模板检查也不报差异，
                 # S5 全部 7 部作品的扉页就这样在报告里完全消失。
                 add("对", cn_id,
-                    f"JP:{jp_p.relative_to(cache)} | CN:{cn_p.relative_to(cache)}",
+                    f"JP:{relative(jp_p)} | CN:{relative(cn_p)}",
                     h, True,
                     ["一侧有正文另一侧无：日文 %d 行（正文 %s）/ 中文 %d 行（正文 %s）"
                      % (len(jl), has_body(jl), len(cl), has_body(cl))],
@@ -435,7 +449,7 @@ def main() -> int:
                 work = jp_id if side_ == "日" else cn_id
                 allow_list = side_ == "中" and is_packaging_header(h)
                 problems = [] if template_exempt(work) else check_file(lines_, allow_list)
-                add(side_, work, str(p_.relative_to(cache)), h, True, problems)
+                add(side_, work, relative(p_), h, True, problems)
             # 配对检查（先算原始问题，再按已确认的例外抵消并给出备注）
             pair_probs = pair_problems_raw(h, jl, cl)
             if pair_probs:
@@ -444,11 +458,11 @@ def main() -> int:
                 note = ""
             if pair_probs:
                 rel_pair = (
-                    f"JP:{jp_p.relative_to(cache)} | CN:{cn_p.relative_to(cache)}"
+                    f"JP:{relative(jp_p)} | CN:{relative(cn_p)}"
                 )
                 add("对", cn_id, rel_pair, h, True, pair_probs, "配对差异")
             elif note:
-                add("对", cn_id, f"JP:{jp_p.relative_to(cache)} | CN:{cn_p.relative_to(cache)}",
+                add("对", cn_id, f"JP:{relative(jp_p)} | CN:{relative(cn_p)}",
                     h, True, [], note)
         # 该作品内未配对的中文文件（中文侧单有的包装页等）
         check_side(cn_id, cn_all, "中", is_packaging_header)
@@ -463,7 +477,7 @@ def main() -> int:
     # japanese_book_id 的错误折叠进不了 pairs，结果是「既没配对、也没单侧检查」——
     # 一层缺陷掩盖了另一层，两者都不报错。
     # ---------------------------------------------------------------------
-    for cn_id, cn_dir in sorted(cn_books.items()):
+    for cn_id, cn_dir in sorted(cn_books.items(), key=lambda item: item[0] or ""):
         if cn_id is None or any(cn_id == p[0] for p in pairs):
             continue
         cn_all = [p for p in cn_dir.rglob("*.xhtml") if p.name.lower() != "nav.xhtml"]
@@ -471,9 +485,9 @@ def main() -> int:
         before = len(bad)
         check_side(cn_id, cn_all, "中", is_packaging_header)
         if len(bad) == before:
-            add("中", cn_id, str(cn_dir.relative_to(cache)), "-", False, [],
+            add("中", cn_id, relative(cn_dir), "-", False, [],
                 "无日文对应作品，仅单侧模板检查")
-    for jp_id, jp_dir in sorted(jp_books.items()):
+    for jp_id, jp_dir in sorted(jp_books.items(), key=lambda item: item[0] or ""):
         if jp_id is None or jp_id in paired_jp:
             continue
         jp_all = [p for p in jp_dir.rglob("*.xhtml") if p.name.lower() != "nav.xhtml"]
@@ -481,10 +495,38 @@ def main() -> int:
         before = len(bad)
         check_side(jp_id, jp_all, "日", False)
         if len(bad) == before:
-            add("日", jp_id, str(jp_dir.relative_to(cache)), "-", False, [],
+            add("日", jp_id, relative(jp_dir), "-", False, [],
                 "无中文对应作品，仅单侧模板检查")
 
-    tsv = cache / "alignment-check.tsv"
+    return rows, bad, checked
+
+
+def main() -> int:
+    import argparse
+    ap = argparse.ArgumentParser(description="检查中日统一固定行模板与对齐（只读）")
+    ap.add_argument("--cache", type=Path, default=Path(".cache/epub-work"))
+    ap.add_argument("--root", type=Path, help="中文成品根目录；默认 <cache>/chinese-text")
+    ap.add_argument("--jp-root", type=Path, help="日文参考根目录；默认 <cache>/japanese-text")
+    ap.add_argument("--book", action="append", help="作品号筛选，可重复")
+    ap.add_argument("--output", type=Path, help="TSV 输出；默认 <cache>/alignment-check.tsv")
+    ap.add_argument("--strict", action="store_true", help="发现问题时非零退出")
+    args = ap.parse_args()
+    cn_root = args.root or args.cache / "chinese-text"
+    jp_root = args.jp_root or args.cache / "japanese-text"
+    if not cn_root.is_dir() and not jp_root.is_dir():
+        print("中文/日文输入根目录均不存在")
+        return 2
+    try:
+        rows, bad, checked = audit_roots(cn_root, jp_root,
+                                       {w.upper() for w in args.book} if args.book else None)
+    except (OSError, UnicodeError, ValueError) as exc:
+        print(f"[阻断] 对齐检查未完成：{exc}")
+        return 2
+    if not rows:
+        print("没有匹配的书籍/内容文件")
+        return 2
+    tsv = args.output or args.cache / "alignment-check.tsv"
+    tsv.parent.mkdir(parents=True, exist_ok=True)
     with tsv.open("w", encoding="utf-8-sig", newline="") as f:
         w = csv.writer(f, delimiter="\t")
         w.writerow(["侧", "书", "文件", "表头", "配对", "问题", "备注"])

@@ -27,6 +27,42 @@ def xhtml(body_lines: list[str]) -> str:
 
 
 class AlignmentTests(unittest.TestCase):
+    def test_duplicate_book_directories_cannot_hide_a_broken_book(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            cache = Path(temporary)
+            for name in ("[S1_01]A", "[S1_01]B"):
+                book = cache / "chinese-text" / name
+                book.mkdir(parents=True)
+                (book / "S1_01-01.xhtml").write_text(xhtml(["<p>正文</p>"]), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "重复作品号"):
+                check_alignment.audit_roots(cache / "chinese-text", cache / "japanese-text")
+            with patch.object(sys, "argv", ["check_alignment.py", "--cache", str(cache), "--strict"]):
+                self.assertEqual(check_alignment.main(), 2)
+
+    def test_h1_and_pagebreak_positions_are_part_of_pair_contract(self):
+        japanese = xhtml(['<p class="pb">日文</p>']).splitlines()
+        chinese = xhtml(["<p>中文</p>"]).splitlines()
+        self.assertTrue(any("pb 位置" in p for p in check_alignment.pair_problems("S1_01-01", japanese, chinese)))
+        chinese[3] = ""
+        self.assertTrue(any("h1 位置" in p for p in check_alignment.pair_problems("S1_01-01", japanese, chinese)))
+        chinese[3] = japanese[3]
+        chinese[5] = '<p class="my-pb">中文</p>'
+        self.assertTrue(any("pb 位置" in p for p in check_alignment.pair_problems("S1_01-01", japanese, chinese)))
+        chinese[5] = '<p class="fit pb">中文</p>'
+        self.assertEqual(check_alignment.pair_problems("S1_01-01", japanese, chinese), [])
+
+    def test_l6_requires_a_paragraph_or_chinese_list_item(self):
+        for line in ("<div>正文</div>", "正文", "<br/>", "<h2>1</h2>"):
+            with self.subTest(line=line):
+                self.assertIn("L6 非独占 p 正文行/列表项", check_alignment.check_file(xhtml([line, "<p>正文</p>"]).splitlines()))
+        lines = xhtml(["<li>译注</li>"]).splitlines()
+        lines[4] = "<ul>"
+        lines.insert(-1, "</ul>")
+        self.assertEqual(check_alignment.check_file(lines, allow_list_wrap_slot=True), [])
+        lines = xhtml(['<div class="box"><p>制作信息</p>', '<p>版本</p></div>']).splitlines()
+        self.assertEqual(check_alignment.check_file(lines, allow_list_wrap_slot=True), [])
+        self.assertIn("L6 非独占 p 正文行/列表项", check_alignment.check_file(lines))
+
     def test_heading_breaks_and_block_wrappers_are_rejected(self):
         heading_break = xhtml(["<p>正文</p>"]).splitlines()
         heading_break[3] = "<h1>主标题<br/>副标题</h1>"

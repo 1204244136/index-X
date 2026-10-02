@@ -56,10 +56,10 @@ _WS = re.compile(r"\s+")
 _HERE = Path(__file__).resolve().parent
 if str(_HERE) not in sys.path:
     sys.path.insert(0, str(_HERE))
-try:
-    from package_cache_epubs import package_book  # type: ignore
-except Exception:  # pragma: no cover - 兜底
-    package_book = None
+from edit_safety import add_edit_mode, require_edit_target
+from epub_ids import book_id
+from epub_structure import artifact_contract_issues, container_contract_issues, epub_zip_issues
+from package_cache_epubs import package_book
 
 
 def clean_text(raw: str) -> str:
@@ -188,25 +188,7 @@ def write_epub(entries: dict[str, bytes], infos: list, out_path: Path) -> None:
 
 def pack_book_dir(book: Path, destination: Path) -> None:
     """把解包书籍目录打包为 EPUB（复用 package_cache_epubs.package_book）。"""
-    if package_book is not None:
-        package_book(book, destination)
-        return
-    # 兜底：与 package_cache_epubs.package_book 相同的打包逻辑
-    mimetype = book / "mimetype"
-    container = book / "META-INF" / "container.xml"
-    if not mimetype.is_file() or mimetype.read_bytes() != EPUB_MIMETYPE:
-        raise ValueError(f"缺少合法 mimetype：{book}")
-    if not container.is_file():
-        raise ValueError(f"缺少 META-INF/container.xml：{book}")
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    with zipfile.ZipFile(destination, "w") as zout:
-        zout.write(mimetype, "mimetype", compress_type=zipfile.ZIP_STORED)
-        for path in sorted(
-            (p for p in book.rglob("*") if p.is_file() and p.name != "mimetype"),
-            key=lambda p: p.relative_to(book).as_posix().casefold(),
-        ):
-            zout.write(path, path.relative_to(book).as_posix(),
-                       compress_type=zipfile.ZIP_DEFLATED)
+    package_book(book, destination)
 
 
 def find_ebook_convert(explicit: Path | None) -> str | None:
@@ -285,42 +267,62 @@ def process_one(book: Path, args: argparse.Namespace, exe: str | None) -> int:
                 src = book
 
             entries, infos, stats = rewrite_epub_entries(src)
+            issues = (epub_zip_issues(infos, entries) + container_contract_issues(entries)
+                      + artifact_contract_issues(entries, book_id(stem)))
+            if stats["issues"] or issues:
+                raise ValueError(f"转换输入/中间 EPUB 契约不满足：{stats['issues'] or issues[:10]}")
 
             if args.dry_run:
                 report(label, stats, out_docx, dry_run=True)
                 return 0
 
-            # 写中间 epub（--keep-src-epub 时留在源目录，否则进临时目录）
-            if args.keep_src_epub:
-                mid = book.parent / f"{stem}.ruby.epub"
-            else:
-                mid = Path(tmp) / f"{stem}.ruby.epub"
+            require_edit_target(out_docx, staging=args.staging)
+            # Conversion runs entirely in a temporary directory; failed converters
+            # cannot truncate a previously delivered DOCX.
+            mid = Path(tmp) / f"{stem}.ruby.epub"
             write_epub(entries, infos, mid)
 
             # 调用 calibre 转换
             out_docx.parent.mkdir(parents=True, exist_ok=True)
+            converted = Path(tmp) / f"{stem}.docx"
             result = subprocess.run(
-                [exe, str(mid), str(out_docx), *args.extra],
+                [exe, str(mid), str(converted), *args.extra],
                 capture_output=True, text=True, encoding="utf-8", errors="replace")
             if result.returncode != 0:
                 print(f"[失败] 转换出错：{book}", file=sys.stderr)
                 for line in result.stderr.strip().splitlines()[-8:]:
                     print(f"    {line}", file=sys.stderr)
                 return 1
+            if not converted.is_file() or not zipfile.is_zipfile(converted):
+                raise ValueError("ebook-convert 未生成合法 DOCX 容器")
+            with zipfile.ZipFile(converted) as archive:
+                if "word/document.xml" not in archive.namelist():
+                    raise ValueError("ebook-convert 产物缺少 word/document.xml")
+            with tempfile.NamedTemporaryFile(prefix=".epub2docx-", dir=out_dir, delete=False) as handle:
+                staged_docx = Path(handle.name)
+            try:
+                shutil.copyfile(converted, staged_docx)
+                os.replace(staged_docx, out_docx)
+            finally:
+                staged_docx.unlink(missing_ok=True)
+            if args.keep_src_epub:
+                keep = out_dir / f"{stem}.ruby.epub"
+                require_edit_target(keep, staging=args.staging)
+                shutil.copyfile(mid, keep)
 
             report(label, stats, out_docx, dry_run=False)
             return 0
-        except (OSError, zipfile.BadZipFile, ValueError) as exc:
+        except Exception as exc:
             print(f"[失败] {label}：{exc}", file=sys.stderr)
             return 1
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(
         description="把 EPUB 转成 DOCX（交稿格式），<ruby>基文<rt>注音</rt></ruby> 还原为 |基文[注音]")
     ap.add_argument("paths", nargs="+", help="一个或多个 .epub 文件或解包书籍目录")
     ap.add_argument("--out", type=Path, default=None,
-                    help="docx 输出目录（默认与输入同目录）")
+                    help="docx 显式输出目录（写入时必填）")
     ap.add_argument("--pattern", default="*",
                     help="目录输入时按书名 glob 筛选（大小写不敏感）")
     ap.add_argument("--ebook-convert", type=Path, default=None,
@@ -329,10 +331,17 @@ def main() -> int:
                     help="透传给 ebook-convert 的额外参数（可多次，如 --extra --docx-page-size=A4）")
     ap.add_argument("--keep-src-epub", action="store_true",
                     help="保留中间 .ruby.epub（默认用后即删）")
-    ap.add_argument("--dry-run", action="store_true",
-                    help="只统计 ruby 改写，不生成 docx")
+    add_edit_mode(ap)
     ap.add_argument("--quiet", action="store_true", help="只打印错误与汇总")
-    args = ap.parse_args()
+    args = ap.parse_args(argv)
+    args.dry_run = not args.apply
+    if args.apply:
+        if args.out is None:
+            ap.error("写入必须显式指定 --out 输出目录")
+        try:
+            require_edit_target(args.out, staging=args.staging)
+        except ValueError as exc:
+            ap.error(str(exc))
 
     exe = None
     if not args.dry_run:

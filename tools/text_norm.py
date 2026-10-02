@@ -38,6 +38,7 @@ import re
 import sys
 from collections import Counter
 from pathlib import Path
+from edit_safety import EditSafetyError, add_edit_mode, require_edit_target
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_ROOT = REPO_ROOT / "EPUB"
@@ -333,15 +334,29 @@ def main() -> int:
 
     ap = argparse.ArgumentParser(
         description="EPUB/ 中文成品字符级规范化（translation-spec 可机械执行子集）")
-    ap.add_argument("--root", type=Path, default=DEFAULT_ROOT, help="EPUB 根目录")
-    ap.add_argument("--apply", action="store_true", help="写盘（默认只读报告）")
+    ap.add_argument("--root", type=Path, default=None, help="EPUB 根目录（默认 EPUB/）")
+    add_edit_mode(ap)
     ap.add_argument("--pattern", default=None, help="按书目录名筛选，如 '*S4_*'")
     ap.add_argument("--report", type=Path, default=None, help="Markdown 报告输出路径")
     ap.add_argument("--summary", type=Path, default=None, help="单行摘要输出路径（供 commit message）")
     ap.add_argument("--top", type=int, default=200, help="报告中每规则最多列出的样例数")
     args = ap.parse_args()
-
-    root = args.root.resolve()
+    if args.staging and args.root is None:
+        ap.error("--staging 必须显式指定 --root 临时目录")
+    requested_root = args.root or DEFAULT_ROOT
+    if args.apply:
+        try:
+            require_edit_target(requested_root, args.staging)
+        except EditSafetyError as exc:
+            ap.error(str(exc))
+    root = requested_root.resolve()
+    targets = list(collect_targets(root, args.pattern))
+    if args.apply:
+        try:
+            for path, _ in targets:
+                require_edit_target(path, args.staging)
+        except EditSafetyError as exc:
+            ap.error(str(exc))
     rule_counts: Counter[str] = Counter()
     rule_files: dict[str, set[str]] = {}
     rule_samples: dict[str, list[str]] = {}
@@ -352,7 +367,7 @@ def main() -> int:
     written_files = 0
     scanned = 0
 
-    for path, is_nav in collect_targets(root, args.pattern):
+    for path, is_nav in targets:
         scanned += 1
         hits, written, reason = process_file(path, args.apply)
         rel = str(path.relative_to(root))

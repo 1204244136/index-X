@@ -30,6 +30,7 @@ import argparse
 import fnmatch
 import sys
 from pathlib import Path
+from publish_preflight import validate_publication
 
 TOOLS_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(TOOLS_DIR))
@@ -284,6 +285,11 @@ def main() -> int:
         if not changes:
             print("\n没有可发布的书籍（全部因冲突被跳过）。")
             return 1
+
+    print("\n== 发布前只读预检（EPUB/ 中文 + 缓存日文）==")
+    if not validate_publication(epub_root, cache / "japanese-text", list(changes)):
+        print("错误: 发布预检未通过，已停止打包、上传与缓存覆盖。", file=sys.stderr)
+        return 1
 
     print("\n== 发布（EPUB/ -> OneDrive + 缓存）==")
     successful: list[str] = []

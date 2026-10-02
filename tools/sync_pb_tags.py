@@ -1,131 +1,107 @@
 #!/usr/bin/env python3
-"""中日换页标记 (pb) 同步工具。
-
-根据 AGENTS.md 规约：「中日两侧同一位置的换页标记与视觉间隔数量一致」。
-分页源合并时在日文侧段落追加了 `class="pb"`，中文侧相应对齐行若缺失 `pb`，
-应在中文侧对应段落追加 `class="pb"`。
-"""
+"""Preview or apply Japanese page-break markers to aligned Chinese EPUB files."""
 from __future__ import annotations
 
 import argparse
 import re
-import sys
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
-if sys.platform == "win32":
-    if hasattr(sys.stdout, "reconfigure"):
-        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-    if hasattr(sys.stderr, "reconfigure"):
-        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+from alignment_rules import pairing_header_of
+from edit_safety import (EditSafetyError, add_content_roots, add_edit_mode,
+                         content_roots, require_edit_target)
+from merge_bw_pages import add_class_pb
+from xhtml_structure import PB_RE, iter_content_pairs, pair_structure_problems
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-
-from merge_bw_pages import add_class_pb  # noqa: E402
-
-
-PB_RE = re.compile(r'\bclass=[\"\'][^\"\']*\bpb\b[^\"\']*[\"\']')
-P_TAG_RE = re.compile(r'<p\b', re.I)
+P_TAG_RE = re.compile(r"^\s*<p\b", re.I)
+P_OPEN_RE = re.compile(r"^\s*<p\b[^>]*>", re.I)
 
 
 def extract_header(filename: str) -> str | None:
-    # Match S1_01-02 or S5_01_03-02 or S6_22.06.10-06
-    m = re.match(r"^(S\d+_(?:\d+(?:_\d+)?|\d{2}(?:\.\d{2}){2})-[A-Za-z0-9_.-]+?)(?:_[^.]+)?\.xhtml$", filename, re.I)
-    if m:
-        return m.group(1)
-    return None
+    """Compatibility alias; pairing uses the shared complete-header parser."""
+    return pairing_header_of(filename)
 
 
-def main():
-    parser = argparse.ArgumentParser(description="同步中日 XHTML 中的 pb 标签")
-    parser.add_argument("--dry-run", action="store_true", help="只预览不写盘")
-    parser.add_argument("--apply", action="store_true", help="实际写入修改")
+def plan_sync(japanese: list[str], chinese: list[str]) -> tuple[list[str] | None, str, int, int]:
+    """Refuse structural drift before adding any marker; leave source untouched."""
+    problems = pair_structure_problems(japanese, chinese)
+    if problems:
+        return None, "; ".join(problems[:3]), 0, 0
+    out = list(chinese)
+    existing = added = 0
+    for idx, (jline, cline) in enumerate(zip(japanese, chinese)):
+        jp_pb, cn_pb = bool(PB_RE.search(jline)), bool(PB_RE.search(cline))
+        if cn_pb and not jp_pb:
+            return None, f"L{idx + 1} 中文侧存在无日文对应的 pb，不擅自搬动", 0, 0
+        if not jp_pb:
+            continue
+        if not P_TAG_RE.match(jline) or not P_TAG_RE.match(cline):
+            return None, f"L{idx + 1} pb 不是配对的独立 p 段落", 0, 0
+        jp_open, cn_open = P_OPEN_RE.match(jline), P_OPEN_RE.match(cline)
+        if not jp_open or not cn_open or not PB_RE.search(jp_open.group(0)):
+            return None, f"L{idx + 1} 日文 pb 不在 p 开标签上，需人工确认", 0, 0
+        if cn_pb:
+            if not PB_RE.search(cn_open.group(0)):
+                return None, f"L{idx + 1} 中文 pb 不在 p 开标签上，需人工确认", 0, 0
+            existing += 1
+        else:
+            # Restrict the existing shared helper to the p opener, so an img/span
+            # class inside the paragraph cannot accidentally receive the marker.
+            out[idx] = add_class_pb(cn_open.group(0)) + cline[cn_open.end():]
+            added += 1
+    try:
+        ET.fromstring("\n".join(out))
+    except ET.ParseError as exc:
+        return None, f"中文 XML 解析失败：{exc}", 0, 0
+    return out, "", existing, added
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="同步已对齐中日 XHTML 的 pb 标签（默认预览）")
+    add_content_roots(parser, paired=True)
+    add_edit_mode(parser)
+    parser.add_argument("--book", help="只处理指定作品号")
     args = parser.parse_args()
-
-    jp_root = Path(".cache/epub-work/japanese-text")
-    zh_root = Path(".cache/epub-work/chinese-text")
-
-    if not jp_root.exists() or not zh_root.exists():
-        print("未找到 .cache/epub-work 目录")
+    root, jp_root = content_roots(args, parser, paired=True)
+    plans: list[tuple[Path, bytes, list[str]]] = []
+    refused: list[str] = []
+    existing = added = 0
+    try:
+        pairs = list(iter_content_pairs(root, jp_root, args.book))
+        for wid, header, jp_path, cn_path in pairs:
+            japanese = jp_path.read_text(encoding="utf-8-sig").splitlines()
+            raw = cn_path.read_bytes()
+            chinese = raw.decode("utf-8-sig").splitlines()
+            if not any(PB_RE.search(line) for line in [*japanese, *chinese]):
+                continue
+            out, reason, already, gain = plan_sync(japanese, chinese)
+            if out is None:
+                refused.append(f"{wid} {header}: {reason}")
+                continue
+            existing += already
+            added += gain
+            if gain:
+                print(f"[补全 pb] {wid} {cn_path.name}: {gain} 处")
+                plans.append((cn_path, raw, out))
+        if args.apply:
+            for path, _, _ in plans:
+                require_edit_target(path, args.staging)
+    except (EditSafetyError, ValueError) as exc:
+        parser.error(str(exc))
+    if refused:
+        for issue in refused:
+            print(f"[拒绝] {issue}")
+        print("预检未通过；没有写入任何文件。")
         return 1
-
-    jp_files = list(jp_root.rglob("*.xhtml"))
-    zh_files = list(zh_root.rglob("*.xhtml"))
-
-    # Map header -> zh_file
-    zh_by_header: dict[str, Path] = {}
-    for zf in zh_files:
-        h = extract_header(zf.name)
-        if h:
-            zh_by_header[h] = zf
-
-    total_jp_pb = 0
-    synced_count = 0
-    already_synced = 0
-    mismatch_count = 0
-
-    files_modified: dict[Path, list[str]] = {}
-
-    for jf in jp_files:
-        h = extract_header(jf.name)
-        if not h:
-            continue
-        jp_text = jf.read_text(encoding="utf-8")
-        if "pb" not in jp_text:
-            continue
-        jp_lines = jp_text.splitlines()
-
-        zf = zh_by_header.get(h)
-        if not zf:
-            continue
-
-        zh_lines = files_modified.get(zf)
-        if zh_lines is None:
-            zh_lines = zf.read_text(encoding="utf-8").splitlines()
-
-        modified = False
-        for idx, jline in enumerate(jp_lines):
-            if PB_RE.search(jline):
-                total_jp_pb += 1
-                if idx >= len(zh_lines):
-                    print(f"[越界] {jf.name}:{idx+1} 日文有 pb，但中文 {zf.name} 只有 {len(zh_lines)} 行")
-                    mismatch_count += 1
-                    continue
-                zline = zh_lines[idx]
-                if PB_RE.search(zline):
-                    already_synced += 1
-                else:
-                    if P_TAG_RE.search(zline):
-                        new_zline = add_class_pb(zline)
-                        zh_lines[idx] = new_zline
-                        modified = True
-                        synced_count += 1
-                        print(f"[补全 pb] {zf.name}:{idx+1}")
-                        print(f"  JP: {jline[:70]}")
-                        print(f"  ZH 旧: {zline[:70]}")
-                        print(f"  ZH 新: {new_zline[:70]}")
-                    else:
-                        print(f"[非段落] {zf.name}:{idx+1} 中文行非 <p> 标签: {zline[:70]}")
-                        mismatch_count += 1
-
-        if modified:
-            files_modified[zf] = zh_lines
-
-    print("\n--- 统计 ---")
-    print(f"日文 pb 总数: {total_jp_pb}")
-    print(f"中文已有 pb: {already_synced}")
-    print(f"本次补充 pb: {synced_count}")
-    print(f"异常/不匹配: {mismatch_count}")
-    print(f"涉及修改文件数: {len(files_modified)}")
-
     if args.apply:
-        for zf, lines in files_modified.items():
-            zf.write_text("\n".join(lines) + "\n", encoding="utf-8")
-        print(f"已成功写入 {len(files_modified)} 个文件！")
-    else:
-        print("当前为预览模式，使用 --apply 写入修改。")
-
+        for path, raw, lines in plans:
+            sep = "\r\n" if b"\r\n" in raw else "\n"
+            text = sep.join(lines) + (sep if raw.endswith(b"\n") else "")
+            bom = b"\xef\xbb\xbf" if raw.startswith(b"\xef\xbb\xbf") else b""
+            path.write_bytes(bom + text.encode("utf-8"))
+    print(f"{'已写盘' if args.apply else '预览'}：已有 pb {existing}；补全 {added}；文件 {len(plans)}")
     return 0
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    raise SystemExit(main())

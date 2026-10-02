@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import io
 import json
+import os
 import sys
 import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
+from unittest.mock import patch, Mock
 
 TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
@@ -31,6 +33,7 @@ from check_epub_validity import (  # noqa: E402
     write_json_report,
     write_text_report,
     write_tsv_report,
+    run_checks_parallel,
 )
 
 
@@ -416,6 +419,27 @@ class ReportTests(unittest.TestCase):
 
 
 class MainEntryTests(unittest.TestCase):
+    def test_workers_use_isolated_temporary_config_and_preserve_environment(self):
+        configs = []
+
+        def launch(command, *, env):
+            config = Path(env["CALIBRE_CONFIG_DIRECTORY"])
+            self.assertTrue(config.is_dir())
+            self.assertNotEqual(str(config), "personal-config")
+            configs.append(config)
+            process = Mock()
+            process.returncode = 0
+            return process
+
+        with patch.dict(os.environ, {"CALIBRE_CONFIG_DIRECTORY": "personal-config"}), \
+                patch("check_epub_validity.worker_command", return_value=["python"]), \
+                patch("check_epub_validity.subprocess.Popen", side_effect=launch):
+            run_checks_parallel([Target(Path("a.epub"), "epub"), Target(Path("b.epub"), "epub")],
+                                2, 1, None, 10, False)
+            self.assertEqual(os.environ["CALIBRE_CONFIG_DIRECTORY"], "personal-config")
+        self.assertEqual(len(set(configs)), 2)
+        self.assertTrue(all(not p.exists() for p in configs))
+
     def test_list_categories_exits_zero(self) -> None:
         with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
             self.assertEqual(main(["--list-categories"]), 0)

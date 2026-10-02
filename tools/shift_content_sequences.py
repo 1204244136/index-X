@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import re
 from pathlib import Path
+from edit_safety import DEFAULT_EPUB, EditSafetyError, add_edit_mode, require_edit_target
 
 
 REFERENCE_SUFFIXES = frozenset({
@@ -142,13 +143,23 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="整体平移一个作品的 XHTML 内容序并同步改写 OPF/NCX/nav 等引用"
     )
-    parser.add_argument("root", type=Path, help="一本 EPUB 的解包根目录")
+    parser.add_argument("root", nargs="?", type=Path, help="一本 EPUB 的解包根目录（默认 EPUB/）")
+    parser.add_argument("--root", dest="root_option", type=Path, help="显式指定解包根目录，不能与位置参数同时使用")
     parser.add_argument("--work-id", required=True, help="完整作品号，如 S4_05 或 S5_01_01")
     parser.add_argument("--offset", required=True, type=int, help="内容序增量，如 1")
-    parser.add_argument("--apply", action="store_true", help="写入；默认只预览")
+    add_edit_mode(parser)
     args = parser.parse_args()
-
-    root = args.root.resolve()
+    if args.root and args.root_option:
+        parser.error("root 位置参数与 --root 不能同时使用")
+    if args.staging and args.root is None and args.root_option is None:
+        parser.error("--staging 必须显式指定临时目录")
+    requested_root = args.root_option or args.root or DEFAULT_EPUB
+    if args.apply:
+        try:
+            require_edit_target(requested_root, args.staging)
+        except EditSafetyError as exc:
+            parser.error(str(exc))
+    root = requested_root.resolve()
     if not root.is_dir():
         parser.error(f"目录不存在：{root}")
     try:
@@ -162,6 +173,11 @@ def main() -> int:
     for source, target in renames.items():
         print(f"  {source.relative_to(root)} -> {target.name}")
     if args.apply:
+        try:
+            for path in [*renames.keys(), *renames.values(), *rewrites.keys()]:
+                require_edit_target(path, args.staging)
+        except EditSafetyError as exc:
+            parser.error(str(exc))
         apply_shift(root, renames, rewrites)
     return 0
 

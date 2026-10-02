@@ -41,12 +41,27 @@ class Fixture:
         self.rebaseline()
 
     @staticmethod
+    def xhtml(text: str) -> str:
+        return "\n".join(["<?xml version='1.0' encoding='utf-8'?>", "<!DOCTYPE html>",
+                          "<html><head/><body>", "", "", text, "</body></html>"])
+
+    @staticmethod
     def _populate(book: Path, text: str) -> None:
+        from docx2epub import _CSS
+        wid = book.name.split("]")[0].lstrip("[")
+        name = f"{wid}-01_Chapter.xhtml"
         (book / "META-INF").mkdir(parents=True, exist_ok=True)
         (book / "mimetype").write_bytes(b"application/epub+zip")
-        (book / "META-INF" / "container.xml").write_text("<container/>", encoding="utf-8")
-        (book / "OEBPS").mkdir(parents=True, exist_ok=True)
-        (book / "OEBPS" / "a.xhtml").write_text(text, encoding="utf-8")
+        (book / "META-INF" / "container.xml").write_text(
+            '<container><rootfiles><rootfile full-path="OEBPS/content.opf"/></rootfiles></container>', encoding="utf-8")
+        (book / "OEBPS" / "Text").mkdir(parents=True, exist_ok=True)
+        (book / "OEBPS" / "Styles").mkdir(parents=True, exist_ok=True)
+        (book / "OEBPS" / "Styles" / "style.css").write_text(_CSS, encoding="utf-8")
+        (book / "OEBPS" / "content.opf").write_text(
+            f'<package><manifest><item id="text" href="Text/{name}" media-type="application/xhtml+xml"/>'
+            '<item id="css" href="Styles/style.css" media-type="text/css"/>'
+            '</manifest><spine><itemref idref="text"/></spine></package>', encoding="utf-8")
+        (book / "OEBPS" / "Text" / name).write_text(Fixture.xhtml(text), encoding="utf-8")
 
     def write_cache_book(self, side: str, name: str, text: str) -> Path:
         book = self.cache / side / name
@@ -228,8 +243,8 @@ class RoutingTests(ToolTestCase):
 
     def test_newline_diff_has_no_warning(self):
         """换行符差异不输出任何警告，项目对换行符不敏感。"""
-        cache_file = self.fx.cache / "chinese-text" / BOOK_CN / "OEBPS" / "a.xhtml"
-        epub_file = self.fx.epub / BOOK_CN / "OEBPS" / "a.xhtml"
+        cache_file = self.fx.cache / "chinese-text" / BOOK_CN / "OEBPS" / "Text" / "S1_01-01_Chapter.xhtml"
+        epub_file = self.fx.epub / BOOK_CN / "OEBPS" / "Text" / "S1_01-01_Chapter.xhtml"
         cache_file.write_bytes(b"<p>x</p>\r\n")
         epub_file.write_bytes(b"<p>x</p>\n")
         # 基线记录上次发布的缓存字节（CRLF）；归档被检出成 LF
@@ -335,35 +350,35 @@ class IntegrationTests(unittest.TestCase):
             return publish_auto.main(self.fx.argv(*extra))
 
     def test_cache_change_publishes_through_real_tools(self):
-        target = self.fx.cache / "chinese-text" / BOOK_CN / "OEBPS" / "a.xhtml"
-        target.write_text("<p>中文B</p>", encoding="utf-8")
+        target = self.fx.cache / "chinese-text" / BOOK_CN / "OEBPS" / "Text" / "S1_01-01_Chapter.xhtml"
+        target.write_text(Fixture.xhtml("<p>中文B</p>"), encoding="utf-8")
 
         self.assertEqual(self.run_tool("--side", "chinese", "--no-upload"), 0)
 
-        archived = self.fx.epub / BOOK_CN / "OEBPS" / "a.xhtml"
-        self.assertEqual(archived.read_text(encoding="utf-8"), "<p>中文B</p>")
+        archived = self.fx.epub / BOOK_CN / "OEBPS" / "Text" / "S1_01-01_Chapter.xhtml"
+        self.assertEqual(archived.read_text(encoding="utf-8"), Fixture.xhtml("<p>中文B</p>"))
         self.assertTrue(
             (self.fx.cache / "packed-epubs" / "chinese-text" / f"{BOOK_CN}.epub").is_file()
         )
         # 发布成功后基线推进，重跑应为空操作
         self.assertEqual(self.run_tool("--side", "chinese", "--no-upload"), 0)
-        japanese = self.fx.cache / "japanese-text" / BOOK_JP / "OEBPS" / "a.xhtml"
-        self.assertEqual(japanese.read_text(encoding="utf-8"), "<p>日文A</p>")
+        japanese = self.fx.cache / "japanese-text" / BOOK_JP / "OEBPS" / "Text" / "S1_01-01_Chapter.xhtml"
+        self.assertEqual(japanese.read_text(encoding="utf-8"), Fixture.xhtml("<p>日文A</p>"))
 
     def test_epub_change_flows_back_through_real_tools(self):
-        target = self.fx.epub / BOOK_CN / "OEBPS" / "a.xhtml"
-        target.write_text("<p>归档新</p>", encoding="utf-8")
+        target = self.fx.epub / BOOK_CN / "OEBPS" / "Text" / "S1_01-01_Chapter.xhtml"
+        target.write_text(Fixture.xhtml("<p>归档新</p>"), encoding="utf-8")
 
         self.assertEqual(self.run_tool("--side", "chinese", "--no-upload"), 0)
 
-        cached = self.fx.cache / "chinese-text" / BOOK_CN / "OEBPS" / "a.xhtml"
-        self.assertEqual(cached.read_text(encoding="utf-8"), "<p>归档新</p>")
+        cached = self.fx.cache / "chinese-text" / BOOK_CN / "OEBPS" / "Text" / "S1_01-01_Chapter.xhtml"
+        self.assertEqual(cached.read_text(encoding="utf-8"), Fixture.xhtml("<p>归档新</p>"))
 
     def test_identical_changes_advance_manifest_through_real_tools(self):
-        cache_target = self.fx.cache / "chinese-text" / BOOK_CN / "OEBPS" / "a.xhtml"
-        epub_target = self.fx.epub / BOOK_CN / "OEBPS" / "a.xhtml"
-        cache_target.write_text("<p>双方同改</p>", encoding="utf-8")
-        epub_target.write_text("<p>双方同改</p>", encoding="utf-8")
+        cache_target = self.fx.cache / "chinese-text" / BOOK_CN / "OEBPS" / "Text" / "S1_01-01_Chapter.xhtml"
+        epub_target = self.fx.epub / BOOK_CN / "OEBPS" / "Text" / "S1_01-01_Chapter.xhtml"
+        cache_target.write_text(Fixture.xhtml("<p>双方同改</p>"), encoding="utf-8")
+        epub_target.write_text(Fixture.xhtml("<p>双方同改</p>"), encoding="utf-8")
 
         self.assertEqual(self.run_tool("--side", "chinese", "--no-upload"), 0)
         self.assertEqual(self.run_tool("--side", "chinese", "--no-upload"), 0)

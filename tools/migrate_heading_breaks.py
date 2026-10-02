@@ -10,6 +10,8 @@ from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
+from edit_safety import (EditSafetyError, add_content_roots, add_edit_mode,
+                         content_roots, require_edit_target)
 
 DEFAULT_CACHE = (
     Path(__file__).resolve().parents[1] / ".cache" / "epub-work" / "chinese-text"
@@ -369,14 +371,9 @@ def selected_books(cache: Path, patterns: list[str]) -> list[Path]:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="将中文缓存中历史 h1/h2 内嵌 <br/> 迁移为语义标题层。"
+        description="将中文归档中历史 h1/h2 内嵌 <br/> 迁移为语义标题层（默认预览）。"
     )
-    parser.add_argument(
-        "--cache",
-        type=Path,
-        default=DEFAULT_CACHE,
-        help="中文缓存根目录（默认 .cache/epub-work/chinese-text）",
-    )
+    add_content_roots(parser)
     parser.add_argument(
         "--book",
         action="append",
@@ -384,18 +381,16 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="GLOB",
         help="只处理书籍目录名匹配的 glob；可重复指定",
     )
-    parser.add_argument(
-        "--apply",
-        action="store_true",
-        help="写入缓存；不指定时只预览",
-    )
+    add_edit_mode(parser)
     parser.add_argument("--verbose", action="store_true", help="列出每本书的统计")
     return parser
 
 
 def main() -> int:
-    args = build_parser().parse_args()
-    cache = args.cache.resolve()
+    parser = build_parser()
+    args = parser.parse_args()
+    cache, _ = content_roots(args, parser)
+    cache = cache.resolve()
     if not cache.is_dir():
         print(f"缓存目录不存在：{cache}")
         return 2
@@ -423,6 +418,12 @@ def main() -> int:
         return 1
 
     if args.apply:
+        try:
+            for plan in plans:
+                for path in plan.originals:
+                    require_edit_target(path, args.staging)
+        except EditSafetyError as exc:
+            parser.error(str(exc))
         for plan in plans:
             apply_book(plan)
 
