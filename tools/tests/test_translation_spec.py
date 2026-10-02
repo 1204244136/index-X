@@ -104,5 +104,49 @@ class P9EndToEndTests(unittest.TestCase):
         self.assertEqual(self.run_checker(), [])
 
 
+class P16TraditionalChineseTests(unittest.TestCase):
+    """P16 只抓中文正文的繁体字。
+
+    放行面容易写宽（包装页、含假名的原文引用行），白名单面容易漏（简繁同形或
+    中文规范本就用该字形的「著／祇／潟／瞭／吋／乾」与已裁定保留的专名用字
+    「姪／燐／鮟鱇」）。两侧都要有最小用例。
+    """
+
+    def p16(self, line, fkind="content"):
+        return [h for h in cts.check_text(line, fkind) if h[0] == "P16"]
+
+    def test_traditional_flagged(self):
+        for s in ("<p>「這就說來話長了。」</p>",
+                  "<p>准確來說，他是個好人。</p>",
+                  "<p>「所有的魔法都應该平等分配。」</p>"):
+            with self.subTest(s=s):
+                self.assertTrue(self.p16(s), "正文繁体应命中 P16：%s" % s)
+
+    def test_simplified_clean(self):
+        for s in ("<p>「这就说来话长了。」</p>", "<p>他说：没问题。</p>"):
+            with self.subTest(s=s):
+                self.assertFalse(self.p16(s), "简体不应命中 P16：%s" % s)
+
+    def test_normative_forms_not_flagged(self):
+        for s in ("<p>以气质优雅著称的常盘台大小姐。</p>",
+                  "<p>包含任何神祇或恶魔。</p>",
+                  "<p>是一名应该正在就读大学的年轻男性，乾山庄治。</p>",
+                  "<p>暗器高手姪龙、捕食女王瑛魅。</p>",
+                  "<p>由蓝白燐光构成的巨大长枪。</p>",
+                  "<p>深海鮟鱇那样用火光吸引人类。</p>"):
+            with self.subTest(s=s):
+                self.assertFalse(self.p16(s), "规范用字不应命中 P16：%s" % s)
+
+    def test_packaging_pages_exempt(self):
+        for kind in ("note", "info", "after", "other"):
+            with self.subTest(kind=kind):
+                self.assertFalse(self.p16("<li>原文写作「妹達」。</li>", kind),
+                                 "包装页不应命中 P16：%s" % kind)
+
+    def test_kana_line_exempt(self):
+        self.assertFalse(self.p16("<p>形状是く字形，這裡是日文引用。</p>"),
+                         "含假名的原文引用行不应命中 P16")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -334,9 +334,9 @@ python tools/compare_epub_images.py --pattern "*S3_*" --output 显式报告目�
 python tools/check_translation_spec.py --cache EPUB --output 显式报告目录
 ```
 
-P1–P15 与规范条款的完整对应表唯一维护于 [翻译规范](../docs/translation-spec.md) 七。检查器只发现可机械形状，warning／info 与例外须人工判断，不自动改正文。`--pattern` 限定书名，`--top` 只控制样例显示；输出 TSV／JSON／Markdown。
+P1–P16 与规范条款的完整对应表唯一维护于 [翻译规范](../docs/translation-spec.md) 七。检查器只发现可机械形状，warning／info 与例外须人工判断，不自动改正文。`--pattern` 限定书名，`--top` 只控制样例显示；输出 TSV／JSON／Markdown。
 
-P9 赛事项目名的封闭例外集合唯一维护于 `check_translation_spec.py` 的 `P9_EVENT_SUFFIXES`；只改词表不复制到文档。改变规则语义才更新规范与合同，并运行 `test_translation_spec.py`。
+P9 赛事项目名的封闭例外集合唯一维护于 `check_translation_spec.py` 的 `P9_EVENT_SUFFIXES`；P16 繁体字表唯一维护于同文件的 `P16_TRADITIONAL`（由 OpenCC `TSCharacters` 生成，只留中文正文确属繁体形的字）；两处只改集合不复制到文档。改变规则语义才更新规范与合同，并运行 `test_translation_spec.py`。
 
 ### 字符级规范化
 
