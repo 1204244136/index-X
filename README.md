@@ -4,6 +4,8 @@
 
 # index-X
 
+维护文档职责与入口见 [文档索引](docs/README.md)。
+
 > 禁书目录 X 系列，不一样的阅读体验！
 
 [🔖 前言](#前言)——什么是 X 系列，为什么要做 X 系列
@@ -24,7 +26,7 @@
 
 [🧭 阅读器测评](https://docs.qq.com/sheet/DUWtiZ3dBbXZFWGR5?tab=000001)
 
-[📚 各版本对比](#各版本对比)
+[📚 各版本对比](#各版本对比电子版)
 
 [📖 已收入内容](#已收入内容)
 
@@ -66,25 +68,13 @@ X 系列以台版为本体，在其基础上与网译版进行校对，部分卷
 
 ## EPUB 打包工具
 
-仓库提供 `tools/package_cache_epubs.py`，用于将 `EPUB/` 下的书籍目录重新打包为 `.epub` 文件。工具会检查根目录 `mimetype` 和 `META-INF/container.xml`，并确保 `mimetype` 是压缩包中的第一个未压缩条目。
-
-在仓库根目录运行：
+可从本仓库归档生成阅读用 `.epub`：
 
 ```powershell
 python tools/package_cache_epubs.py --source EPUB --output output/epubs
 ```
 
-生成的文件位于 `output/epubs/`。可按书籍目录名筛选，或仅预览将要生成的文件：
-
-```powershell
-# 只打包目录名中包含 S3_11 的书籍
-python tools/package_cache_epubs.py --source EPUB --output output/epubs --pattern "*S3_11*"
-
-# 仅预览输入和输出，不生成文件
-python tools/package_cache_epubs.py --source EPUB --output output/epubs --dry-run
-```
-
-生成文件属于构建产物，不应复制回或提交到 `EPUB/`。完整参数与数据流见 [`tools/README.md`](tools/README.md)「打包工具（CI 和手动使用）」。
+生成文件是构建产物。完整命令、筛选参数与门禁以 [工具合同](tools/README.md#打包工具ci-和手动使用) 为准。
 
 ## 反馈
 

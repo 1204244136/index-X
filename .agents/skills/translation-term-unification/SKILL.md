@@ -5,6 +5,8 @@ description: index-X（某系列 EPUB 档案）译名／术语统一工作流。
 
 # 译名／术语统一工作流（index-X）
 
+文档职责与入口见 [文档索引](../../../docs/README.md)。
+
 本 skill 是**读改译文用词**这一类任务的操作正文。仓库级规约仍以 `AGENTS.md` 为准；译文该写成什么样以 `docs/translation-spec.md`（尤其「五、译名与专有写法」）为准；本文件只写「怎么做」。
 
 ## 一、先分清任务类型
@@ -22,56 +24,41 @@ description: index-X（某系列 EPUB 档案）译名／术语统一工作流。
 
 1. **以日文写法为锚**，逐点替换。禁止 `科学.?势力 → 科学阵营` 式无锚点全局替换——实测有 6% 命中会误伤真实的「势力」义项（`docs/maintenance-records/science-magic-side-translation-consistency-2026-09-12.md` §6.3）。
 2. **显式映射 + 逐条预检**：每条映射写死「书籍、文件、行号、原串、新串」；预检要求文件唯一、行号有效、**原串在该行恰好出现一次**。任一不满足 → **整批不写盘**，报出来交人工。
-3. **只改行内文字，不增删物理行**，不动标签、属性、注音、资源引用、标题结构；**标题原本是英文的绝对不能改**（`<h1>`/`<h2>` 及其分层 `span`、`nav.xhtml`/`toc.ncx` 目录中原本是英文的外文题名与编码层绝对禁止汉化，保持原文；如神裂篇第六章题名 `BIFROST.` 必须保留英文）；改完中日行数必须不变。
+3. **只改行内文字，不增删物理行**，不动标签、属性、注音、资源引用、标题结构；标题语言保护规则见 `docs/translation-spec.md` 五.6；改完中日行数必须不变。
 4. **写入落点只有 `EPUB/`**（内容写入的唯一权威落点）。`.cache/` 一律只读，仅用于分析与中日对照。改完由 `publish_auto.py` 回流 OneDrive 与缓存。
-5. **任务脚本与映射数据不留仓库**：一次性修订属 `AGENTS.md`「工具与记录的边界」，不新增 `tools/fix_*.py`、`tools/*_overrides.json`。定位／替换脚本丢在 `.cache/` 或临时目录，跑完删除；复核与回退用 `git show` / `git revert`。
+5. **任务脚本与映射数据不留仓库**：一次性修订属 `AGENTS.md`「工具与记录的边界」，不新增 `tools/fix_*.py`、`tools/*_overrides.json`。定位／替换脚本放在临时目录，跑完删除；复核与回退用 `git show` / `git revert`。
 6. **留档与裁定登记分工**：`docs/maintenance-records/` **只忠实反映本次修改内容**（范围、文件数、统计、验证、样例），不承载翻译方案。**裁定**指「多个都成立的候选之间必须选一个」的决定，登记进 `docs/translation-name-rulings.md`；**把明显错误改成正确（错字、误译、漏译、日文词残留、机械替换误伤）与规范条文的执行不算裁定**，直接改，由提交承载。改动落在两本及以上书籍（中日两侧同一作品算一本）→ 写留档；只落在一本内且裁定已登记 → 不留档。
 
 ## 三、判定口径
 
 ### 3.1 锚点与分层
 
-- 锚点是**日文写法**，不是中文现状、不是台版／网翻／维基旧译。同一日文词形在系列内出现多种译法时，选**覆盖率最高且与其它义项冲突最小**的候选（冲突率要实测，见 §四 步骤 3）。
-- 同一日文有**两层用法**时必须分层（范例：`サイド`＝术语「阵营」，带 `こちら／あちら／むこう` 等指示注音的 `側`＝指示代词「侧／那边」）。两层不得互串：术语层不得落成「势力／侧／方／世界」，指示层不得升格为「阵营」。**同一行同时出现两个锚点时按日文写法分别判定。**
+- 锚点是日文写法；先读裁定与现译名表。语料频次和覆盖率用于发现冲突及估算改动面，不能据此决定候选优劣；取舍按 `translation-name-selection-spec.md`，查独立权威资料。
+- 分层锚点按裁定表分别定位；同一行有两个锚点时分别判定，不能因同处一行就套同一个目标译法。
 - 译名表是**锚点的第一顺位来源**（见 §3.3）；表里没有才走「日文原文 + 语料统计」裁定，并把结论与理由登记进 `docs/translation-name-rulings.md`。
-- **源为印刷做了两类妥协；规范、裁定表、留档与译名表一律写「不妥协写法」**：
-  - **源的事实**：BW 源注音里的小字假名 **99.8% 写作大字**（`ヤユヨツ` 而非 `ゃゅょっ`；原始源 432323 处 `<rt>` 中 431400 处通篇只用大字，仅 923 处写小字），**半角英数符号**也大量写作全角（`Ａ` `５` `＝` `＆` 等，共 53 种 29506 处）。这是源的排印约定，**不是「原文的正确写法」**。
-  - **写法**：规范、裁定表、留档与**译名表的日文列**一律写**不妥协写法**——小字假名按标准日文写小字（`エキシビジョン`、`カリキュラム`、`ディ`／`ウィ`、`らんりゅうしゅ`），英数符号写半角 ASCII（`レベル6シフト`、`H・T`、`OS`、`シープ&シープ`、`ジェーン=エルブス`）。**不得照抄源的妥协码位。**
-  - **检索**：要在源里定位时，对查询串与源串**同时做折叠归一化**（小字→大字、全角→半角），不要拿某一侧的写法直接当字符串锚点。源自身**不统一**（同一卷内 `Ｕ` 全角而 `04` 半角；同一词大小字并存 142 组，如 `カリキユラム` 51 : `カリキュラム` 1、`ドヴエルグ` 34 : `ドヴェルグ` 25），故「源怎么写」不能作为写法依据。
-  - **唯一例外是逐字引证源的实际字符串**（如「源此处作 `オーラムアツシヤー`」）：此时照抄源码位，并注明那是源的妥协形。核对原始码位回 `C:\Users\12042\OneDrive\某系列\BW提取` 的源 `.epub`；`.cache/epub-work/japanese-text` 是 `bw_preprocess.py` 合并 ruby 后的产物，**不是原始源**（各卷处理进度还不一致）。
-  - **译名表只用于确定「是哪个词条、取哪个中文译名」**；表内日文列本身按不妥协写法维护，与源不一致是**预期**，不是缺陷——**绝不能拿源的写法去"订正"译名表**（曾因此把 `＝`、`ＯＳ` 等改回妥协形，见 §3.3）。
-  - **线上检索端（魔禁维基 huijiwiki）已按此部署**：表内是不妥协写法，检索时用源的妥协形也能查到（查询串展开成字符类并与正则取并集）。结构与改动点见 §3.3。
+- 日文锚点写法、查询折叠和逐字引证的规则正文见 `docs/translation-spec.md` 六.5。核注音／码位时读取原始 BW 分页源；缓存是工作产物。
 
 ### 3.2 检索时的三个必守口径
 
 - **剥离标签先剥 `<rt>`**：`<ruby>魔術<rt>まじゆつ</rt></ruby>サイド` 若只去标签会变成 `魔ま術じゆつサイド` 而**漏检**（`xhtml_text.text_of` 就是只去标签的那种，用它之前必须先剥注音）。这个口径 bug 曾导致「科学阵营」改完而「魔法阵营」漏改 31 处。
-- **2 字词不当强证据**：「時代」「科学」这类在正文里常以普通词义出现，只有达到门槛的长别名才可作为「译名不一致」的强证据（`docs/translation-spec.md` 五.5）。
-- **风格化行默认跳过**：带「符号 + ruby 注音」的段落（如 `<ruby>〼<rt>是</rt></ruby>`、`<ruby>◎<rt>若</rt></ruby>`）繁简混用与符号是风格的一部分，不得当错字／繁体残留处理，术语判定跳过后交人工。
+- 证据强度与风格化行的准入按 `docs/translation-spec.md` 五.4／五.5；先标记跳过范围再产出映射，不把短词或刻意风格自动当异译。
 
-### 3.3 锚点数据源（本机，不写进仓库文件）
 
-| 数据 | 位置 |
-| --- | --- |
-| 译名对照表 | BetweenLines 仓库 `src/workbenches/translation-compare/ai/profiles/local/work-profile.js` 的 `termTables` 声明（本机 xlsx，**路径随本机环境变化，按该声明现读，不要硬编码**） |
-| 说话习惯表（角色口癖、固定语尾，52 条已内化） | BetweenLines `src/workbenches/translation-compare/ai/profiles/demo.js` |
-| 表格字段 | `base_ori`/`original`（日文原词）、`ruby_ori`（特殊读音）、`base_trans`/`translation`（中文译名）、`type`（人名／术语）、`other_fandom`（其他译法） |
+### 3.3 锚点数据源
 
-口癖类任务先查说话习惯表：**同一角色的同一句日文在不同卷必须逐字相同**，跨卷不一致就是要收敛的对象。
+按 `docs/translation-spec.md`「外部依赖与核验」动态定位译名表、说话习惯、BetweenLines 版本与 BW 原始源，并在工作报告记录版本／哈希。读表字段通常为 `Base_Ori`、`Ruby_Ori`、`Base_Trans`、`Ruby_Trans`、`Type`，以当前表头为准。
 
-**本表还有一份线上副本：魔禁维基（huijiwiki）[`Data:Translation.tabx`](https://toaru.huijiwiki.com/wiki/Data:Translation.tabx)，检索入口 [`Project:译名表`](https://toaru.huijiwiki.com/wiki/Project:%E8%AF%91%E5%90%8D%E8%A1%A8)。**
-两侧同一份数据，**日文列一律按 §3.1 的不妥协写法维护**（表内 `カリキュラム`/`レベル5`/`ジェーン=エルブス`，源里是 `カリキユラム`/`レベル５`/`ジェーン＝エルブス`）。
-检索端已做折叠归一化，用源的妥协形也能查到不妥协词条（2026-09-28 部署并实测通过）；折叠归一化的口径与源侧事实数据见 §3.1，**wiki 侧结构以该站实际文件为准，仓库内不另存副本**。
-**注意**：wiki 侧文件（`零件:GlobalSearcher.js` 等）**不在本仓库**，无 git 记录；改完需强刷（5 小时缓存）。
+口癖类任务先查说话习惯与已裁定条目。线上魔禁维基的 [译名表](https://toaru.huijiwiki.com/wiki/Project:%E8%AF%91%E5%90%8D%E8%A1%A8) 可帮助定位词条，但它与项目表共享来源，不能作为候选取舍的独立证据。Wiki 文件由站点维护，本仓库不保留副本或部署状态；外部表／档案无法读取时明确未核验范围。
 
-### 3.4 注音义务的锚点是 BW 源的特殊读音
+### 3.4 注音相关任务
 
-判定「原文是否带注音」必须回 BookWalker 分页源核对，不能只看缓存：`bw_preprocess.py` 已把多段 ruby 合并、只保留特殊注音，源里普通汉字词也标读音（`<ruby>学<rt>がく</rt>園<rt>えん</rt>…`）。因此「日文有特殊注音则译文必须有注音」的锚点是源中的**特殊读音（当て字／外来语）**，普通读音不构成译文注音义务。这条只在任务涉及注音增减时使用；单纯换汉字写法不动 `<rt>`。
+涉及注音增减时按 `docs/translation-spec.md` 三.1 回 BW 原始分页源核特殊读音；单纯换基文不动 `<rt>`。
 
 ## 四、执行流程
 
 ### S0 读既有裁定，避免重开已决口径
 
-先查 `docs/translation-name-rulings.md`（已裁定总表，§六 为其入口）与 `docs/maintenance-records/` 的同类记录。**已裁定过的锚点不得再换目标译法**；同一锚点二次统一要说明前次结论哪里不适用。
+先查 `docs/translation-name-rulings.md`（已裁定总表，§六 为其入口）；同类维护记录只用于追溯修改事实，不用来重开取舍。**已裁定过的锚点不得再换目标译法**；同一锚点二次统一要说明前次结论哪里不适用。
 
 ### S1 写前同步
 
@@ -85,24 +72,24 @@ python tools/publish_auto.py            # 预览可加 --dry-run
 
 - 分析源优先 `.cache/epub-work/japanese-text/`（日文完整）与 `chinese-text/`；写作目标是 `EPUB/`。
 - 检索一律用 `rg` 或直读，**不用 CodeGraph**：正文是字面文本，不构成符号。
-- 中日配对：同作品号目录；文件按**表头 + 内容序**对齐（`01`＝序章／引子、`02`＝行间一、`03`＝第一章…）。作品号／表头解析用 `tools/epub_ids.py`（`book_id`／`work_id`／`header_of`／`content_sequence`），不要自己写正则。
-- 逐点产出三列：日文锚点位置 → 中文同行现状 → 判定（应改 / 保留 / 待人工）。**中文未收录的作品不纳入**（如 S3_12–S3_16 长期未收录），在统计中单列。
+- 中日配对：同作品号目录；文件按**表头 + 内容序**对齐（内容序只表达对齐顺序，章节语义以文件内容与导航为准）。作品号／表头解析用 `tools/epub_ids.py`（`book_id`／`work_id`／`header_of`／`content_sequence`），不要自己写正则。
+- 逐点产出三列：日文锚点位置 → 中文同行现状 → 判定（应改 / 保留 / 待人工）。**中文未收录的作品不纳入**，在统计中单列。
 
 ### S3 裁定目标译法
 
-对每个候选给出「全书频次 → 改动面 → 与其它义项冲突率 → 是否与日文对仗」四项依据，取多数派且无冲突者。冲突率要实测（例：`势力` 段 71 行中 4 行与作品固有「势力」义项压平，`阵营` 段 173 行中仅 1 行）。**若这一步是在多个都成立的候选间作选择，把裁定登记进 `docs/translation-name-rulings.md`**；若只是把明显错误改成正确，直接改，不登记。留档只反映本次修改内容。
+先沿用已决裁定和当前译名表；缺项时按译名选取规范查证独立来源，再比较候选与原文的所指、义项冲突及作品语域。全库频次只用来发现不一致、测定修改规模，不能替代取舍依据。多个候选都成立时登记裁定；明显错误或规范执行直接订正，留档只记录修改事实。
 
 ### S4 生成显式映射并预检
 
 按 §五 的命令生成业务映射（书籍、文件、行号、原串、新串）。执行器用本 skill 附带的模板：
 
 ```powershell
-Copy-Item .agents/skills/translation-term-unification/references/unify_terms_template.py .cache/_unify_terms.py
+Copy-Item .agents/skills/translation-term-unification/references/unify_terms_template.py (Join-Path $env:TEMP "unify_terms_task.py")
 # 填 MAPPINGS 后：
-python .cache/_unify_terms.py                  # 预检：只打印，不写盘
-python .cache/_unify_terms.py --apply           # 预检全过才写 EPUB/
-python .cache/_unify_terms.py --apply --tsv .cache/_unify.tsv   # 顺带产出可粘进留档的明细表
-Remove-Item .cache/_unify_terms.py             # 用完删除，不提交
+python (Join-Path $env:TEMP "unify_terms_task.py")                  # 预检：只打印，不写盘
+python (Join-Path $env:TEMP "unify_terms_task.py") --apply           # 预检全过才写 EPUB/
+python (Join-Path $env:TEMP "unify_terms_task.py") --apply --tsv (Join-Path $env:TEMP "unify_terms_task.tsv")   # 顺带产出可粘进留档的明细表
+Remove-Item -LiteralPath (Join-Path $env:TEMP "unify_terms_task.py")             # 用完删除，不提交
 ```
 
 模板自带回归测试（改动模板后跑一次；无第三方依赖、不触碰 `EPUB/`）：
@@ -124,12 +111,12 @@ python .agents/skills/translation-term-unification/references/test_unify_terms_t
 ### S6 门禁
 
 ```powershell
-python tools/check_alignment.py --strict        # 中日行数 / 模板 / h2 / 图片行；当前基线 1105 正文文件 0 问题
+python tools/check_alignment.py --strict        # 中日行数 / 模板 / h2 / 图片行
 python tools/check_epub_health.py --strict      # 单侧结构（XML、ruby、加粗、悬空引用等）
 python tools/check_translation_spec.py          # 涉及标点／注音／单位时跑；报告在 .cache/epub-work/
 ```
 
-`check_alignment.py` 的输出行数异常（如「1105 个正文文件」变成别的数字）要先解释再继续，不得当成噪声跳过。（913 是 S5 配对修复前的旧基线，见 `cn-jp-pairing-fix-s5-works-2026-09-17.md`。）
+记录本次选定范围的实际文件数、未配对范围与问题数；数量变化先核对输入范围和收录状态，不能套用历史全库数字。
 
 ### S7 写后同步、留档、提交
 
@@ -167,7 +154,7 @@ python tools/check_translation_spec.py --pattern "*S3_10*"
 python tools/proofread_review.py <commit>       # 产物 .cache/epub-work/proofread-review/
 ```
 
-**同步的元数据不在中日配对范围内**，但同属术语一致性，需按内容单独判定并同步：`content.opf` 简介、`*-Introduction.xhtml`（与 OPF 简介同文，必须同步）、无日文对照本的作品（如 `S6_10.06.26`）；**注意：标题原本是英文的不能改**——章节标题与 `nav.xhtml`/`toc.ncx` 目录中原本是英文的外文题名或编码层（如 `BIFROST.`）绝对禁止改写汉化，保持外文原文不变；章名原本为中文的专名若涉及异译则允许统一（如「超绝者姆特·底比斯」）。
+元数据不在正文行配对范围内，但术语修改涉及同文简介时同步判定 `content.opf` 与 `*-Introduction.xhtml`；标题与 nav/NCX 的语言保护规则见 `docs/translation-spec.md` 五.6。没有日文参考的作品单列未核验范围。
 
 ## 六、已裁定结论索引
 
@@ -195,7 +182,7 @@ python tools/proofread_review.py <commit>       # 产物 .cache/epub-work/proofr
 | --- | --- |
 | `<日文锚点>` | <目标译法> |
 
-<本次判定的依据：频次、覆盖率、冲突率、对仗；口癖类写明排他性证据>
+<本次引用的裁定／规范条款或独立权威证据；语料统计只说明修改范围>
 
 ## 修订明细
 
@@ -211,7 +198,7 @@ python tools/proofread_review.py <commit>       # 产物 .cache/epub-work/proofr
 
 - 修订前 / 修订后：<译法分布与残留数>
 - 全部为行内替换，不增删物理行：<各文件 行数/行数 中日一致>
-- `python tools/check_alignment.py --strict`：1105 个正文文件，0 个问题
+- `python tools/check_alignment.py --strict`：<本次范围、文件数、问题数、未配对项>
 - `python tools/publish_auto.py`：<哪些书已上传并回流缓存>
 - 回退：`git revert <commit>`
 ```
