@@ -53,9 +53,9 @@ from audit_risk import audit_risk_flags
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_OUT_DIR = os.path.join(REPO_ROOT, ".cache", "epub-work", "proofread-review")
 
-OLD_RE = re.compile(r"\[-(.*?)-\]", re.S)
-NEW_RE = re.compile(r"\{\+(.*?)\+\}", re.S)
 OCTAL_RE = re.compile(r"\\([0-7]{3})")
+# hunk 头 `@@ -a,n +b,m @@`；`-U0` 下某侧只有一行时 git 省略 `,n`。
+HUNK_RE = re.compile(r"@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@")
 
 # 标点/空白：两侧剥离后相同即视为「只改了标点排版」。
 # 覆盖全角与半角标点、各类引号、破折号/波浪号/省略号/间隔号变体——
@@ -173,28 +173,50 @@ def clip(text: str, frag: str, width: int = CLIP_WIDTH) -> str:
     return ("…" if s > 0 else "") + text[s:e] + ("…" if e < len(text) else "")
 
 
-def parse_word_diff(text: str, label: str) -> list[dict]:
-    """解析 `git diff -U0 --word-diff=plain` 输出。
+def parse_diff_rows(text: str, label: str) -> list[dict]:
+    """解析 `git diff -U0`（普通 unified diff）为行级改动记录。
 
-    每个 hunk 内 `[-x-]` 与 `{+y+}` 数量相同时逐条配对；数量不同说明有整段增删，
-    整段合并为一条，避免错位配对。
+    行号：unified diff 的 `-` 行严格对应旧文件的一行、`+` 行严格对应新文件的一行，
+    hunk 头 `@@ -a,n +b,m @@` 给出两侧起始行号，hunk 内按前缀递增即可让每行拿到
+    自己的行号。
+
+    为什么不用 `--word-diff`（两条路都试过，实测都不行）：
+
+    - `plain`：用 `[-x-]`/`{+y+}` 标记行内变化，一个**物理行**可以同时含删除与新增
+      片段，而且同一个**文件行**的内容会被拆到多个物理行。实测 `@@ -309,3 +309,3 @@`
+      的 5 个物理行里，新 309 的内容分散在 phys#1 与 phys#3，中间夹着旧 310 的片段，
+      按物理行递增必然错位。
+    - `porcelain`：输出的是词级 run，不与文件行一一对应。实测 2 删 2 增的 hunk 里
+      出现了一个 `+` 空 run（`-旧28 / ~ / -旧29 / + / +新28 / ~ / +新29 / ~`）。
+
+    行级口径牺牲的只是「一行内多处独立改动拆成多条」，而分级、聚类与样例显示都基于
+    `minimal_diff`（剥公共前后缀后取最小差异），不受影响；换来的是行号严格准确。
+
+    每个 hunk 内 `-` 与 `+` 数量相同时逐条配对，取**新侧行号**（复核关心的是改动在
+    当前文件里的位置，日文原文也按当前行号一一对应）；纯删除行没有新侧行号时退回旧侧
+    行号。数量不同说明有整段增删，整段合并为一条，避免错位配对。
     """
     rows: list[dict] = []
-    cur_file, cur_line = "?", "?"
-    olds: list[str] = []
-    news: list[str] = []
+    cur_file = "?"
+    old_no, new_no = 0, 0
+    olds: list[tuple[str, int]] = []
+    news: list[tuple[str, int]] = []
 
     def flush() -> None:
         if not olds and not news:
             return
-        o_list = [to_text(x) for x in olds]
-        n_list = [to_text(x) for x in news]
-        pairs = (list(zip(o_list, n_list)) if len(o_list) == len(n_list)
-                 else [(" ‖ ".join(o_list), " ‖ ".join(n_list))])
-        for old, new in pairs:
+        o_list = [to_text(x) for x, _ in olds]
+        n_list = [to_text(x) for x, _ in news]
+        if len(o_list) == len(n_list):
+            pairs = [(o, n, nl or ol) for o, n, (_, ol), (_, nl)
+                     in zip(o_list, n_list, olds, news)]
+        else:
+            pairs = [(" ‖ ".join(o_list), " ‖ ".join(n_list),
+                      news[0][1] if news else olds[0][1])]
+        for old, new, ln in pairs:
             if not old and not new:
                 continue
-            rows.append({"commit": label, "file": cur_file, "line": cur_line,
+            rows.append({"commit": label, "file": cur_file, "line": str(ln),
                          "old": old, "new": new})
 
     for line in text.split("\n"):
@@ -205,13 +227,19 @@ def parse_word_diff(text: str, label: str) -> list[dict]:
         elif line.startswith("@@"):
             flush()
             olds, news = [], []
-            m = re.match(r"@@ -(\d+)", line)
-            cur_line = m.group(1) if m else "?"
+            m = HUNK_RE.match(line)
+            old_no, new_no = (int(m.group(1)), int(m.group(2))) if m else (0, 0)
         elif line.startswith(("---", "+++", "index ")):
             continue
-        else:
-            olds.extend(OLD_RE.findall(line))
-            news.extend(NEW_RE.findall(line))
+        elif line.startswith("-"):
+            olds.append((line[1:], old_no))
+            old_no += 1
+        elif line.startswith("+"):
+            news.append((line[1:], new_no))
+            new_no += 1
+        elif line.startswith(" "):  # `-U0` 下不出现；留作上下文行的行号对齐
+            old_no += 1
+            new_no += 1
     flush()
     return rows
 
@@ -221,14 +249,14 @@ def collect(repo: str, commits: list[str], path: str, worktree: bool) -> list[di
     targets = ["worktree"] if worktree else commits
     for c in targets:
         if worktree:
-            args = ["diff", "-U0", "--no-color", "--word-diff=plain"]
+            args = ["diff", "-U0", "--no-color"]
             label = "worktree"
         else:
-            args = ["diff", "-U0", "--no-color", "--word-diff=plain", "%s~1" % c, c]
+            args = ["diff", "-U0", "--no-color", "%s~1" % c, c]
             label = c[:8]
         if path:
             args += ["--", path]
-        rows.extend(parse_word_diff(git(repo, *args), label))
+        rows.extend(parse_diff_rows(git(repo, *args), label))
     return rows
 
 
