@@ -67,6 +67,8 @@
 1. **写前同步**：运行 `python tools/publish_auto.py`，使工作站缓存、归档与 OneDrive 的最新有效内容同步；需要预览时加 `--dry-run`。同步冲突按下一节逐项分析。
 2. **分析与写入**：分析优先读缓存；已确认的内容只写 `EPUB/`。新书导入可在显式暂存目录预处理，最终结果必须落到归档。规范化、修复等写工具默认预览，明确 `--apply` 才写入；暂存模式与路径限制见工具合同。
 3. **验证**：按修改类型运行对应门禁，检查 `git status`、变更文件数、`git diff --stat` 并抽查 diff。批量校对产出按 `.agents/skills/proofread-review/SKILL.md` 复核；术语收敛按 `.agents/skills/translation-term-unification/SKILL.md` 执行。
+   - 任何改写行内文字的改动（重译、通校、回改、术语替换、标点调整）都可能重新划定加粗边界或挪动标点，写盘后必须重跑字符级规范化并确认 0 命中：`python tools/text_norm.py --dry-run`（可加 `--pattern "*S3_09*"` 限定书籍）。`<b>` 段内含标点同时是 `check_epub_health.py --strict` 与 `publish_auto.py` 发布预检的**阻断项**——留着不修会卡住写后同步，或由每日规范化 CI 代为提交、使「结论 ↔ 落地」分家。加粗口径见 `docs/translation-spec.md` 一.8。
+   - 通校／重译这类整批改写同样算「动译名」：整批 `rewrite` 里的用词也要比对 `docs/translation-name-rulings.md`，不得只按日文字面直译；比对方法与案例见 `.agents/skills/proofread-review/SKILL.md` §二.5。
 4. **写后同步**：立即再次运行 `python tools/publish_auto.py`，把本次修改发布到 OneDrive，并更新缓存、清单与拉取状态。
 5. **留档与提交**：一次内容修改落在两本及以上作品时，在 `docs/maintenance-records/` 记录范围、文件数、依据、统计、验证与必要样例；中日同一作品算一本。单本修改以提交承载，不另留档。留档忠实反映修改事实，候选取舍登记 `docs/translation-name-rulings.md`；明显错误订正与规范执行不算裁定。只暂存本任务文件，成功同步后直接提交，不 push。
 

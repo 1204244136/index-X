@@ -111,6 +111,7 @@ python .agents/skills/translation-term-unification/references/test_unify_terms_t
 ### S6 门禁
 
 ```powershell
+python tools/text_norm.py --dry-run             # 字符级规范化：必须 0 命中，有命中先 --apply 再复跑
 python tools/check_alignment.py --strict        # 中日行数 / 模板 / h2 / 图片行
 python tools/check_epub_health.py --strict      # 单侧结构（XML、ruby、加粗、悬空引用等）
 python tools/check_translation_spec.py          # 涉及标点／注音／单位时跑；报告在 .cache/epub-work/
