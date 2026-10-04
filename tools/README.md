@@ -12,8 +12,8 @@
 | `pull.ps1` | OneDrive 打包源、拉取状态 | 缓存；`-SyncToEpub` 时归档 | 解包路径安全、保全未发布变化；增量更新基线 | 共享能力：`test_sync_and_rename.py`／`test_path_safety.py`；PowerShell 入口无专用测试 |
 | `publish.py`／`publish_epub.py` | B：缓存；C：归档中文及只读日文参考 | 缓存、归档、打包与 OneDrive | 共享发布前检查、基线缺失与冲突阻断 | `test_sync_and_rename.py`、`test_publish_preflight.py` |
 | `package_cache_epubs.py` | 显式 `--source` 或缓存书目录 | `--output` 构建目录 | 容器、XML、资源引用；`mimetype` 首项不压缩 | `test_package_cache_epubs.py` |
-| `bw_preprocess.py` | BW `.epub`／显式分页暂存目录 | 显式产物／暂存目录 | 分页或合并后契约、映射完整性、资源与 XML | `test_bw_preprocess.py`、`test_import_output_boundaries.py` |
-| `merge_bw_pages.py` | 已预处理分页目录 | 显式章节输出 | 表头、作品号、序号冲突阻断；边界疑点报告人工 | `test_xhtml_and_merge.py`、`test_image_title_merge.py`、`test_import_output_boundaries.py` |
+| `bw_preprocess.py` | BW `.epub`／显式分页暂存目录 | 显式产物／暂存目录 | 分页或合并后契约、映射完整性、资源与 XML | `test_bw_preprocess.py`、`test_import_output_boundaries.py`、`test_bw_pagebreaks.py` |
+| `merge_bw_pages.py` | 已预处理分页目录 | 显式章节输出 | 表头、作品号、序号冲突阻断；边界疑点报告人工 | `test_xhtml_and_merge.py`、`test_image_title_merge.py`、`test_import_output_boundaries.py`、`test_bw_pagebreaks.py` |
 | `split_s5_epubs.py` | 显式合订卷源与 `SPLIT_SPECS` | 显式打包／解包暂存目录 | 全部源、页区间和产物先预检；失败不输出 | `test_split_s5_epubs.py`、`test_bw_preprocess.py` |
 | `normalize_single.py`／`normalize_paired.py` | 指定单侧文件；归档中文与只读日文参考或双侧暂存 | `EPUB/`；显式 `--staging` 暂存 | 共用模板规则；配对写入验证行数，不靠重排凑齐 | CLI：`test_edit_safety.py`；模板规则：`test_xhtml_and_merge.py` |
 | `migrate_heading_breaks.py` | 归档或显式暂存书籍 XHTML/CSS | 同一书 XHTML/CSS | 全书预检未知结构、CSS 路径和按层文字不变 | `test_heading_breaks.py` |
@@ -28,7 +28,7 @@
 | `check_semantic_alignment.py` | 中日缓存；L2 模型运行时 | 语义诊断报告 | strict 全范围 L2；环境失败及未通过结果非零 | `test_check_semantic_alignment.py`、`test_diff_paired_lines.py` |
 | `compare_epub_images.py` | 中日缓存图片与引用 | 图片核对报告 | 字节／像素相同与感知候选分开；候选需视觉确认 | 无专用测试；只读诊断 |
 | `check_note_order.py` | 中文缓存或 `--root` | TSV／JSON／Markdown | 未定义／重复／未引用与阅读顺序问题 | `test_check_note_order.py`；共享规则：`test_docx_and_notes.py` |
-| `check_translation_spec.py` | 中文缓存或 `--cache EPUB` | TSV／JSON／Markdown | P1–P15 规则报告；提示不自动当缺陷 | `test_translation_spec.py` |
+| `check_translation_spec.py` | 中文缓存或 `--cache EPUB` | TSV／JSON／Markdown | P1–P16 规则报告；提示不自动当缺陷 | `test_translation_spec.py` |
 | `text_norm.py` | 中文归档 | 字符级成品修改与显式报告 | 确定性规则、XML 与行数不变，默认预览 | `test_text_norm.py` |
 | `check_epub_health.py` | 中文归档 | 显式 TSV／JSON | 单侧项目规约，strict 遇 error 非零 | `test_check_epub_health.py`（每项含负例） |
 | `check_epub_validity.py` | EPUB 成品／解包书籍 | 显式报告；系统临时解包 | calibre 补充检查，环境错误明确非零 | `test_calibre_validity.py` |
@@ -60,7 +60,7 @@
 
 `bw_extract_preprocess.json` 维护可重复预处理规则；`bw_page_header_overrides.json` 维护已审计的逐页内容映射。映射必须覆盖实际分页，不能把未知页默认为上一章节。
 
-共享路径／结构保护另有 `test_edit_safety.py` 和 `test_xhtml_structure.py`；发布前检查由 `test_publish_preflight.py`、打包由 `test_package_cache_epubs.py` 验证。修改共享模块或其调用方后运行对应矩阵测试及：
+共享路径／结构保护另有 `test_edit_safety.py` 和 `test_xhtml_structure.py`；作品号／表头解析由 `test_epub_ids.py` 验证；发布前检查由 `test_publish_preflight.py`、打包由 `test_package_cache_epubs.py` 验证。修改共享模块或其调用方后运行对应矩阵测试及：
 
 ```powershell
 python -m unittest discover -s tools/tests -p "test_*.py" -v
