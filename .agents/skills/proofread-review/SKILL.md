@@ -59,7 +59,7 @@ python tools/proofread_review.py b7515335 2d44cb26 821c46b9 7a218119
 终端另给：片段数、各级别条数、`spec` 子类分布、**明显增补／明显删减**条数、按作品分布。
 
 - **不要为复核新建 git worktree**：工具直接读 git 历史，`<commit>` 参数即够。
-- 分级判据与参数的权威定义在 `tools/README.md`「译文校对复核（提交级，只读）」与 `tools/proofread_review.py` 源码；本 skill 只写怎么用、怎么判。
+- 分级判据与参数的权威定义在 `tools/README.md`「提交级校对复核」与 `tools/proofread_review.py` 源码；本 skill 只写怎么用、怎么判。
 - `.cache/` 属只读分析区，工具产物（TSV / `groups.txt` / 复核报告）落在其下的 `proofread-review/` 即可，**不进仓库**；也不要把报告写进其它 agent 的工作目录。
 
 ## 四、分级与处置
