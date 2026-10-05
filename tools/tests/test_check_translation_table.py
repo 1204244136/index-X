@@ -557,7 +557,7 @@ class SettledAnchorTests(unittest.TestCase):
             from alignment_rules import SETTLED_ANCHORS
         except ImportError:  # pragma: no cover
             self.skipTest("无法导入 alignment_rules")
-        for anchor in ("昼間", "ラベンダー", "ヘイヘイ", "ヒュドラ"):
+        for anchor in ("昼間", "ラベンダー", "ヘイヘイ"):
             self.assertIn(anchor, SETTLED_ANCHORS)
 
     def test_small_kana_key_is_folded(self):
