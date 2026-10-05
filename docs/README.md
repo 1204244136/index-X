@@ -20,8 +20,7 @@
 | --- | --- |
 | [翻译规范（EPUB 成品层）](translation-spec.md) | 译文**该写成什么样**：标点、字形、注音、译注、语义与证据边界（规范执行类以此为准） |
 | [译名选取规范](translation-name-selection-spec.md) | 一个译名在多个候选之间**怎么取舍**：从俗 → 从官 → 自拟、原语还原防日语中转、外文人名性别化选字 |
-| [X 版译名差异说明](x-translation-differences.md) | 本项目与灰机 Wiki 译名表之间**人为制定的固有差异**（取舍而非缺陷，两侧各自维持）；差异清单是一张 Markdown 表格，同时作为 `tools/check_translation_table.py` 的**门禁**被机器读取 |
-| [译名裁定总表](translation-name-rulings.md) | **已经作出过的裁定**：某锚点在多个成立候选间定了哪个、否决了什么、哪些不作统一 |
+| [译名裁定总表](translation-name-rulings.md) | **已经作出过的裁定**：某锚点在多个成立候选间定了哪个、否决了什么、哪些不作统一；§7.1 是与灰机 Wiki 译名表的人为固有差异清单，同时作为 `tools/check_translation_table.py` 的**门禁**被机器读取 |
 | [`maintenance-records/`](maintenance-records/) | **只忠实反映本次修改内容**：范围、涉及书籍与文件数、统计、验证、样例。**不是翻译方案的来源** |
 
 选译法的**原则**看前三份；**已决的取舍**看裁定总表；**这次改了什么、改了多少**看留档与提交。

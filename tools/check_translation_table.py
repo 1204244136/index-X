@@ -16,18 +16,18 @@
 
 判定口径：
   · **门禁顺序（不可颠倒）**：先做**折叠归一化**，再用**折叠后的锚点**匹配 X 版固有
-    差异清单，命中后才按 X 版写法判定——即「码位折叠 → 差异清单 → 落地判定」。
-    折叠依据《Data_Translation 九列取值口径裁定》§5.3「不妥协写法」：译名表与差异清单
+    裁定表，命中后才按裁定写法判定——即「码位折叠 → 裁定表 → 落地判定」。
+    折叠依据《Data_Translation 九列取值口径裁定》§5.3「不妥协写法」：译名表与裁定表
     写不妥协形式（注音小字假名、半角 ASCII），BW 源是印刷妥协形式（小字写成大字、
     半角英数写成全角），故两侧同时折叠（全角 ASCII→半角、小字假名→大字）。拿未折叠的
     锚点直接查清单，源侧的妥协码位（`＆`／`６`／大字假名）就对不上；
   · 归一化还去 `【】「」『』` 与空白（`【】` 按该裁定 §5／§6 是振假名范围标记，非名称
     的一部分），因此表内 `アンナ=シュプレンゲル` 能匹配原文 `アンナ＝シュプレンゲル`；
   · 文本一律**先剥 `<rt>/<rp>` 注音再剥标签**，避免注音串入正文；
-  · **X 版固有差异门禁**（`docs/x-translation-differences.md`）：该清单登记的是
-    本项目与灰机 Wiki 译名表之间**人为制定的取舍**（「两侧各自维持自身写法，不计入待改、
-    不得按表回改」），命中项按 **X 版写法**判定——成品用 X 版写法即算落地，退回表侧写法
-    记为 `x_form=table`，两者都无才报未落地；
+  · **裁定表门禁**（`docs/translation-name-rulings.md`）：该表登记已决口径（含与灰机 Wiki
+    译名表的人为固有差异）。命中项按**裁定写法**判定——成品用裁定写法即算落地
+    （`form_kind=ruling`），都没有才报未落地；判定列标 `人读` 的条目跳过判定、
+    报告里单列（`status=human_only`）；
   · 命中处前后若是假名或汉字，标记为 `suspect`（疑似更长词的子串，如
     表内 `ニック` 命中 `パニック`）；默认不计入未落地，可用 `--include-suspect` 纳入。
 
@@ -36,20 +36,20 @@
     python tools/check_translation_table.py --table <译名表.xlsx> --book S3_06
     python tools/check_translation_table.py --table <译名表.xlsx> --strict
     python tools/check_translation_table.py --table <译名表.xlsx> --sheet data --limit 200
-    python tools/check_translation_table.py --table <译名表.xlsx> --audit-x-diff
+    python tools/check_translation_table.py --table <译名表.xlsx> --audit-rulings
 
-`--audit-x-diff` 是**清单自身的门禁**：只核对「X 版差异清单 ↔ 译名表」，不跑成品
+`--audit-rulings` 是**清单自身的门禁**：只核对「译名裁定总表 ↔ 译名表」，不跑成品
 核对，报出四类问题（表侧应回填／与表不一致、`<rt>` 与 `Ruby_Ori`／`Ruby_Trans`
 不一致、写法含全角 ASCII），有问题则退出 1。改完清单锚点后应重跑一次——锚点归一化
 之后若不重查译名表，就会出现「锚点改对了、表侧却还空着」的漏项。
 
 产物（默认 `.cache/epub-work/`）：
-    translation-table-check.tsv    全部「日文有」条目：作品/锚点/译名/类型/状态/是否疑似/是否 X 版差异/实际写法/日文上下文
+    translation-table-check.tsv    全部「日文有」条目：作品/锚点/译名/类型/状态/是否疑似/是否命中裁定表/实际写法/日文上下文
     translation-table-check.json   结构化结果（含统计）
-    translation-table-check.md     摘要 + X 版差异命中 + 未落地清单（可直接贴进复核报告）
-    x-diff-audit.tsv / .md         `--audit-x-diff` 的清单一致性核对报告
+    translation-table-check.md     摘要 + 裁定表命中 + 未落地清单（可直接贴进复核报告）
+    rulings-audit.tsv / .md         `--audit-rulings` 的清单一致性核对报告
 
-退出码：0 正常；1 `--strict` 且存在未落地项、或 `--audit-x-diff` 检出问题；2 参数或环境错误。
+退出码：0 正常；1 `--strict` 且存在未落地项、或 `--audit-rulings` 检出问题；2 参数或环境错误。
 只读：不修改 `EPUB/`、`.cache/` 正文，只写报告文件。
 """
 from __future__ import annotations
@@ -67,7 +67,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_EPUB = REPO_ROOT / "EPUB"
 DEFAULT_JP = REPO_ROOT / ".cache" / "epub-work" / "japanese-text"
 DEFAULT_OUT = REPO_ROOT / ".cache" / "epub-work"
-DEFAULT_X_DIFF = REPO_ROOT / "docs" / "x-translation-differences.md"
+DEFAULT_RULINGS = REPO_ROOT / "docs" / "translation-name-rulings.md"
 
 # 剥注音与标签：先整段移除 <rt>/<rp>（含内容），再剥其余标签
 RT_RE = re.compile(r"<(rt|rp)\b[^>]*>.*?</\1>", re.S | re.I)
@@ -102,6 +102,7 @@ _ASCII_FOLD_TABLE = str.maketrans(_ASCII_FOLD)
 STATUS_LANDED = "landed"
 STATUS_MISSING = "missing"
 STATUS_SETTLED = "settled"   # 已判定为工具误报／暂缓（见 alignment_rules.SETTLED_ANCHORS）
+STATUS_HUMAN_ONLY = "human_only"   # 裁定表「判定」列标 `人读`：工具不判定，报告里单列
 
 
 class ToolError(Exception):
@@ -239,62 +240,72 @@ def load_table(path: Path, sheet: str | None, ori_col: str, trans_col: str,
             "trans": tr.strip(),
             "type": (row[i_ty] if 0 <= i_ty < len(row) else "") or "",
             "debuts": (row[i_db] if 0 <= i_db < len(row) else "") or "",
-            # 注音列供 `audit_x_diff` 对照清单的 <rt>（`compare` 用不到）
+            # 注音列供 `audit_rulings` 对照清单的 <rt>（`compare` 用不到）
             "ruby_ori": ((row[i_ro] if 0 <= i_ro < len(row) else "") or "").strip(),
             "ruby_trans": ((row[i_rt] if 0 <= i_rt < len(row) else "") or "").strip(),
         })
     return entries, headers
 
 
-def load_x_diff(path: Path) -> dict[str, dict[str, str]]:
-    """解析「X 版译名与灰机 Wiki 译名表的固有差异」清单（Markdown 表格）。
+def load_rulings(path: Path) -> dict[str, dict[str, object]]:
+    """解析「译名裁定总表」的锚点表格（Markdown），供落地判定与清单自检共用。
 
-    返回 {归一化日文锚点: {"ori":…, "table": 表侧写法, "x": X 版写法, "cat": 类别}}。
-    表格列序固定为 `日文锚点 | 表侧写法 | X 版写法 | 类别 | 说明`；`—` 视为空。
+    返回 {归一化日文锚点: {"forms": [可接受写法…], "raw": [原始裁定单元格…],
+                          "labels": [义项标识…], "human_only": bool}}。
 
-    **写法列可以带 `<ruby>` 注音**（如 `<ruby>主神之枪<rt>冈格尼尔</rt></ruby>`）——
-    文档按项目惯例用 ruby 呈现注音，本函数统一**只取基文**（先删 `<rt>/<rp>` 再剥标签），
-    因此清单与成品文本在同一规范下比对；注音本身不参与匹配（成品侧同样已剥注音）。
+    解析规则与裁定表 §12 的格式约定一致：
+      · 锚点列用反引号包裹，**一行的多个反引号内容都算锚点**（如 `魔術`／`魔術師`）；
+      · 「裁定」列用 `／` 分隔多个可接受写法，中文括号注释不参与匹配；
+      · 同一锚点的多条登记**合并为候选集合**（分层与同词异译按不同义项标识并列）；
+      · 「判定」列为 `人读` 时跳过判定（条件式、分层、描述性或聚合条目）。
 
-    这些差异是**取舍而非缺陷**——`docs/x-translation-differences.md` 与
-    `docs/translation-name-rulings.md` 均明确「两侧各自维持自身写法，不计入待改、
-    不得按表回改」。故本工具把它当**门禁**先加载：命中项按 X 版写法判定，
-    不会被误报成术语未落地。
+    写法列可以带 `<ruby>` 注音（如 `<ruby>主神之枪<rt>冈格尼尔</rt></ruby>`）；本函数
+    只取基文参与匹配（成品侧同样先剥注音），注音层的判定另行处理。
     """
     if not path.is_file():
         return {}
-    out: dict[str, dict[str, str]] = {}
-
-    def cell(value: str) -> str:
-        """列值 → 纯基文：`—`/`-`/空 视为空，其余先剥注音再剥标签。"""
-        v = value.strip()
-        if v in ("—", "-", ""):
-            return ""
-        return strip_markup(v).strip()
-
+    out: dict[str, dict[str, object]] = {}
+    header: list[str] | None = None
     for raw in path.read_text(encoding="utf-8").splitlines():
         line = raw.strip()
-        if not line.startswith("|"):
+        if line.startswith("#") or not line.startswith("|"):
+            header = None
             continue
         cells = [c.strip() for c in line.strip("|").split("|")]
-        if len(cells) < 4:
+        if header is None:
+            header = cells
             continue
-        ori, table_form, x_form, cat = cells[0], cells[1], cells[2], cells[3]
-        if strip_markup(ori) == "日文锚点" or set(ori) <= set("-: "):
-            continue      # 表头行 / 分隔行
-        key = norm_anchor(strip_markup(ori))
-        if not key:
+        if len(cells) != len(header) or set("".join(cells)) <= set("-: "):
             continue
-        out[key] = {
-            "ori": strip_markup(ori).strip(),
-            "table": cell(table_form),
-            "x": cell(x_form),
-            "cat": cat,
-            # 原始单元格（含 <ruby> 注音），供 `audit_x_diff` 检查写法与注音
-            "ori_raw": ori,
-            "table_raw": table_form,
-            "x_raw": x_form,
-        }
+        ai = 1 if "角色" in header[0] else 0
+        ri = next((n for n, name in enumerate(header) if name in ("裁定", "裁定标准形")), None)
+        ji = next((n for n, name in enumerate(header) if name == "判定"), None)
+        if ri is None or max(ai, ri) >= len(cells):
+            continue
+        anchors = re.findall(r"`([^`]+)`", cells[ai])
+        if not anchors:
+            continue
+        label = re.sub(r"`[^`]+`", "", cells[ai]).strip("（）() ").strip()
+        human = bool(ji is not None and ji < len(cells) and "人读" in cells[ji])
+        forms: list[str] = []
+        for part in re.split(r"／", cells[ri]):
+            # 剥中文括号注释与 Markdown 装饰（粗体／反引号），再剥标签取基文
+            form = strip_markup(re.sub(r"（[^）]*）|\([^)]*\)", "", part))
+            form = form.replace("**", "").replace("`", "").strip()
+            if form and form not in ("—", "-") and form not in forms:
+                forms.append(form)
+        for anchor in anchors:
+            key = norm_anchor(strip_markup(anchor))
+            if not key:
+                continue
+            slot = out.setdefault(key, {"forms": [], "raw": [], "labels": [], "ori_raw": [], "human_only": False})
+            for form in forms:
+                if form not in slot["forms"]:
+                    slot["forms"].append(form)
+            slot["raw"].append(cells[ri])
+            slot["labels"].append(label)
+            slot["ori_raw"].append(anchor)
+            slot["human_only"] = bool(slot["human_only"]) or human
     return out
 
 
@@ -306,24 +317,25 @@ def _rt_of(raw: str) -> str:
 
 # 全角 ASCII（U+FF01–U+FF5E）；`，` 与 `／` 是本文档自用的中文标点与分隔符，不算违规
 _FULLWIDTH_ASCII_RE = re.compile(r"[\uff01-\uff5e]")
+# 锚点列只查全角英数字母：日文原文的全角标点（？（）等）是正常写法，不算不妥协写法违规
+FULLWIDTH_ALNUM_RE = re.compile(r"[Ａ-Ｚａ-ｚ０-９]")
 
 
 def _fullwidth_hits(raw: str) -> list[str]:
     return [ch for ch in _FULLWIDTH_ASCII_RE.findall(raw or "") if ch not in "，／"]
 
 
-def audit_x_diff(x_diff: dict[str, dict[str, str]],
-                 entries: list[dict[str, str]]) -> list[dict[str, str]]:
-    """核对「X 版差异清单」与译名表的一致性（只读，供 `--audit-x-diff`）。
+def audit_rulings(rulings: dict[str, dict[str, object]],
+                  entries: list[dict[str, str]]) -> list[dict[str, str]]:
+    """核对「译名裁定总表」与译名表的一致性（只读，供 `--audit-rulings`）。
 
-    报四类问题，均可直接回填或修正：
+    报三类问题：
 
     | kind | 含义 |
     | --- | --- |
-    | `anchor-fullwidth` / `table-fullwidth` / `x-fullwidth` | 该列含全角 ASCII，按 §5.3 不妥协写法应写半角（中文标点 `，` 与分隔符 `／` 除外） |
-    | `table-missing` | 清单「表侧写法」为空，但译名表有对应条目 → 应回填 |
-    | `table-mismatch` | 清单「表侧写法」与译名表 `Base_Trans` 不一致 → 应修正 |
-    | `ruby-mismatch` | 清单锚点／表侧的 `<rt>` 与译名表 `Ruby_Ori`／`Ruby_Trans` 不一致 → 应修正 |
+    | `anchor-fullwidth` | 锚点列含全角 ASCII，按不妥协写法应写半角（中文标点与分隔符 `／` 除外） |
+    | `forms-empty` | 裁定列解析不出任何可接受写法（散文格式或漏填）→ 应改标 `人读` 或补写法 |
+    | `ruby-mismatch` | 锚点的 `<rt>` 与译名表 `Ruby_Ori` 不一致 → 应修正 |
 
     同名异物（同一锚点在表内多行）时，各候选都会列出，由人工判断该取哪一行。
     """
@@ -337,61 +349,41 @@ def audit_x_diff(x_diff: dict[str, dict[str, str]],
         problems.append({"kind": kind, "anchor": key, "col": col,
                          "current": cur, "expected": expect, "note": note})
 
-    for key, v in x_diff.items():
-        for col, kind in (("ori_raw", "anchor-fullwidth"),
-                          ("table_raw", "table-fullwidth"),
-                          ("x_raw", "x-fullwidth")):
-            hits = _fullwidth_hits(v.get(col, ""))
-            if hits:
-                add(kind, key, col, v.get(col, ""), "".join(sorted(set(hits))),
-                    "§5.3：英数与符号写半角 ASCII")
+    for key, v in rulings.items():
+        ori_raw = " ".join(v.get("ori_raw", []))
+        hits = sorted(set(FULLWIDTH_ALNUM_RE.findall(ori_raw)))
+        if hits:
+            add("anchor-fullwidth", key, "锚点", ori_raw, "".join(hits),
+                "不妥协写法：全角英数字母写半角 ASCII")
 
-        hits = index.get(key, [])
-        if not hits:
-            # 译名表查无此锚点：表侧留空是正常的；表侧非空则说明它另有来源
-            if v.get("table"):
-                add("table-mismatch", key, "table_raw", v["table"], "（译名表无此锚点）",
-                    "确认该表侧写法是否另有依据")
-            continue
+        if not v.get("forms") and not v.get("human_only"):
+            add("forms-empty", key, "裁定", "（空）", "至少一个写法",
+                "散文格式的裁定列应改标 `人读` 或补写法")
 
-        for e in hits:
-            tbl = strip_markup(e.get("trans", "")).replace("【", "").replace("】", "").strip()
-            cur = (v.get("table") or "").strip()
-            if not cur:
-                add("table-missing", key, "table_raw", "", e.get("trans", ""),
-                    f"表内条目 {e.get('ori', '')}（读音 {e.get('ruby_trans', '') or '—'}）")
-            elif norm_anchor(cur) != norm_anchor(tbl):
-                add("table-mismatch", key, "table_raw", cur, e.get("trans", ""),
-                    f"表内条目 {e.get('ori', '')}")
-
-            rt_list = _rt_of(v.get("ori_raw", ""))
+        if ori_raw.count("<ruby") > 1:
+            continue      # 多段 ruby 结构（当て字逐字分解等）：注音比对交人工，避免拼接误报
+        for e in index.get(key, []):
+            rt_list = _rt_of(ori_raw)
             rt_table = (e.get("ruby_ori") or "").strip()
-            # 注音写法比较只折叠全角 ASCII：假名大小字差异正是要检出的问题，不能折叠掉
+            # 注音写法比较只折叠全角 ASCII：假名大小字差异正是要检出的问题
             if rt_list and rt_table and fold_ascii(rt_list).strip() != fold_ascii(rt_table).strip():
-                add("ruby-mismatch", key, "ori_raw", rt_list, rt_table,
-                    "锚点 <rt> 与表内 Ruby_Ori 不一致")
-
-            rt_cur = _rt_of(v.get("table_raw", ""))
-            rt_cur_table = (e.get("ruby_trans") or "").strip()
-            if rt_cur and rt_cur_table and fold_ascii(rt_cur).strip() != fold_ascii(rt_cur_table).strip():
-                add("ruby-mismatch", key, "table_raw", rt_cur, rt_cur_table,
-                    "表侧 <rt> 与表内 Ruby_Trans 不一致")
+                add("ruby-mismatch", key, "锚点", rt_list, rt_table, "锚点 <rt> 与表内 Ruby_Ori 不一致")
 
     return problems
 
 
-def run_audit_x_diff(x_diff_path: Path, entries: list[dict[str, str]],
+def run_audit_rulings(rulings_path: Path, entries: list[dict[str, str]],
                      table_path: Path, out_dir: Path) -> int:
-    """`--audit-x-diff` 的执行体：核对清单与译名表，写报告并返回退出码。"""
-    x_diff = load_x_diff(x_diff_path)
-    if not x_diff:
-        print(f"[错误] 未加载到 X 版差异清单：{x_diff_path}", file=sys.stderr)
+    """`--audit-rulings` 的执行体：核对裁定表与译名表，写报告并返回退出码。"""
+    rulings = load_rulings(rulings_path)
+    if not rulings:
+        print(f"[错误] 未加载到译名裁定总表：{rulings_path}", file=sys.stderr)
         return 2
 
-    problems = audit_x_diff(x_diff, entries)
+    problems = audit_rulings(rulings, entries)
     out_dir.mkdir(parents=True, exist_ok=True)
-    tsv_path = out_dir / "x-diff-audit.tsv"
-    md_path = out_dir / "x-diff-audit.md"
+    tsv_path = out_dir / "rulings-audit.tsv"
+    md_path = out_dir / "rulings-audit.md"
 
     fields = ["kind", "anchor", "col", "current", "expected", "note"]
     with tsv_path.open("w", encoding="utf-8", newline="\n") as fh:
@@ -401,9 +393,9 @@ def run_audit_x_diff(x_diff_path: Path, entries: list[dict[str, str]],
 
     by_kind = Counter(p["kind"] for p in problems)
     lines = [
-        "# X 版差异清单 ↔ 译名表 一致性核对",
+        "# 译名裁定总表 ↔ 译名表 一致性核对",
         "",
-        f"- 清单：`{x_diff_path.name}`（{len(x_diff)} 条锚点）",
+        f"- 裁定表：`{rulings_path.name}`（{len(rulings)} 条锚点）",
         f"- 译名表：`{table_path.name}`（{len(entries)} 条）",
         f"- **问题 {len(problems)} 条**",
         "",
@@ -421,7 +413,7 @@ def run_audit_x_diff(x_diff_path: Path, entries: list[dict[str, str]],
         lines.append("| — | — | — | — | — | 无 |")
     md_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
-    print(f"X 版差异清单 ↔ 译名表：清单 {len(x_diff)} 条 / 表 {len(entries)} 条 "
+    print(f"译名裁定总表 ↔ 译名表：裁定 {len(rulings)} 条 / 表 {len(entries)} 条 "
           f"→ 问题 {len(problems)} 条")
     for kind, n in by_kind.most_common():
         print(f"    {kind}: {n}")
@@ -437,7 +429,7 @@ def run_audit_x_diff(x_diff_path: Path, entries: list[dict[str, str]],
 
 def compare(entries: list[dict[str, str]], jp_books: dict[str, str],
             cn_texts: dict[str, str],
-            x_diff: dict[str, dict[str, str]] | None = None,
+            rulings: dict[str, dict[str, str]] | None = None,
             translation_host: dict[str, str] | None = None,
             settled_anchors: dict[str, str] | None = None,
             ) -> tuple[list[dict[str, str]], int, list[str]]:
@@ -448,10 +440,10 @@ def compare(entries: list[dict[str, str]], jp_books: dict[str, str],
     `【】「」『』` 与空白），否则表内 `アンナ=シュプレンゲル` 匹配不到原文
     `アンナ＝シュプレンゲル`；报告里的 `jp_context` 也取自归一化文本。
 
-    `x_diff` 是 **X 版固有差异门禁**（`load_x_diff` 的产物）：命中的锚点按
-    **X 版写法**判定——成品用 X 版写法即算落地；成品若退回表侧写法也算落地，
-    但在 `x_form` 里标为 `table` 以便区分；两者都没有才报未落地。这样
-    「与灰机 Wiki 译名表的人为固有差异」不会被误报成术语未落地。
+    `rulings` 是 **裁定表门禁**（`load_rulings` 的产物）：命中的锚点按**裁定写法**判定——
+    成品用裁定写法即算落地（`form_kind=ruling`）；裁定列标 `人读` 的条目跳过判定
+    （`status=human_only`，报告里单列）。这样「与灰机 Wiki 译名表的人为固有差异」
+    不会被误报成术语未落地。
 
     `translation_host` 是**译文归属映射**（`alignment_rules.TRANSLATION_HOST`）：
     某作品的部分中文译文落在另一本书时（如 S5_02_03 的中文后记归入 S5_02_01），
@@ -459,10 +451,10 @@ def compare(entries: list[dict[str, str]], jp_books: dict[str, str],
     命中则在 `cn_host` 标出实际所在的书。
 
     记录字段：book / ori / trans / type / debuts / status / suspect /
-    x_diff / x_form / cn_host / jp_context。
+    rulings / form_kind / cn_host / jp_context。
     `status` 为 landed（日文有、中文有可接受写法）或 missing（日文有、中文无）。
     """
-    x_diff = x_diff or {}
+    rulings = rulings or {}
     translation_host = translation_host or {}
     # 登记表按**自然写法**维护，这里统一折叠成与 `ori` 同一套归一化形式再查
     # （否则含小字假名的锚点对不上：`ヒュドラ` → `ヒユドラ`、`ロッド` → `ロツド`）
@@ -485,22 +477,18 @@ def compare(entries: list[dict[str, str]], jp_books: dict[str, str],
             # 表内该条目的译名尚未定（Base_Trans 为空），无从核对
             skipped_empty_trans += 1
             continue
-        xd = x_diff.get(ori)
-        x_forms = [norm_anchor(v) for v in xd["x"].split("／")] if xd else []
-        x_forms = [v for v in x_forms if v]
-        x_table = norm_anchor(xd["table"]) if xd else ""
+        rd = rulings.get(ori)
+        forms = [norm_anchor(v) for v in (rd["forms"] if rd else [])]
+        forms = [v for v in forms if v]
+        human_only = bool(rd["human_only"]) if rd else False
 
         def hit(text: str) -> tuple[bool, str]:
-            """在给定中文文本里找可接受写法 → (是否命中, x_form 标记)。"""
-            if xd:
-                # 长写法优先：否则「妹妹」（X 版）会因是「妹妹们」（表侧）的子串而误判来源
-                cands = [(f, "x") for f in x_forms]
-                if x_table:
-                    cands.append((x_table, "table"))
-                cands.sort(key=lambda t: -len(t[0]))
-                for form_text, kind in cands:
-                    if form_text and form_text in text:
-                        return True, kind
+            """在给定中文文本里找可接受写法 → (是否命中, form_kind 标记)。"""
+            if forms:
+                # 长写法优先：否则「妹妹」会因是「妹妹们」的子串而误判
+                for form_text in sorted(forms, key=len, reverse=True):
+                    if form_text in text:
+                        return True, "ruling"
                 return False, ""
             return (tr in text), ""
 
@@ -524,8 +512,25 @@ def compare(entries: list[dict[str, str]], jp_books: dict[str, str],
                     "debuts": e["debuts"],
                     "status": STATUS_SETTLED,
                     "suspect": "1" if suspect else "",
-                    "x_diff": "",
-                    "x_form": "",
+                    "rulings": "",
+                    "form_kind": "",
+                    "cn_host": "",
+                    "jp_context": context_of(jp_text, idx, ori),
+                })
+                continue
+
+            if human_only:
+                # 条件式／分层／描述性／聚合条目：工具不判定，报告里单列
+                records.append({
+                    "book": bid,
+                    "ori": e["ori"],
+                    "trans": e["trans"],
+                    "type": e["type"],
+                    "debuts": e["debuts"],
+                    "status": STATUS_HUMAN_ONLY,
+                    "suspect": "1" if suspect else "",
+                    "rulings": "1",
+                    "form_kind": "",
                     "cn_host": "",
                     "jp_context": context_of(jp_text, idx, ori),
                 })
@@ -546,8 +551,8 @@ def compare(entries: list[dict[str, str]], jp_books: dict[str, str],
                 "debuts": e["debuts"],
                 "status": STATUS_LANDED if landed else STATUS_MISSING,
                 "suspect": "1" if suspect else "",
-                "x_diff": ("1" if xd else ""),
-                "x_form": form,
+                "rulings": ("1" if rd else ""),
+                "form_kind": form,
                 "cn_host": cn_host,
                 "jp_context": context_of(jp_text, idx, ori),
             })
@@ -566,8 +571,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--debuts-col", default="Debuts", help="出场列名（默认 Debuts）")
     ap.add_argument("--ruby-ori-col", default="Ruby_Ori", help="日文注音列名（默认 Ruby_Ori）")
     ap.add_argument("--ruby-trans-col", default="Ruby_Trans", help="中文注音列名（默认 Ruby_Trans）")
-    ap.add_argument("--audit-x-diff", action="store_true",
-                    help="只核对「X 版差异清单 ↔ 译名表」的一致性（不跑成品核对）："
+    ap.add_argument("--audit-rulings", action="store_true",
+                    help="只核对「译名裁定总表 ↔ 译名表」的一致性（不跑成品核对）："
                          "表侧为空/不一致、<rt> 与 Ruby_Ori／Ruby_Trans 不一致、"
                          "写法含全角 ASCII；有问题则非 0 退出")
     ap.add_argument("--book", action="append", default=[],
@@ -576,11 +581,11 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--jp-dir", default=str(DEFAULT_JP),
                     help="日文缓存根目录（默认 .cache/epub-work/japanese-text）")
     ap.add_argument("--out", default=str(DEFAULT_OUT), help="报告输出目录")
-    ap.add_argument("--x-diff", default=str(DEFAULT_X_DIFF),
-                    help="X 版固有差异清单（默认 docs/x-translation-differences.md）；"
-                         "命中的锚点按 X 版写法判定，不报未落地")
-    ap.add_argument("--no-x-diff", action="store_true",
-                    help="跳过 X 版固有差异门禁（仅用于诊断）")
+    ap.add_argument("--rulings", default=str(DEFAULT_RULINGS),
+                    help="译名裁定总表（默认 docs/translation-name-rulings.md）；"
+                         "命中的锚点按裁定写法判定，不报未落地")
+    ap.add_argument("--no-rulings", action="store_true",
+                    help="跳过 裁定表门禁（仅用于诊断）")
     ap.add_argument("--include-suspect", action="store_true",
                     help="把疑似子串命中（suspect）也计入未落地")
     ap.add_argument("--limit", type=int, default=0, help="只检查前 N 条条目（调试用）")
@@ -598,9 +603,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.limit > 0:
         entries = entries[:args.limit]
 
-    x_diff_path = Path(args.x_diff).expanduser()
-    if args.audit_x_diff:
-        return run_audit_x_diff(x_diff_path, entries, table_path, Path(args.out))
+    rulings_path = Path(args.rulings).expanduser()
+    if args.audit_rulings:
+        return run_audit_rulings(rulings_path, entries, table_path, Path(args.out))
 
     only = {b.strip() for b in args.book if b.strip()}
     jp_books = collect_books(Path(args.jp_dir), "item/xhtml", only)
@@ -624,14 +629,14 @@ def main(argv: list[str] | None = None) -> int:
     # 字符集预筛：锚点全部字符都在该书字符集内，才做子串查找（大幅减少全库扫描）。
     # 传**全部**中文书：译文归属书（TRANSLATION_HOST 的值）可能只存在于中文侧。
     cn_texts = dict(cn_books)
-    x_diff = {} if args.no_x_diff else load_x_diff(Path(args.x_diff).expanduser())
-    if args.no_x_diff:
-        print("[提示] 已按 --no-x-diff 跳过 X 版固有差异门禁。", file=sys.stderr)
-    elif not x_diff:
-        print(f"[提示] 未加载到 X 版固有差异清单（{args.x_diff}）；"
+    rulings = {} if args.no_rulings else load_rulings(Path(args.rulings).expanduser())
+    if args.no_rulings:
+        print("[提示] 已按 --no-rulings 跳过 裁定表门禁。", file=sys.stderr)
+    elif not rulings:
+        print(f"[提示] 未加载到 译名裁定总表（{args.rulings}）；"
               f"该门禁用于避免把人为差异报成未落地。", file=sys.stderr)
     else:
-        print(f"X 版固有差异门禁：{len(x_diff)} 条锚点（{Path(args.x_diff).name}）")
+        print(f"裁定表门禁：{len(rulings)} 条锚点（{Path(args.rulings).name}）")
     try:
         from alignment_rules import SETTLED_ANCHORS, TRANSLATION_HOST  # noqa: PLC0415
     except ImportError as exc:
@@ -646,7 +651,7 @@ def main(argv: list[str] | None = None) -> int:
     if SETTLED_ANCHORS:
         print(f"已判定锚点（不计待判）：{len(SETTLED_ANCHORS)} 条")
     records, skipped_empty_trans, shared = compare(entries, jp_books, cn_texts,
-                                                   x_diff, TRANSLATION_HOST,
+                                                   rulings, TRANSLATION_HOST,
                                                    SETTLED_ANCHORS)
     del jp_books
 
@@ -663,20 +668,20 @@ def main(argv: list[str] | None = None) -> int:
     md_path = out_dir / "translation-table-check.md"
 
     fields = ["book", "ori", "trans", "type", "debuts", "status", "suspect",
-              "x_diff", "x_form", "cn_host", "jp_context"]
+              "rulings", "form_kind", "cn_host", "jp_context"]
     with tsv_path.open("w", encoding="utf-8", newline="\n") as fh:
         w = csv.DictWriter(fh, fieldnames=fields, delimiter="\t", extrasaction="ignore")
         w.writeheader()
         w.writerows(records)
 
-    x_hits = [r for r in records if r["x_diff"]]
-    x_form_x = [r for r in x_hits if r["x_form"] == "x"]
-    x_form_table = [r for r in x_hits if r["x_form"] == "table"]
+    x_hits = [r for r in records if r["rulings"]]
+    form_kind_x = [r for r in x_hits if r["form_kind"] == "x"]
+    form_kind_table = [r for r in x_hits if r["form_kind"] == "table"]
 
     summary = {
         "table": str(table_path),
-        "x_diff": "" if args.no_x_diff else str(args.x_diff),
-        "x_diff_anchors": len(x_diff),
+        "rulings": "" if args.no_rulings else str(args.rulings),
+        "ruling_anchors": len(rulings),
         "sheet_headers": headers,
         "entries": len(entries),
         "skipped_empty_trans": skipped_empty_trans,
@@ -687,9 +692,9 @@ def main(argv: list[str] | None = None) -> int:
         "missing": len(missing),
         "missing_real": len(missing_real),
         "missing_suspect": len(missing_suspect),
-        "x_diff_hits": len(x_hits),
-        "x_form_x": len(x_form_x),
-        "x_form_table": len(x_form_table),
+        "ruling_hits": len(x_hits),
+        "form_kind_x": len(form_kind_x),
+        "form_kind_table": len(form_kind_table),
         "translation_host": translation_host_pairs,
         "cn_host_hits": len(host_hits),
         "settled_anchors": len(SETTLED_ANCHORS),
@@ -708,8 +713,8 @@ def main(argv: list[str] | None = None) -> int:
         + (f"（其中表定译名为空、跳过核对 {skipped_empty_trans} 条）" if skipped_empty_trans else ""),
         f"- 日文侧命中：{len(records)}（译名已落地 {summary['landed']}）",
         f"- **未落地：{len(missing)}**（其中疑似子串 {len(missing_suspect)}、待判 {len(missing_real)}）",
-        f"- X 版固有差异门禁：{len(x_diff)} 条锚点，命中 {len(x_hits)}"
-        + (f"（用 X 版写法 {len(x_form_x)}／退回表侧写法 {len(x_form_table)}）" if x_hits else ""),
+        f"- 裁定表门禁：{len(rulings)} 条锚点，命中 {len(x_hits)}"
+        + (f"（裁定写法 {len(form_kind_x)}）" if x_hits else ""),
         f"- 译文归属映射：{len(translation_host_pairs)} 项"
         + (f"（{'、'.join(translation_host_pairs)}），命中 {len(host_hits)} 条"
            if translation_host_pairs else ""),
@@ -749,16 +754,16 @@ def main(argv: list[str] | None = None) -> int:
             lines.append(f"| {r['book']} | {r['ori']} | {r['trans']} | {r['cn_host']} | {r['jp_context']} |")
         lines.append("")
     lines += [
-        "## X 版固有差异命中（门禁已过，非缺陷）",
+        "## 裁定表命中（门禁已过，非缺陷）",
         "",
-        "`docs/x-translation-differences.md` 登记的人为取舍：两侧各自维持自身写法，"
+        "`docs/translation-name-rulings.md` 登记的人为取舍：两侧各自维持自身写法，"
         "不计入待改、不得按表回改。",
         "",
         "| 作品 | 日文锚点 | 表定译名 | 采用写法 | 日文上下文 |",
         "| --- | --- | --- | --- | --- |",
     ]
     for r in x_hits:
-        used = "X 版" if r["x_form"] == "x" else ("表侧" if r["x_form"] == "table" else "**均未见**")
+        used = "X 版" if r["form_kind"] == "x" else ("表侧" if r["form_kind"] == "table" else "**均未见**")
         lines.append(f"| {r['book']} | {r['ori']} | {r['trans']} | {used} | {r['jp_context']} |")
     if not x_hits:
         lines.append("| — | — | — | — | 无 |")
@@ -787,7 +792,7 @@ def main(argv: list[str] | None = None) -> int:
     lines += [
         "",
         "> 判定提示：`AGENTS.md` 定「专有名词与术语以本项目译名表为准」，"
-        "但 `docs/x-translation-differences.md` 登记的人为固有差异**不计入待改、不得按表回改**"
+        "但 `docs/translation-name-rulings.md` 登记的人为固有差异**不计入待改、不得按表回改**"
         "（本工具已把该清单作为门禁先加载）。待判项既可能是术语未落地/拼写偏差（应改成品），"
         "也可能是**同形不同义**（表内条目是某作品的能力或组织名，本书里是普通词，无需处理）。",
         "",
@@ -796,8 +801,8 @@ def main(argv: list[str] | None = None) -> int:
 
     print(f"  日文侧命中 {len(records)} 条；已落地 {summary['landed']}；"
           f"未落地 {len(missing)}（待判 {len(missing_real)}／疑似子串 {len(missing_suspect)}）")
-    print(f"  X 版固有差异命中 {len(x_hits)} 条"
-          + (f"（X 版写法 {len(x_form_x)}／表侧写法 {len(x_form_table)}）" if x_hits else ""))
+    print(f"  裁定表命中 {len(x_hits)} 条"
+          + (f"（裁定写法 {len(form_kind_x)}）" if x_hits else ""))
     if host_hits:
         print(f"  跨书归属命中 {len(host_hits)} 条（译文在 "
               + "、".join(sorted({r["cn_host"] for r in host_hits})) + "）")

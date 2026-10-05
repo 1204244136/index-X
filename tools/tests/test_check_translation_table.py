@@ -17,16 +17,16 @@ except ImportError:  # pragma: no cover - 取决于运行环境是否装有 open
     openpyxl = None  # type: ignore
 
 from check_translation_table import (  # noqa: E402
-    DEFAULT_X_DIFF,
+    DEFAULT_RULINGS,
     ToolError,
-    audit_x_diff,
+    audit_rulings,
     book_id,
     collect_books,
     compare,
     fold,
     is_suspect,
     load_table,
-    load_x_diff,
+    load_rulings,
     main,
     norm_anchor,
     strip_markup,
@@ -45,7 +45,7 @@ class NormTests(unittest.TestCase):
                          norm_anchor("超絶者アラディア"))
 
 
-class StripMarkupTests(unittest.TestCase):
+class StripMarkupEntityTests(unittest.TestCase):
     """剥标签 + 反转义实体：含 `&` 的术语必须能匹配（`R&amp;C` → `R&C`）。"""
 
     def test_entity_unescaped(self):
@@ -291,150 +291,168 @@ class LoadTableTests(unittest.TestCase):
                        "Base_Ori", "Base_Trans", "Type", "Debuts")
 
 
-class LoadXDiffTests(unittest.TestCase):
-    """X 版固有差异门禁：解析 Markdown 表格。
+class LoadRulingsTests(unittest.TestCase):
+    """裁定表门禁：解析 Markdown 表格（锚点列反引号、裁定列 `／` 多写法、判定列 `人读`）。
 
-    `docs/x-translation-differences.md` 登记的是本项目与灰机 Wiki 译名表之间
-    **人为制定的取舍**（「两侧各自维持、不计入待改、不得按表回改」），
-    工具必须先过这道门禁，否则会把这些差异报成术语未落地。
+    `docs/translation-name-rulings.md` 登记的是已决口径（含与灰机 Wiki 译名表的人为固有
+    差异）。工具必须先过这道门禁，否则会把裁定写法报成术语未落地。
     """
 
     SAMPLE = "\n".join([
         "# 标题",
         "",
-        "| 日文锚点 | 表侧写法 | X 版写法 | 类别 | 说明 |",
+        "| 日文锚点 | 裁定 | 被否决或并存的候选 | 理由 | 判定 |",
         "| --- | --- | --- | --- | --- |",
-        "| 妹達 | 妹妹们 | 妹妹 | 符合语境 | 说明文字 |",
-        "| ハイウェイクレイドル | Highway Cradle | 高速摇篮号 | 原创词 | — |",
-        "| 投擲の槌 | 投掷之锤 | 投掷之锤／雷神之锤 | 中文注音 | 多写法 |",
+        "| `妹達` | 妹妹 | 妹妹们 | 符合语境 | |",
+        "| `ハイウェイクレイドル` | 高速摇篮号 | Highway Cradle | 原创词 | |",
+        "| `投擲の槌` | 投掷之锤／雷神之锤 | Mjölnir | 中文注音 | |",
+        "| `機能` | 设备类→功能；生物类→机能 | — | 按指代分层 | 人读 |",
     ])
 
     def _write(self, tmp: str, text: str) -> Path:
-        p = Path(tmp) / "x.md"
+        p = Path(tmp) / "r.md"
         p.write_text(text, encoding="utf-8")
         return p
 
     def test_parses_rows_and_skips_header_and_separator(self):
         with tempfile.TemporaryDirectory() as tmp:
-            d = load_x_diff(self._write(tmp, self.SAMPLE))
-            self.assertEqual(len(d), 3)                     # 表头与分隔行不计入
+            d = load_rulings(self._write(tmp, self.SAMPLE))
+            self.assertEqual(len(d), 4)                     # 表头与分隔行不计入
             self.assertNotIn("日文锚点", d)
-            self.assertEqual(d["妹達"]["x"], "妹妹")
-            self.assertEqual(d["妹達"]["table"], "妹妹们")
-            self.assertEqual(d["妹達"]["cat"], "符合语境")
+            self.assertEqual(d["妹達"]["forms"], ["妹妹"])
+            self.assertFalse(d["妹達"]["human_only"])
+            self.assertTrue(d[norm_anchor("機能")]["human_only"])
+            self.assertEqual(d[norm_anchor("投擲の槌")]["forms"], ["投掷之锤", "雷神之锤"])
             # 键是折叠后的形式（§5.3）：ハイウェイ… 的 ウェ 折叠为 ウエ
-            self.assertEqual(d[norm_anchor("ハイウェイクレイドル")]["x"], "高速摇篮号")
+            self.assertEqual(d[norm_anchor("ハイウェイクレイドル")]["forms"], ["高速摇篮号"])
 
     def test_missing_file_returns_empty(self):
-        self.assertEqual(load_x_diff(Path("不存在的清单.md")), {})
+        self.assertEqual(load_rulings(Path("不存在的裁定表.md")), {})
+
+    HEADER = "| 日文锚点 | 裁定 | 被否决或并存的候选 | 理由 | 判定 |\n| --- | --- | --- | --- | --- |\n"
 
     def test_anchor_is_normalized(self):
         with tempfile.TemporaryDirectory() as tmp:
-            d = load_x_diff(self._write(tmp, "| 【実践魔女】 | 表 | 里 | 类别 | 说明 |\n"))
+            d = load_rulings(self._write(
+                tmp, self.HEADER + "| `【実践魔女】` | 里 | 表 | 类别 | |\n"))
             self.assertIn("実践魔女", d)
 
+    def test_multiple_backticks_are_all_anchors(self):
+        """锚点列一行多个反引号内容都算锚点（§12 格式约定）。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            d = load_rulings(self._write(
+                tmp, self.HEADER + "| `魔術`／`魔術師`（术语层） | 魔法／魔法师 | 魔术 | 分层 | |\n"))
+            self.assertIn("魔術", d)
+            self.assertIn("魔術師", d)
+
+    def test_same_anchor_rows_merge_forms(self):
+        """同一锚点多条登记合并为候选集合（分层与同词异译）。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            d = load_rulings(self._write(tmp, self.HEADER + "\n".join([
+                "| `スフィア`（装备） | 天体仪 | — | 装备义 | |",
+                "| `スフィア`（组织） | 天体 | — | 组织义 | |"])))
+            self.assertEqual(sorted(d[norm_anchor("スフィア")]["forms"]), ["天体", "天体仪"])
+
     RUBY_SAMPLE = "\n".join([
-        "| 日文锚点 | 表侧写法 | X 版写法 | 类别 | 说明 |",
+        "| 日文锚点 | 裁定 | 被否决或并存的候选 | 理由 | 判定 |",
         "| --- | --- | --- | --- | --- |",
-        "| <ruby>主神の槍<rt>グングニル</rt></ruby> | <ruby>主神之枪<rt>Gungnir</rt></ruby> "
-        "| <ruby>主神之枪<rt>冈格尼尔</rt></ruby> | 中文注音 | 仅注音不同 |",
-        "| <ruby>投擲の槌<rt>ミヨルニル</rt></ruby> | <ruby>投掷之锤<rt>Mjölnir</rt></ruby> "
-        "| <ruby>投掷之锤<rt>妙尔尼尔</rt></ruby>／<ruby>雷神之锤<rt>妙尔尼尔</rt></ruby> "
-        "| 中文注音 | 多写法 |",
+        "| `<ruby>主神の槍<rt>グングニル</rt></ruby>` | `<ruby>主神之枪<rt>冈格尼尔</rt></ruby>` "
+        "| 表侧「<ruby>主神之枪<rt>Gungnir</rt></ruby>」 | 中文注音：仅注音不同 | |",
     ])
 
-    def test_ruby_readings_are_stripped_from_all_columns(self):
-        """注音用 `<ruby>` 写在写法列里，解析只取基文（注音不参与匹配）。"""
+    def test_ruby_readings_are_stripped_from_forms(self):
+        """裁定列里的注音用 `<ruby>` 呈现，解析只取基文（注音不参与匹配）。"""
         with tempfile.TemporaryDirectory() as tmp:
-            d = load_x_diff(self._write(tmp, self.RUBY_SAMPLE))
-            self.assertIn("主神の槍", d)                       # 锚点取基文
-            self.assertEqual(d["主神の槍"]["ori"], "主神の槍")
-            self.assertEqual(d["主神の槍"]["table"], "主神之枪")
-            self.assertEqual(d["主神の槍"]["x"], "主神之枪")     # 注音已剥
-            self.assertNotIn("<ruby>", d["主神の槍"]["x"])
-            self.assertNotIn("冈格尼尔", d["主神の槍"]["x"])     # 注音不进匹配值
-            self.assertEqual(d["投擲の槌"]["x"], "投掷之锤／雷神之锤")
+            d = load_rulings(self._write(tmp, self.RUBY_SAMPLE))
+            self.assertIn("主神の槍", d)
+            self.assertEqual(d["主神の槍"]["forms"], ["主神之枪"])
+            self.assertNotIn("<ruby>", d["主神の槍"]["forms"][0])
+            self.assertNotIn("冈格尼尔", d["主神の槍"]["forms"][0])   # 注音不进匹配值
 
     def test_ruby_form_matches_plain_cn_text(self):
-        """清单写法带 ruby、成品文本已剥注音 —— 仍应判定落地。"""
+        """裁定写法带 ruby、成品文本已剥注音 —— 仍应判定落地。"""
         with tempfile.TemporaryDirectory() as tmp:
-            xd = load_x_diff(self._write(tmp, self.RUBY_SAMPLE))
+            rd = load_rulings(self._write(tmp, self.RUBY_SAMPLE))
             recs, _s, _sh = compare(
                 [{"ori": "主神の槍", "trans": "主神之枪", "type": "", "debuts": ""}],
                 {"S1_01": "主神の槍"},
                 {"S1_01": "主神之枪"},          # 成品侧同样已剥注音
-                xd)
+                rd)
             self.assertEqual(recs[0]["status"], "landed")
-            self.assertEqual(recs[0]["x_form"], "x")
+            self.assertEqual(recs[0]["form_kind"], "ruling")
 
     def test_repo_gate_file_is_present_and_parsable(self):
         """仓库内的门禁文件必须存在、可解析，且覆盖已知条目。"""
-        self.assertTrue(DEFAULT_X_DIFF.is_file(), f"门禁文件缺失：{DEFAULT_X_DIFF}")
-        d = load_x_diff(DEFAULT_X_DIFF)
-        self.assertGreater(len(d), 20, "门禁清单条目数异常偏少")
-        for anchor in ("妹達", "ハイウェイクレイドル", "保温鍋バンマリ", "主神の槍"):
-            self.assertIn(norm_anchor(anchor), d, f"门禁清单缺少已知条目：{anchor}")
+        self.assertTrue(DEFAULT_RULINGS.is_file(), f"门禁文件缺失：{DEFAULT_RULINGS}")
+        d = load_rulings(DEFAULT_RULINGS)
+        self.assertGreater(len(d), 20, "裁定表条目数异常偏少")
+        for anchor in ("妹達（シスターズ）", "ハイウェイクレイドル", "保温鍋バンマリ", "主神の槍",
+                       "クロウリーズ・ハザード"):
+            self.assertIn(norm_anchor(anchor), d, f"裁定表缺少已知条目：{anchor}")
 
     def test_repo_gate_values_carry_no_ruby_markup(self):
-        """仓库门禁解析出的写法必须是干净基文（注音已剥），否则匹配会失败。"""
-        d = load_x_diff(DEFAULT_X_DIFF)
-        self.assertEqual(d["主神の槍"]["x"], "主神之枪")
-        self.assertEqual(d["妹達"]["x"], "妹妹")
+        """仓库裁定表解析出的写法必须是干净基文（注音已剥），否则匹配会失败。"""
+        d = load_rulings(DEFAULT_RULINGS)
+        self.assertEqual(d[norm_anchor("主神の槍")]["forms"], ["主神之枪"])
         for key, val in d.items():
-            for col in ("table", "x"):
-                self.assertNotIn("<ruby>", val[col], f"{key}.{col} 残留 ruby 标记")
-                self.assertNotIn("<rt>", val[col], f"{key}.{col} 残留 rt 标记")
+            for form in val["forms"]:
+                self.assertNotIn("<ruby>", form, f"{key} 残留 ruby 标记")
+                self.assertNotIn("<rt>", form, f"{key} 残留 rt 标记")
 
 
-class CompareWithXDiffTests(unittest.TestCase):
+class CompareWithRulingsTests(unittest.TestCase):
     """门禁生效后的判定分支（每个分支一个反例）。"""
 
-    XD = {"妹達": {"ori": "妹達", "table": "妹妹们", "x": "妹妹", "cat": "符合语境"}}
+    RD = {"妹達": {"forms": ["妹妹"], "raw": ["妹妹"], "labels": [""],
+                   "ori_raw": ["妹達"], "human_only": False}}
 
     @staticmethod
     def entry(ori: str, trans: str) -> dict[str, str]:
         return {"ori": ori, "trans": trans, "type": "", "debuts": ""}
 
-    def test_x_form_lands(self):
-        """成品只含 X 版写法 → 落地（不过门禁就会被误报未落地）。"""
+    def test_ruling_form_lands(self):
+        """成品用裁定写法 → 落地（不过门禁就会被误报未落地）。"""
         recs, _s, _sh = compare(
             [self.entry("妹達", "妹妹们")],
             {"S1_01": "妹達は"},
             {"S1_01": "妹妹"},
-            self.XD)
+            self.RD)
         self.assertEqual(recs[0]["status"], "landed")
-        self.assertEqual(recs[0]["x_diff"], "1")
-        self.assertEqual(recs[0]["x_form"], "x")
+        self.assertEqual(recs[0]["rulings"], "1")
+        self.assertEqual(recs[0]["form_kind"], "ruling")
 
     def test_longer_form_wins_when_both_present(self):
-        """两种写法同时出现时取更长者——否则「妹妹」是「妹妹们」的子串，来源会被误判。"""
+        """多种裁定写法同时出现时取更长者（长写法优先）。"""
+        rd = {"投擲の槌": {"forms": ["投掷之锤", "雷神之锤"], "raw": [], "labels": [""],
+                           "ori_raw": ["投擲の槌"], "human_only": False}}
         recs, _s, _sh = compare(
-            [self.entry("妹達", "妹妹们")],
-            {"S1_01": "妹達は"},
-            {"S1_01": "妹妹们与妹妹"},
-            self.XD)
+            [self.entry("投擲の槌", "投掷之锤")],
+            {"S1_01": "投擲の槌"},
+            {"S1_01": "雷神之锤"},
+            rd)
         self.assertEqual(recs[0]["status"], "landed")
-        self.assertEqual(recs[0]["x_form"], "table")
+        self.assertEqual(recs[0]["form_kind"], "ruling")
 
-    def test_table_form_lands_but_marked(self):
-        """成品退回表侧写法 → 也算落地，但标 x_form=table。"""
+    def test_table_form_no_longer_lands(self):
+        """退回表侧写法 → 不再算落地（并存已取消，与旧行为相反的反例）。"""
+        rd = {"妹達": {"forms": ["妹妹们"], "raw": [], "labels": [""],
+                       "ori_raw": ["妹達"], "human_only": False}}
         recs, _s, _sh = compare(
             [self.entry("妹達", "妹妹们")],
             {"S1_01": "妹達は"},
-            {"S1_01": "妹妹们"},
-            self.XD)
-        self.assertEqual(recs[0]["status"], "landed")
-        self.assertEqual(recs[0]["x_form"], "table")
+            {"S1_01": "妹妹"},
+            rd)
+        self.assertEqual(recs[0]["status"], "missing")
 
     def test_neither_form_reports_missing(self):
-        """两种写法都没有 → 才报未落地（负向自检）。"""
+        """裁定写法没有 → 报未落地（负向自检）。"""
         recs, _s, _sh = compare(
             [self.entry("妹達", "妹妹们")],
             {"S1_01": "妹達は"},
             {"S1_01": "姐妹们"},
-            self.XD)
+            self.RD)
         self.assertEqual(recs[0]["status"], "missing")
-        self.assertEqual(recs[0]["x_form"], "")
+        self.assertEqual(recs[0]["form_kind"], "")
 
     def test_without_gate_the_same_line_is_reported(self):
         """不传门禁时同一行会被报未落地——反证门禁确实在起作用。"""
@@ -444,15 +462,17 @@ class CompareWithXDiffTests(unittest.TestCase):
             {"S1_01": "妹妹"})
         self.assertEqual(recs[0]["status"], "missing")
 
-    def test_multi_form_split_by_fullwidth_slash(self):
+    def test_human_only_is_skipped(self):
+        """判定列标 `人读` 的条目：工具不判定，记 human_only。"""
+        rd = {"妹達": {"forms": ["妹妹"], "raw": ["带数量修饰→妹妹；其余→妹妹们"],
+                       "labels": [""], "ori_raw": ["妹達"], "human_only": True}}
         recs, _s, _sh = compare(
-            [self.entry("投擲の槌", "投掷之锤")],
-            {"S1_01": "投擲の槌"},
-            {"S1_01": "雷神之锤"},
-            {"投擲の槌": {"ori": "投擲の槌", "table": "投掷之锤",
-                          "x": "投掷之锤／雷神之锤", "cat": "中文注音"}})
-        self.assertEqual(recs[0]["status"], "landed")
-        self.assertEqual(recs[0]["x_form"], "x")
+            [self.entry("妹達", "妹妹们")],
+            {"S1_01": "妹達は"},
+            {"S1_01": "姐妹们"},
+            rd)
+        self.assertEqual(recs[0]["status"], "human_only")
+
 
 
 class TranslationHostTests(unittest.TestCase):
@@ -549,8 +569,8 @@ class SettledAnchorTests(unittest.TestCase):
         self.assertEqual(recs[0]["status"], "settled")
 
 
-class AuditXDiffTests(unittest.TestCase):
-    """清单 ↔ 译名表一致性核对（`--audit-x-diff`）：每个问题类型一个反例。"""
+class AuditRulingsTests(unittest.TestCase):
+    """裁定表 ↔ 译名表一致性核对（`--audit-rulings`）：每个问题类型一个反例。"""
 
     @staticmethod
     def entry(ori: str, trans: str, ruby_ori: str = "", ruby_trans: str = "") -> dict[str, str]:
@@ -558,59 +578,53 @@ class AuditXDiffTests(unittest.TestCase):
                 "ruby_ori": ruby_ori, "ruby_trans": ruby_trans}
 
     @staticmethod
-    def xd(ori_raw: str, table_raw: str = "", x_raw: str = "", cat: str = "类别"):
-        """构造与 `load_x_diff` 同形的条目：`table`/`x` 存**剥音后的基文**，`*_raw` 保留原样。"""
+    def rd(ori_raw: str, forms: list[str] | None = None, human_only: bool = False):
+        """构造与 `load_rulings` 同形的条目。"""
         def cell(v: str) -> str:
             v = (v or "").strip()
             return "" if v in ("—", "-", "") else strip_markup(v).strip()
 
         return {norm_anchor(strip_markup(ori_raw)): {
-            "ori": strip_markup(ori_raw).strip(),
-            "table": cell(table_raw), "x": cell(x_raw), "cat": cat,
-            "ori_raw": ori_raw, "table_raw": table_raw, "x_raw": x_raw}}
+            "forms": [f for f in (cell(x) for x in (forms or [])) if f],
+            "raw": [], "labels": [""], "ori_raw": [ori_raw], "human_only": human_only}}
 
-    def kinds(self, x_diff, entries):
-        return {p["kind"] for p in audit_x_diff(x_diff, entries)}
+    def kinds(self, rulings, entries):
+        return {p["kind"] for p in audit_rulings(rulings, entries)}
 
     def test_clean_sample_reports_nothing(self):
-        xd = self.xd("<ruby>妹達<rt>シスターズ</rt></ruby>",
-                     "<ruby>妹妹们<rt>Sisters</rt></ruby>", "妹妹")
+        rd = self.rd("<ruby>妹達<rt>シスターズ</rt></ruby>", ["妹妹"])
         e = self.entry("妹達", "妹妹们", "シスターズ", "Sisters")
-        self.assertEqual(audit_x_diff(xd, [e]), [])
+        self.assertEqual(audit_rulings(rd, [e]), [])
 
-    def test_table_missing_detected(self):
-        """负向自检：表侧留空但译名表有值 → table-missing（本轮实际漏过的类型）。"""
-        xd = self.xd("<ruby>妹達<rt>シスターズ</rt></ruby>", "—", "妹妹")
-        self.assertIn("table-missing", self.kinds(xd, [self.entry("妹達", "妹妹们")]))
+    def test_forms_empty_detected(self):
+        """负向自检：裁定列解析不出写法（散文格式漏标 `人读`）→ forms-empty。"""
+        rd = self.rd("妹達", ["—"])
+        self.assertIn("forms-empty", self.kinds(rd, [self.entry("妹達", "妹妹们")]))
 
-    def test_table_mismatch_detected(self):
-        xd = self.xd("妹達", "妹妹", "妹妹")
-        self.assertIn("table-mismatch", self.kinds(xd, [self.entry("妹達", "妹妹们")]))
+    def test_human_only_exempts_forms_empty(self):
+        """标了 `人读` 的条目即使解析不出写法也不算问题。"""
+        rd = self.rd("機能", [], human_only=True)
+        self.assertEqual(self.kinds(rd, []), set())
 
     def test_ruby_ori_mismatch_detected(self):
         """负向自检：锚点 <rt> 照抄了源的大字形式 → ruby-mismatch。"""
-        xd = self.xd("<ruby>投擲の槌<rt>ミヨルニル</rt></ruby>", "投掷之锤", "投掷之锤")
+        rd = self.rd("<ruby>投擲の槌<rt>ミヨルニル</rt></ruby>", ["投掷之锤"])
         e = self.entry("投擲の槌", "投掷之锤", "ミョルニル")
-        self.assertIn("ruby-mismatch", self.kinds(xd, [e]))
+        self.assertIn("ruby-mismatch", self.kinds(rd, [e]))
 
     def test_anchor_fullwidth_detected(self):
-        """负向自检：锚点写全角 ＆ → anchor-fullwidth（本轮实际漏过的类型）。"""
-        xd = self.xd("シープ＆シープ", "", "两只绵羊")
-        e = self.entry("シープ&シープ", "Sheep & Sheep")
-        self.assertIn("anchor-fullwidth", self.kinds(xd, [e]))
+        """负向自检：锚点写全角英数字母 → anchor-fullwidth。"""
+        rd = self.rd("ＡからＦ班", ["〜小队"])
+        e = self.entry("AからF班", "〜小队")
+        self.assertIn("anchor-fullwidth", self.kinds(rd, [e]))
 
-    def test_fullwidth_exempts_cjk_punct_and_separator(self):
-        """中文标点 `，` 与多写法分隔符 `／` 不算违规。"""
-        xd = self.xd("汝の欲する所を為せ、それが汝の法とならん",
-                     "为汝所欲为，即为汝之法", "甲／乙")
-        kinds = self.kinds(xd, [])
-        self.assertNotIn("table-fullwidth", kinds)
-        self.assertNotIn("x-fullwidth", kinds)
+    def test_fullwidth_exempts_japanese_punct(self):
+        """日文原文的全角标点（？、（））不算违规——只查全角英数字母。"""
+        rd1 = self.rd("汝の欲する所を為せ、それが汝の法とならん", ["为汝所欲为，即为汝之法"])
+        rd2 = self.rd("とうま、これからどうするの？", ["当麻，接下来怎么办？"])
+        self.assertNotIn("anchor-fullwidth", self.kinds(rd1, []))
+        self.assertNotIn("anchor-fullwidth", self.kinds(rd2, []))
 
-    def test_unknown_anchor_with_table_value_is_flagged(self):
-        """译名表查无此锚点、清单却填了表侧 → 提示确认依据。"""
-        xd = self.xd("存在しない語", "某写法", "另一写法")
-        self.assertIn("table-mismatch", self.kinds(xd, []))
 
 
 @unittest.skipUnless(openpyxl is not None, "未安装 openpyxl，跳过端到端用例")
@@ -687,8 +701,8 @@ class EndToEndTests(unittest.TestCase):
                        "--book", "S9_99"])
             self.assertEqual(rc, 2, "限定到不存在作品时应以参数错误退出")
 
-    def test_audit_x_diff_exit_code(self):
-        """`--audit-x-diff`：清单表侧漏填时报错退出，补齐后通过。"""
+    def test_audit_rulings_exit_code(self):
+        """`--audit-rulings`：裁定列解析不出写法时报错退出，补上写法后通过。"""
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             wb = openpyxl.Workbook()
@@ -699,21 +713,23 @@ class EndToEndTests(unittest.TestCase):
             table = root / "t.xlsx"
             wb.save(table)
 
-            head = ("| 日文锚点 | 表侧写法 | X 版写法 | 类别 | 说明 |\n"
+            head = ("| 日文锚点 | 裁定 | 被否决或并存的候选 | 理由 | 判定 |\n"
                     "| --- | --- | --- | --- | --- |\n")
-            xd = root / "x.md"
-            base = ["--table", str(table), "--audit-x-diff", "--x-diff", str(xd),
+            rd = root / "r.md"
+            base = ["--table", str(table), "--audit-rulings", "--rulings", str(rd),
                     "--out", str(root / "out")]
 
-            xd.write_text(
-                head + "| <ruby>妹達<rt>シスターズ</rt></ruby> | — | 妹妹 | 符合语境 | — |\n",
+            # 裁定列为空占位（散文格式漏标 `人读`）→ forms-empty，非 0 退出
+            rd.write_text(
+                head + "| `<ruby>妹達<rt>シスターズ</rt></ruby>` | — | — | 符合语境 | |\n",
                 encoding="utf-8")
-            self.assertEqual(main(base), 1, "表侧漏填时应非 0 退出")
+            self.assertEqual(main(base), 1, "裁定列解析不出写法时应非 0 退出")
 
-            xd.write_text(
-                head + "| <ruby>妹達<rt>シスターズ</rt></ruby> | 妹妹们 | 妹妹 | 符合语境 | — |\n",
+            # 补上写法（或改标 `人读`）后通过
+            rd.write_text(
+                head + "| `<ruby>妹達<rt>シスターズ</rt></ruby>` | 妹妹 | 妹妹们 | 符合语境 | |\n",
                 encoding="utf-8")
-            self.assertEqual(main(base), 0, "补齐表侧后应通过")
+            self.assertEqual(main(base), 0, "补上写法后应通过")
 
 
 if __name__ == "__main__":

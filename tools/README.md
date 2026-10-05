@@ -374,14 +374,14 @@ python tools/check_epub_validity.py --list-categories
 
 ```powershell
 python tools/check_translation_table.py --table 显式译名表.xlsx --strict
-python tools/check_translation_table.py --table 显式译名表.xlsx --audit-x-diff
+python tools/check_translation_table.py --table 显式译名表.xlsx --audit-rulings
 ```
 
-读取外部表、日文参考和归档中文；表路径按翻译规范“外部依赖与核验”动态取得。列名支持 `--sheet`、`--ori-col`、`--trans-col`、`--type-col`、`--debuts-col`、`--ruby-ori-col`／`--ruby-trans-col`。`--epub`、`--jp-dir`、`--out`、重复 `--book` 指定范围。先按规范折叠查询和源，再匹配 `docs/x-translation-differences.md` 固有差异、判定中文落地；注音与基文分工以该清单机器合同为准。
+读取外部表、日文参考、归档中文与《译名裁定总表》；表路径按翻译规范“外部依赖与核验”动态取得。列名支持 `--sheet`、`--ori-col`、`--trans-col`、`--type-col`、`--debuts-col`、`--ruby-ori-col`／`--ruby-trans-col`。`--epub`、`--jp-dir`、`--out`、重复 `--book` 指定范围。判定顺序为**同形例外 → 裁定表 → 译名表**：先按规范折叠查询和源，再查裁定表（同一锚点多条登记合并为候选集合，裁定列 `／` 分隔多写法，判定列标 `人读` 的条目跳过并在报告里单列），未命中才按译名表 `Base_Trans` 判定；裁定未落地单独成节、不并入 `--strict` 阻断。
 
-`--x-diff` 指定差异表；`--no-x-diff` 是诊断绕过，不可据此要求回改已登记固有差异。`--include-suspect` 展示短串候选、`--limit` 是局部调试，不能称全表验收。`alignment_rules.TRANSLATION_HOST` 和 `SETTLED_ANCHORS` 是已确认跨书归属／同形词事实源。
+`--rulings` 指定《译名裁定总表》（默认仓库内路径）；`--no-rulings` 是诊断绕过，不可据此要求回改已登记裁定。`--include-suspect` 展示短串候选、`--limit` 是局部调试，不能称全表验收。`alignment_rules.TRANSLATION_HOST` 和 `SETTLED_ANCHORS` 是已确认跨书归属／同形词事实源。
 
-落地未命中只产生待判项，不等于误译；回原文判断普通词／专名、单复数与语境，执行 [术语统一 skill](../.agents/skills/translation-term-unification/SKILL.md)。strict 存在待判未落地项非零。`--audit-x-diff` 只核清单和表的锚点、基文、注音、全半角，出问题非零；改清单后重跑。
+落地未命中只产生待判项，不等于误译；回原文判断普通词／专名、单复数与语境，执行 [术语统一 skill](../.agents/skills/translation-term-unification/SKILL.md)。strict 存在待判未落地项非零。`--audit-rulings` 只核裁定表与译名表：锚点全角英数字母、裁定列解析不出写法（散文格式漏标 `人读`）、锚点 `<rt>` 与 `Ruby_Ori` 不一致，出问题非零；改裁定表后重跑。
 
 ### 提交级校对复核
 

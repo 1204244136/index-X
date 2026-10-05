@@ -33,17 +33,44 @@ JP_SHINJITAI = {
     '設': '设', '試': '试', '話': '话', '誠': '诚'
 }
 
-# 常见受控术语规则 (正则, 规范词, 风险描述)
+# 常见受控术语规则 (正则, 规范词, 风险描述)。
+# 只保留能在《译名裁定总表》找到落点的条目并注明来源；查不到落点的纠错类规则
+# （Saintium、站所、瓢虫铁处女机制、灵异照片机制、方向反转、12 人 VIP）已于
+# 2026-10-05 按维护者决定删除——它们与裁定混在同一张表里、来源只存在于历史提交。
 CONTROLLED_TERMS = [
-    (r"Saintium", "圣金属", "正文使用 Saintium 会导致与 note 词头「圣金属（Saintium）」错位"),
-    (r"和服裤裙", "袴之少女", "应统一为「袴之少女」专称"),
-    (r"行动代号[·・]手铐|代号[·・]手铐", "手铐行动", "应统一使用已裁定术语「手铐行动」"),
-    (r"警备员.*驻所", "站所", "警备员詰め所应统一为「站所」"),
-    (r"呆住眼睁睁地看着她们离去", "眼睁睁地看着她们走近", "双子正步入站所，非离去（方向反转）"),
-    (r"塞进猎物体内", "塞入自己体内", "瓢虫铁处女机制是将猎物塞入自身体内"),
-    (r"光是被看见就会死", "光是看见就会死", "灵异照片机制为人类视线看见幽灵即受害，被动颠倒机制"),
-    (r"只有一两个名额的VIP", "十二人的VIP", "统括理事会固定12席，一二指十二"),
+    # 裁定表 §九「袴少女」系列：本卷既有写法自洽，不另拟
+    (r"和服裤裙", "袴之少女", "应统一为「袴之少女」专称（裁定表 §九）"),
+    # 裁定表 §五：オペレーションネーム・ハンドカフス／ハンドカフス（按语境）
+    (r"行动代号[·・]手铐|代号[·・]手铐", "手铐行动", "应统一使用已裁定术语「手铐行动」（裁定表 §五）"),
 ]
+
+
+def load_ruling_terms(path: str) -> list[tuple[str, str, str]]:
+    """从《译名裁定总表》的候选列生成受控术语提示（只取标注「成品旧译」的条目）。
+
+    只对**确证在成品里出现过**的旧译生成规则——把全表候选列都变成提示会让噪声淹没
+    真信号。候选列的第一个词条（`／` 或 `（` 之前）是写法本体。
+    """
+    from pathlib import Path
+
+    p = Path(path)
+    if not p.is_file():
+        return []
+    out: list[tuple[str, str, str]] = []
+    for line in p.read_text(encoding="utf-8").splitlines():
+        if not line.lstrip().startswith("|"):
+            continue
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if len(cells) < 4:
+            continue
+        ruling = cells[1].replace("**", "").strip()
+        alt = cells[2]
+        if "成品旧译" not in alt or not ruling:
+            continue
+        form = re.split(r"／|（|\(", alt)[0].strip()
+        if form:
+            out.append((re.escape(form), ruling, f"裁定表登记的成品旧译「{form}」应作「{ruling}」"))
+    return out
 
 NEG_WORDS_CN = re.compile(r"(不|没|未|别|非|无|莫)")
 NEG_MARKERS_JP = re.compile(r"(ない|なかった|ず|ぬ|ません|まい|なく|わけではない|とは限らない|否定)")
@@ -61,8 +88,13 @@ def audit_risk_flags(old: str, new: str, jp: str = "") -> list[str]:
     return [d["flag"] for d in details]
 
 
-def audit_risk_details(old: str, new: str, jp: str = "") -> list[dict]:
-    """返回改动命中的所有风险详情列表。"""
+def audit_risk_details(old: str, new: str, jp: str = "",
+                       extra_terms: list[tuple[str, str, str]] | None = None) -> list[dict]:
+    """返回改动命中的所有风险详情列表。
+
+    `extra_terms` 追加受控术语规则（格式同 `CONTROLLED_TERMS`），供调用方传入
+    `load_ruling_terms()` 从裁定表生成的条目。
+    """
     old_p = strip_html(old)
     new_p = strip_html(new)
     jp_p = strip_html(jp)
@@ -123,7 +155,7 @@ def audit_risk_details(old: str, new: str, jp: str = "") -> list[dict]:
         })
 
     # 7. 受控术语与已知误改模式
-    for pat, standard, note in CONTROLLED_TERMS:
+    for pat, standard, note in list(CONTROLLED_TERMS) + list(extra_terms or []):
         if re.search(pat, new):
             risks.append({
                 "flag": "controlled_term",
@@ -153,10 +185,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--old", required=True, help="旧译文（支持带 HTML）")
     parser.add_argument("--new", required=True, help="新译文（支持带 HTML）")
     parser.add_argument("--jp", default="", help="对应日文原文行（可选）")
+    parser.add_argument("--rulings", default="docs/translation-name-rulings.md",
+                        help="《译名裁定总表》路径，用于追加「成品旧译」受控术语（默认仓库内路径）")
     parser.add_argument("--json", action="store_true", help="输出 JSON 格式")
     args = parser.parse_args(argv)
 
-    risks = audit_risk_details(args.old, args.new, args.jp)
+    risks = audit_risk_details(args.old, args.new, args.jp,
+                               extra_terms=load_ruling_terms(args.rulings))
     if args.json:
         print(json.dumps(risks, ensure_ascii=False, indent=2))
     else:
