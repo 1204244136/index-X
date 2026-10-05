@@ -88,7 +88,7 @@ python tools/proofread_review.py b7515335 2d44cb26 821c46b9 7a218119
 
 1. 事实层：数字、单位、专名、否定、时态、主体、词义方向 —— 逐条回原文；
 2. 明显删减 → 重点核（误删高发）；明显增补 → 确认不是凭空添加；
-3. 术语改动 → 对照 `translation-term-unification` skill §六 的已裁定结论索引与 `AGENTS.md` 口径；
+3. 术语改动 → 对照 `docs/translation-name-rulings.md` 的已裁定结论与 `AGENTS.md` 口径；发现应新增裁定时只提出候选与依据，不自行写入裁定表；
 4. `groups.txt` 聚类里的高频模式 → 按类抽样，同类结论一致即可批量判定；
 5. `rewrite` → 抽查，重点看有没有整段删掉信息。
 

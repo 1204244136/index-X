@@ -97,6 +97,134 @@ def audit(root: Path) -> list[str]:
                     break
             if not linked:
                 issues.append(f"{path.relative_to(root).as_posix()}: 开头缺少回指文档索引的入口")
+    issues += single_source_issues(root)
+    return issues
+
+
+# ── 单一来源检查：裁定表锚点唯一、规范不嵌取值、规范不复制词表、§ 引用可解析 ──
+RULINGS_DOC = "docs/translation-name-rulings.md"
+SPEC_DOCS = ("docs/translation-spec.md", "docs/translation-name-selection-spec.md")
+RULING_SECTIONS = ("五、", "6.1", "6.2", "七、", "八、", "8.1", "九、")
+BACKTICK_RE = re.compile(r"`([^`]+)`")
+MAPPING_MARK_RE = re.compile(r"→|＝|译作|译为")
+WHITELIST_MARK = "single-source-ok"
+TABLE_ROW_RE = re.compile(r"^\s*\|")
+SECTION_HEAD_RE = re.compile(r"^#{2,3}\s+([0-9]+(?:\.[0-9]+)?|[一二三四五六七八九十]+)[、\s]")
+SECTION_REF_RE = re.compile(r"§\s*([0-9]+(?:\.[0-9]+)?|[一二三四五六七八九十]+)")
+REF_SCAN_DOCS = SPEC_DOCS + (RULINGS_DOC,)
+
+
+def norm_anchor(value: str) -> str:
+    """锚点归一化：剥 `<ruby>` 取基文、剥标签与装饰符、去空白。"""
+    text = re.sub(r"<ruby\b[^>]*>(.*?)<rt\b[^>]*>.*?</rt>\s*</ruby>", r"\1", value or "", flags=re.S)
+    text = re.sub(r"<[^>]+>", "", text).replace("`", "").replace("**", "")
+    return re.sub(r"[【】「」『』\s]", "", text)
+
+
+def ruling_rows(root: Path) -> list[tuple[str, str, int]]:
+    """裁定表主表条目：(锚点, 义项标识, 行号)。义项标识 = 锚点列中反引号之外的部分。"""
+    path = root / RULINGS_DOC
+    if not path.is_file():
+        return []
+    rows: list[tuple[str, str, int]] = []
+    in_main = False
+    header: list[str] | None = None
+    for number, line in enumerate(path.read_text(encoding="utf-8-sig").splitlines(), 1):
+        head = re.match(r"^#{2,3}\s", line)
+        if head:
+            in_main = any(key in line for key in RULING_SECTIONS)
+            header = None
+            continue
+        if not TABLE_ROW_RE.match(line):
+            header = None
+            continue
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        if header is None:
+            header = cells
+            continue
+        if not in_main or set("".join(cells)) <= set("-: ") or len(cells) != len(header):
+            continue
+        index = 1 if "角色" in header[0] else 0
+        if index >= len(cells):
+            continue
+        raw = cells[index]
+        found = BACKTICK_RE.findall(raw)
+        if not found:
+            continue
+        label = BACKTICK_RE.sub("", raw).strip("（）() ").strip()
+        rows.append((found[0], label, number))
+    return rows
+
+
+def single_source_issues(root: Path) -> list[str]:
+    """单一来源检查：同一规则只在一处写正文，其余处只留指针。"""
+    issues: list[str] = []
+    rows = ruling_rows(root)
+    if not rows:
+        return issues
+
+    # ① 裁定表锚点唯一：同一锚点 + 相同义项标识不得重复登记
+    seen: dict[tuple[str, str], int] = {}
+    for anchor, label, number in rows:
+        key = (norm_anchor(anchor), label)
+        if key in seen:
+            issues.append(
+                f"{RULINGS_DOC}:{number}: 裁定条目重复（锚点 `{anchor}` 义项「{label}」已见第 {seen[key]} 行）")
+        else:
+            seen[key] = number
+
+    # ② 规范正文不得嵌入裁定取值：出现裁定表锚点且同行带映射标记即视为复述
+    anchors = sorted({a for a, _, _ in rows if len(a) >= 2}, key=len, reverse=True)
+    for rel in SPEC_DOCS:
+        path = root / rel
+        if not path.is_file():
+            continue
+        for number, line in enumerate(path.read_text(encoding="utf-8-sig").splitlines(), 1):
+            if WHITELIST_MARK in line or "translation-name-rulings" in line:
+                continue
+            hit = [a for a in anchors if a in line]
+            if hit and MAPPING_MARK_RE.search(line):
+                issues.append(
+                    f"{rel}:{number}: 规范正文出现裁定取值（{'、'.join(hit[:3])}），应改为指向裁定表的指针")
+
+    # ③ 规范不得复制检查工具的词表（命中过半数即视为复制）
+    suffixes: tuple[str, ...] = ()
+    try:
+        import importlib.util
+
+        spec = importlib.util.spec_from_file_location("_cts", root / "tools/check_translation_spec.py")
+        if spec and spec.loader:
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            suffixes = tuple(getattr(module, "P9_EVENT_SUFFIXES", ()))
+    except Exception:
+        suffixes = ()
+    if suffixes:
+        for rel in SPEC_DOCS:
+            path = root / rel
+            if not path.is_file():
+                continue
+            text = path.read_text(encoding="utf-8-sig")
+            hits = [item for item in suffixes if item in text]
+            if len(hits) * 2 >= len(suffixes):
+                issues.append(
+                    f"{rel}: 疑似复制检查词表（命中 {len(hits)}/{len(suffixes)} 个 P9_EVENT_SUFFIXES 元素）")
+
+    # ④ § 引用可解析：引用的裁定表小节必须真实存在
+    sections = {
+        match.group(1)
+        for line in (root / RULINGS_DOC).read_text(encoding="utf-8-sig").splitlines()
+        for match in [SECTION_HEAD_RE.match(line)]
+        if match
+    }
+    for rel in REF_SCAN_DOCS:
+        path = root / rel
+        if not path.is_file():
+            continue
+        for number, line in enumerate(path.read_text(encoding="utf-8-sig").splitlines(), 1):
+            for ref in SECTION_REF_RE.findall(line):
+                if ref not in sections:
+                    issues.append(f"{rel}:{number}: 引用的裁定表小节 §{ref} 不存在")
     return issues
 
 

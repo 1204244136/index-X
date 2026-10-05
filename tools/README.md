@@ -36,7 +36,7 @@
 | `proofread_review.py` | Git 改动与日文参考 | 分级 TSV／聚类 | 精确行级配对，分级和风险提示不等于裁定 | `test_proofread_review.py` |
 | `japanese_lookup.py`／`audit_risk.py` | 作品／文件／行；单处旧新日文 | 终端／JSON | 前者只定位原文；后者仅启发式风险 | `test_japanese_lookup.py`、`test_audit_risk.py` |
 | `epub_char_count.py`／`epub_composition_metrics.py` | EPUB／解包目录 | 终端、CSV／JSON | 共用字数口径；印刷页推算明确估算范围 | 无专用测试；只读诊断 |
-| `check_project_docs.py` | 活跃文档、文档索引、归档链接与工具目录清单 | 终端报告 | 本地链接／锚点、索引登记与回指、工具说明覆盖缺项非零 | `test_check_project_docs.py` |
+| `check_project_docs.py` | 活跃文档、文档索引、归档链接、工具目录清单与单一来源 | 终端报告 | 本地链接／锚点、索引登记与回指、工具说明覆盖、裁定表锚点唯一／规范不嵌裁定取值／规范不复制检查词表／§ 引用可解析，缺项非零 | `test_check_project_docs.py` |
 | `read_xlsx.py`／`search_text.py` | 外部表格；缓存或归档文本 | 终端与显式导出 | 表列选择／注音三轨检索；无语义裁定 | `test_read_xlsx.py`、`test_search_text.py` |
 
 ## 共享规则模块
@@ -284,7 +284,9 @@ python tools/docx2epub.py 交稿.docx --out 显式构建输出 --unpacked 显式
 python tools/check_project_docs.py
 ```
 
-只读核验本地链接／锚点、顶层 `docs/*.md` 在 [文档索引](../docs/README.md) 的登记、活跃文档开头回指索引的入口（前 20 行内的相对链接；维护记录与冻结归档不逐项要求），以及 `tools/*.py`、`*.ps1`、`*.json` 的说明覆盖；缺项非零，供 CI 和后续文档整改复跑。它检查可机械合同，不证明文档语义之间没有重复或冲突。
+只读核验本地链接／锚点、顶层 `docs/*.md` 在 [文档索引](../docs/README.md) 的登记、活跃文档开头回指索引的入口（前 20 行内的相对链接；维护记录与冻结归档不逐项要求），以及 `tools/*.py`、`*.ps1`、`*.json` 的说明覆盖；缺项非零，供 CI 和后续文档整改复跑。
+
+**单一来源检查**（同一规则只在一处写正文，其余处只留指针）：① 裁定表主表内「同一锚点 + 相同义项标识」不得重复登记——分层与同词异译以不同义项标识并列属合法；② 翻译规范与译名选取规范正文不得出现裁定表锚点的取值，同行带 `→`／`＝`／「译作」等映射标记即视为复述，指针行（含裁定表链接）与带 `<!-- single-source-ok -->` 白名单标记的行除外；③ 规范不得复制 `check_translation_spec.py` 的词表（命中 `P9_EVENT_SUFFIXES` 过半即报）；④ 规范与裁定表内 `§X` 形式的引用必须指向真实存在的小节。它检查可机械覆盖的合同，不替代对文档语义之间是否重复或冲突的判断。
 
 
 ### 对齐检查

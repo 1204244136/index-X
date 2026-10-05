@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from check_project_docs import audit
+from check_project_docs import audit, single_source_issues
 
 
 class DocumentationTests(unittest.TestCase):
@@ -76,6 +76,79 @@ class DocumentationTests(unittest.TestCase):
             # 回指放在开头范围之外 → 仍报错
             (root / "AGENTS.md").write_text("# 规约\n" + "\n" * 25 + "[文档索引](docs/README.md)\n", encoding="utf-8")
             self.assertEqual(len(audit(root)), 1)
+
+
+HEADER = "| 日文锚点 | 裁定 | 被否决或并存的候选 | 理由 |\n| --- | --- | --- | --- |\n"
+
+
+def build(root: Path, rulings: str, spec: str = "") -> None:
+    (root / "docs").mkdir(parents=True, exist_ok=True)
+    (root / "docs" / "translation-name-rulings.md").write_text(rulings, encoding="utf-8")
+    (root / "docs" / "translation-spec.md").write_text(spec, encoding="utf-8")
+
+
+class SingleSourceTests(unittest.TestCase):
+    def test_duplicate_anchor_reported(self):
+        """同一锚点 + 相同义项标识重复登记 → 报。"""
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            build(root, "## 五、设定\n\n" + HEADER
+                  + "| `サイド` | 阵营 | 势力 | |\n"
+                  + "| `サイド` | 阵营 | 势力 | |\n")
+            issues = single_source_issues(root)
+            self.assertTrue(any("裁定条目重复" in issue for issue in issues), issues)
+
+    def test_layered_anchor_allowed(self):
+        """同一锚点带不同义项标识（分层）→ 不报。"""
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            build(root, "## 五、设定\n\n" + HEADER
+                  + "| `人払い`（术式层） | 闲人驱散 | | |\n"
+                  + "| `人払い`（世俗清场） | 人群疏散 | | |\n")
+            self.assertEqual(single_source_issues(root), [])
+
+    def test_spec_embedding_reported(self):
+        """规范正文出现裁定锚点且同行带映射标记 → 报。"""
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            build(root, "## 五、设定\n\n" + HEADER + "| `サイド` | 阵营 | 势力 | |\n",
+                  "示例：`サイド` → 「阵营」。\n")
+            issues = single_source_issues(root)
+            self.assertTrue(any("出现裁定取值" in issue for issue in issues), issues)
+
+    def test_spec_pointer_line_allowed(self):
+        """规范里的指针行（含裁定表链接）→ 不报。"""
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            build(root, "## 五、设定\n\n" + HEADER + "| `サイド` | 阵营 | 势力 | |\n",
+                  "已裁定锚点见 [译名裁定总表](translation-name-rulings.md)（如 `サイド` → 阵营）。\n")
+            self.assertEqual(single_source_issues(root), [])
+
+    def test_whitelist_marker_allowed(self):
+        """带行内白名单标记 → 不报。"""
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            build(root, "## 五、设定\n\n" + HEADER + "| `サイド` | 阵营 | 势力 | |\n",
+                  "示例：`サイド` → 「阵营」。<!-- single-source-ok -->\n")
+            self.assertEqual(single_source_issues(root), [])
+
+    def test_bad_section_ref_reported(self):
+        """引用不存在的裁定表小节 → 报。"""
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            build(root, "## 五、设定\n\n" + HEADER + "| `サイド` | 阵营 | 势力 | |\n",
+                  "见裁定表 §11.9。\n")
+            issues = single_source_issues(root)
+            self.assertTrue(any("§11.9" in issue for issue in issues), issues)
+
+    def test_existing_section_ref_allowed(self):
+        """引用存在的裁定表小节 → 不报。"""
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            build(root, "## 五、设定\n\n" + HEADER + "| `サイド` | 阵营 | 势力 | |\n\n### 11.1 纠错\n\n"
+                  + HEADER + "| `甲` | 乙 | | |\n",
+                  "见裁定表 §11.1 与 §五。\n")
+            self.assertEqual(single_source_issues(root), [])
 
 
 if __name__ == "__main__":
