@@ -27,7 +27,7 @@
 | <ruby>戦乱の剣<rt>ダインスレーヴ</rt></ruby> | <ruby>战乱之剑<rt>Dáinsleif</rt></ruby> | <ruby>战乱之剑<rt>丹因斯莱夫</rt></ruby> | 中文注音 | 基文一致，仅注音改为汉译 |
 | <ruby>万象の金<rt>ドラウプニル</rt></ruby> | <ruby>万象之金<rt>Draupnir</rt></ruby> | <ruby>万象之金<rt>德罗普尼尔</rt></ruby> | 中文注音 | 基文一致，仅注音改为汉译 |
 | <ruby>黒小人<rt>ドヴェルグ</rt></ruby> | <ruby>黑侏儒<rt>Dvergr</rt></ruby> | <ruby>黑侏儒<rt>矮人</rt></ruby> | 中文注音 | 基文一致，仅注音改为汉译；日文另有 `ドヴエルグ` 写法 |
-| <ruby>電撃使い<rt>エレクトロマスター</rt></ruby> | <ruby>电击使<rt>Electro Master</rt></ruby> | <ruby>电击使<rt>Electromaster</rt></ruby> | 混乱统一 | 一切以 `エレクトロマスター` 为注音的词，统一写作「电击使」、注音连写为 `Electromaster` |
+| <ruby>電撃使い<rt>エレクトロマスター</rt></ruby> | <ruby>电击使<rt>Electro Master</rt></ruby> | <ruby>电击使<rt>Electro Master</rt></ruby> | 混乱统一 | 一切以 `エレクトロマスター` 为注音的词，统一写作「电击使」、注音作 `Electro Master`（2026-10-05 维护者裁定：X 版采用译名表写法，本条差异消解） |
 | <ruby>絶対能力進化<rt>レベル6シフト</rt></ruby> | <ruby>绝对能力进化<rt>Level 6 Shift</rt></ruby> | <ruby>绝对能力进化<rt>Level 6 Shift</rt></ruby> | 混乱统一 | 表侧条目作 `【絶対能力進化】計画` → `【绝对能力进化】计划`，另收 `【絶対能力】`→「绝对能力」等写法；X 版把一切以 `レベル6シフト` 为注音的计划统一写作「绝对能力进化」计划 |
 | <ruby>量産型能力者<rt>レディオノイズ</rt></ruby> | <ruby>量产型能力者<rt>Radio Noise</rt></ruby> | <ruby>量产型能力者<rt>Radio Noise</rt></ruby> | 混乱统一 | 表侧条目作 `【量産型能力者】計画` → `【量产型能力者】计划`；源正文作 `量産型能力者（レデイオノイズ）計画`（大字）、章标题作 `レディオノイズ`。表侧另收 `【超電磁砲量産】計画`→「超电磁炮量产」计划，X 版把这类计划统一写作「量产型能力者」计划 |
 | カラオケボックス | — | KTV | 杂项 | 译名表无此锚点 |
