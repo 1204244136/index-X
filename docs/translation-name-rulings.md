@@ -334,6 +334,7 @@ X 版与译名表之间**人为制定的固有差异**（取舍而非缺陷）�
 | --- | --- |
 | 注音有无、当て字分工、拉丁注音范围 | [翻译规范](translation-spec.md) 三.1 |
 | 人名连接符与单字母缩写 | [翻译规范](translation-spec.md) 一.3 |
+| 外文人名原语还原与性别化选字 | [译名选取规范](translation-name-selection-spec.md) §四、§五；[翻译规范](translation-spec.md) 五.7、五.8 |
 | 日文锚点的不妥协写法与源检索折叠 | [翻译规范](translation-spec.md) 六.5 |
 | 全半角标点与 `&` | [翻译规范](translation-spec.md) 一.1 |
 | 加粗范围 | [翻译规范](translation-spec.md) 一.8 |
