@@ -179,3 +179,17 @@
 - 留档、裁定登记与提交按「维护流程」和「版本控制边界」执行。
 - 不保留的形式包括 `tools/fix_<具体词变体>.py`、`tools/check_<具体术语>.py`、`tools/<术语>_overrides.json` 之类的单点术语工具与映射表，以及写在 `.cache/` 下的 `scan_*`／一次性分析脚本。
 - 已执行完毕的一次性判定如需复核或回退，用提交历史（`git show`／`git revert`），而不是重跑工具。
+
+## Agent skills
+
+### Issue tracker
+
+issue 与 spec 以 GitHub Issues 承载（`1204244136/index-X`），通过 `gh` CLI 读写。详见 `docs/agents/issue-tracker.md`。
+
+### Triage labels
+
+保留默认五角色标签词汇：`needs-triage` / `needs-info` / `ready-for-agent` / `ready-for-human` / `wontfix`，标签字符串与角色同名。详见 `docs/agents/triage-labels.md`。
+
+### Domain docs
+
+单上下文（single-context）：仓库根 `CONTEXT.md` + `docs/adr/`。详见 `docs/agents/domain.md`。
