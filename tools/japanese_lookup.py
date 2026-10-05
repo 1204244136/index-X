@@ -29,6 +29,49 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_JP_BASE = os.path.join(REPO_ROOT, ".cache", "epub-work", "japanese-text")
 
 
+_RUBY_PATTERN = re.compile(r"<ruby\b[^>]*>(.*?)</ruby>", re.I | re.S)
+_RT_PATTERN = re.compile(r"<rt\b[^>]*>(.*?)</rt>", re.I | re.S)
+_RP_PATTERN = re.compile(r"<rp\b[^>]*>.*?</rp>", re.I | re.S)
+_TAG_PATTERN = re.compile(r"<[^>]+>")
+
+
+def _clean_text(s: str) -> str:
+    return html.unescape(_TAG_PATTERN.sub("", s)).strip()
+
+
+def render_ruby_to_markup(inner: str) -> str:
+    """把 <ruby> 的 inner 渲染为汉化组标准的 |基文[注音] 格式。
+
+    - <rt> 内容（支持多段拼接）提取为 [注音]；<rp> 丢弃；
+    - 无 <rt> 或注音为空时只输出基文；
+    - 汉化组与项目规约标准记号：|基文[注音]（参考 docs/translation-spec.md §三.1）。
+    """
+    annos = [_clean_text(m.group(1)) for m in _RT_PATTERN.finditer(inner)]
+    base_raw = _RP_PATTERN.sub("", inner)
+    base_raw = _RT_PATTERN.sub("", base_raw)
+    base = _clean_text(base_raw)
+    if not annos:
+        return base
+    anno = "".join(annos)
+    if not base:
+        return anno
+    if not anno:
+        return base
+    return f"|{base}[{anno}]"
+
+
+def to_ruby_markup(html_text: str) -> str:
+    """将 HTML 中的 <ruby> 结构转换为汉化组标准的 |基文[注音] 格式，并剥除其它 HTML 标签。"""
+    text = _RUBY_PATTERN.sub(lambda m: render_ruby_to_markup(m.group(1)), html_text)
+    text = _TAG_PATTERN.sub("", text)
+    return html.unescape(text).strip()
+
+
+def strip_ruby_markup(text: str) -> str:
+    """把 |基文[注音] 记号快速剥除注文，还原为纯基文。"""
+    return re.sub(r"\|([^|\[\n]+)\[[^\]\n]*\]", r"\1", text)
+
+
 def strip_rt_and_tags(html_text: str) -> str:
     """剥除 <rt>...</rt>、<rp>...</rp> 及所有 HTML 标签，返回干净纯文本。"""
     # 先剥除 rt 和 rp 注音内容，避免注音被混入正文
@@ -118,13 +161,34 @@ class JapaneseSourceLookup:
         self._file_lines_cache[cache_key] = lines
         return lines
 
-    def get_line(self, work: str, file_or_seq: str, line_num: int, strip_ruby: bool = True) -> str | None:
-        """获取指定行（1-based）的内容。超出范围或文件不存在返回 None。"""
+    def get_line(
+        self,
+        work: str,
+        file_or_seq: str,
+        line_num: int,
+        strip_ruby: bool = True,
+        ruby_mode: str | None = None,
+    ) -> str | None:
+        """获取指定行（1-based）的内容。超出范围或文件不存在返回 None。
+
+        `ruby_mode` 选项：
+          - "markup": 将 <ruby> 结构转为汉化组标准的 |基文[注音] 格式，剥除其它标签（复审/对照推荐）
+          - "strip": 彻底剥除注音与所有 HTML 标签，返回干净基文纯文本
+          - "raw": 保留原始 HTML
+        未显式指定 `ruby_mode` 时，遵循向后兼容参数 `strip_ruby`（True 走 strip，False 走 raw）。
+        """
         lines = self.get_lines(work, file_or_seq)
         if not lines or line_num < 1 or line_num > len(lines):
             return None
 
         raw = lines[line_num - 1]
+        if ruby_mode == "markup":
+            return to_ruby_markup(raw)
+        if ruby_mode == "strip":
+            return strip_rt_and_tags(raw)
+        if ruby_mode == "raw":
+            return raw.strip()
+
         if strip_ruby:
             return strip_rt_and_tags(raw)
         return raw.strip()
@@ -133,16 +197,29 @@ class JapaneseSourceLookup:
 def main(argv: list[str] | None = None) -> int:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
-    parser = argparse.ArgumentParser(description="查询日文缓存中对应行纯文本（自动剥除注音）")
+    parser = argparse.ArgumentParser(description="查询日文缓存中对应行文本（支持汉化组 |基文[注音] 记号）")
     parser.add_argument("work", help="作品号，如 S3_03")
     parser.add_argument("file", help="中文文件名或内容序，如 S3_03-04_Chapter2.xhtml 或 04")
     parser.add_argument("line", type=int, help="行号（1-based）")
-    parser.add_argument("--raw", action="store_true", help="保留完整 HTML 标签（不剥除 <rt>）")
+    parser.add_argument(
+        "--mode",
+        choices=["markup", "strip", "raw"],
+        default="markup",
+        help="注音呈现模式：markup (|基文[注音], 默认), strip (剥除注音), raw (原始HTML)",
+    )
+    parser.add_argument("--raw", action="store_true", help="保留完整 HTML 标签（等价于 --mode raw）")
+    parser.add_argument("--strip", action="store_true", help="彻底剥除注音（等价于 --mode strip）")
     parser.add_argument("--jp-base", default=DEFAULT_JP_BASE, help="日文解包缓存基础目录")
     args = parser.parse_args(argv)
 
+    mode = args.mode
+    if args.raw:
+        mode = "raw"
+    elif args.strip:
+        mode = "strip"
+
     lookup = JapaneseSourceLookup(REPO_ROOT, args.jp_base)
-    text = lookup.get_line(args.work, args.file, args.line, strip_ruby=not args.raw)
+    text = lookup.get_line(args.work, args.file, args.line, ruby_mode=mode)
     if text is None:
         print(f"[未找到] 作品 {args.work} 文件 {args.file} 第 {args.line} 行", file=sys.stderr)
         return 1
