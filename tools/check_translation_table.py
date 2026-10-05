@@ -103,6 +103,7 @@ STATUS_LANDED = "landed"
 STATUS_MISSING = "missing"
 STATUS_SETTLED = "settled"   # 已判定为工具误报／暂缓（见 alignment_rules.SETTLED_ANCHORS）
 STATUS_HUMAN_ONLY = "human_only"   # 裁定表「判定」列标 `人读`：工具不判定，报告里单列
+STATUS_PENDING_RULING = "pending_ruling"   # 同形例外中 status=待裁定：两个译法都成立、尚未定
 
 
 class ToolError(Exception):
@@ -153,14 +154,48 @@ def load_plain(path: Path) -> str:
     return strip_markup(raw)
 
 
+RUBY_PAIR_RE = re.compile(r"<ruby\b[^>]*>(.*?)</ruby>", re.S | re.I)
+RT_INNER_RE = re.compile(r"<rt\b[^>]*>(.*?)</rt>", re.S | re.I)
+
+
+def to_ruby_text(raw: str) -> str:
+    """XHTML → **带注音的复合串文本**：`<ruby>基文<rt>注文</rt></ruby>` → `基文（注文）`。
+
+    剥注音文本只能比基文，判定不了成品把注音写成了什么（`<rt>Gungnir</rt>` 与
+    `<rt>冈格尼尔</rt>` 剥完都是「主神之枪」）。复合串让「基文 + 注音」成为可匹配的
+    整体。多段 ruby（当て字逐字分解）按段展开，这类锚点的注音判定交人工。
+    """
+    def repl(match):
+        inner = match.group(1)
+        rt = RT_INNER_RE.search(inner)
+        base = re.sub(r"<[^>]+>", "", RT_INNER_RE.sub("", inner)).strip()
+        note = re.sub(r"<[^>]+>", "", rt.group(1)).strip() if rt else ""
+        return f"{base}（{note}）" if note else base
+
+    text = RUBY_PAIR_RE.sub(repl, raw or "")
+    return html.unescape(re.sub(r"<[^>]+>", "", text))
+
+
+def load_ruby_plain(path: Path) -> str:
+    try:
+        raw = path.read_text(encoding="utf-8", errors="ignore")
+    except OSError:
+        return ""
+    return to_ruby_text(raw)
+
+
 def book_id(dir_name: str) -> str:
     """从 `[S3_06]创约 …` 取出作品号 `S3_06`。"""
     m = BOOK_RE.match(dir_name)
     return m.group(1) if m else ""
 
 
-def collect_books(root: Path, text_subdir: str, only: set[str]) -> dict[str, str]:
-    """收集 {作品号: 全书纯文本}。目录名形如 `[S3_06]…`。"""
+def collect_books(root: Path, text_subdir: str, only: set[str],
+                  ruby: bool = False) -> dict[str, str]:
+    """收集 {作品号: 全书纯文本}。目录名形如 `[S3_06]…`。
+
+    `ruby=True` 时输出**带注音的复合串文本**（`基文（注文）`），供注音判定使用。
+    """
     books: dict[str, str] = {}
     if not root.is_dir():
         return books
@@ -176,7 +211,7 @@ def collect_books(root: Path, text_subdir: str, only: set[str]) -> dict[str, str
         chunks: list[str] = []
         for f in sorted(text_dir.iterdir()):
             if f.suffix.lower() == ".xhtml":
-                chunks.append(load_plain(f))
+                chunks.append(load_ruby_plain(f) if ruby else load_plain(f))
         if chunks:
             books[bid] = "\n".join(chunks)
     return books
@@ -288,21 +323,32 @@ def load_rulings(path: Path) -> dict[str, dict[str, object]]:
         label = re.sub(r"`[^`]+`", "", cells[ai]).strip("（）() ").strip()
         human = bool(ji is not None and ji < len(cells) and "人读" in cells[ji])
         forms: list[str] = []
+        ruby_forms: list[str] = []
         for part in re.split(r"／", cells[ri]):
             # 剥中文括号注释与 Markdown 装饰（粗体／反引号），再剥标签取基文
-            form = strip_markup(re.sub(r"（[^）]*）|\([^)]*\)", "", part))
-            form = form.replace("**", "").replace("`", "").strip()
+            clean = re.sub(r"（[^）]*）|\([^)]*\)", "", part)
+            form = strip_markup(clean).replace("**", "").replace("`", "").strip()
             if form and form not in ("—", "-") and form not in forms:
                 forms.append(form)
+            # 带注音的写法另存复合串（`基文（注文）`），供注音判定
+            if "<rt" in part:
+                ruby_form = to_ruby_text(clean).replace("**", "").replace("`", "").strip()
+                if ruby_form and ruby_form not in ruby_forms:
+                    ruby_forms.append(ruby_form)
         for anchor in anchors:
             key = norm_anchor(strip_markup(anchor))
             if not key:
                 continue
-            slot = out.setdefault(key, {"forms": [], "raw": [], "labels": [], "ori_raw": [], "human_only": False})
+            slot = out.setdefault(key, {"forms": [], "ruby_forms": [], "raw": [], "labels": [],
+                                        "ori_raw": [], "alt_raw": [], "human_only": False})
             for form in forms:
                 if form not in slot["forms"]:
                     slot["forms"].append(form)
+            for ruby_form in ruby_forms:
+                if ruby_form not in slot["ruby_forms"]:
+                    slot["ruby_forms"].append(ruby_form)
             slot["raw"].append(cells[ri])
+            slot["alt_raw"].append(cells[ri + 1] if ri + 1 < len(cells) else "")
             slot["labels"].append(label)
             slot["ori_raw"].append(anchor)
             slot["human_only"] = bool(slot["human_only"]) or human
@@ -336,6 +382,8 @@ def audit_rulings(rulings: dict[str, dict[str, object]],
     | `anchor-fullwidth` | 锚点列含全角 ASCII，按不妥协写法应写半角（中文标点与分隔符 `／` 除外） |
     | `forms-empty` | 裁定列解析不出任何可接受写法（散文格式或漏填）→ 应改标 `人读` 或补写法 |
     | `ruby-mismatch` | 锚点的 `<rt>` 与译名表 `Ruby_Ori` 不一致 → 应修正 |
+    | `alt-unfounded` | 候选列的写法在译名表里找不到来源、也没标来源 → 疑似无据登记 |
+    | `homonym-unregistered` | 译名表同一锚点有多种译法，但裁定表未登记 → 收敛时无从判断取哪个 |
 
     同名异物（同一锚点在表内多行）时，各候选都会列出，由人工判断该取哪一行。
     """
@@ -368,6 +416,32 @@ def audit_rulings(rulings: dict[str, dict[str, object]],
             # 注音写法比较只折叠全角 ASCII：假名大小字差异正是要检出的问题
             if rt_list and rt_table and fold_ascii(rt_list).strip() != fold_ascii(rt_table).strip():
                 add("ruby-mismatch", key, "锚点", rt_list, rt_table, "锚点 <rt> 与表内 Ruby_Ori 不一致")
+
+    # 候选列依据：只核对**声称了来源**的候选——候选列本来就包含从没落地过的候选（「势力」
+    # 这类被否决的译法），它们不在译名表里是正常的，不能一律判无据。真正要拦的是
+    # 「标成表内值、但表里并没有这个写法」那种误登记（2026-10-05 废弃的「表内原值」标注）。
+    table_forms = {norm_anchor(e.get("trans", "")) for e in entries}
+    table_forms.discard("")
+    for key, v in rulings.items():
+        for alt in v.get("alt_raw", []):
+            if not alt or ("表内原值" not in alt and "译名表当前值" not in alt):
+                continue
+            first = re.split(r"／|（|\(", alt)[0].strip().strip("`*")
+            if first and norm_anchor(first) not in table_forms:
+                add("alt-unfounded", key, "候选", first, "译名表当前值",
+                    "候选列标为表内值，但译名表里没有该写法")
+
+    # 同词异译登记：译名表同一锚点有多种译法时，必须已在裁定表登记义项
+    homonyms: dict[str, set[str]] = {}
+    for e in entries:
+        k = norm_anchor(e.get("ori", ""))
+        if k:
+            homonyms.setdefault(k, set()).add(norm_anchor(e.get("trans", "")))
+    for k, forms in sorted(homonyms.items()):
+        forms.discard("")
+        if len(forms) > 1 and k not in rulings:
+            add("homonym-unregistered", k, "锚点", "／".join(sorted(forms)), "在裁定表登记义项",
+                f"译名表同锚点有 {len(forms)} 种译法，裁定表未登记")
 
     return problems
 
@@ -432,6 +506,8 @@ def compare(entries: list[dict[str, str]], jp_books: dict[str, str],
             rulings: dict[str, dict[str, str]] | None = None,
             translation_host: dict[str, str] | None = None,
             settled_anchors: dict[str, str] | None = None,
+            jp_ruby: dict[str, str] | None = None,
+            cn_ruby: dict[str, str] | None = None,
             ) -> tuple[list[dict[str, str]], int, list[str]]:
     """核心比对：返回 (记录列表, 跳过的空译名数, 可比对作品号)。
 
@@ -461,6 +537,8 @@ def compare(entries: list[dict[str, str]], jp_books: dict[str, str],
     settled_anchors = {norm_anchor(k): v for k, v in (settled_anchors or {}).items()}
     shared = sorted(set(jp_books) & set(cn_texts))
     jp_norm = {b: norm_anchor(jp_books[b]) for b in shared}
+    jp_ruby_norm = {b: norm_anchor(v) for b, v in (jp_ruby or {}).items()}
+    cn_ruby_norm = {b: norm_anchor(v) for b, v in (cn_ruby or {}).items()}
     # 中文侧归一化**覆盖全部中文书**（不只两侧都有的）：译文归属书可能只在中方存在，
     # 只按 shared 建表会让 TRANSLATION_HOST 永远查不到归属书。
     cn_norm = {b: norm_anchor(t) for b, t in cn_texts.items()}
@@ -480,6 +558,8 @@ def compare(entries: list[dict[str, str]], jp_books: dict[str, str],
         rd = rulings.get(ori)
         forms = [norm_anchor(v) for v in (rd["forms"] if rd else [])]
         forms = [v for v in forms if v]
+        ruby_forms = [norm_anchor(v) for v in (rd.get("ruby_forms", []) if rd else [])]
+        ruby_forms = [v for v in ruby_forms if v]
         human_only = bool(rd["human_only"]) if rd else False
 
         def hit(text: str) -> tuple[bool, str]:
@@ -502,15 +582,25 @@ def compare(entries: list[dict[str, str]], jp_books: dict[str, str],
                 continue
             suspect = is_suspect(jp_text, idx, ori)
 
-            if ori in settled_anchors:
-                # 已判定为工具误报（同形不同义）或暂缓：记 settled，不出现在待判里
+            settled = settled_anchors.get(ori)
+            # 同形例外只在该锚点被判定过的那本书内抑制。`settled`（已判定为同形不同义）
+            # 始终抑制——它讲的正是「表内义项 ≠ 正文义项」，裁定表登记的是表内那个义项，
+            # 不该因此把正文义项也放行；只有 `待裁定`（两案都成立、尚未定）在裁定表
+            # 登记该锚点后才失效、改按裁定判定。
+            pending_settled = isinstance(settled, dict) and settled.get("status") == "待裁定"
+            if settled is not None and not (pending_settled and ori in rulings) and (
+                    not isinstance(settled, dict) or not settled.get("scope")
+                    or settled.get("scope") == bid):
+                settled_status = (STATUS_PENDING_RULING
+                                  if isinstance(settled, dict) and settled.get("status") == "待裁定"
+                                  else STATUS_SETTLED)
                 records.append({
                     "book": bid,
                     "ori": e["ori"],
                     "trans": e["trans"],
                     "type": e["type"],
                     "debuts": e["debuts"],
-                    "status": STATUS_SETTLED,
+                    "status": settled_status,
                     "suspect": "1" if suspect else "",
                     "rulings": "",
                     "form_kind": "",
@@ -537,6 +627,12 @@ def compare(entries: list[dict[str, str]], jp_books: dict[str, str],
                 continue
 
             landed, form = hit(cn_norm[bid])
+            # 注音判定：裁定条目带注音要求、且该书日文侧存在带注音的该锚点时，
+            # 中文侧必须出现裁定的复合串（`基文（注文）`）——否则视为注音未落地
+            if landed and ruby_forms and jp_ruby is not None and cn_ruby is not None:
+                if f"{ori}(" in jp_ruby_norm.get(bid, ""):   # 归一化已把全角括号折叠为半角
+                    if not any(rf in cn_ruby_norm.get(bid, "") for rf in ruby_forms):
+                        landed, form = False, ""
             cn_host = ""
             host = translation_host.get(bid, "")
             if not landed and host and host in cn_norm:
@@ -630,6 +726,10 @@ def main(argv: list[str] | None = None) -> int:
     # 传**全部**中文书：译文归属书（TRANSLATION_HOST 的值）可能只存在于中文侧。
     cn_texts = dict(cn_books)
     rulings = {} if args.no_rulings else load_rulings(Path(args.rulings).expanduser())
+    # 注音判定：只有裁定表里存在带注音写法时才收集复合串文本（内存约翻倍，按需启用）
+    need_ruby = any(rd.get("ruby_forms") for rd in rulings.values())
+    jp_ruby = collect_books(Path(args.jp_dir), "item/xhtml", only, ruby=True) if need_ruby else None
+    cn_ruby = collect_books(Path(args.epub), "OEBPS/Text", only, ruby=True) if need_ruby else None
     if args.no_rulings:
         print("[提示] 已按 --no-rulings 跳过 裁定表门禁。", file=sys.stderr)
     elif not rulings:
@@ -652,7 +752,8 @@ def main(argv: list[str] | None = None) -> int:
         print(f"已判定锚点（不计待判）：{len(SETTLED_ANCHORS)} 条")
     records, skipped_empty_trans, shared = compare(entries, jp_books, cn_texts,
                                                    rulings, TRANSLATION_HOST,
-                                                   SETTLED_ANCHORS)
+                                                   SETTLED_ANCHORS,
+                                                   jp_ruby, cn_ruby)
     del jp_books
 
     missing = [r for r in records if r["status"] == STATUS_MISSING]

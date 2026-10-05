@@ -30,6 +30,7 @@ from check_translation_table import (  # noqa: E402
     main,
     norm_anchor,
     strip_markup,
+    to_ruby_text,
 )
 
 
@@ -386,7 +387,7 @@ class LoadRulingsTests(unittest.TestCase):
         self.assertTrue(DEFAULT_RULINGS.is_file(), f"门禁文件缺失：{DEFAULT_RULINGS}")
         d = load_rulings(DEFAULT_RULINGS)
         self.assertGreater(len(d), 20, "裁定表条目数异常偏少")
-        for anchor in ("妹達（シスターズ）", "ハイウェイクレイドル", "保温鍋バンマリ", "主神の槍",
+        for anchor in ("妹達", "ハイウェイクレイドル", "保温鍋バンマリ", "主神の槍",
                        "クロウリーズ・ハザード"):
             self.assertIn(norm_anchor(anchor), d, f"裁定表缺少已知条目：{anchor}")
 
@@ -730,6 +731,127 @@ class EndToEndTests(unittest.TestCase):
                 head + "| `<ruby>妹達<rt>シスターズ</rt></ruby>` | 妹妹 | 妹妹们 | 符合语境 | |\n",
                 encoding="utf-8")
             self.assertEqual(main(base), 0, "补上写法后应通过")
+
+
+class RubyTextTests(unittest.TestCase):
+    """注音复合串：`<ruby>基文<rt>注文</rt></ruby>` → `基文（注文）`。"""
+
+    def test_pair_becomes_composite(self):
+        self.assertEqual(to_ruby_text("<p><ruby>主神之枪<rt>冈格尼尔</rt></ruby></p>"),
+                         "主神之枪（冈格尼尔）")
+
+    def test_ruby_without_rt_stays_base(self):
+        self.assertEqual(to_ruby_text("<p><ruby>主神之枪</ruby></p>"), "主神之枪")
+
+    def test_multi_segment_ruby_expands_per_segment(self):
+        self.assertEqual(to_ruby_text("<ruby>封<rt>ド</rt></ruby><ruby>の<rt>ロ</rt></ruby>"),
+                         "封（ド）の（ロ）")
+
+
+class RubyJudgementTests(unittest.TestCase):
+    """注音判定：日文侧带注音时，中文侧必须出现裁定的复合串。"""
+
+    ENTRY = [{"ori": "主神の槍", "trans": "主神之枪", "type": "", "debuts": ""}]
+    RD = {"主神の槍": {"forms": ["主神之枪"], "ruby_forms": ["主神之枪（冈格尼尔）"],
+                       "raw": [], "alt_raw": [], "labels": [""], "ori_raw": ["主神の槍"],
+                       "human_only": False}}
+
+    def test_correct_ruby_lands(self):
+        recs, _s, _sh = compare(self.ENTRY, {"S1_01": "主神の槍"}, {"S1_01": "主神之枪"}, self.RD,
+                                None, None, {"S1_01": "主神の槍（グングニル）"},
+                                {"S1_01": "主神之枪（冈格尼尔）"})
+        self.assertEqual(recs[0]["status"], "landed")
+
+    def test_wrong_ruby_reports_missing(self):
+        """成品注音写成表侧的 Gungnir → 报未落地（剥注音的判定看不出来）。"""
+        recs, _s, _sh = compare(self.ENTRY, {"S1_01": "主神の槍"}, {"S1_01": "主神之枪"}, self.RD,
+                                None, None, {"S1_01": "主神の槍（グングニル）"},
+                                {"S1_01": "主神之枪（Gungnir）"})
+        self.assertEqual(recs[0]["status"], "missing")
+
+    def test_no_jp_ruby_skips_judgement(self):
+        """日文侧本来就裸写时不做注音判定（否则中文裸写会被误报）。"""
+        recs, _s, _sh = compare(self.ENTRY, {"S1_01": "主神の槍"}, {"S1_01": "主神之枪"}, self.RD,
+                                None, None, {"S1_01": "主神の槍"}, {"S1_01": "主神之枪"})
+        self.assertEqual(recs[0]["status"], "landed")
+
+
+class NewAuditChecksTests(unittest.TestCase):
+    """候选列依据与同词异译登记两项检查。"""
+
+    @staticmethod
+    def entry(ori, trans):
+        return {"ori": ori, "trans": trans, "type": "", "debuts": "",
+                "ruby_ori": "", "ruby_trans": ""}
+
+    def kinds(self, rulings, entries):
+        return {p["kind"] for p in audit_rulings(rulings, entries)}
+
+    def test_alt_unfounded_reported(self):
+        """候选列标成「表内原值」但译名表里没有该写法 → 报。"""
+        rd = {"甲": {"forms": ["乙"], "ruby_forms": [], "raw": ["乙"], "alt_raw": ["丙（表内原值）"],
+                     "labels": [""], "ori_raw": ["甲"], "human_only": False}}
+        self.assertIn("alt-unfounded", self.kinds(rd, [self.entry("甲", "丁")]))
+
+    def test_alt_with_real_table_value_passes(self):
+        rd = {"甲": {"forms": ["乙"], "ruby_forms": [], "raw": ["乙"], "alt_raw": ["丁（译名表当前值）"],
+                     "labels": [""], "ori_raw": ["甲"], "human_only": False}}
+        self.assertNotIn("alt-unfounded", self.kinds(rd, [self.entry("甲", "丁")]))
+
+    def test_alt_without_source_claim_is_not_checked(self):
+        """候选列没声称来源（普通被否决候选，如「势力」）→ 不检查。"""
+        rd = {"甲": {"forms": ["乙"], "ruby_forms": [], "raw": ["乙"], "alt_raw": ["势力"],
+                     "labels": [""], "ori_raw": ["甲"], "human_only": False}}
+        self.assertEqual(self.kinds(rd, [self.entry("甲", "丁")]), set())
+
+    def test_homonym_unregistered_reported(self):
+        entries = [self.entry("甲", "乙"), self.entry("甲", "丙")]
+        self.assertIn("homonym-unregistered", self.kinds({}, entries))
+
+    def test_homonym_registered_passes(self):
+        entries = [self.entry("甲", "乙"), self.entry("甲", "丙")]
+        rd = {"甲": {"forms": ["乙"], "ruby_forms": [], "raw": [], "alt_raw": [], "labels": [""],
+                     "ori_raw": ["甲"], "human_only": False}}
+        self.assertNotIn("homonym-unregistered", self.kinds(rd, entries))
+
+
+class SettledScopeTests(unittest.TestCase):
+    """同形例外按作品登记：抑制只在该作品内生效，裁定表登记后失效。"""
+
+    ENTRY = [{"ori": "テスト", "trans": "译文", "type": "", "debuts": ""}]
+    SETTLED = {"テスト": {"note": "表内专名、正文普通词", "scope": "S1_01", "status": "settled"}}
+
+    def test_suppressed_in_scope(self):
+        recs, _s, _sh = compare(self.ENTRY, {"S1_01": "テスト"}, {"S1_01": "无关内容"},
+                                None, None, self.SETTLED)
+        self.assertEqual(recs[0]["status"], "settled")
+
+    def test_not_suppressed_out_of_scope(self):
+        """别的书里命中同一锚点 → 不抑制，照常判定。"""
+        recs, _s, _sh = compare(self.ENTRY, {"S2_02": "テスト"}, {"S2_02": "无关内容"},
+                                None, None, self.SETTLED)
+        self.assertEqual(recs[0]["status"], "missing")
+
+    def test_settled_survives_ruling_registration(self):
+        """已判定为同形不同义的条目：裁定表登记的是**表内那个义项**，抑制继续生效。"""
+        rd = {"テスト": {"forms": ["译文"], "ruby_forms": [], "raw": [], "alt_raw": [], "labels": [""],
+                         "ori_raw": ["テスト"], "human_only": False}}
+        recs, _s, _sh = compare(self.ENTRY, {"S1_01": "テスト"}, {"S1_01": "译文"}, rd, None, self.SETTLED)
+        self.assertEqual(recs[0]["status"], "settled")
+
+    def test_pending_ruling_overridden_by_ruling(self):
+        """`待裁定` 的条目：裁定表一旦登记该锚点，抑制失效、改按裁定判定。"""
+        settled = {"テスト": {"note": "两案都成立", "scope": "S1_01", "status": "待裁定"}}
+        rd = {"テスト": {"forms": ["译文"], "ruby_forms": [], "raw": [], "alt_raw": [], "labels": [""],
+                         "ori_raw": ["テスト"], "human_only": False}}
+        recs, _s, _sh = compare(self.ENTRY, {"S1_01": "テスト"}, {"S1_01": "译文"}, rd, None, settled)
+        self.assertEqual(recs[0]["status"], "landed")
+
+    def test_pending_ruling_status(self):
+        settled = {"テスト": {"note": "两案都成立", "scope": "S1_01", "status": "待裁定"}}
+        recs, _s, _sh = compare(self.ENTRY, {"S1_01": "テスト"}, {"S1_01": "无关内容"},
+                                None, None, settled)
+        self.assertEqual(recs[0]["status"], "pending_ruling")
 
 
 if __name__ == "__main__":
