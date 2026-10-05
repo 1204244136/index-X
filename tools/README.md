@@ -32,9 +32,9 @@
 | `text_norm.py` | 中文归档 | 字符级成品修改与显式报告 | 确定性规则、XML 与行数不变，默认预览 | `test_text_norm.py` |
 | `check_epub_health.py` | 中文归档 | 显式 TSV／JSON | 单侧项目规约，strict 遇 error 非零 | `test_check_epub_health.py`（每项含负例） |
 | `check_epub_validity.py` | EPUB 成品／解包书籍 | 显式报告；系统临时解包 | calibre 补充检查，环境错误明确非零 | `test_calibre_validity.py` |
-| `check_translation_table.py` | 外部 xlsx＋日文缓存＋中文归档＋X 版差异表 | 本地核对报告 | 折叠→固有差异→落地；同形词待语义判断 | `test_check_translation_table.py` |
+| `check_translation_table.py` | 外部 xlsx＋日文缓存＋中文归档＋译名裁定总表 | 本地核对报告 | 折叠→同形例外→裁定表（含注音判定）→译名表；同形词待语义判断 | `test_check_translation_table.py` |
 | `proofread_review.py` | Git 改动与日文参考 | 分级 TSV／聚类 | 精确行级配对，分级和风险提示不等于裁定 | `test_proofread_review.py` |
-| `japanese_lookup.py`／`audit_risk.py` | 作品／文件／行；单处旧新日文 | 终端／JSON | 前者只定位原文；后者仅启发式风险 | `test_japanese_lookup.py`、`test_audit_risk.py` |
+| `japanese_lookup.py`／`audit_risk.py` | 作品／文件／行；单处旧新日文 | 终端／JSON | 前者只定位原文；后者仅启发式风险（受控词表可并入裁定表生成的「成品旧译」提示） | `test_japanese_lookup.py`、`test_audit_risk.py` |
 | `epub_char_count.py`／`epub_composition_metrics.py` | EPUB／解包目录 | 终端、CSV／JSON | 共用字数口径；印刷页推算明确估算范围 | 无专用测试；只读诊断 |
 | `check_project_docs.py` | 活跃文档、文档索引、归档链接、工具目录清单与单一来源 | 终端报告 | 本地链接／锚点、索引登记与回指、工具说明覆盖、裁定表锚点唯一／规范不嵌裁定取值／规范不复制检查词表／§ 引用可解析，缺项非零 | `test_check_project_docs.py` |
 | `read_xlsx.py`／`search_text.py` | 外部表格；缓存或归档文本 | 终端与显式导出 | 表列选择／注音三轨检索；无语义裁定 | `test_read_xlsx.py`、`test_search_text.py` |
