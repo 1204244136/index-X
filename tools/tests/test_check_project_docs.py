@@ -117,6 +117,27 @@ class SingleSourceTests(unittest.TestCase):
                   + "| `人払い`（世俗清场） | 人群疏散 | | |\n")
             self.assertEqual(single_source_issues(root), [])
 
+    def test_layer_may_live_in_note_column(self):
+        """锚点列只写锚点、义项区分落在「备注」列（原「理由」列）→ 不报。"""
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            build(root, "## 五、设定\n\n"
+                  + "| 日文锚点 | 裁定 | 被否决或并存的候选 | 备注 |\n| --- | --- | --- | --- |\n"
+                  + "| `スフィア` | 天体仪 | — | 装备义项 |\n"
+                  + "| `スフィア` | 天体 | — | 组织义项 |\n")
+            self.assertEqual(single_source_issues(root), [])
+
+    def test_same_anchor_and_same_note_still_reported(self):
+        """锚点与备注都相同 → 仍判重复（列内只写锚点后，义项标识回落到备注列）。"""
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            build(root, "## 五、设定\n\n"
+                  + "| 日文锚点 | 裁定 | 被否决或并存的候选 | 备注 |\n| --- | --- | --- | --- |\n"
+                  + "| `スフィア` | 天体仪 | — | 装备义项 |\n"
+                  + "| `スフィア` | 天体仪 | — | 装备义项 |\n")
+            issues = single_source_issues(root)
+            self.assertTrue(any("裁定条目重复" in issue for issue in issues), issues)
+
     def test_spec_embedding_reported(self):
         """规范正文出现裁定锚点且同行带映射标记 → 报。"""
         with tempfile.TemporaryDirectory() as temporary:

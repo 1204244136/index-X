@@ -123,7 +123,11 @@ def norm_anchor(value: str) -> str:
 
 
 def ruling_rows(root: Path) -> list[tuple[str, str, int]]:
-    """裁定表主表条目：(锚点, 义项标识, 行号)。义项标识 = 锚点列中反引号与 `<ruby>` 之外的部分。"""
+    """裁定表主表条目：(锚点, 义项标识, 行号)。义项标识 = 锚点列中反引号与 `<ruby>` 之外的部分。
+
+    锚点列按「列内只写锚点」整理后，该列不再残留义项文字；此时义项标识取**「备注」列**
+    （原「理由」列），同一锚点的多行（如 `スフィア` 的装备／组织两个义项）靠它区分。
+    """
     path = root / RULINGS_DOC
     if not path.is_file():
         return []
@@ -156,6 +160,10 @@ def ruling_rows(root: Path) -> list[tuple[str, str, int]]:
         if not found:
             continue
         label = RUBY_ANCHOR_RE.sub("", BACKTICK_RE.sub("", raw)).strip("（）() ").strip()
+        if not label:
+            note_index = next((n for n, name in enumerate(header) if name in ("备注", "理由")), None)
+            if note_index is not None and note_index < len(cells):
+                label = cells[note_index]
         rows.append((found[0], label, number))
     return rows
 
@@ -172,8 +180,9 @@ def single_source_issues(root: Path) -> list[str]:
     for anchor, label, number in rows:
         key = (norm_anchor(anchor), label)
         if key in seen:
+            show = label if len(label) <= 30 else label[:30] + "…"
             issues.append(
-                f"{RULINGS_DOC}:{number}: 裁定条目重复（锚点 `{anchor}` 义项「{label}」已见第 {seen[key]} 行）")
+                f"{RULINGS_DOC}:{number}: 裁定条目重复（锚点 `{anchor}` 义项「{show}」已见第 {seen[key]} 行）")
         else:
             seen[key] = number
 
