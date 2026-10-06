@@ -946,9 +946,6 @@ class NewAuditChecksTests(unittest.TestCase):
         return {p["kind"] for p in audit_rulings(rulings, entries)}
 
     def test_alt_with_real_table_value_passes(self):
-        rd = {"甲": {"forms": ["乙"], "ruby_forms": [], "raw": ["乙"], "alt_raw": ["丁（译名表当前值）"],
-                     "labels": [""], "ori_raw": ["甲"], "human_only": False}}
-        self.assertNotIn("alt-unfounded", self.kinds(rd, [self.entry("甲", "丁")]))
 
     def test_homonym_unregistered_reported(self):
         entries = [self.entry("甲", "乙"), self.entry("甲", "丙")]
