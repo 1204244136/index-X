@@ -98,6 +98,16 @@ class SingleSourceTests(unittest.TestCase):
             issues = single_source_issues(root)
             self.assertTrue(any("裁定条目重复" in issue for issue in issues), issues)
 
+    def test_ruby_anchor_without_backticks_is_collected(self):
+        """锚点列的注音锚点写成裸 `<ruby>…</ruby>` → 计入锚点，重复登记仍能报出。"""
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            build(root, "## 五、设定\n\n" + HEADER
+                  + "| <ruby>時間割り<rt>カリキュラム</rt></ruby> | 课程 | 表侧 | |\n"
+                  + "| <ruby>時間割り<rt>カリキュラム</rt></ruby> | 课程 | 表侧 | |\n")
+            issues = single_source_issues(root)
+            self.assertTrue(any("裁定条目重复" in issue for issue in issues), issues)
+
     def test_layered_anchor_allowed(self):
         """同一锚点带不同义项标识（分层）→ 不报。"""
         with tempfile.TemporaryDirectory() as temporary:

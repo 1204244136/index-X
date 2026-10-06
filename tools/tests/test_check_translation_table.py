@@ -382,6 +382,22 @@ class LoadRulingsTests(unittest.TestCase):
             self.assertEqual(recs[0]["status"], "landed")
             self.assertEqual(recs[0]["form_kind"], "ruling")
 
+    def test_ruby_anchor_without_backticks_is_collected(self):
+        """锚点列的注音锚点写成裸 `<ruby>…</ruby>`（不加反引号）→ 仍算锚点，标签不含标记。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            d = load_rulings(self._write(tmp, self.HEADER + "\n".join([
+                "| <ruby>時間割り<rt>カリキュラム</rt></ruby> | <ruby>课程<rt>Curriculum</rt></ruby>"
+                " | 表侧 | 符合语境 | |",
+                "| <ruby>主神の槍<rt>グングニル</rt></ruby>（专名） | <ruby>主神之枪<rt>冈格尼尔</rt></ruby>"
+                " | 表侧 | 中文注音 | |",
+            ])))
+            self.assertIn(norm_anchor("時間割り"), d)
+            self.assertEqual(d[norm_anchor("時間割り")]["forms"], ["课程"])
+            self.assertEqual(d[norm_anchor("時間割り")]["labels"], [""])
+            self.assertIn(norm_anchor("主神の槍"), d)
+            self.assertEqual(d[norm_anchor("主神の槍")]["labels"], ["专名"])
+            self.assertEqual(d[norm_anchor("主神の槍")]["ruby_forms"], ["主神之枪（冈格尼尔）"])
+
     def test_repo_gate_file_is_present_and_parsable(self):
         """仓库内的门禁文件必须存在、可解析，且覆盖已知条目。"""
         self.assertTrue(DEFAULT_RULINGS.is_file(), f"门禁文件缺失：{DEFAULT_RULINGS}")

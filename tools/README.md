@@ -377,7 +377,7 @@ python tools/check_translation_table.py --table 显式译名表.xlsx --strict
 python tools/check_translation_table.py --table 显式译名表.xlsx --audit-rulings
 ```
 
-读取外部表、日文参考、归档中文与《译名裁定总表》；表路径按翻译规范“外部依赖与核验”动态取得。列名支持 `--sheet`、`--ori-col`、`--trans-col`、`--type-col`、`--debuts-col`、`--ruby-ori-col`／`--ruby-trans-col`。`--epub`、`--jp-dir`、`--out`、重复 `--book` 指定范围。判定顺序为**同形例外 → 裁定表 → 译名表**：先按规范折叠查询和源，再查裁定表（同一锚点多条登记合并为候选集合，裁定列 `／` 分隔多写法，判定列标 `人读` 的条目跳过并在报告里单列），未命中才按译名表 `Base_Trans` 判定；裁定未落地单独成节、不并入 `--strict` 阻断。**注音判定**：裁定条目带注音（`<ruby>基文<rt>注文</rt></ruby>`）且该书日文侧存在带注音的该锚点时，中文侧必须出现裁定的复合串 `基文（注文）`——剥注音的判定分不出 `<rt>Gungnir</rt>` 与 `<rt>冈格尼尔</rt>`。
+读取外部表、日文参考、归档中文与《译名裁定总表》；表路径按翻译规范“外部依赖与核验”动态取得。列名支持 `--sheet`、`--ori-col`、`--trans-col`、`--type-col`、`--debuts-col`、`--ruby-ori-col`／`--ruby-trans-col`。`--epub`、`--jp-dir`、`--out`、重复 `--book` 指定范围。判定顺序为**同形例外 → 裁定表 → 译名表**：先按规范折叠查询和源，再查裁定表（锚点列取反引号内容与裸 `<ruby>…</ruby>` 两类——含注音的锚点按裁定表 §12 格式约定不加反引号，预览才渲染注音；同一锚点多条登记合并为候选集合，裁定列 `／` 分隔多写法，判定列标 `人读` 的条目跳过并在报告里单列），未命中才按译名表 `Base_Trans` 判定；裁定未落地单独成节、不并入 `--strict` 阻断。**注音判定**：裁定条目带注音（`<ruby>基文<rt>注文</rt></ruby>`）且该书日文侧存在带注音的该锚点时，中文侧必须出现裁定的复合串 `基文（注文）`——剥注音的判定分不出 `<rt>Gungnir</rt>` 与 `<rt>冈格尼尔</rt>`。
 
 `--rulings` 指定《译名裁定总表》（默认仓库内路径）；`--no-rulings` 是诊断绕过，不可据此要求回改已登记裁定。`--include-suspect` 展示短串候选、`--limit` 是局部调试，不能称全表验收。`alignment_rules.TRANSLATION_HOST` 和 `SETTLED_ANCHORS` 是已确认跨书归属／同形词事实源。`SETTLED_ANCHORS` 每条含 `note`／`scope`／`status`：**抑制只在该锚点被判定过的那本书内生效**；`status=settled`（已判定同形不同义）始终抑制，`status=待裁定`（两案都成立、尚未定）在裁定表登记该锚点后失效、改按裁定判定。
 

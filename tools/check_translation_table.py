@@ -156,6 +156,8 @@ def load_plain(path: Path) -> str:
 
 RUBY_PAIR_RE = re.compile(r"<ruby\b[^>]*>(.*?)</ruby>", re.S | re.I)
 RT_INNER_RE = re.compile(r"<rt\b[^>]*>(.*?)</rt>", re.S | re.I)
+# 裁定表锚点列：含注音的锚点直接写成 <ruby>…</ruby>（不加反引号，见 §12 格式约定）
+RUBY_ANCHOR_RE = re.compile(r"<ruby\b[^>]*>.*?</ruby\s*>", re.S | re.I)
 
 
 def to_ruby_text(raw: str) -> str:
@@ -290,6 +292,8 @@ def load_rulings(path: Path) -> dict[str, dict[str, object]]:
 
     解析规则与裁定表 §12 的格式约定一致：
       · 锚点列用反引号包裹，**一行的多个反引号内容都算锚点**（如 `魔術`／`魔術師`）；
+      · **含注音的锚点写成裸 `<ruby>基文<rt>注文</rt></ruby>`（不加反引号）**，同样计入锚点
+        （反引号会把标记当代码原样显示，预览里注音不渲染）；
       · 「裁定」列用 `／` 分隔多个可接受写法，中文括号注释不参与匹配；
       · 同一锚点的多条登记**合并为候选集合**（分层与同词异译按不同义项标识并列）；
       · 「判定」列为 `人读` 时跳过判定（条件式、分层、描述性或聚合条目）。
@@ -318,9 +322,13 @@ def load_rulings(path: Path) -> dict[str, dict[str, object]]:
         if ri is None or max(ai, ri) >= len(cells):
             continue
         anchors = re.findall(r"`([^`]+)`", cells[ai])
+        # 含注音的锚点直接写成 <ruby>…</ruby>（不加反引号，否则预览不渲染注音）：
+        # 反引号内容与 ruby 块一并算锚点，同一串只计一次
+        anchors += [match.group(0) for match in RUBY_ANCHOR_RE.finditer(cells[ai])]
+        anchors = list(dict.fromkeys(anchors))
         if not anchors:
             continue
-        label = re.sub(r"`[^`]+`", "", cells[ai]).strip("（）() ").strip()
+        label = RUBY_ANCHOR_RE.sub("", re.sub(r"`[^`]+`", "", cells[ai])).strip("（）() ").strip()
         human = bool(ji is not None and ji < len(cells) and "人读" in cells[ji])
         forms: list[str] = []
         ruby_forms: list[str] = []

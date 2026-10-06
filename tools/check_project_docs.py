@@ -106,6 +106,7 @@ RULINGS_DOC = "docs/translation-name-rulings.md"
 SPEC_DOCS = ("docs/translation-spec.md", "docs/translation-name-selection-spec.md")
 RULING_SECTIONS = ("五、", "6.1", "6.2", "七、", "八、", "8.1", "九、")
 BACKTICK_RE = re.compile(r"`([^`]+)`")
+RUBY_ANCHOR_RE = re.compile(r"<ruby\b[^>]*>.*?</ruby\s*>", re.S | re.I)
 MAPPING_MARK_RE = re.compile(r"→|＝|译作|译为")
 WHITELIST_MARK = "single-source-ok"
 TABLE_ROW_RE = re.compile(r"^\s*\|")
@@ -122,7 +123,7 @@ def norm_anchor(value: str) -> str:
 
 
 def ruling_rows(root: Path) -> list[tuple[str, str, int]]:
-    """裁定表主表条目：(锚点, 义项标识, 行号)。义项标识 = 锚点列中反引号之外的部分。"""
+    """裁定表主表条目：(锚点, 义项标识, 行号)。义项标识 = 锚点列中反引号与 `<ruby>` 之外的部分。"""
     path = root / RULINGS_DOC
     if not path.is_file():
         return []
@@ -149,9 +150,12 @@ def ruling_rows(root: Path) -> list[tuple[str, str, int]]:
             continue
         raw = cells[index]
         found = BACKTICK_RE.findall(raw)
+        # 含注音的锚点写成裸 <ruby>…</ruby>（不加反引号，见裁定表 §12 格式约定），同样计入锚点
+        found += [match.group(0) for match in RUBY_ANCHOR_RE.finditer(raw)]
+        found = list(dict.fromkeys(found))
         if not found:
             continue
-        label = BACKTICK_RE.sub("", raw).strip("（）() ").strip()
+        label = RUBY_ANCHOR_RE.sub("", BACKTICK_RE.sub("", raw)).strip("（）() ").strip()
         rows.append((found[0], label, number))
     return rows
 
