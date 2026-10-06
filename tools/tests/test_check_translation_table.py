@@ -945,8 +945,6 @@ class NewAuditChecksTests(unittest.TestCase):
     def kinds(self, rulings, entries):
         return {p["kind"] for p in audit_rulings(rulings, entries)}
 
-    def test_alt_with_real_table_value_passes(self):
-
     def test_homonym_unregistered_reported(self):
         entries = [self.entry("甲", "乙"), self.entry("甲", "丙")]
         self.assertIn("homonym-unregistered", self.kinds({}, entries))
