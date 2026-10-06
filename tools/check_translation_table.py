@@ -397,10 +397,20 @@ def load_rulings(path: Path) -> dict[str, dict[str, object]]:
     return out
 
 
-def _rt_of(raw: str) -> str:
-    """取单元格里 `<rt>` 的注音内容（无则空串）。"""
-    m = re.search(r"<rt\b[^>]*>(.*?)</rt>", raw or "", re.S | re.I)
-    return m.group(1).strip() if m else ""
+def anchor_ruby_pairs(raw: str) -> list[tuple[str, str]]:
+    """锚点列的 ruby 块 → `[(基文, 注音)]`，**逐块**返回。
+
+    一格可以写多个独立锚点（如 §八 把 4 个北欧灵装并列写在同一格），也可以把一个名字
+    写成逐字分解的多段 ruby（`<ruby>封<rt>ド</rt></ruby><ruby>の<rt>ロ</rt></ruby>…`）。
+    前者每块都是完整锚点，后者每块只是碎片——由调用方按基文长度筛。
+    """
+    pairs: list[tuple[str, str]] = []
+    for block in RUBY_ANCHOR_RE.findall(raw or ""):
+        m = ANCHOR_RT_RE.search(block)
+        base = re.sub(r"<[^>]+>", "", RT_INNER_RE.sub("", block)).strip()
+        if base and m and m.group(1).strip():
+            pairs.append((base, m.group(1).strip()))
+    return pairs
 
 
 # 全角 ASCII（U+FF01–U+FF5E）；`，` 与 `／` 是本文档自用的中文标点与分隔符，不算违规
@@ -463,14 +473,18 @@ def audit_rulings(rulings: dict[str, dict[str, object]],
                 "单段 <ruby>基文<rt>注文</rt></ruby>",
                 "匹配轴需要锚点写成单段 ruby 且只带一个 <rt>；多段 ruby 或无注音时无从判定")
 
-        if ori_raw.count("<ruby") > 1:
-            continue      # 多段 ruby 结构（当て字逐字分解等）：注音比对交人工，避免拼接误报
-        for e in index.get(key, []):
-            rt_list = _rt_of(ori_raw)
-            rt_table = (e.get("ruby_ori") or "").strip()
-            # 注音写法比较只折叠全角 ASCII：假名大小字差异正是要检出的问题
-            if rt_list and rt_table and fold_ascii(rt_list).strip() != fold_ascii(rt_table).strip():
-                add("ruby-mismatch", key, "锚点", rt_list, rt_table, "锚点 <rt> 与表内 Ruby_Ori 不一致")
+        # 锚点列的 ruby 块**逐块**核对：一格多锚点（§八 把 4 个北欧灵装并列写在一格）时
+        # 每块都要查——早先按「整格多 ruby 就跳过」会连带漏检；逐字分解的碎片（基文只剩
+        # 1 个字符）不是独立锚点，跳过。
+        for base, rt in anchor_ruby_pairs(ori_raw):
+            if len(base) < 2:
+                continue
+            for e in index.get(norm_anchor(base), []):
+                rt_table = (e.get("ruby_ori") or "").strip()
+                # 注音写法比较只折叠全角 ASCII：假名大小字差异正是要检出的问题
+                if rt_table and fold_ascii(rt).strip() != fold_ascii(rt_table).strip():
+                    add("ruby-mismatch", key, "锚点", rt, rt_table,
+                        f"锚点 <rt> 与表内 Ruby_Ori 不一致（{base}）")
 
     # 候选列依据：只核对**声称了来源**的候选——候选列本来就包含从没落地过的候选（「势力」
     # 这类被否决的译法），它们不在译名表里是正常的，不能一律判无据。真正要拦的是

@@ -602,6 +602,38 @@ class MatchAxisTests(unittest.TestCase):
             self.assertIn("match-axis-unsupported", kinds)
 
 
+class RubyBlockAuditTests(unittest.TestCase):
+    """锚点列的 ruby 块**逐块**核对。
+
+    §八 把 4 个北欧灵装并列写在同一个锚点格里；早先「整格多 ruby 就跳过」会连带漏检
+    （`戦乱の剣` 写 ダインスレイヴ、表内是 ダインスレーヴ，就是这么漏掉的）。
+    """
+
+    HEADER = ("| 日文锚点 | 裁定 | 被否决或并存的候选 | 理由 | 判定 |\n"
+              "| --- | --- | --- | --- | --- |\n")
+
+    TABLE = [{"ori": "【戦乱の剣】", "trans": "【战乱之剑】", "type": "", "debuts": "",
+              "ruby_ori": "ダインスレーヴ", "ruby_trans": "Dáinsleif"}]
+
+    def _rulings(self, tmp: str, rt: str):
+        p = Path(tmp) / "r.md"
+        p.write_text(self.HEADER
+                     + f"| 北欧灵装（<ruby>破滅の枝<rt>レーヴァテイン</rt></ruby>、"
+                       f"<ruby>戦乱の剣<rt>{rt}</rt></ruby>） | 汉译 | — | — | 人读 |\n",
+                     encoding="utf-8")
+        return load_rulings(p)
+
+    def test_each_block_is_checked(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            kinds = {p["kind"] for p in audit_rulings(self._rulings(tmp, "ダインスレイヴ"), self.TABLE)}
+            self.assertIn("ruby-mismatch", kinds)
+
+    def test_matching_block_passes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            kinds = {p["kind"] for p in audit_rulings(self._rulings(tmp, "ダインスレーヴ"), self.TABLE)}
+            self.assertNotIn("ruby-mismatch", kinds)
+
+
 class TranslationHostTests(unittest.TestCase):
     """译文归属映射：日文锚点在 A 书、中文译文在 B 书时仍应判落地。"""
 
