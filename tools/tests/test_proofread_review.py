@@ -247,13 +247,17 @@ class MinimalDiffTests(unittest.TestCase):
 
 class EnrichRowsTests(unittest.TestCase):
     def test_enrich_adds_jp_and_flags(self):
+        # 受控术语规则须落在《译名裁定总表》上：此处用裁定表 §九登记的
+        # 「和服裤裙」回退写法（与 test_audit_risk.test_controlled_term 同源）。
+        # 旧用例依赖的 Saintium 规则已于 2026-10-05 按维护者决定删除（依据只在历史提交），
+        # 规则再迁移时本用例须同步，不得恢复查不到落点的条目。
         rows = [{
             "commit": "test",
             "work": "S3_03",
             "file": "S3_03-04_Chapter2.xhtml",
             "line": "55",
-            "old": "它由圣金属制成",
-            "new": "它由Saintium制成"
+            "old": "她穿着袴",
+            "new": "她穿着和服裤裙"
         }]
         enrich_rows(rows, enable_jp=False, enable_audit=True)
         self.assertIn("flags", rows[0])
