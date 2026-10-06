@@ -159,6 +159,19 @@ RT_INNER_RE = re.compile(r"<rt\b[^>]*>(.*?)</rt>", re.S | re.I)
 # 裁定表锚点列：含注音的锚点直接写成 <ruby>…</ruby>（不加反引号，见 §12 格式约定）
 RUBY_ANCHOR_RE = re.compile(r"<ruby\b[^>]*>.*?</ruby\s*>", re.S | re.I)
 
+# 判定列的**匹配轴**取值（裁定表 §12.8）。轴决定「日文侧凭什么认定该锚点出现」：
+#   留空／`匹配基文`（默认）——只按基文匹配，注音不参与（今天的既有行为）
+#   `严格全文`           ——基文＋注文都要对上：日文侧须有 `<ruby>基文<rt>注文</rt></ruby>`
+#                          这一复合串；裸写基文不在本行范围（如 `人払い` 的术式层）
+#   `匹配注文`           ——只按注文匹配，基文可以是别的字（同一读音的当て字变体）
+# 同一锚点的多行必须声明同一轴；混用退回默认并在 `--audit-rulings` 报出。
+MATCH_BASE = "匹配基文"
+MATCH_FULL = "严格全文"
+MATCH_READING = "匹配注文"
+MATCH_AXES = (MATCH_BASE, MATCH_FULL, MATCH_READING)
+# 锚点列里的 `<rt>`：`严格全文` / `匹配注文` 的作用域键
+ANCHOR_RT_RE = re.compile(r"<rt\b[^>]*>([^<]*)</rt\s*>", re.I)
+
 
 def to_ruby_text(raw: str) -> str:
     """XHTML → **带注音的复合串文本**：`<ruby>基文<rt>注文</rt></ruby>` → `基文（注文）`。
@@ -296,7 +309,12 @@ def load_rulings(path: Path) -> dict[str, dict[str, object]]:
         （反引号会把标记当代码原样显示，预览里注音不渲染）；
       · 「裁定」列用 `／` 分隔多个可接受写法，中文括号注释不参与匹配；
       · 同一锚点的多条登记**合并为候选集合**（分层与同词异译按不同义项标识并列）；
-      · 「判定」列为 `人读` 时跳过判定（条件式、分层、描述性或聚合条目）。
+      · 「判定」列为 `人读` 时跳过判定（条件式、分层、描述性或聚合条目）；
+      · 「判定」列可声明**匹配轴**（`匹配基文`／`严格全文`／`匹配注文`，见模块常量）：
+        留空等同 `匹配基文`（只比基文，注音不参与）；`严格全文` 要求日文侧出现
+        `<ruby>基文<rt>注文</rt></ruby>` 这一复合串；`匹配注文` 只要求该注文出现在某个
+        ruby 里（基文可以是别的字）。同一锚点的多行须声明同一轴，混用退回默认并由
+        `--audit-rulings` 报出。
 
     写法列可以带 `<ruby>` 注音（如 `<ruby>主神之枪<rt>冈格尼尔</rt></ruby>`）；本函数
     只取基文参与匹配（成品侧同样先剥注音），注音层的判定另行处理。
@@ -330,6 +348,11 @@ def load_rulings(path: Path) -> dict[str, dict[str, object]]:
             continue
         label = RUBY_ANCHOR_RE.sub("", re.sub(r"`[^`]+`", "", cells[ai])).strip("（）() ").strip()
         human = bool(ji is not None and ji < len(cells) and "人读" in cells[ji])
+        declared = ([ax for ax in MATCH_AXES if ax in cells[ji]]
+                    if ji is not None and ji < len(cells) else [])
+        axis = declared[0] if len(declared) == 1 else MATCH_BASE
+        axis_conflict = len(declared) > 1
+        anchor_rts = [rt.strip() for rt in ANCHOR_RT_RE.findall(cells[ai]) if rt.strip()]
         forms: list[str] = []
         ruby_forms: list[str] = []
         for part in re.split(r"／", cells[ri]):
@@ -348,18 +371,29 @@ def load_rulings(path: Path) -> dict[str, dict[str, object]]:
             if not key:
                 continue
             slot = out.setdefault(key, {"forms": [], "ruby_forms": [], "raw": [], "labels": [],
-                                        "ori_raw": [], "alt_raw": [], "human_only": False})
+                                        "ori_raw": [], "alt_raw": [], "human_only": False,
+                                        "anchor_rts": [], "match_axis": MATCH_BASE,
+                                        "axis_mixed": False, "_axis_flags": []})
             for form in forms:
                 if form not in slot["forms"]:
                     slot["forms"].append(form)
             for ruby_form in ruby_forms:
                 if ruby_form not in slot["ruby_forms"]:
                     slot["ruby_forms"].append(ruby_form)
+            for rt in anchor_rts:
+                if rt not in slot["anchor_rts"]:
+                    slot["anchor_rts"].append(rt)
             slot["raw"].append(cells[ri])
             slot["alt_raw"].append(cells[ri + 1] if ri + 1 < len(cells) else "")
             slot["labels"].append(label)
             slot["ori_raw"].append(anchor)
             slot["human_only"] = bool(slot["human_only"]) or human
+            slot["_axis_flags"].append(MATCH_BASE if axis_conflict else axis)
+    for slot in out.values():
+        axes = slot.pop("_axis_flags", [])
+        slot["axis_mixed"] = len(set(axes)) > 1
+        slot["axis_values"] = sorted(set(axes))
+        slot["match_axis"] = MATCH_BASE if (slot["axis_mixed"] or not axes) else axes[0]
     return out
 
 
@@ -392,6 +426,8 @@ def audit_rulings(rulings: dict[str, dict[str, object]],
     | `ruby-mismatch` | 锚点的 `<rt>` 与译名表 `Ruby_Ori` 不一致 → 应修正 |
     | `alt-unfounded` | 候选列的写法在译名表里找不到来源、也没标来源 → 疑似无据登记 |
     | `homonym-unregistered` | 译名表同一锚点有多种译法，但裁定表未登记 → 收敛时无从判断取哪个 |
+    | `match-axis-mixed` | 同一锚点的多行声明了不同的匹配轴 → 工具退回默认，与标注意图不符 |
+    | `match-axis-unsupported` | 声明了匹配轴，但锚点不是单段 ruby（多段分解或无注音）→ 作用域无从判定 |
 
     同名异物（同一锚点在表内多行）时，各候选都会列出，由人工判断该取哪一行。
     """
@@ -415,6 +451,17 @@ def audit_rulings(rulings: dict[str, dict[str, object]],
         if not v.get("forms") and not v.get("human_only"):
             add("forms-empty", key, "裁定", "（空）", "至少一个写法",
                 "散文格式的裁定列应改标 `人读` 或补写法")
+
+        if v.get("axis_mixed"):
+            add("match-axis-mixed", key, "判定", "／".join(v.get("axis_values", [])),
+                "同一匹配轴",
+                "同一锚点的多行声明了不同匹配轴 → 工具退回 `匹配基文`，与标注意图不符")
+        axis = str(v.get("match_axis", MATCH_BASE))
+        if axis != MATCH_BASE and not (len(v.get("anchor_rts", [])) == 1
+                                       and ori_raw.count("<ruby") == 1):
+            add("match-axis-unsupported", key, "判定", axis,
+                "单段 <ruby>基文<rt>注文</rt></ruby>",
+                "匹配轴需要锚点写成单段 ruby 且只带一个 <rt>；多段 ruby 或无注音时无从判定")
 
         if ori_raw.count("<ruby") > 1:
             continue      # 多段 ruby 结构（当て字逐字分解等）：注音比对交人工，避免拼接误报
@@ -569,6 +616,9 @@ def compare(entries: list[dict[str, str]], jp_books: dict[str, str],
         ruby_forms = [norm_anchor(v) for v in (rd.get("ruby_forms", []) if rd else [])]
         ruby_forms = [v for v in ruby_forms if v]
         human_only = bool(rd["human_only"]) if rd else False
+        match_axis = str(rd.get("match_axis", MATCH_BASE)) if rd else MATCH_BASE
+        anchor_rts = [norm_anchor(v) for v in (rd.get("anchor_rts", []) if rd else [])]
+        anchor_rts = [v for v in anchor_rts if v]
 
         def hit(text: str) -> tuple[bool, str]:
             """在给定中文文本里找可接受写法 → (是否命中, form_kind 标记)。"""
@@ -581,14 +631,29 @@ def compare(entries: list[dict[str, str]], jp_books: dict[str, str],
             return (tr in text), ""
 
         for bid in shared:
-            # 字符集预筛：锚点全部字符都在该书字符集内，才做子串查找
-            if not set(ori) <= jp_charsets[bid]:
-                continue
             jp_text = jp_norm[bid]
-            idx = jp_text.find(ori)
-            if idx < 0:
-                continue
-            suspect = is_suspect(jp_text, idx, ori)
+            ruby_text = jp_ruby_norm.get(bid, "")
+            # 匹配轴（裁定表 §12.8）：决定日文侧凭什么认定该锚点出现。
+            if match_axis == MATCH_READING and anchor_rts:
+                # 匹配注文：基文可以是别的字，按复合串里的注文定位
+                probe = next((f"({rt})" for rt in anchor_rts if f"({rt})" in ruby_text), "")
+                if not probe:
+                    continue
+                ctx_text, ctx_anchor, idx = ruby_text, probe, ruby_text.find(probe)
+            else:
+                # 字符集预筛：锚点全部字符都在该书字符集内，才做子串查找
+                if not set(ori) <= jp_charsets[bid]:
+                    continue
+                if match_axis == MATCH_FULL and anchor_rts:
+                    # 严格全文：日文侧须有「基文（注文）」复合串；裸写基文不在本行范围，
+                    # 既不判落地也不报未落地。
+                    if not any(f"{ori}({rt})" in ruby_text for rt in anchor_rts):
+                        continue
+                idx = jp_text.find(ori)
+                if idx < 0:
+                    continue
+                ctx_text, ctx_anchor = jp_text, ori
+            suspect = is_suspect(ctx_text, idx, ctx_anchor)
 
             settled = settled_anchors.get(ori)
             # 同形例外只在该锚点被判定过的那本书内抑制。`settled`（已判定为同形不同义）
@@ -613,7 +678,7 @@ def compare(entries: list[dict[str, str]], jp_books: dict[str, str],
                     "rulings": "",
                     "form_kind": "",
                     "cn_host": "",
-                    "jp_context": context_of(jp_text, idx, ori),
+                    "jp_context": context_of(ctx_text, idx, ctx_anchor),
                 })
                 continue
 
@@ -630,7 +695,7 @@ def compare(entries: list[dict[str, str]], jp_books: dict[str, str],
                     "rulings": "1",
                     "form_kind": "",
                     "cn_host": "",
-                    "jp_context": context_of(jp_text, idx, ori),
+                    "jp_context": context_of(ctx_text, idx, ctx_anchor),
                 })
                 continue
 
@@ -658,7 +723,7 @@ def compare(entries: list[dict[str, str]], jp_books: dict[str, str],
                 "rulings": ("1" if rd else ""),
                 "form_kind": form,
                 "cn_host": cn_host,
-                "jp_context": context_of(jp_text, idx, ori),
+                "jp_context": context_of(ctx_text, idx, ctx_anchor),
             })
     return records, skipped_empty_trans, shared
 
@@ -735,7 +800,8 @@ def main(argv: list[str] | None = None) -> int:
     cn_texts = dict(cn_books)
     rulings = {} if args.no_rulings else load_rulings(Path(args.rulings).expanduser())
     # 注音判定：只有裁定表里存在带注音写法时才收集复合串文本（内存约翻倍，按需启用）
-    need_ruby = any(rd.get("ruby_forms") for rd in rulings.values())
+    need_ruby = any(rd.get("ruby_forms") or rd.get("match_axis", MATCH_BASE) != MATCH_BASE
+                    for rd in rulings.values())
     jp_ruby = collect_books(Path(args.jp_dir), "item/xhtml", only, ruby=True) if need_ruby else None
     cn_ruby = collect_books(Path(args.epub), "OEBPS/Text", only, ruby=True) if need_ruby else None
     if args.no_rulings:

@@ -18,6 +18,9 @@ except ImportError:  # pragma: no cover - 取决于运行环境是否装有 open
 
 from check_translation_table import (  # noqa: E402
     DEFAULT_RULINGS,
+    MATCH_BASE,
+    MATCH_FULL,
+    MATCH_READING,
     ToolError,
     audit_rulings,
     book_id,
@@ -490,6 +493,113 @@ class CompareWithRulingsTests(unittest.TestCase):
             rd)
         self.assertEqual(recs[0]["status"], "human_only")
 
+
+
+class MatchAxisTests(unittest.TestCase):
+    """判定列的**匹配轴**（`匹配基文`／`严格全文`／`匹配注文`，裁定表 §12.8）。
+
+    轴决定「日文侧凭什么认定该锚点出现」：`严格全文` 只在日文出现
+    `<ruby>基文<rt>注文</rt></ruby>` 复合串时生效——裸写基文不在本行范围，既不判落地
+    也不报未落地；`匹配注文` 则允许基文是别的字（同一读音的当て字变体）。
+    """
+
+    HEADER = ("| 日文锚点 | 裁定 | 被否决或并存的候选 | 理由 | 判定 |\n"
+              "| --- | --- | --- | --- | --- |\n")
+
+    @staticmethod
+    def entry(ori: str, trans: str) -> dict[str, str]:
+        return {"ori": ori, "trans": trans, "type": "", "debuts": ""}
+
+    @staticmethod
+    def rd(axis: str) -> dict[str, dict[str, object]]:
+        return {"人払い": {"forms": ["闲人驱散"], "ruby_forms": [], "raw": ["闲人驱散"],
+                           "labels": [""], "ori_raw": ["<ruby>人払い<rt>Opila</rt></ruby>"],
+                           "alt_raw": [""], "human_only": False, "anchor_rts": ["Opila"],
+                           "match_axis": axis, "axis_mixed": False, "axis_values": [axis]}}
+
+    def _write(self, tmp: str, text: str) -> Path:
+        p = Path(tmp) / "r.md"
+        p.write_text(text, encoding="utf-8")
+        return p
+
+    def test_default_axis_is_base(self):
+        """判定列留空 → 匹配基文（既有行为不变）。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            d = load_rulings(self._write(tmp, self.HEADER + "| `妹達` | 妹妹 | — | — | |\n"))
+            self.assertEqual(d["妹達"]["match_axis"], MATCH_BASE)
+            self.assertEqual(d["妹達"]["anchor_rts"], [])
+
+    def test_full_axis_and_reading_parsed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            d = load_rulings(self._write(
+                tmp, self.HEADER + "| <ruby>人払い<rt>Opila</rt></ruby>（术式层） | 闲人驱散 "
+                                   "| 驱散闲人 | 术式名 | 严格全文 |\n"))
+            self.assertEqual(d["人払い"]["match_axis"], MATCH_FULL)
+            self.assertEqual(d["人払い"]["anchor_rts"], ["Opila"])
+
+    def test_mixed_axes_fall_back_to_base(self):
+        """同一锚点多行声明不同轴 → 退回默认，并在 `--audit-rulings` 报出。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            d = load_rulings(self._write(tmp, self.HEADER + "\n".join([
+                "| <ruby>人払い<rt>Opila</rt></ruby> | 闲人驱散 | — | 术式层 | 严格全文 |",
+                "| `人払い` | 按语境 | — | 世俗层 | 人读 |"])))
+            self.assertTrue(d["人払い"]["axis_mixed"])
+            self.assertEqual(d["人払い"]["match_axis"], MATCH_BASE)
+
+    def test_full_axis_skips_book_without_ruby(self):
+        """裸写基文不在 `严格全文` 范围内：既不判落地，也不报未落地。"""
+        recs, _s, _sh = compare(
+            [self.entry("人払い", "闲人驱散")], {"S1_01": "人払いを使う"},
+            {"S1_01": "他疏散了人群"}, self.rd(MATCH_FULL),
+            jp_ruby={"S1_01": to_ruby_text("人払いを使う")})
+        self.assertEqual(recs, [])
+
+    def test_full_axis_judges_when_ruby_present(self):
+        """有该注音时本行生效：中文没写裁定写法 → 未落地。"""
+        recs, _s, _sh = compare(
+            [self.entry("人払い", "闲人驱散")], {"S1_01": "人払いを使う"},
+            {"S1_01": "他疏散了人群"}, self.rd(MATCH_FULL),
+            jp_ruby={"S1_01": to_ruby_text("<ruby>人払い<rt>Opila</rt></ruby>を使う")})
+        self.assertEqual(len(recs), 1)
+        self.assertEqual(recs[0]["status"], "missing")
+
+    def test_full_axis_lands_on_ruling_form(self):
+        recs, _s, _sh = compare(
+            [self.entry("人払い", "闲人驱散")], {"S1_01": "人払いを使う"},
+            {"S1_01": "他用闲人驱散清了场"}, self.rd(MATCH_FULL),
+            jp_ruby={"S1_01": to_ruby_text("<ruby>人払い<rt>Opila</rt></ruby>を使う")})
+        self.assertEqual(recs[0]["status"], "landed")
+
+    def test_reading_axis_matches_other_base(self):
+        """`匹配注文`：基文是别的字（遺産 读 Opila）也算本行命中。"""
+        recs, _s, _sh = compare(
+            [self.entry("人払い", "闲人驱散")], {"S1_01": "遺産を刻む"},
+            {"S1_01": "他用闲人驱散清了场"}, self.rd(MATCH_READING),
+            jp_ruby={"S1_01": to_ruby_text("<ruby>遺産<rt>Opila</rt></ruby>を刻む")})
+        self.assertEqual(recs[0]["status"], "landed")
+
+    def test_reading_axis_skips_when_reading_absent(self):
+        recs, _s, _sh = compare(
+            [self.entry("人払い", "闲人驱散")], {"S1_01": "遺産を刻む"},
+            {"S1_01": "他疏散了人群"}, self.rd(MATCH_READING),
+            jp_ruby={"S1_01": to_ruby_text("遺産を刻む")})
+        self.assertEqual(recs, [])
+
+    def test_audit_reports_mixed_axis(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            d = load_rulings(self._write(tmp, self.HEADER + "\n".join([
+                "| <ruby>人払い<rt>Opila</rt></ruby> | 闲人驱散 | — | 术式层 | 严格全文 |",
+                "| `人払い` | 按语境 | — | 世俗层 | 人读 |"])))
+            kinds = {p["kind"] for p in audit_rulings(d, [])}
+            self.assertIn("match-axis-mixed", kinds)
+
+    def test_audit_reports_axis_without_single_ruby(self):
+        """声明了匹配轴，但锚点没有单段 ruby → 作用域无从判定。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            d = load_rulings(self._write(
+                tmp, self.HEADER + "| `人払い` | 闲人驱散 | — | 术式名 | 严格全文 |\n"))
+            kinds = {p["kind"] for p in audit_rulings(d, [])}
+            self.assertIn("match-axis-unsupported", kinds)
 
 
 class TranslationHostTests(unittest.TestCase):
