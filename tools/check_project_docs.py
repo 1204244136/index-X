@@ -104,7 +104,7 @@ def audit(root: Path) -> list[str]:
 # ── 单一来源检查：裁定表锚点唯一、规范不嵌取值、规范不复制词表、§ 引用可解析 ──
 RULINGS_DOC = "docs/translation-name-rulings.md"
 SPEC_DOCS = ("docs/translation-spec.md", "docs/translation-name-selection-spec.md")
-RULING_SECTIONS = ("五、", "6.1", "6.2", "七、", "八、", "8.1", "九、")
+RULING_SECTIONS = ("五、", "六、", "七、", "八、", "九、", "9.1", "十、")
 BACKTICK_RE = re.compile(r"`([^`]+)`")
 RUBY_ANCHOR_RE = re.compile(r"<ruby\b[^>]*>.*?</ruby\s*>", re.S | re.I)
 MAPPING_MARK_RE = re.compile(r"→|＝|译作|译为")
