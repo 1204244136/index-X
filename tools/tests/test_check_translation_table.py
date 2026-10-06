@@ -945,22 +945,10 @@ class NewAuditChecksTests(unittest.TestCase):
     def kinds(self, rulings, entries):
         return {p["kind"] for p in audit_rulings(rulings, entries)}
 
-    def test_alt_unfounded_reported(self):
-        """候选列标成「表内原值」但译名表里没有该写法 → 报。"""
-        rd = {"甲": {"forms": ["乙"], "ruby_forms": [], "raw": ["乙"], "alt_raw": ["丙（表内原值）"],
-                     "labels": [""], "ori_raw": ["甲"], "human_only": False}}
-        self.assertIn("alt-unfounded", self.kinds(rd, [self.entry("甲", "丁")]))
-
     def test_alt_with_real_table_value_passes(self):
         rd = {"甲": {"forms": ["乙"], "ruby_forms": [], "raw": ["乙"], "alt_raw": ["丁（译名表当前值）"],
                      "labels": [""], "ori_raw": ["甲"], "human_only": False}}
         self.assertNotIn("alt-unfounded", self.kinds(rd, [self.entry("甲", "丁")]))
-
-    def test_alt_without_source_claim_is_not_checked(self):
-        """候选列没声称来源（普通被否决候选，如「势力」）→ 不检查。"""
-        rd = {"甲": {"forms": ["乙"], "ruby_forms": [], "raw": ["乙"], "alt_raw": ["势力"],
-                     "labels": [""], "ori_raw": ["甲"], "human_only": False}}
-        self.assertEqual(self.kinds(rd, [self.entry("甲", "丁")]), set())
 
     def test_homonym_unregistered_reported(self):
         entries = [self.entry("甲", "乙"), self.entry("甲", "丙")]

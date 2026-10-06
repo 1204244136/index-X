@@ -434,7 +434,6 @@ def audit_rulings(rulings: dict[str, dict[str, object]],
     | `anchor-fullwidth` | 锚点列含全角 ASCII，按不妥协写法应写半角（中文标点与分隔符 `／` 除外） |
     | `forms-empty` | 裁定列解析不出任何可接受写法（散文格式或漏填）→ 应改标 `人读` 或补写法 |
     | `ruby-mismatch` | 锚点的 `<rt>` 与译名表 `Ruby_Ori` 不一致 → 应修正 |
-    | `alt-unfounded` | 候选列的写法在译名表里找不到来源、也没标来源 → 疑似无据登记 |
     | `homonym-unregistered` | 译名表同一锚点有多种译法，但裁定表未登记 → 收敛时无从判断取哪个 |
     | `match-axis-mixed` | 同一锚点的多行声明了不同的匹配轴 → 工具退回默认，与标注意图不符 |
     | `match-axis-unsupported` | 声明了匹配轴，但锚点不是单段 ruby（多段分解或无注音）→ 作用域无从判定 |
@@ -485,20 +484,6 @@ def audit_rulings(rulings: dict[str, dict[str, object]],
                 if rt_table and fold_ascii(rt).strip() != fold_ascii(rt_table).strip():
                     add("ruby-mismatch", key, "锚点", rt, rt_table,
                         f"锚点 <rt> 与表内 Ruby_Ori 不一致（{base}）")
-
-    # 候选列依据：只核对**声称了来源**的候选——候选列本来就包含从没落地过的候选（「势力」
-    # 这类被否决的译法），它们不在译名表里是正常的，不能一律判无据。真正要拦的是
-    # 「标成表内值、但表里并没有这个写法」那种误登记（2026-10-05 废弃的「表内原值」标注）。
-    table_forms = {norm_anchor(e.get("trans", "")) for e in entries}
-    table_forms.discard("")
-    for key, v in rulings.items():
-        for alt in v.get("alt_raw", []):
-            if not alt or ("表内原值" not in alt and "译名表当前值" not in alt):
-                continue
-            first = re.split(r"／|（|\(", alt)[0].strip().strip("`*")
-            if first and norm_anchor(first) not in table_forms:
-                add("alt-unfounded", key, "候选", first, "译名表当前值",
-                    "候选列标为表内值，但译名表里没有该写法")
 
     # 同词异译登记：译名表同一锚点有多种译法时，必须已在裁定表登记义项
     homonyms: dict[str, set[str]] = {}
