@@ -38,6 +38,8 @@
 | `epub_char_count.py`／`epub_composition_metrics.py` | EPUB／解包目录 | 终端、CSV／JSON | 共用字数口径；印刷页推算明确估算范围 | 无专用测试；只读诊断 |
 | `check_project_docs.py` | 活跃文档、文档索引、归档链接、工具目录清单与单一来源 | 终端报告 | 本地链接／锚点、索引登记与回指、工具说明覆盖、裁定表锚点唯一／规范不嵌裁定取值／规范不复制检查词表／§ 引用可解析，缺项非零 | `test_check_project_docs.py` |
 | `read_xlsx.py`／`search_text.py` | 外部表格；缓存或归档文本 | 终端与显式导出 | 表列选择／注音三轨检索；无语义裁定 | `test_read_xlsx.py`、`test_search_text.py` |
+| `bw_extract_preprocess.json`／`bw_page_header_overrides.json` | BW 分页预处理规则与已审计逐页映射 | 只读配置 | 仅供 `bw_preprocess.py` 读取；未知页不得默认继承上一单元 | `test_bw_preprocess.py` |
+| `alignment_rules.py`／`edit_safety.py`／`epub_ids.py`／`epub_structure.py`／`file_transaction.py`／`manifest.py`／`notes_core.py`／`path_safety.py`／`publish_preflight.py`／`sync_core.py`／`xhtml_structure.py`／`xhtml_template.py`／`xhtml_text.py` | 内部共享规则与原子写入能力 | 由调用方决定；共享模块不另建 CLI 工作流 | 只提供单一实现；不得承担入口编排或语义裁定 | 对应调用方测试矩阵 |
 
 ## 共享规则模块
 
@@ -72,6 +74,8 @@ python -m unittest discover -s tools/tests -p "test_*.py" -v
 
 归档规范化和修复入口默认只预览，显式 `--apply` 才写。`--staging` 只允许显式暂存目录；共享路径保护始终拒绝仓库 `.cache` 和 OneDrive 内容写入。同步器负责三副本回流，构建输出不应放回输入书目录。
 
+同一批次的文件写入使用 `file_transaction.py` 的临时文件／临时目录和失败回滚：`normalize_single.py` 的目录模式、`normalize_paired.py`、`reorder_notes.py`、发布入口的单书镜像与 `sync_file_changes()` 在捕获到写入异常时恢复本批次原始字节。发布流程的每本书以书目录为事务边界；多本书之间不组成一个跨目录事务，成功书籍可以提交、失败书籍保留变更等待重试。进程被强制终止或文件系统本身拒绝回滚时，工具只能保留恢复副本并报告，不能宣称断电级事务。
+
 单侧修改指定 `EPUB/`；配对修改使用 `--root EPUB --jp-root .cache/epub-work/japanese-text`，日文目录仅读。双侧暂存处理使用 `--cache <暂存根> --staging`，暂存根包含 `chinese-text/` 和 `japanese-text/`。`--dry-run` 保留为预览兼容参数，与 `--apply` 互斥；它不代替写入授权或路径验证。
 
 标题／页边界的语义未确认时，工具输出待人工项并保留内容。译文选词不由结构工具自动处理；执行流程见两份项目 skill。
@@ -97,7 +101,7 @@ python tools/publish_auto.py
 | B：已确认缓存来源 | `python tools/publish.py` | 缓存 → 归档中文＋分别打包上传两侧；同步清单与状态 |
 | C：归档内容变化 | `python tools/publish_epub.py` | 归档中文 → 打包上传＋缓存增量镜像；日文参考只读 |
 
-B 不是 agent 的常规编辑入口，只用于同步器／导入流程已生成并确认的缓存来源；成品修改走 C。三个方向都有 `--dry-run`／`-WhatIf`。B/C 用共享发布前检查读取本次候选：模板与对齐、单侧项目规约、合法容器、全部 XML 及书内资源引用。C 验证归档中文与缓存日文，不临时覆盖缓存来做检查。预检失败不推进该书发布与清单基线。
+B 不是 agent 的常规编辑入口，只用于同步器／导入流程已生成并确认的缓存来源；成品修改走 C。三个方向都有 `--dry-run`／`-WhatIf`。B/C 用共享发布前检查读取本次候选：模板与对齐、单侧项目规约、合法容器、全部 XML 及书内资源引用。C 验证归档中文与缓存日文，不临时覆盖缓存来做检查。预检失败不推进该书发布与清单基线。发布先在临时副本完成打包和单书镜像；上传或状态更新失败时回滚本书本地镜像，清单只为完整成功的书更新。
 
 `--force` 不表示跳过成品结构门禁。清单中某处理侧全无基线记录时，发布停止并给出重建提示；仅确认缓存即已发布状态后用 `manifest.py --update-books chinese-text/某书目录` 重建，不用清单更新掩盖未发布变化。
 

@@ -34,6 +34,7 @@ from publish_preflight import validate_publication
 
 TOOLS_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(TOOLS_DIR))
+from file_transaction import rollback_paths  # noqa: E402
 from manifest import load_manifest, save_manifest, scan_cache, scan_epub  # noqa: E402
 from package_cache_epubs import package_book, PackageError  # noqa: E402
 from sync_core import (  # noqa: E402
@@ -87,35 +88,32 @@ def publish_book_reverse(
         return False, f"打包失败 {book_key}: {exc}"
     print(f"  [打包] {side}/{book}.epub ({size:,} bytes)")
 
-    # 2. Upload to OneDrive, then keep pull-state in sync so the next
-    #    pull.ps1 does not re-extract the old OneDrive file over the cache.
-    if not no_upload:
-        if onedrive_dir:
-            dest = onedrive_dir / f"{book}.epub"
-            try:
-                upload_book(packed_epub, dest, cache_root, book_key)
-            except OSError as exc:
-                return False, f"上传失败 {book_key}: {exc}"
-            print(f"  [上传] -> {dest}")
-
-    # 3. Overwrite the changed files into the cache (EPUB/ -> cache).
+    # 2. Mirror EPUB/ into the cache first. The mirror is atomic; a later
+    #    upload failure restores the previous cache book.
     try:
-        copied, deleted = sync_file_changes(
-            epub_book_dir,
-            cache_root / book_key,
-            file_changes,
-            full_mirror=full_mirror,
-        )
-    except OSError as exc:
-        return False, f"同步缓存失败 {book_key}: {exc}"
-    if full_mirror:
-        print(f"  [缓存] {book}: 已全量重建 {copied} 个文件")
-    elif copied or deleted:
-        parts = [f"覆盖 {copied} 个文件"]
-        if deleted:
-            parts.append(f"删除 {deleted} 个文件")
-        print(f"  [缓存] {book}: " + "，".join(parts))
+        with rollback_paths([cache_root / book_key]):
+            copied, deleted = sync_file_changes(
+                epub_book_dir,
+                cache_root / book_key,
+                file_changes,
+                full_mirror=full_mirror,
+            )
+            if full_mirror:
+                print(f"  [缓存] {book}: 已全量重建 {copied} 个文件")
+            elif copied or deleted:
+                parts = [f"覆盖 {copied} 个文件"]
+                if deleted:
+                    parts.append(f"删除 {deleted} 个文件")
+                print(f"  [缓存] {book}: " + "，".join(parts))
 
+            # 3. Upload to OneDrive, then keep pull-state in sync so the next
+            #    pull.ps1 does not re-extract the old file over the cache.
+            if not no_upload and onedrive_dir:
+                dest = onedrive_dir / f"{book}.epub"
+                upload_book(packed_epub, dest, cache_root, book_key)
+                print(f"  [上传] -> {dest}")
+    except OSError as exc:
+        return False, f"同步或上传失败 {book_key}: {exc}"
     return True, ""
 
 

@@ -137,6 +137,33 @@ class MutatorCliTests(unittest.TestCase):
             self.assertEqual(self.call(normalize_single, path, "--apply", "--staging"), 1)
             self.assertEqual(path.read_bytes(), invalid)
 
+    def test_single_batch_write_failure_rolls_back_all_files(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            paths = [root / "a.xhtml", root / "b.xhtml"]
+            for path in paths:
+                path.write_text(xhtml("<p>内容</p>"), encoding="utf-8")
+            originals = [path.read_bytes() for path in paths]
+
+            def rebuild(path, *_):
+                return xhtml(f"<p>{path.stem}</p>").splitlines(), "ok"
+
+            real_write = normalize_single.write_lines
+            calls = 0
+
+            def failing_write(path, *args):
+                nonlocal calls
+                calls += 1
+                if calls == 2:
+                    raise OSError("模拟写入失败")
+                return real_write(path, *args)
+
+            with patch.object(normalize_single, "rebuild", side_effect=rebuild), \
+                    patch.object(normalize_single, "write_lines", side_effect=failing_write):
+                self.assertEqual(self.call(normalize_single, "--dir", root,
+                                           "--apply", "--staging"), 1)
+            self.assertEqual([path.read_bytes() for path in paths], originals)
+
     def test_every_root_mutator_blocks_cache_write_before_scanning(self):
         with tempfile.TemporaryDirectory() as tmp:
             repo = Path(tmp) / "repo"

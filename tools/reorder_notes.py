@@ -13,6 +13,8 @@ import re
 import sys
 import shutil
 import argparse
+import tempfile
+from file_transaction import rollback_paths
 from edit_safety import (EditSafetyError, add_content_roots, add_edit_mode,
                          content_roots, require_edit_target)
 
@@ -34,8 +36,21 @@ def read(path):
 
 
 def write(path, text):
-    with open(path, "w", encoding="utf-8") as f:
-        f.write(text)
+    directory = os.path.dirname(path) or "."
+    fd, temporary = tempfile.mkstemp(
+        prefix="." + os.path.basename(path) + ".",
+        suffix=".tmp",
+        dir=directory,
+    )
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8", newline="") as f:
+            f.write(text)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(temporary, path)
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
 
 
 def backup_file(path, backup_dir, rel):
@@ -83,10 +98,7 @@ def process_book(book, text_dir, nf, dry_run, backup_dir):
     ref_total = 0
     touched = [nf]
 
-    if not dry_run:
-        backup_file(note_path, backup_dir, os.path.join(book, nf))
-        write(note_path, new_note)
-
+    writes = {note_path: new_note}
     for fn in sorted(os.listdir(text_dir)):
         if fn == nf or not fn.endswith(".xhtml"):
             continue
@@ -103,9 +115,14 @@ def process_book(book, text_dir, nf, dry_run, backup_dir):
         nc = ref_pat.sub(repl, c)
         if nc != c:
             touched.append(fn)
-            if not dry_run:
-                backup_file(p, backup_dir, os.path.join(book, fn))
-                write(p, nc)
+            writes[p] = nc
+
+    if not dry_run:
+        with rollback_paths(writes):
+            for path in writes:
+                backup_file(path, backup_dir, os.path.join(book, os.path.basename(path)))
+            for path, content in writes.items():
+                write(path, content)
 
     return {
         "book": book,

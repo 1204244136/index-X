@@ -36,6 +36,7 @@ from publish_preflight import validate_publication
 
 TOOLS_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(TOOLS_DIR))
+from file_transaction import rollback_paths  # noqa: E402
 from manifest import scan_cache, load_manifest, save_manifest  # noqa: E402
 from package_cache_epubs import package_book, PackageError  # noqa: E402
 from sync_core import (  # noqa: E402
@@ -173,27 +174,31 @@ def publish_book(
             return False, f"打包失败 {book_key}: {exc}"
         print(f"  [打包] {side}/{book}.epub ({size:,} bytes)")
 
-    # 2. Sync only changed files to EPUB/ (Chinese only)
+    # 2. Sync only changed files to EPUB/ (Chinese only). Keep a book-level
+    # snapshot so a later upload failure cannot leave local output committed.
     if side == "chinese-text":
         try:
-            copied, deleted = sync_book_changes(
-                book_key, file_changes, cache_root, epub_root, full_mirror
-            )
+            with rollback_paths([epub_root / book]):
+                copied, deleted = sync_book_changes(
+                    book_key, file_changes, cache_root, epub_root, full_mirror
+                )
+                if full_mirror:
+                    print(f"  [EPUB/] {book}: 已全量重建 {copied} 个文件")
+                elif copied or deleted:
+                    parts = [f"写入 {copied} 个文件"]
+                    if deleted:
+                        parts.append(f"删除 {deleted} 个文件")
+                    print(f"  [EPUB/] {book}: " + "，".join(parts))
+
+                if not sync_only and not no_upload:
+                    onedrive_dir = onedrive_dirs.get(side)
+                    if onedrive_dir:
+                        dest = onedrive_dir / f"{book}.epub"
+                        upload_book(packed_epub, dest, cache_root, book_key)
+                        print(f"  [上传] -> {dest}")
         except OSError as exc:
-            return False, f"同步 EPUB/ 失败 {book_key}: {exc}"
-        if full_mirror:
-            print(f"  [EPUB/] {book}: 已全量重建 {copied} 个文件")
-        elif copied or deleted:
-            parts = [f"写入 {copied} 个文件"]
-            if deleted:
-                parts.append(f"删除 {deleted} 个文件")
-            print(f"  [EPUB/] {book}: " + "，".join(parts))
-
-    if sync_only:
-        return True, ""
-
-    # 3. Upload to OneDrive
-    if not no_upload:
+            return False, f"同步或上传失败 {book_key}: {exc}"
+    elif not sync_only and not no_upload:
         onedrive_dir = onedrive_dirs.get(side)
         if onedrive_dir:
             dest = onedrive_dir / f"{book}.epub"

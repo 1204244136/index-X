@@ -4,6 +4,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
@@ -13,6 +14,7 @@ from text_norm import (  # noqa: E402
     split_bold_punct,
     transform_line,
 )
+import reorder_notes  # noqa: E402
 from reorder_notes import process_book  # noqa: E402
 
 
@@ -143,6 +145,43 @@ class ReorderNotesTests(unittest.TestCase):
             idx_1 = new_note_content.index('id="note1">注释一')
             idx_2 = new_note_content.index('id="note2">注释二')
             self.assertLess(idx_1, idx_2)
+
+    def test_write_failure_restores_note_and_references(self):
+        with tempfile.TemporaryDirectory() as td:
+            text_dir = Path(td) / "OEBPS" / "Text"
+            text_dir.mkdir(parents=True)
+            note = text_dir / "S1_01-Note.xhtml"
+            note.write_text(
+                '<html><body>\n<ul>\n'
+                '<li epub:type="footnote" id="note1">一</li>\n'
+                '<li epub:type="footnote" id="note2">二</li>\n'
+                "</ul>\n</body></html>\n",
+                encoding="utf-8",
+            )
+            chapter = text_dir / "S1_01-01_Chapter.xhtml"
+            chapter.write_text(
+                '<html><body><p>正文'
+                '<a epub:type="noteref" href="S1_01-Note.xhtml#note2"><sup>1</sup></a>'
+                '<a epub:type="noteref" href="S1_01-Note.xhtml#note1"><sup>2</sup></a>'
+                "</p></body></html>\n",
+                encoding="utf-8",
+            )
+            originals = {path: path.read_bytes() for path in (note, chapter)}
+            real_write = reorder_notes.write
+            calls = 0
+
+            def failing_write(path, content):
+                nonlocal calls
+                calls += 1
+                if calls == 2:
+                    raise OSError("模拟写入失败")
+                real_write(path, content)
+
+            with patch.object(reorder_notes, "write", side_effect=failing_write):
+                with self.assertRaises(OSError):
+                    process_book("S1_01", str(text_dir), note.name,
+                                 dry_run=False, backup_dir=None)
+            self.assertEqual({path: path.read_bytes() for path in (note, chapter)}, originals)
 
 
 if __name__ == "__main__":

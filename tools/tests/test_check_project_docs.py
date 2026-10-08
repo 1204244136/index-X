@@ -6,10 +6,28 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from check_project_docs import audit, single_source_issues
+from check_project_docs import audit, single_source_issues, tool_matrix_issues
 
 
 class DocumentationTests(unittest.TestCase):
+    def test_tool_matrix_requires_one_owner_per_file(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            tools = root / "tools"
+            tools.mkdir()
+            (tools / "a.py").write_text("", encoding="utf-8")
+            (tools / "b.py").write_text("", encoding="utf-8")
+            text = (
+                "## 职责与覆盖矩阵\n"
+                "| 工具／能力 | 输入 | 写入 | 门禁 | 测试 |\n"
+                "| --- | --- | --- | --- | --- |\n"
+                "| `a.py`／`a.py` | | | | |\n"
+                "## 共享规则模块\n"
+            )
+            issues = tool_matrix_issues(root, text)
+            self.assertTrue(any("a.py" in issue and "重复" in issue for issue in issues))
+            self.assertTrue(any("b.py" in issue and "未登记" in issue for issue in issues))
+
     def test_links_anchors_and_missing_tool_contract(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

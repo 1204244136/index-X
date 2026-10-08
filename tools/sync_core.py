@@ -2,9 +2,12 @@
 """Change detection, tree mirroring, upload and pull-state helpers."""
 from __future__ import annotations
 
+import os
 import shutil
+import tempfile
 from pathlib import Path
 
+from file_transaction import atomic_write_bytes, rollback_paths
 from path_safety import is_extract_artifact
 
 
@@ -42,10 +45,7 @@ def update_pull_state_record(
     for key, (ticks, length) in sorted(records.items()):
         side, book = key.split("/", 1)
         lines.append(f"{side}\t{book}\t{ticks}\t{length}\n")
-    state_path.write_text(
-        "".join(lines),
-        encoding="utf-8",
-    )
+    atomic_write_bytes(state_path, "".join(lines).encode("utf-8"))
 
 
 def upload_book(packed_epub: Path, destination: Path, cache_root: Path, book_key: str) -> None:
@@ -54,13 +54,27 @@ def upload_book(packed_epub: Path, destination: Path, cache_root: Path, book_key
     The caller owns direction, preflight checks and logging. Failed copies must
     never advance pull-state; errors propagate so the manifest is not advanced.
     """
-    shutil.copy2(packed_epub, destination)
-    stat = destination.stat()
-    update_pull_state_record(
-        cache_root, book_key,
-        stat.st_mtime_ns // 100 + UNIX_TO_DOTNET_TICKS_OFFSET,
-        stat.st_size,
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    state_path = cache_root / PULL_STATE_FILENAME
+    fd, name = tempfile.mkstemp(
+        prefix=".extract-upload-",
+        suffix=".tmp",
+        dir=destination.parent,
     )
+    os.close(fd)
+    temporary = Path(name)
+    try:
+        shutil.copy2(packed_epub, temporary)
+        with rollback_paths([destination, state_path]):
+            os.replace(temporary, destination)
+            stat = destination.stat()
+            update_pull_state_record(
+                cache_root, book_key,
+                stat.st_mtime_ns // 100 + UNIX_TO_DOTNET_TICKS_OFFSET,
+                stat.st_size,
+            )
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 def remove_pull_state_record(cache_root: Path, book_key: str) -> bool:
@@ -82,9 +96,7 @@ def remove_pull_state_record(cache_root: Path, book_key: str) -> bool:
             continue
         kept.append(line)
     if removed:
-        state_path.write_text(
-            "".join(f"{line}\n" for line in kept), encoding="utf-8"
-        )
+        atomic_write_bytes(state_path, "".join(f"{line}\n" for line in kept).encode("utf-8"))
     return removed
 
 
@@ -211,48 +223,74 @@ def sync_file_changes(
     if not source_book_dir.is_dir():
         raise FileNotFoundError(f"源书籍目录不存在: {source_book_dir}")
 
-    if full_mirror:
-        if destination_book_dir.is_dir():
-            shutil.rmtree(destination_book_dir)
+    source_book_dir = source_book_dir.resolve()
+    destination_book_dir = destination_book_dir.absolute()
+    if (source_book_dir.is_relative_to(destination_book_dir.resolve())
+            or destination_book_dir.resolve().is_relative_to(source_book_dir)):
+        raise OSError("Source and destination books must not overlap")
+    for name, status in file_changes.items():
+        relative = Path(name)
+        if (relative.is_absolute()
+                or not (source_book_dir / relative).resolve().is_relative_to(source_book_dir)
+                or not (destination_book_dir / relative).resolve().is_relative_to(
+                    destination_book_dir.resolve())):
+            raise OSError(f"Unsafe relative sync path: {name}")
+        if status not in {"added", "modified", "deleted"}:
+            raise ValueError(f"Unknown sync status: {status}")
+        if status != "deleted" and not (source_book_dir / relative).is_file():
+            raise FileNotFoundError(f"待同步源文件不存在: {source_book_dir / relative}")
+
+    if not full_mirror:
+        copied = deleted = 0
+        with rollback_paths(destination_book_dir / name for name in file_changes):
+            for name, status in file_changes.items():
+                target = destination_book_dir / name
+                if status == "deleted":
+                    if target.is_file():
+                        target.unlink()
+                        deleted += 1
+                else:
+                    atomic_write_bytes(target, (source_book_dir / name).read_bytes())
+                    copied += 1
+        return copied, deleted
+
+    destination_book_dir.parent.mkdir(parents=True, exist_ok=True)
+    staging = Path(tempfile.mkdtemp(
+        prefix=".extract-sync-",
+        dir=destination_book_dir.parent,
+    ))
+    backup = staging / "previous"
+    payload = staging / "payload"
+    payload.mkdir()
+    try:
         copied = 0
         for source in source_book_dir.rglob("*"):
-            if not source.is_file():
+            if not source.is_file() or is_extract_artifact(source.relative_to(source_book_dir)):
                 continue
-            if is_extract_artifact(source.relative_to(source_book_dir)):
-                continue
-            relative = source.relative_to(source_book_dir)
-            destination = destination_book_dir / relative
-            destination.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(source, destination)
+            if not source.resolve().is_relative_to(source_book_dir):
+                raise OSError(f"Source resource escapes book: {source}")
+            target = payload / source.relative_to(source_book_dir)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, target)
             copied += 1
+
+        if destination_book_dir.exists():
+            os.replace(destination_book_dir, backup)
+        try:
+            os.replace(payload, destination_book_dir)
+        except BaseException:
+            if backup.exists():
+                try:
+                    os.replace(backup, destination_book_dir)
+                except OSError as exc:
+                    raise OSError(f"Mirror rollback incomplete; recovery={backup}") from exc
+            raise
+        if backup.exists():
+            shutil.rmtree(backup, ignore_errors=True)
         return copied, 0
-
-    copied = 0
-    deleted = 0
-    for file_in_book, status in file_changes.items():
-        relative = Path(file_in_book)
-        destination = destination_book_dir / relative
-        if status == "deleted":
-            if destination.is_file():
-                destination.unlink()
-                deleted += 1
-            parent = destination.parent
-            while (
-                parent != destination_book_dir
-                and parent.is_dir()
-                and not any(parent.iterdir())
-            ):
-                parent.rmdir()
-                parent = parent.parent
-            continue
-
-        source = source_book_dir / relative
-        if not source.is_file():
-            raise FileNotFoundError(f"待同步源文件不存在: {source}")
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(source, destination)
-        copied += 1
-    return copied, deleted
+    finally:
+        if not backup.exists():
+            shutil.rmtree(staging, ignore_errors=True)
 
 
 def update_manifest_for_book(

@@ -10,6 +10,7 @@ import argparse
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
+from file_transaction import rollback_paths
 from xhtml_template import has_body, read_lines, rebuild, write_lines
 from edit_safety import DEFAULT_EPUB, EditSafetyError, add_edit_mode, require_edit_target
 
@@ -42,6 +43,30 @@ def normalize_single(path: Path, dry_run: bool = False, side: str | None = None)
         return False
 
 
+def prepare(path: Path, side: str | None) -> tuple[Path, list[str], bytes, bool, bool, str] | None:
+    """Validate one file and return its pending write without touching disk."""
+    if not path.exists():
+        raise OSError(f"文件不存在：{path}")
+    if not has_body(path):
+        return None
+    new, message = rebuild(path, None, side)
+    if new is None:
+        raise ValueError(f"{path}: {message}")
+    ET.fromstring("\n".join(new))
+    raw = path.read_bytes()
+    old, bom, crlf = read_lines(path)
+    if new == old:
+        return None
+    return path, new, raw, bom, crlf, message
+
+
+def apply_plans(plans: list[tuple[Path, list[str], bytes, bool, bool, str]]) -> None:
+    """Apply a batch and restore every already-written file if one write fails."""
+    with rollback_paths(path for path, *_ in plans):
+        for path, new, raw, bom, crlf, _ in plans:
+            write_lines(path, new, bom, crlf)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="单文件/目录固定行模板规范化工具")
     parser.add_argument("paths", nargs="*", type=Path, help="要处理的文件")
@@ -69,12 +94,34 @@ def main() -> int:
                 require_edit_target(path, args.staging)
         except EditSafetyError as exc:
             parser.error(str(exc))
-    success = sum(normalize_single(path, not args.apply,
-                  args.side or ("cn" if path.resolve().is_relative_to(DEFAULT_EPUB.resolve()) else None))
-                  for path in files)
-    failed = len(files) - success
-    print(f"\n总计：{success} 个成功，{failed} 个失败")
-    return 0 if failed == 0 else 1
+    side_for = lambda path: args.side or (
+        "cn" if path.resolve().is_relative_to(DEFAULT_EPUB.resolve()) else None
+    )
+    plans = []
+    try:
+        for path in files:
+            plan = prepare(path, side_for(path))
+            if plan is not None:
+                plans.append(plan)
+    except (OSError, UnicodeError, ET.ParseError, ValueError) as exc:
+        print(f"[阻断] 规范化预检失败；没有写入任何文件：{exc}")
+        return 1
+
+    if not args.apply:
+        for path, _, _, _, _, message in plans:
+            print(f"[预览] {path}: {message}")
+        print(f"\n总计：{len(files)} 个成功，0 个失败")
+        return 0
+
+    try:
+        apply_plans(plans)
+    except (OSError, UnicodeError) as exc:
+        print(f"[阻断] 写入失败，已回滚本次文件：{exc}")
+        return 1
+    for path, _, _, _, _, message in plans:
+        print(f"[完成] {path}: {message}")
+    print(f"\n总计：{len(files)} 个成功，0 个失败")
+    return 0
 
 
 if __name__ == "__main__":

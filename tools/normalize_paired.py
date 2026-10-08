@@ -16,6 +16,7 @@ import argparse
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
+from file_transaction import rollback_paths
 from alignment_rules import (JP_H1_BY_HEADER, MANUAL_ALIGNMENT_HEADERS,
                              NON_PAIR_WORK_IDS, PAIR_RULES, TEXTUAL_IMAGE_HEADERS,
                              template_exempt)
@@ -104,14 +105,11 @@ def main() -> int:
     if not args.apply:
         print("预览模式，未写文件；加 --apply 执行。")
         return 0
-    written: list[tuple[Path, bytes]] = []
     try:
-        for path, new, raw, bom, crlf in plans:
-            written.append((path, raw))
-            write_lines(path, new, bom, crlf)
+        with rollback_paths(path for path, *_ in plans):
+            for path, new, _, bom, crlf in plans:
+                write_lines(path, new, bom, crlf)
     except OSError as exc:
-        for path, raw in reversed(written):
-            path.write_bytes(raw)
         print(f"[阻断] 写入失败，已回滚本次文件：{exc}")
         return 1
     print(f"已改写：{len(plans)}")

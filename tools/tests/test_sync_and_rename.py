@@ -56,6 +56,21 @@ class SyncCoreTests(unittest.TestCase):
                             "chinese-text/book")
             self.assertEqual(state.read_bytes(), original)
 
+    def test_upload_state_failure_restores_destination_and_state(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            packed, destination = root / "packed.epub", root / "uploaded.epub"
+            packed.write_bytes(b"new package")
+            destination.write_bytes(b"old package")
+            state = root / "pull-state.tsv"
+            state.write_bytes(b"chinese-text\tbook\t123\t456\n")
+            with patch("sync_core.update_pull_state_record",
+                       side_effect=OSError("state failed")):
+                with self.assertRaises(OSError):
+                    upload_book(packed, destination, root, "chinese-text/book")
+            self.assertEqual(destination.read_bytes(), b"old package")
+            self.assertEqual(state.read_bytes(), b"chinese-text\tbook\t123\t456\n")
+
     def test_reverse_upload_state_failure_stops_cache_mirror(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -74,6 +89,27 @@ class SyncCoreTests(unittest.TestCase):
             self.assertFalse(ok)
             self.assertIn("state failed", message)
             self.assertEqual(target.read_bytes(), b"old")
+
+    def test_forward_upload_failure_restores_epub_mirror(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            cache, epub, onedrive = root / "cache", root / "epub", root / "onedrive"
+            source = cache / "chinese-text/book"
+            target = epub / "book"
+            source.mkdir(parents=True)
+            target.mkdir(parents=True)
+            onedrive.mkdir()
+            (source / "a.txt").write_bytes(b"new")
+            (target / "a.txt").write_bytes(b"old")
+            with patch("publish.package_book", return_value=3), \
+                    patch("publish.upload_book", side_effect=OSError("upload failed")):
+                ok, message = publish_book(
+                    "chinese-text/book", {"a.txt": "modified"}, cache, epub,
+                    {"chinese-text": onedrive},
+                )
+            self.assertFalse(ok)
+            self.assertIn("upload failed", message)
+            self.assertEqual((target / "a.txt").read_bytes(), b"old")
 
     def test_detect_and_apply_delta(self):
         current = {"chinese-text/book/a.txt": "new", "chinese-text/book/b.txt": "b"}
@@ -99,6 +135,31 @@ class SyncCoreTests(unittest.TestCase):
             source.mkdir()
             with self.assertRaises(FileNotFoundError):
                 sync_file_changes(source, destination, {"missing": "added"})
+
+    def test_full_mirror_copy_failure_preserves_previous_destination(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source, destination = root / "src", root / "dst"
+            source.mkdir()
+            destination.mkdir()
+            (source / "a.txt").write_bytes(b"new a")
+            (source / "b.txt").write_bytes(b"new b")
+            (destination / "old.txt").write_bytes(b"old")
+            original_copy2 = __import__("sync_core").shutil.copy2
+            calls = 0
+
+            def fail_after_first(*args, **kwargs):
+                nonlocal calls
+                calls += 1
+                if calls == 2:
+                    raise OSError("copy failed")
+                return original_copy2(*args, **kwargs)
+
+            with patch("sync_core.shutil.copy2", side_effect=fail_after_first):
+                with self.assertRaises(OSError):
+                    sync_file_changes(source, destination, {}, full_mirror=True)
+            self.assertEqual((destination / "old.txt").read_bytes(), b"old")
+            self.assertFalse((destination / "a.txt").exists())
 
     def test_missing_upload_target_fails_before_mirroring(self):
         with tempfile.TemporaryDirectory() as tmp:

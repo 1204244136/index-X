@@ -8,6 +8,7 @@ from urllib.parse import unquote, urlsplit
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 LINK = re.compile(r"\[[^\]\n]+\]\((<[^>]+>|[^)\n]+)\)")
+TOOL_FILE = re.compile(r"`([A-Za-z0-9_.-]+\.(?:py|ps1|json))`")
 # 活跃文档开头允许回指文档索引的最大行范围（现有文档均在 10 行以内）
 BACK_POINTER_HEAD_LINES = 20
 
@@ -70,6 +71,7 @@ def audit(root: Path) -> list[str]:
         for path in sorted((root / "tools").iterdir()):
             if path.is_file() and path.suffix in {".py", ".ps1", ".json"} and f"`{path.name}`" not in text:
                 issues.append(f"tools/README.md: 缺少工具/配置职责：{path.name}")
+        issues.extend(tool_matrix_issues(root, text))
     doc_index = root / "docs" / "README.md"
     if doc_index.is_file():
         index_resolved = doc_index.resolve()
@@ -98,6 +100,33 @@ def audit(root: Path) -> list[str]:
             if not linked:
                 issues.append(f"{path.relative_to(root).as_posix()}: 开头缺少回指文档索引的入口")
     issues += single_source_issues(root)
+    return issues
+
+
+def tool_matrix_issues(root: Path, text: str) -> list[str]:
+    """Require each top-level tool/config to have exactly one matrix owner."""
+    start = text.find("## 职责与覆盖矩阵")
+    end = text.find("## 共享规则模块", start)
+    if start < 0 or end < 0:
+        return []
+
+    counts: dict[str, int] = {}
+    for line in text[start:end].splitlines():
+        if not line.startswith("|") or line.startswith("| ---"):
+            continue
+        first_cell = line.split("|", 2)[1]
+        for name in TOOL_FILE.findall(first_cell):
+            counts[name] = counts.get(name, 0) + 1
+
+    issues: list[str] = []
+    for path in sorted((root / "tools").iterdir()):
+        if not path.is_file() or path.suffix not in {".py", ".ps1", ".json"}:
+            continue
+        count = counts.get(path.name, 0)
+        if count == 0:
+            issues.append(f"tools/README.md: 工具/配置未登记职责矩阵：{path.name}")
+        elif count > 1:
+            issues.append(f"tools/README.md: 工具/配置重复登记职责矩阵：{path.name}（{count} 行）")
     return issues
 
 
