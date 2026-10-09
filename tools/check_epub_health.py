@@ -405,8 +405,10 @@ def find_note_structure_problems(lines: list[str], name: str) -> list[tuple[int,
     if lines[0] != "<?xml version='1.0' encoding='utf-8'?>":
         problems.append((1, "XML 声明应为单引号形式 `<?xml version='1.0' encoding='utf-8'?>`"))
     head = lines[2]
-    if re.search(r"</head>\s+<link", head):
+    if re.search(r"<head>\s+<link", head):
         problems.append((3, "`<head>` 与 `<link>` 之间有多余空格"))
+    if re.search(r"/>\s+<title", head):
+        problems.append((3, "`<link>` 与 `<title>` 之间有多余空格"))
     m = re.search(r"<title>(.*?)</title>", head)
     if m and m.group(1):
         problems.append((3, "`<title>` 应为空，实为 %r" % m.group(1)[:30]))
