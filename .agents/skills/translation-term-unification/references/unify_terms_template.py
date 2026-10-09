@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """译名／术语统一：显式映射 + 逐条预检的一次性执行器模板（index-X）。
 
-配套 `.dsh/skills/translation-term-unification/SKILL.md`。这是**模板**，不是仓库工具：
+配套 `.agents/skills/translation-term-unification/SKILL.md`。这是**模板**，不是仓库工具：
 按任务填好 `MAPPINGS` 后复制到 `.cache/`（或临时目录）运行，跑完删除，不提交。
 
 用法：
-    Copy-Item .dsh/skills/translation-term-unification/references/unify_terms_template.py .cache/_unify_terms.py
+    Copy-Item .agents/skills/translation-term-unification/references/unify_terms_template.py .cache/_unify_terms.py
     # 填 MAPPINGS 后：
     python .cache/_unify_terms.py                  # 预检：只打印，不写盘
     python .cache/_unify_terms.py --apply           # 预检全过才写 EPUB/

@@ -33,7 +33,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[4]  # .agents/skills/proofread-review/references/ -> 仓库根
 sys.path.insert(0, str(REPO / "tools"))
-from xhtml_text import text_of  # noqa: E402  复用既有剥离口径，不重复实现
+from xhtml_text import strip_ruby_annotations, text_of  # noqa: E402  复用既有剥离口径，不重复实现
 
 JP_ROOT = REPO / ".cache" / "epub-work" / "japanese-text"
 CN_ROOT = REPO / "EPUB"
@@ -49,9 +49,9 @@ def find_book(root: Path, work: str) -> Path:
 
 
 def line_texts(path: Path) -> list[str]:
-    """逐行转纯文本：先剥 <rt>/<rp> 注音，再用 xhtml_text.text_of 剥标签解实体。"""
+    """逐行转纯文本：先剥 <rt>/<rp> 注音（共享实现），再用 xhtml_text.text_of 剥标签解实体。"""
     raw = path.read_text(encoding="utf-8", errors="ignore")
-    stripped = re.sub(r"<(rt|rp)\b[^>]*>.*?</\1>", "", raw, flags=re.S | re.I)
+    stripped = strip_ruby_annotations(raw)
     return [text_of(ln.encode("utf-8")) for ln in stripped.split("\n")]
 
 

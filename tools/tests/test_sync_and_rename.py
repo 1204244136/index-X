@@ -9,7 +9,7 @@ from unittest.mock import patch
 TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 
-from fix_empty_placeholders import apply_candidate  # noqa: E402
+from fix_empty_placeholders import apply_candidate, candidates, is_empty  # noqa: E402
 from manifest import compute_hash, scan_cache, scan_epub  # noqa: E402
 from publish import publish_book  # noqa: E402
 from publish_epub import publish_book_reverse  # noqa: E402
@@ -345,6 +345,71 @@ class SyncCoreTests(unittest.TestCase):
 
 
 class PlaceholderTests(unittest.TestCase):
+    def test_is_empty_requires_no_image_or_svg(self):
+        """空页资格必须能触发失败：含 <img>/<svg> 的页不算空，纯空白页才算。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            cases = {
+                "image.xhtml": '<body><p class="fit"><img src="../Images/a.jpg"/></p></body>',
+                "svg.xhtml": '<body><p><svg viewBox="0 0 1 1"><path d="M0 0"/></svg></p></body>',
+                "bare_img.xhtml": "<body><img/></body>",
+                "blank.xhtml": "<body>\n<p> </p>\n</body>",
+                "tags_only.xhtml": "<body><div></div></body>",
+                "text.xhtml": "<body><p>正文</p></body>",
+                "entity_text.xhtml": "<body><p>&#12288;</p><p>字</p></body>",
+            }
+            for name, body in cases.items():
+                (root / name).write_text(body, encoding="utf-8")
+            expected_empty = {"blank.xhtml", "tags_only.xhtml"}
+            for name in cases:
+                with self.subTest(name=name):
+                    self.assertEqual(is_empty(root / name), name in expected_empty)
+
+    def test_is_empty_ignores_head_content(self):
+        """<head> 里的 title/style 不算正文：只剩 head 内容时判空。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            head_only = Path(tmp) / "head.xhtml"
+            head_only.write_text(
+                '<html><head><title>书名</title><style>p{color:red}</style></head><body></body></html>',
+                encoding="utf-8")
+            self.assertTrue(is_empty(head_only))
+            body_text = Path(tmp) / "body.xhtml"
+            body_text.write_text(
+                '<html><head><title>书名</title></head><body><p>正文</p></body></html>',
+                encoding="utf-8")
+            self.assertFalse(is_empty(body_text))
+
+    def test_candidates_require_numbered_neighbours(self):
+        """候选页必须在编号链中间：缺前一位、缺后一位、或编号断档都不算候选。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+
+            def page(number: int, body: str = "<body></body>") -> None:
+                (root / f"S5_01_03-{number:02d}_p-{number:03d}.xhtml").write_text(body, encoding="utf-8")
+
+            # 只有一页 → 没有前后邻居
+            page(1)
+            self.assertEqual(candidates(root), [])
+            # 01、02 两页，02 是末页 → 仍无后邻居
+            page(2)
+            self.assertEqual(candidates(root), [])
+            # 补上 03：中间的空页 02 成为候选
+            page(3, "<body><p>正文</p></body>")
+            self.assertEqual([p.name for p in candidates(root)],
+                             ["S5_01_03-02_p-002.xhtml"])
+            # 02 有正文 → 不再是候选
+            page(2, "<body><p>正文</p></body>")
+            self.assertEqual(candidates(root), [])
+
+    def test_candidates_skip_numbering_gap(self):
+        """编号断档（01、03、04）不算候选：每一页都缺一侧邻居。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for number in (1, 3, 4):
+                (root / f"S5_01_03-{number:02d}_p-{number:03d}.xhtml").write_text(
+                    "<body></body>", encoding="utf-8")
+            self.assertEqual(candidates(root), [])
+
     def test_rename_updates_metadata_references(self):
         with tempfile.TemporaryDirectory() as tmp:
             book = Path(tmp)

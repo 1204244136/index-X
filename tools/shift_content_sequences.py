@@ -10,11 +10,8 @@ import argparse
 import re
 from pathlib import Path
 from edit_safety import DEFAULT_EPUB, EditSafetyError, add_edit_mode, require_edit_target
+from epub_structure import REFERENCE_SUFFIXES
 
-
-REFERENCE_SUFFIXES = frozenset({
-    ".xhtml", ".html", ".htm", ".opf", ".ncx", ".xml", ".css", ".svg",
-})
 WORK_ID_RE = re.compile(
     r"S\d+_(?:\d+(?:_\d+)?|\d{2}(?:\.\d{2}){2})",
     re.IGNORECASE,

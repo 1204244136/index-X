@@ -29,6 +29,7 @@ from typing import Iterable
 
 from alignment_rules import NON_PAIR_WORK_IDS, pairing_header_of
 from epub_ids import book_id, japanese_book_id
+from image_signature import dhash_image, hamming
 
 try:
     from PIL import Image, ImageFilter, ImageOps, UnidentifiedImageError
@@ -172,16 +173,6 @@ def _layout_from_ratio(ratio: float) -> str:
     return "ambiguous_aspect_ratio"
 
 
-def _dhash(image: Image.Image) -> int:
-    small = image.convert("L").resize((9, 8), Image.Resampling.LANCZOS)
-    pixels = list(small.getdata())
-    value = 0
-    for row in range(8):
-        for col in range(8):
-            value = (value << 1) | int(pixels[row * 9 + col] > pixels[row * 9 + col + 1])
-    return value
-
-
 def _edges(image: Image.Image) -> tuple[int, ...]:
     pixels = list(image.convert("L").getdata())
     width, height = image.size
@@ -238,7 +229,7 @@ def feature(asset: Asset) -> Feature | None:
                 pixels=gray_values,
                 blurred=_values(blurred),
                 edges=edge_values,
-                dhash=_dhash(gray),
+                dhash=dhash_image(gray),
                 histogram=_histogram(boxed),
                 luma_std=luma_std,
                 edge_density=edge_density,
@@ -262,10 +253,6 @@ def _mae(first: Iterable[int], second: Iterable[int]) -> float:
 
 def _histogram_intersection(first: tuple[float, ...], second: tuple[float, ...]) -> float:
     return sum(min(a, b) for a, b in zip(first, second)) / 3.0
-
-
-def _hamming(first: int, second: int) -> int:
-    return (first ^ second).bit_count()
 
 
 def _library_hash_distance(first: str | None, second: str | None) -> int | None:
@@ -473,7 +460,7 @@ def compare(first: Asset, second: Asset) -> tuple[float, float, float, float, in
     blurred_mae = _mae(f1.blurred, f2.blurred)
     edge_mae = _mae(f1.edges, f2.edges)
     histogram = _histogram_intersection(f1.histogram, f2.histogram)
-    dhash_distance = _hamming(f1.dhash, f2.dhash)
+    dhash_distance = hamming(f1.dhash, f2.dhash)
     phash_distance = _library_hash_distance(f1.phash, f2.phash)
     whash_distance = _library_hash_distance(f1.whash, f2.whash)
     colorhash_distance = _library_hash_distance(f1.colorhash, f2.colorhash)

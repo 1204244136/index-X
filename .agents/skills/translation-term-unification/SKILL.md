@@ -143,10 +143,11 @@ rg -n --no-heading "科学势力|科学侧|科学方" EPUB --glob "*.xhtml"
 
 # 剥标签后比对（务必先剥 <rt>）
 # `xhtml_text.text_of` 只剥标签、**不剥注音**，直接用它检索会把「魔術サイド」拆成「魔術 まじゆつ サイド」
-# 现成实现（先剥 <rt> 再 text_of，已封装路径与内容序）：见 proofread-review skill 的 references/lookup_source.py
-# 逐行取纯文本时的最小写法（复用既有口径，不另写一套剥离逻辑）：
-#   stripped = re.sub(r"<(rt|rp)\b[^>]*>.*?</\1>", "", raw, flags=re.S)
-#   lines = [xhtml_text.text_of(ln.encode("utf-8")) for ln in stripped.split("\n")]
+# 现成实现：`xhtml_text.text_of_without_ruby`（先剥 <rt>/<rp> 再按同一口径提取，规则的唯一实现）
+# 逐行取纯文本时（复用既有口径，不另写一套剥离逻辑）：
+#   from xhtml_text import strip_ruby_annotations, text_of
+#   lines = [text_of(ln.encode("utf-8")) for ln in strip_ruby_annotations(raw).split("\n")]
+# 按内容序定位并取行的现成入口：见 proofread-review skill 的 references/lookup_source.py
 
 # 只读审计
 python tools/check_translation_spec.py --pattern "*S3_10*"

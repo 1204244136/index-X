@@ -11,6 +11,11 @@ from alignment_rules import JP_WRAPPER_RE
 XHTML_SUFFIXES = (".xhtml", ".html", ".htm")
 IMAGE_SUFFIXES = (".jpg", ".jpeg", ".png", ".gif", ".webp", ".avif", ".bmp", ".svg", ".tif", ".tiff")
 XML_SUFFIXES = XHTML_SUFFIXES + (".opf", ".ncx", ".xml", ".svg")
+# 书内引用改名要覆盖的文本文件：XML 家族（含 xhtml/opf/ncx/svg）＋ CSS。
+REFERENCE_SUFFIXES = frozenset(XML_SUFFIXES + (".css",))
+# 会被删条目（manifest item／itemref／navPoint／nav li）的文件类型：只有这四类
+# （不带 `.htm`：本管线的编号页与其容器只用 `.xhtml`／`.opf`／`.ncx`）。
+METADATA_SUFFIXES = frozenset((".xhtml", ".html", ".opf", ".ncx"))
 CSS_URL_RE = re.compile(rb"url\(\s*(['\"]?)(.*?)\1\s*\)", re.I)
 
 def resolve_reference(source: str, value: str, *, root_relative: bool = False) -> str | None:

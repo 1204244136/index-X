@@ -7,6 +7,7 @@ import re
 from pathlib import Path
 
 from epub_ids import NUMBERED_BOOK, S6_DATE
+from epub_structure import METADATA_SUFFIXES
 from edit_safety import (EditSafetyError, add_content_roots, add_edit_mode,
                          content_roots, require_edit_target)
 
@@ -14,7 +15,6 @@ NAME_RE = re.compile(
     rf"^({S6_DATE}|{NUMBERED_BOOK})-(\d+)(_p-(\d+)|_p-[^.]+)(\.xhtml)$",
     re.I,
 )
-REFERENCE_SUFFIXES = {".opf", ".ncx", ".xhtml", ".html"}
 
 
 def is_empty(path: Path) -> bool:
@@ -67,7 +67,7 @@ def rewrite_references(book_root: Path, renamed: list[tuple[Path, Path]]) -> set
                     for source, target in renamed]
     changed: set[Path] = set()
     for candidate in book_root.rglob("*"):
-        if not candidate.is_file() or candidate.suffix.casefold() not in REFERENCE_SUFFIXES:
+        if not candidate.is_file() or candidate.suffix.casefold() not in METADATA_SUFFIXES:
             continue
         raw = candidate.read_bytes()
         updated = raw
@@ -88,7 +88,7 @@ def remove_deleted_metadata_references(book_root: Path, deleted_name: str) -> se
     old = re.escape(deleted_name.encode("ascii"))
     changed: set[Path] = set()
     for candidate in book_root.rglob("*"):
-        if not candidate.is_file() or candidate.suffix.casefold() not in REFERENCE_SUFFIXES:
+        if not candidate.is_file() or candidate.suffix.casefold() not in METADATA_SUFFIXES:
             continue
         raw = candidate.read_bytes()
         updated = raw

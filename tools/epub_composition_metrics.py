@@ -46,6 +46,7 @@ from epub_char_count import (  # noqa: E402
     CJK_RE,
     EpubSource,
     analyze,
+    apply_label_rules,
     is_fixed_layout,
     is_wrapper,
     normalize_label,
@@ -123,6 +124,10 @@ def scan_book(source: EpubSource, pages_per: int, include_all: bool) -> dict:
         c = analyze(source, it, pages_per)
         raw = source.read(it["path"]).decode("utf-8", errors="replace")
         txt = text_of(raw)
+        # 子成分直接复用 analyze 的切分结果，不再二次切分与二次取文本
+        subs = [{"label": s["label"], "all_chars": s["all_chars"],
+                 "cjk_chars": s["cjk_chars"], "pages_char": s["pages"], "refs": []}
+                for s in c["sub_components"]]
         comps.append({
             "path": it["path"],
             "stem": stem,
@@ -132,7 +137,7 @@ def scan_book(source: EpubSource, pages_per: int, include_all: bool) -> dict:
             "cjk_chars": c["cjk_chars"],
             "pages_char": c["pages"],
             "image_anchors": image_anchors(raw),
-            "subs": split_sections(raw, pages_per),
+            "subs": subs,
             "_raw": raw,
         })
         if c["all_chars"] == 0 and not [r for _, r in image_anchors(raw) if r]:
@@ -308,7 +313,7 @@ def scan_book(source: EpubSource, pages_per: int, include_all: bool) -> dict:
 
 
 def sub_offsets(raw: str) -> list[int]:
-    """各子成分（<h2> 段）在 raw 中的起始偏移，顺序与 split_sections 一致。"""
+    """各子成分（<h2> 段）在 raw 中的起始偏移，顺序与 `epub_char_count.split_sections` 一致。"""
     body_start = len(re.split(r"<h1[^>]*>.*?</h1>", raw, flags=re.S)[0])
     parts = re.split(r"(<h2[^>]*>.*?</h2>)", raw, flags=re.S)
     offsets = []
@@ -319,56 +324,19 @@ def sub_offsets(raw: str) -> list[int]:
     return offsets
 
 
-def split_sections(raw: str, pages_per: int = 400) -> list[dict]:
-    """按 <h2> 切分子成分：返回 [{label, all_chars, cjk_chars, pages_char, refs}, ...]。
-
-    与 `epub_char_count.split_sections` 口径一致：子成分段不含 h1 标题文字，
-    h1 之前的开场文字并入第一节。
-    """
-    body = re.sub(r"<h1[^>]*>.*?</h1>", "", raw, flags=re.S)
-    parts = re.split(r"(<h2[^>]*>.*?</h2>)", body, flags=re.S)
-    if len(parts) < 3:
-        return []
-    fw = str.maketrans("０１２３４５６７８９", "0123456789")
-    out = []
-    for i in range(1, len(parts), 2):
-        seg = (parts[0] if i == 1 else "") + parts[i] + parts[i + 1]
-        label = re.sub(r"<rt[^>]*>.*?</rt>", "", parts[i], flags=re.S)
-        label = re.sub(r"<[^>]+>", "", label)
-        label = re.sub(r"\s+", " ", label).strip().translate(fw)
-        txt = text_of(seg)
-        out.append({"label": label, "all_chars": len(txt),
-                    "cjk_chars": len(CJK_RE.findall(txt)),
-                    "pages_char": max(1, math.ceil(len(txt) / pages_per)) if txt else 0,
-                    "refs": []})
-    return out
-
-
 def normalize_labels(rep: dict) -> None:
     """成分名规范化（与 epub_char_count 同一套规则）。
 
     - 章节标题截断为「序章/第N章/终章」，去掉副标题；
     - 常用日文词替换为中文（行間→行间、終→终、あとがき→后记）；
-    - 位置规则：第一个「序章」之前的成分 → 引子；第一个「后记」之后的成分 → 尾声。
+    - 位置规则（第一个「序章」之前的成分 → 引子；第一个「后记」之后的成分 → 尾声）
+      复用 `epub_char_count.apply_label_rules`，不另写一遍；
+    - 本函数额外补：空标签的子成分写成「（无标号N）」。
     """
     comps = rep["components"]
     for c in comps:
         c["label"] = normalize_label(c["label"])
-    labels = [c["label"] for c in comps]
-    first_pro = next(
-        (i for i, label in enumerate(labels) if label == "序章"),
-        None,
-    )
-    if first_pro is not None:
-        for c in comps[:first_pro]:
-            c["label"] = "引子"
-    first_af = next(
-        (i for i, label in enumerate(labels) if label == "后记"),
-        None,
-    )
-    if first_af is not None:
-        for c in comps[first_af + 1:]:
-            c["label"] = "尾声"
+    apply_label_rules(comps)
     for c in comps:
         if len(c["subs"]) > 1:
             for i, s in enumerate(c["subs"], 1):

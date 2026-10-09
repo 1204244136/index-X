@@ -591,7 +591,7 @@ python -m unittest discover -s tools/tests -p "test_*.py" -v
 | `sync_core.py` | 无 CLI（共享模块） | 差异、镜像、上传状态与拉取状态 | 【无】 | `test_publish_auto.py`、`test_sync_and_rename.py` |
 | `xhtml_structure.py` | 无 CLI（共享模块） | 物理行类型、保守配对与页边界修复前提 | 【无】 | `test_xhtml_structure.py` |
 | `xhtml_template.py` | 无 CLI（共享模块） | 固定模板纯重建 | 【无】 | `test_xhtml_and_merge.py` |
-| `xhtml_text.py` | 无 CLI（共享模块） | 保留注音的复核纯文本提取 | 【无】 | 无专用测试；由调用方验证 |
+| `xhtml_text.py` | 无 CLI（共享模块） | XHTML → 纯文本的唯一口径（保留注音／去注音／可见文本三种） | 【无】 | `test_xhtml_text.py`；另有调用方测试 |
 
 ### 负责与不负责
 
@@ -609,7 +609,7 @@ python -m unittest discover -s tools/tests -p "test_*.py" -v
 | `edit_safety.py` | 写目标与显式暂存范围的限制 | 决定修改语义是否正确 |
 | `path_safety.py` | ZIP 路径安全和解包残留识别 | 内容／语言规范 |
 | `epub_structure.py` | 从 BW 导入共用的容器、OPF spine、XML 与资源引用检查 | 工具编排与成品模板选择 |
-| `xhtml_text.py` | 保留注音的复核纯文本提取 | 扫描与报告；原文检索须由调用方先去注音 |
+| `xhtml_text.py` | XHTML → 纯文本的三种口径（保留注音／去注音／可见文本）；`<rt>`、`<rp>` 剥除规则的唯一实现 | 扫描与报告；该用哪种口径由调用方决定 |
 | `file_transaction.py` | 异常安全的文件系统写入（临时文件／目录 + 回滚） | 发布策略与冲突取舍 |
 
 `tools/README.md` 自身的说明覆盖、簇归属与单一来源合同由 C4 的 `check_project_docs.py` 检查；改本文件的结构后先跑它。

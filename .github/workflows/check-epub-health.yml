@@ -71,6 +71,11 @@ jobs:
       - name: 工具测试
         run: python -m unittest discover -s tools/tests -p "test_*.py"
 
+      # 技能侧模板的回归测试是自定义 check() 的纯函数脚本，不是 unittest.TestCase，
+      # `unittest discover` 采集不到，只能显式运行。
+      - name: 技能模板回归测试
+        run: python .agents/skills/translation-term-unification/references/test_unify_terms_template.py
+
       - name: 文档职责与链接检查
         run: python tools/check_project_docs.py
 

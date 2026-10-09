@@ -1,6 +1,6 @@
 """`unify_terms_template.py` 的回归测试（无第三方依赖，不碰 EPUB/）。
 
-    python .dsh/skills/translation-term-unification/references/test_unify_terms_template.py
+    python .agents/skills/translation-term-unification/references/test_unify_terms_template.py
 
 覆盖模板的五条不变式：未命中／定位失败／空映射 → 整批拒绝且不写盘；命中 + 已统一 → 预检通过
 且幂等；`--apply` 只替换目标行并保留行数、CRLF 与 BOM。

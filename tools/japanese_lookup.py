@@ -28,6 +28,9 @@ from pathlib import Path
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_JP_BASE = os.path.join(REPO_ROOT, ".cache", "epub-work", "japanese-text")
 
+sys.path.insert(0, os.path.join(REPO_ROOT, "tools"))
+from xhtml_text import strip_ruby_annotations  # noqa: E402  注音剥除规则的唯一实现
+
 
 _RUBY_PATTERN = re.compile(r"<ruby\b[^>]*>(.*?)</ruby>", re.I | re.S)
 _RT_PATTERN = re.compile(r"<rt\b[^>]*>(.*?)</rt>", re.I | re.S)
@@ -73,14 +76,12 @@ def strip_ruby_markup(text: str) -> str:
 
 
 def strip_rt_and_tags(html_text: str) -> str:
-    """剥除 <rt>...</rt>、<rp>...</rp> 及所有 HTML 标签，返回干净纯文本。"""
-    # 先剥除 rt 和 rp 注音内容，避免注音被混入正文
-    text = re.sub(r"<(rt|rp)\b[^>]*>.*?</\1>", "", html_text, flags=re.I | re.S)
-    # 剥除所有 HTML 标签
-    text = re.sub(r"<[^>]+>", "", text)
-    # 还原字符实体并整理空白
-    text = html.unescape(text)
-    return text.strip()
+    """剥除 <rt>/<rp>...</rt> 及所有 HTML 标签，返回干净纯文本。
+
+    注音剥除规则唯一实现在 `xhtml_text.strip_ruby_annotations`。
+    """
+    text = _TAG_PATTERN.sub("", strip_ruby_annotations(html_text))
+    return html.unescape(text).strip()
 
 
 class JapaneseSourceLookup:

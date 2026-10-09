@@ -78,19 +78,23 @@ except ImportError:
         def japanese_book_id(chinese_id: str) -> str:
             return chinese_id.upper()
 
+try:
+    from xhtml_text import visible_text_of
+except ImportError:  # 以包方式导入时 tools/ 不在 sys.path
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from xhtml_text import visible_text_of
+
 # ---------------------------------------------------------------------------
 # 文本与标签解析
 # ---------------------------------------------------------------------------
 
-TAG_RE = re.compile(r"<[^>]+>")
 KANJI_CHAR_RE = re.compile(r"[\u4e00-\u9fff0-9A-Za-z]")
 
 # 比较可见文本前必须先整段剥离 <rt> 注音。日文侧把读音放进 <rt>
 # （`<ruby>水<rt>みず</rt></ruby>`），中文侧放拼音或英文，两侧注音内容本就不同源；
 # 不剥离会把注音字数算进长度，把 `水瓶座`(3 字) 与 `水みず瓶がめ座ざ`(9 字) 判成
-# 长度比越界。仓库既有口径一致：check_translation_spec / epub_char_count /
-# epub_composition_metrics 都是先剥 <rt> 再统计正文。
-RT_RE = re.compile(r"<rt\b[^>]*>.*?</rt\s*>", re.S | re.I)
+# 长度比越界。规则唯一实现在 `xhtml_text.visible_text_of`，与
+# check_semantic_alignment 共用同一份实现。
 
 # 固定行模板的 L1-L3（XML 声明 / DOCTYPE / html+head+body 头部行）不是正文行。
 # 两侧 <title> 内容本就不同（日文填书名、中文留空），不排除会让每个文件的 L3
@@ -130,8 +134,8 @@ def parse_line(raw_line: str) -> LineInfo:
     )
 
     # 剔除 HTML 标签获取可见文本；**先整段剥离 <rt> 注音**再取文本，否则日文读音
-    # 会混进可见文本与字符集，让长度比与重合率同时失真（详见 RT_RE 注释）。
-    visible_text = TAG_RE.sub("", RT_RE.sub("", stripped)).strip()
+    # 会混进可见文本与字符集，让长度比与重合率同时失真（实现见 xhtml_text.visible_text_of）。
+    visible_text = visible_text_of(stripped)
     kanji_and_digits = set(KANJI_CHAR_RE.findall(visible_text))
     is_dialogue = visible_text.startswith(("「", "“", '"', "『", "（", "("))
 

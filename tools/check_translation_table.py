@@ -63,14 +63,15 @@ import sys
 from collections import Counter
 from pathlib import Path
 
+from xhtml_text import strip_ruby_annotations
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_EPUB = REPO_ROOT / "EPUB"
 DEFAULT_JP = REPO_ROOT / ".cache" / "epub-work" / "japanese-text"
 DEFAULT_OUT = REPO_ROOT / ".cache" / "epub-work"
 DEFAULT_RULINGS = REPO_ROOT / "docs" / "translation-name-rulings.md"
 
-# 剥注音与标签：先整段移除 <rt>/<rp>（含内容），再剥其余标签
-RT_RE = re.compile(r"<(rt|rp)\b[^>]*>.*?</\1>", re.S | re.I)
+# 剥注音与标签：先整段移除 <rt>/<rp>（含内容，规则唯一实现在 xhtml_text），再剥其余标签
 TAG_RE = re.compile(r"<[^>]+>")
 WS_RE = re.compile(r"[\s\u3000]+")
 BOOK_RE = re.compile(r"^\[([^\]]+)\]")
@@ -143,7 +144,7 @@ def strip_markup(raw: str) -> str:
     成品里含 `&` 的术语必须还原才能比对——`R&amp;C超自然公司` 对应译名表的
     `R&C超自然公司`，不反转义就会误报未落地（译名表核验口径同样要求「反转义实体」）。
     """
-    return html.unescape(TAG_RE.sub("", RT_RE.sub("", raw)))
+    return html.unescape(TAG_RE.sub("", strip_ruby_annotations(raw)))
 
 
 def load_plain(path: Path) -> str:

@@ -15,6 +15,8 @@ except ImportError:  # pragma: no cover
     Image = None  # type: ignore[assignment]
     ImageOps = None  # type: ignore[assignment]
 
+# 只列 Pillow 能稳妥解码的格式；`epub_structure.IMAGE_SUFFIXES` 是打包校验用的更宽集合
+# （另含 avif/bmp/tif/tiff/svg），两者用途不同，不要互相替换。
 IMAGE_SUFFIXES = (".jpg", ".jpeg", ".png", ".gif", ".webp")
 
 

@@ -77,12 +77,16 @@ from check_alignment import (
     pair_problems,
 )
 
+try:
+    from xhtml_text import visible_text_of
+except ImportError:  # 以包方式导入时 tools/ 不在 sys.path
+    sys.path.insert(0, str(TOOLS_DIR))
+    from xhtml_text import visible_text_of
+
 
 class SemanticStructureError(ValueError):
     """The declared strict scope cannot form trustworthy paired inputs."""
 
-TAG_RE = re.compile(r"<[^>]+>")
-RT_RE = re.compile(r"<rt\b[^>]*>.*?</rt\s*>", re.S | re.I)
 KANJI_CHAR_RE = re.compile(r"[\u4e00-\u9fff0-9A-Za-z]")
 
 TEMPLATE_XML_RE = re.compile(r"^\s*<\?xml\b", re.I)
@@ -117,7 +121,8 @@ def parse_line(raw_line: str) -> LineData:
         or TEMPLATE_DOCTYPE_RE.match(stripped)
         or TEMPLATE_HTML_RE.search(stripped)
     )
-    visible_text = TAG_RE.sub("", RT_RE.sub("", stripped)).strip()
+    # 先剥离 <rt> 注音再取可见文本（实现见 xhtml_text.visible_text_of，与 diff_paired_lines 共用）
+    visible_text = visible_text_of(stripped)
     kanji_and_digits = set(KANJI_CHAR_RE.findall(visible_text))
     is_dialogue = visible_text.startswith(("「", "“", '"', "『", "（", "("))
 
