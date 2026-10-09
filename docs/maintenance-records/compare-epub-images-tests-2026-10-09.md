@@ -33,3 +33,25 @@
 - `python tools/check_project_docs.py` → 问题 0 条。
 - 真实数据冒烟：`python tools/compare_epub_images.py --pattern "*S2_14*" --output <临时目录>` → exit 0，报告正常生成。
 - 工具合同 C4 成员表 `compare_epub_images.py` 行的「测试」列由「无专用测试；只读诊断」改为 `test_compare_epub_images.py`。
+
+## 补记：本批引入的 CI 中断与修复（2026-10-09 晚）
+
+本批把 Pillow 依赖带进了测试采集阶段，中断了当晚的 Build EPUB Release 流水线，属**本批引入的回归**，同日修复。
+
+**现象**：`release-epubs` 任务在「Validate tools and publication source」一步失败——`Ran 613 tests`、`FAILED (errors=1, skipped=19)`、`ImportError: Failed to import test module: test_compare_epub_images`、`ModuleNotFoundError: No module named 'PIL'`，job 以 exit 1 结束。同一 `run` 块里其后的 `check_project_docs.py` 与 `publish_preflight.py --source EPUB` 因 `set -euo pipefail` 未执行，EPUB 打包、合并 ZIP 与 release 全部未发生。
+
+**根因**：`test_compare_epub_images.py` 在模块顶层硬导入 `PIL`，而 CI 只跑 `actions/setup-python`、不装任何第三方包。`unittest discover` 在**采集阶段**导入失败会让整个发现过程报错，不是只跳过这一个模块。此前 `tools/tests/` 的第三方依赖（`openpyxl`）已在 `test_read_xlsx.py` 按「可选依赖整组跳过」处理，本批未沿用该口径。本机装有 Pillow 11.3.0，全量测试 639 项通过，缺陷在本地不可见。
+
+**修复**：`test_compare_epub_images.py` 改为与 `test_read_xlsx.py` 一致的口径——`try` 内导入 `PIL` 与 `compare_epub_images`（工具模块在缺 Pillow 时主动 `raise SystemExit`，故连 `SystemExit` 一起兜住），失败时八个测试类按 `@requires_pillow` 整组跳过。不改 workflow，保持「CI 只用官方 Python 环境、不装第三方包」的既有假设。
+
+**验证**（本机）：
+
+| 场景 | 结果 |
+| --- | --- |
+| 有 Pillow：`python -m unittest discover -s tools/tests -p "test_*.py"` | exit 0，`Ran 639 tests`，`OK (skipped=2)` |
+| 无 Pillow（`PYTHONPATH` 注入屏蔽 `PIL` 的 `sitecustomize.py` 模拟 CI） | 修复前 exit 1、`Ran 613`、`FAILED (errors=1, skipped=2)`，与 CI 原始报错一致；修复后 exit 0、`Ran 639`、`OK (skipped=29)`，多出的 27 项即本模块 |
+| 单模块直跑 `python tools/tests/test_compare_epub_images.py` | 有 Pillow `Ran 27 tests, OK`；无 Pillow `Ran 27 tests, OK (skipped=27)` |
+| `python tools/publish_preflight.py --source EPUB` | exit 0，79 本，问题 0 条 |
+
+`check_project_docs.py` 在本机当前工作区曾报 3 条，全部是同期 `AGENTS.md` 版式规范拆分新增的三份 `docs/epub-*-spec.md` 尚未登记进 `docs/README.md`，与本次修复无关；该拆分由 45d108ce 登记完成后已回到 0 条。
+

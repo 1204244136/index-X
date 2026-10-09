@@ -8,23 +8,48 @@ from pathlib import Path
 TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 
-from PIL import Image  # noqa: E402  模块本身强依赖 Pillow
+# Pillow 与 compare_epub_images.py 保持一致的**可选依赖**口径：CI 只用官方 Python 环境、
+# 不安装任何第三方包，此处若硬导入会在测试采集阶段就 ImportError，使整个
+# unittest discover 失败（而不是仅跳过图片相关用例）——2026-10-09 的 Build EPUB Release
+# 即因此整条发布流水线中断。工具模块在缺 Pillow 时主动 raise SystemExit，所以这里连
+# SystemExit 一起兜住，缺依赖时只跳过本模块。
+try:
+    from PIL import Image  # noqa: E402
 
-from compare_epub_images import (  # noqa: E402
-    Asset,
-    _layout_from_ratio,
-    _uses_s1_illustration_sequence,
-    body_number_key,
-    body_number_parts,
-    collect_book,
-    compare_book,
-    feature,
-    image_name_family,
-    name_rule_match,
-    page_role,
-    render_markdown,
-    scan,
-)
+    from compare_epub_images import (  # noqa: E402
+        Asset,
+        _layout_from_ratio,
+        _uses_s1_illustration_sequence,
+        body_number_key,
+        body_number_parts,
+        collect_book,
+        compare_book,
+        feature,
+        image_name_family,
+        name_rule_match,
+        page_role,
+        render_markdown,
+        scan,
+    )
+except (ImportError, SystemExit):  # pragma: no cover - 取决于运行环境是否装有 Pillow
+    Image = None  # type: ignore[assignment]
+    Asset = None  # type: ignore[assignment,misc]
+    _layout_from_ratio = None  # type: ignore[assignment]
+    _uses_s1_illustration_sequence = None  # type: ignore[assignment]
+    body_number_key = None  # type: ignore[assignment]
+    body_number_parts = None  # type: ignore[assignment]
+    collect_book = None  # type: ignore[assignment]
+    compare_book = None  # type: ignore[assignment]
+    feature = None  # type: ignore[assignment]
+    image_name_family = None  # type: ignore[assignment]
+    name_rule_match = None  # type: ignore[assignment]
+    page_role = None  # type: ignore[assignment]
+    render_markdown = None  # type: ignore[assignment]
+    scan = None  # type: ignore[assignment]
+
+PILLOW_MISSING = Image is None
+PILLOW_SKIP_REASON = "未安装 Pillow，跳过中日图片核对工具测试"
+requires_pillow = unittest.skipUnless(not PILLOW_MISSING, PILLOW_SKIP_REASON)
 
 
 def asset(name: str, *, locations: tuple[str, ...] = (), layout: str | None = None,
@@ -40,6 +65,7 @@ def write_png(path: Path, size: tuple[int, int] = (40, 60), color: tuple[int, in
     Image.new("RGB", size, color).save(path)
 
 
+@requires_pillow
 class PageRoleTests(unittest.TestCase):
     def test_page_role_classifies_packaging_pages(self):
         cases = {
@@ -60,6 +86,7 @@ class PageRoleTests(unittest.TestCase):
                 self.assertEqual(page_role(name), expected)
 
 
+@requires_pillow
 class ImageFamilyTests(unittest.TestCase):
     def test_family_strips_work_prefix_across_series_forms(self):
         cases = {
@@ -82,6 +109,7 @@ class ImageFamilyTests(unittest.TestCase):
                 self.assertEqual(image_name_family(name), expected)
 
 
+@requires_pillow
 class BodyNumberTests(unittest.TestCase):
     def test_body_number_key_normalises_the_known_naming_schemes(self):
         cases = {
@@ -104,6 +132,7 @@ class BodyNumberTests(unittest.TestCase):
         self.assertIsNone(body_number_parts("S1_03-p000-00-16-1.jpg"))
 
 
+@requires_pillow
 class LayoutTests(unittest.TestCase):
     def test_layout_thresholds(self):
         self.assertEqual(_layout_from_ratio(2.0), "double_page_candidate")
@@ -119,6 +148,7 @@ class LayoutTests(unittest.TestCase):
         self.assertFalse(_uses_s1_illustration_sequence("S2_09-illustrations1.jpg"))
 
 
+@requires_pillow
 class NameRuleMatchTests(unittest.TestCase):
     def test_family_must_match(self):
         matched, label = name_rule_match(asset("S1_01-cover.jpg", locations=("family:cover:0",)),
@@ -180,6 +210,7 @@ class NameRuleMatchTests(unittest.TestCase):
         self.assertEqual(s1[1], "IllustrationsN/kuchie-(N+1)")
 
 
+@requires_pillow
 class CollectBookTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
@@ -237,6 +268,7 @@ class CollectBookTests(unittest.TestCase):
         self.assertIsNotNone(asset_row.decode_error)
 
 
+@requires_pillow
 class CompareBookTests(unittest.TestCase):
     def test_identical_bytes_match_by_hash(self):
         matches, cn_only, jp_only = compare_book(
@@ -286,6 +318,7 @@ class CompareBookTests(unittest.TestCase):
         self.assertIn("共同位置键", matches[0].reason)
 
 
+@requires_pillow
 class ScanReportTests(unittest.TestCase):
     def test_scan_pairs_books_and_reports_matches(self):
         """端到端：缓存下中日两本书按作品号配对，字节相同的封面进「精确字节匹配」。"""

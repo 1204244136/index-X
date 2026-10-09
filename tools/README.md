@@ -341,6 +341,8 @@ python tools/reorder_notes.py --root EPUB --apply --no-backup
 | `check_epub_validity.py` | `python tools/check_epub_validity.py EPUB --structural --strict` | 只读；写显式报告；系统临时解包 | calibre 补充检查；strict 过滤后仍有问题为 1，环境／输入前提错误为 2【无】 | `test_calibre_validity.py` |
 | `check_project_docs.py` | `python tools/check_project_docs.py` | 只读；终端报告 | 本地链接／锚点、索引登记与回指、工具簇归属与单一来源；缺项非零【无】 | `test_check_project_docs.py` |
 
+- **依赖**：`compare_epub_images.py` 需要 `Pillow`（`python -m pip install Pillow`），与 `image_signature.py` 同一口径：属**可选依赖**，CI 只用官方 Python 环境、不预装第三方包。因此 `test_compare_epub_images.py` 在无 Pillow 环境下整组跳过，而不是让测试采集失败；采集阶段失败会中断整个 `unittest discover`，使发布流水线在「Validate tools and publication source」一步整条中止。
+
 ### 对齐检查
 
 ```powershell
