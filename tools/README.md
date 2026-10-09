@@ -22,7 +22,7 @@
 | 拉 OneDrive 新源进本地参考副本 `.cache/` | C1 | `./tools/pull.ps1`（预览 `-WhatIf`） |
 | 打发布包／出 release 产物 | C1 | `python tools/package_cache_epubs.py --source EPUB --output output/epubs` |
 | 新书交稿做成成品 | C2 | `python tools/import_materials.py …`（材料门禁先行，缺项即停） |
-| 日文 BW 源做成工作源 | C2 | `python tools/bw_preprocess.py …`，合并见 `merge_bw_pages.py` |
+| 日文 BW 源做成工作源 | C2 | `python tools/bw_preprocess.py …`，合并见 `merge_bw_pages.py`；流程见 [bw-source-import skill](../.agents/skills/bw-source-import/SKILL.md) |
 | 中日结构／行数对不上 | C4 查 → C3 修 | 查：`python tools/check_alignment.py`，漂移定位加 `python tools/diff_paired_lines.py`；修：`fix_legacy_pagebreak_br.py`／`restore_cn_scene_breaks.py`／`sync_pb_tags.py`（页边界）→ `normalize_paired.py` → `wrap_cn_image_lines.py`／`reorder_notes.py`；预案 P4 |
 | 只想检查、不写盘 | C4 | `python tools/check_alignment.py --strict`、`python tools/check_epub_health.py --strict` |
 | 核对译名有没有落地 | C4 | `python tools/check_translation_table.py --table 译名表.xlsx --strict` |
@@ -57,7 +57,7 @@
 | C4 门禁与体检 | 只读阻断与诊断；不修内容 | 10 | strict 非零即阻断 |
 | C5 内容质量 | 字符级与语义级的内容改动；不决定译名取舍（走 skill） | 4 | 字符级规范化 0 命中 |
 | C6 检索与统计 | 只读检索与字数／页数换算；不作语义裁定 | 4 | 无（只读诊断） |
-| C0 共享内核 | 无 CLI 的共享规则与原子写入能力；不另建工作流入口 | 14 | 由调用方承担 |
+| C0 共享内核 | 无 CLI 的共享规则与原子写入能力；不另建工作流入口 | 15 | 由调用方承担 |
 
 ## C1 同步与发布
 
@@ -143,7 +143,7 @@ python tools/package_cache_epubs.py --source EPUB --output output/epubs --patter
 
 ## C2 导入与交稿往返
 
-管「源 → 成品」的构建：交稿 docx ＋素材 → EPUB 成品，以及 BW 分页源 → 章节文件、S5 合订卷拆分、成品 ↔ 交稿往返。不管成品的后续结构修复（C3）与规范检查（C4）。新书导入的流程与材料清单见 [volume-import skill](../.agents/skills/volume-import/SKILL.md)；本簇只写命令合同。
+管「源 → 成品」的构建：交稿 docx ＋素材 → EPUB 成品，以及 BW 分页源 → 章节文件、S5 合订卷拆分、成品 ↔ 交稿往返。不管成品的后续结构修复（C3）与规范检查（C4）。流程见两个 skill：日文源侧 [bw-source-import skill](../.agents/skills/bw-source-import/SKILL.md)（源 → 日文工作源），交稿侧 [volume-import skill](../.agents/skills/volume-import/SKILL.md)（交稿 → 成品）；本簇只写命令合同。
 
 | 工具 | 入口命令 | 读写范围 | 门禁与失败边界 | 测试 |
 | --- | --- | --- | --- | --- |
@@ -589,6 +589,7 @@ python -m unittest discover -s tools/tests -p "test_*.py" -v
 | `notes_core.py` | 无 CLI（共享模块） | Note 解析和阅读顺序 | 【无】 | `test_docx_and_notes.py` |
 | `path_safety.py` | 无 CLI（共享模块） | ZIP 路径安全和解包残留识别 | 【无】 | `test_path_safety.py` |
 | `sync_core.py` | 无 CLI（共享模块） | 差异、镜像、上传状态与拉取状态 | 【无】 | `test_publish_auto.py`、`test_sync_and_rename.py` |
+| `xhtml_slots.py` | 无 CLI（共享模块） | 固定行模板 L1–L6 的槽位行号与名称常量 | 【无】 | 由调用方测试覆盖：`test_alignment.py`、`test_bw_preprocess.py`、`test_heading_breaks.py` |
 | `xhtml_structure.py` | 无 CLI（共享模块） | 物理行类型、保守配对与页边界修复前提 | 【无】 | `test_xhtml_structure.py` |
 | `xhtml_template.py` | 无 CLI（共享模块） | 固定模板纯重建 | 【无】 | `test_xhtml_and_merge.py` |
 | `xhtml_text.py` | 无 CLI（共享模块） | XHTML → 纯文本的唯一口径（保留注音／去注音／可见文本三种） | 【无】 | `test_xhtml_text.py`；另有调用方测试 |
@@ -603,6 +604,7 @@ python -m unittest discover -s tools/tests -p "test_*.py" -v
 | `image_signature.py` | 图片 dHash 指纹与尺寸（Pillow 可选） | 判定图片语义角色、写盘 |
 | `alignment_rules.py` | 有依据的配对、模板与语义归属例外 | 为消除错误扩大豁免 |
 | `xhtml_template.py` | 固定模板纯重建 | 文件选择与历史标题语义迁移 |
+| `xhtml_slots.py` | 固定行模板 L1–L6 的槽位行号与名称常量（唯一来源） | 槽位判定策略：配对／分页／合并三类契约的宽严不同，留在各入口实现 |
 | `xhtml_structure.py` | 物理行类型、保守配对与页边界修复前提 | 语义拆合或猜测未确认偏移 |
 | `notes_core.py` | Note 解析和阅读顺序 | 同步、发布方向 |
 | `sync_core.py` | 差异、镜像、上传状态与拉取状态 | 冲突取舍和方向选择 |

@@ -38,6 +38,7 @@ from alignment_rules import (
     template_exempt,
 )
 from epub_ids import book_id, content_sequence, is_packaging_header, japanese_book_id
+from xhtml_slots import LINE_BODY_FIRST, LINE_H1, LINE_H2, SLOT_COUNT
 from xhtml_structure import line_kind, PB_RE, books_by_id
 
 TAG_RE = re.compile(r"<[^>]*>")
@@ -87,7 +88,7 @@ def check_file(lines: list[str], allow_list_wrap_slot: bool = False) -> list[str
     errs: list[str] = []
     if not has_body(lines):
         return errs  # 纯图片页/无正文页：不适用
-    if len(lines) < 6:
+    if len(lines) < SLOT_COUNT:
         errs.append("行数<6")
         return errs
     if "<?xml" not in lines[0]:
@@ -96,7 +97,7 @@ def check_file(lines: list[str], allow_list_wrap_slot: bool = False) -> list[str
         errs.append("L2 非 DOCTYPE")
     if "<html" not in lines[2] or "<body" not in lines[2]:
         errs.append("L3 非头部合并行")
-    l4, l5, l6 = lines[3], lines[4], lines[5]
+    l4, l5, l6 = lines[LINE_H1 - 1], lines[LINE_H2 - 1], lines[LINE_BODY_FIRST - 1]
     if l4.strip():
         if not re.match(r"^\s*<h1\b", l4) or not re.search(r"</h1>\s*$", l4):
             errs.append("L4 非 h1 独占行")
@@ -122,7 +123,7 @@ def check_file(lines: list[str], allow_list_wrap_slot: bool = False) -> list[str
             if idx == 5 and allow_list_wrap_slot and LIST_WRAP_RE.match(line):
                 continue
             errs.append(f"L{idx} 非标题行却有内容")
-    for lineno, line in enumerate(lines[5:], 6):
+    for lineno, line in enumerate(lines[LINE_BODY_FIRST - 1:], LINE_BODY_FIRST):
         if FLOW_SIBLING_RE.search(line):
             errs.append(f"L{lineno} 同一物理行包含多个正文块")
         if CONTENT_BODY_CLOSE_RE.search(line):

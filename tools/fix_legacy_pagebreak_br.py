@@ -19,9 +19,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from edit_safety import (EditSafetyError, add_content_roots, add_edit_mode,
                          content_roots, require_edit_target)
+from xhtml_slots import LINE_BODY_FIRST
 from xhtml_structure import BR_ONLY, BLANK, PB_RE as PB, body_start, iter_content_pairs, line_kind
-
-FIRST_BODY_LINE = 6  # L6 必须是正文，其前的 br 属模板槽位，不得删
 
 
 def read_lines(path: Path) -> list[str]:
@@ -72,9 +71,9 @@ def find_legacy_br(japanese: list[str], chinese: list[str]) -> list[int]:
         if PB.search(x):
             jp_run = _br_run(japanese, j + 1)
             cn_run = _br_run(chinese, c + 1)
-            # 中文侧超出日文侧的部分 = 旧合页遗留
+            # 中文侧超出日文侧的部分 = 旧合页遗留；L6 起才算正文，之前的 br 属模板槽位不得删
             for i in cn_run[len(jp_run):]:
-                if i + 1 > FIRST_BODY_LINE:
+                if i + 1 > LINE_BODY_FIRST:
                     doomed.append(i)
         j += 1
         c += 1

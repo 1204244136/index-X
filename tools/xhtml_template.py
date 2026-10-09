@@ -6,6 +6,7 @@ import re
 from pathlib import Path
 
 from epub_ids import is_list_packaging_path, LIST_PACKAGING_SUFFIXES, header_of, header_suffix
+from xhtml_slots import LINE_HEAD
 
 
 TAG_RE = re.compile(r"<[^>]*>")
@@ -221,7 +222,8 @@ def rebuild(path: Path, jp_h1: str | None = None, side: str | None = None) -> tu
     if jp_h1 and h1_slot is None:
         h1_slot = f"<h1>{jp_h1}</h1>"
 
-    new = lines[:2] + [line3_new + "".join(images), h1_slot or "", h2_slot or ""]
+    # L1-L2 原样保留，L3 头部行并入篇首图片，L4/L5 为标题槽（空则空行）
+    new = lines[:LINE_HEAD - 1] + [line3_new + "".join(images), h1_slot or "", h2_slot or ""]
     body = lines[first_body:]
     if list_packaging:
         body = [P_LI_WRAP_RE.sub(r"\1", line) for line in body]

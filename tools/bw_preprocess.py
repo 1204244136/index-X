@@ -71,6 +71,7 @@ from path_safety import (
     archive_member_destination,
     validate_archive_member_name,
 )
+from xhtml_slots import LINE_BODY_FIRST, LINE_H1, LINE_H2, SLOT_COUNT
 
 XHTML_SUFFIXES = (".xhtml", ".html", ".htm")
 IMAGE_SUFFIXES = (
@@ -358,8 +359,8 @@ def template_issues(lines: list[str], *, merged: bool = False) -> list[str]:
     此时只要求 L3 为折叠的 ``<html …><head>…</head><body…>`` 单行。
     """
     issues: list[str] = []
-    if len(lines) < 6:
-        return [f"行数 {len(lines)} < 6，无法满足 L1-L6 模板"]
+    if len(lines) < SLOT_COUNT:
+        return [f"行数 {len(lines)} < {SLOT_COUNT}，无法满足 L1-L6 模板"]
     if not lines[0].startswith("<?xml"):
         issues.append(f"L1 非 XML 声明：{lines[0][:40]}")
     if not lines[1].startswith("<!DOCTYPE"):
@@ -373,7 +374,7 @@ def template_issues(lines: list[str], *, merged: bool = False) -> list[str]:
             issues.append(
                 "L3 已含 <body> 但无 <div class=\"main\">：这是 merge_bw_pages "
                 "合并后的章节文件形态，校验缓存请加 --merged")
-    l4, l5, l6 = lines[3], lines[4], lines[5]
+    l4, l5, l6 = lines[LINE_H1 - 1], lines[LINE_H2 - 1], lines[LINE_BODY_FIRST - 1]
     if l4 and not re.match(r"^<h1\b[^>]*>.*</h1>$", l4):
         issues.append(f"L4 应为单行 <h1> 或空行：{l4[:40]}")
     if l5 and not re.match(r"^<h2\b[^>]*>.*</h2>$", l5):
@@ -481,12 +482,12 @@ def pairing_header_renames(
             unrenamed_pages.add(name)
             continue
         has_new_h1 = (
-            is_content(text) and len(lines) > 3
-            and lines[3].lstrip().startswith("<h1")
+            is_content(text) and len(lines) >= LINE_H1
+            and lines[LINE_H1 - 1].lstrip().startswith("<h1")
         )
         if sequence == 0 or has_new_h1:
             sequence += 1
-            if has_new_h1 and AFTERWORD_TITLE_RE.search(lines[3]):
+            if has_new_h1 and AFTERWORD_TITLE_RE.search(lines[LINE_H1 - 1]):
                 seen_afterwords = True
         elif seen_afterwords:
             # 明确规定：后记不会出现图片；后记之后若有**连续**正文文本页面，归入单一的

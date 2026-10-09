@@ -37,7 +37,8 @@ python tools/import_materials.py --docx 交稿.docx --images 图片素材目录 
 
 **缺项时的动作**：把缺失清单原样转达用户并停下，例如「还缺：图片素材目录（封面／彩页／正文插图）、
 简介正文块。请提供这两项后我再继续。」——不要先做能做的部分，不要用占位图或自拟简介开工。
-日文原文缺失时先按 [工具说明](../../../tools/README.md)「拉取」把外部源同步进缓存，再重跑核对。
+日文原文缺失时：源还没加工过（只有 BW 分页源）就先走 [日文源导入 skill](../bw-source-import/SKILL.md)；
+源已在 OneDrive 日文目录则按 [工具说明](../../../tools/README.md) 的 C1「拉取」同步进缓存，再重跑核对。
 
 另需人工确认（工具不代查）：`python tools/publish_auto.py --dry-run` 显示三副本无待发布改动。
 
@@ -118,13 +119,15 @@ python tools/import_images.py apply .cache/epub-work/import/plan.json --out "EPU
 ```powershell
 python tools/import_build_wrappers.py .cache/epub-work/import/plan.json `
     --template "EPUB/[S4_03]某暗部的少女共栖 3X" --info 制作信息.txt --intro 简介.txt `
-    --out "EPUB/[S4_04]某暗部的少女共栖 4X" --apply
+    --out "EPUB/[S4_04]某暗部的少女共栖 4X" --apply --calibre-id 197
 ```
 
 生成 Cover／Illustrations／Information／Introduction 四个包装页与 `nav.xhtml`、`toc.ncx`、
 `content.opf`、`mimetype`、`META-INF/container.xml`、`OEBPS/Styles/style.css`。
 前置是正文与图片都已就位，缺一即阻断不写盘。`--info`／`--intro` 是页面 **L4 起**的内容行
 （第 1 行 h1、第 2 行空行占位），由用户素材决定，工具不内置署名或简介。
+`--calibre-id` 是可选的 calibre 库号，会写成 OPF 里的 `<dc:identifier>calibre:<号></dc:identifier>`；
+取值由用户按其 calibre 库给出，缺省则不写这一行——不要照抄模板书的号。
 
 ### 6. 规范化与门禁
 
