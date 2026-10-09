@@ -486,8 +486,8 @@ python tools/audit_risk.py --old "旧句" --new "新句" --jp "日文"
 | --- | --- | --- | --- | --- |
 | `search_text.py` | `python tools/search_text.py "レールガン" --side jp` | 只读缓存与归档 | 无语义裁定；注音三轨检索【无】 | `test_search_text.py` |
 | `read_xlsx.py` | `python tools/read_xlsx.py 文件.xlsx --list-sheets` | 只读外部表格；`--out` 显式导出 | 无语义裁定；依赖可选 `openpyxl`【无】 | `test_read_xlsx.py` |
-| `epub_char_count.py` | `python tools/epub_char_count.py <epub 或目录> --pages-per 400` | 只读 | 字数口径与包装页过滤；输出占比列【无】 | 无专用测试；只读诊断 |
-| `epub_composition_metrics.py` | `python tools/epub_composition_metrics.py <目录或epub>` | 只读；CSV 默认写 `.cache/epub-work/composition-metrics/` | 印刷页是推算值，锚点之外靠密度外推【无】 | 无专用测试；只读诊断 |
+| `epub_char_count.py` | `python tools/epub_char_count.py <epub 或目录> --pages-per 400` | 只读 | 字数口径与包装页过滤；输出占比列【无】 | `test_epub_char_count.py` |
+| `epub_composition_metrics.py` | `python tools/epub_composition_metrics.py <目录或epub>` | 只读；CSV 默认写 `.cache/epub-work/composition-metrics/` | 印刷页是推算值，锚点之外靠密度外推【无】 | `test_epub_composition_metrics.py` |
 
 ### 全库文本与术语检索（注音保全 + 中日联动，只读）
 

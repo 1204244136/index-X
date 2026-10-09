@@ -37,25 +37,29 @@ import html
 from collections import OrderedDict, Counter
 
 from epub_ids import content_sequence
+from xhtml_text import strip_ruby_annotations
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_CACHE = os.path.join(REPO_ROOT, ".cache", "epub-work", "chinese-text")
 DEFAULT_OUTPUT = os.path.join(REPO_ROOT, ".cache", "epub-work")
 
 TAG_RE = re.compile(r"<[^>]*>")
-# 整段移除 ruby 的 <rt> 注音（含内容），避免注音泄漏进正文文本检查
-RT_FULL_RE = re.compile(r"<rt\b[^>]*>.*?</rt>", re.S)
 # 整段移除内嵌 <style>/<script> 块（含内容）：CSS/JS 里的半角逗号、分号
 # 不属于正文，若不整段移除会被误判为半角标点。属性 style="..." 已由 TAG_RE 剥掉。
 STYLE_FULL_RE = re.compile(r"<style\b[^>]*>.*?</style>", re.S | re.I)
 SCRIPT_FULL_RE = re.compile(r"<script\b[^>]*>.*?</script>", re.S | re.I)
 
 def strip_to_text(line):
-    """把一行原始 XHTML 转成纯正文文本：先整段移除 <style>/<script>/<rt> 块，
-    再剥标签、反转义。外部 CSS（.css 文件）不在 XHTML 文本层，天然不进入检查。"""
+    """把一行原始 XHTML 转成纯正文文本：先整段移除 <style>/<script> 与 ruby 注音块，
+    再剥标签、反转义。外部 CSS（.css 文件）不在 XHTML 文本层，天然不进入检查。
+
+    注音剥除（`<rt>` 与 `<rp>`，含内容）的唯一实现在 `xhtml_text.strip_ruby_annotations`：
+    此前只剥 `<rt>`，会把 `<rp>（</rp>` 这类全角括号留在正文文本里（如 `驱动铠（）`）；
+    当前规则集对该残留没有命中，但剥离口径应与其它入口一致，不留第二份实现。
+    """
     t = STYLE_FULL_RE.sub("", line)
     t = SCRIPT_FULL_RE.sub("", t)
-    t = RT_FULL_RE.sub("", t)
+    t = strip_ruby_annotations(t)
     return unescape(strip_tags(t))
 
 # CJK 表意文字 + 全角标点（用于判断“中文语境”）
