@@ -39,7 +39,12 @@
 | `check_project_docs.py` | 活跃文档、文档索引、归档链接、工具目录清单与单一来源 | 终端报告 | 本地链接／锚点、索引登记与回指、工具说明覆盖、裁定表锚点唯一／规范不嵌裁定取值／规范不复制检查词表／§ 引用可解析，缺项非零 | `test_check_project_docs.py` |
 | `read_xlsx.py`／`search_text.py` | 外部表格；缓存或归档文本 | 终端与显式导出 | 表列选择／注音三轨检索；无语义裁定 | `test_read_xlsx.py`、`test_search_text.py` |
 | `bw_extract_preprocess.json`／`bw_page_header_overrides.json` | BW 分页预处理规则与已审计逐页映射 | 只读配置 | 仅供 `bw_preprocess.py` 读取；未知页不得默认继承上一单元 | `test_bw_preprocess.py` |
-| `alignment_rules.py`／`edit_safety.py`／`epub_ids.py`／`epub_structure.py`／`file_transaction.py`／`manifest.py`／`notes_core.py`／`path_safety.py`／`publish_preflight.py`／`sync_core.py`／`xhtml_structure.py`／`xhtml_template.py`／`xhtml_text.py` | 内部共享规则与原子写入能力 | 由调用方决定；共享模块不另建 CLI 工作流 | 只提供单一实现；不得承担入口编排或语义裁定 | 对应调用方测试矩阵 |
+| `import_materials.py` | 交稿／素材目录／制作信息页块／简介页块／作品号／日文缓存／模板书 | 终端报告 | 七类材料逐项核对，缺项非零并给出向用户索取的清单 | `test_import_tools.py`（含缺项反例） |
+| `import_docx_outline.py`／`import_align_plan.py` | 交稿 docx；后者加日文只读参考根 | 显式清单／计划骨架／缺口报告 | 交稿形状门禁（段内换行、未闭合记号阻断）；章节一一对应与关系报告 | `test_import_tools.py` |
+| `import_build_text.py` | 导入计划＋交稿＋日文行数 | `<书目录>/OEBPS/Text/*.xhtml` | 逐章物理行数必须等于日文，任何一章不齐整批不写 | `test_import_tools.py`（含对不齐不写盘反例） |
+| `import_build_wrappers.py` | 导入计划＋模板书＋制作信息／简介页块＋已就位正文与图片 | 包装页、nav/ncx/opf/mimetype/container/style.css | 正文／封面彩页缺失即阻断；manifest 与 spine 互指、id 唯一 | `test_import_tools.py` |
+| `import_images.py` | 计划里的图片映射；`suggest` 加素材与日文原图目录 | `<书目录>/OEBPS/Images/*` | 归档名必须带作品号前缀，源文件可解码；低置信指纹需人工确认 | `test_import_tools.py` |
+| `alignment_rules.py`／`docx_source.py`／`edit_safety.py`／`epub_ids.py`／`epub_structure.py`／`file_transaction.py`／`image_signature.py`／`import_plan.py`／`manifest.py`／`notes_core.py`／`path_safety.py`／`publish_preflight.py`／`sync_core.py`／`xhtml_structure.py`／`xhtml_template.py`／`xhtml_text.py` | 内部共享规则与原子写入能力 | 由调用方决定；共享模块不另建 CLI 工作流 | 只提供单一实现；不得承担入口编排或语义裁定 | 对应调用方测试矩阵 |
 
 ## 共享规则模块
 
@@ -48,6 +53,9 @@
 | 模块 | 负责 | 不负责 |
 | --- | --- | --- |
 | `epub_ids.py` | 作品号、表头、内容序、文件角色与明确历史别名 | 猜测配对或按章名反推序号 |
+| `docx_source.py` | 交稿 docx 段落流与行内记号（注音、译注、可信标签）的单一实现 | 章节装配、模板渲染、写盘与他人裁定 |
+| `import_plan.py` | 导入计划的结构校验与逐条改动装配 | 裁定改动对错、写盘、发布方向 |
+| `image_signature.py` | 图片 dHash 指纹与尺寸（Pillow 可选） | 判定图片语义角色、写盘 |
 | `alignment_rules.py` | 有依据的配对、模板与语义归属例外 | 为消除错误扩大豁免 |
 | `xhtml_template.py` | 固定模板纯重建 | 文件选择与历史标题语义迁移 |
 | `xhtml_structure.py` | 物理行类型、保守配对与页边界修复前提 | 语义拆合或猜测未确认偏移 |
@@ -160,6 +168,47 @@ python tools/package_cache_epubs.py --source EPUB --output output/epubs --patter
 发布 CI 先运行工具测试与归档 health，再执行共享容器／XML／资源检查后打包；没有日文源的 CI 明确只做单侧检查。calibre 是本地补充合法性校验，不是云端必需运行时。自动规范化 CI 的提交与工作站回流边界见 AGENTS。
 
 ## 导入与结构维护
+
+### 新书成品生成（交稿 → 成品）
+
+流程与材料清单见 [volume-import skill](../.agents/skills/volume-import/SKILL.md)；本节只写命令合同。
+六步各自只写自己的作用域，任一门禁不过都不写盘：
+
+```powershell
+python tools/import_materials.py --docx 交稿.docx --images 素材目录 --info 制作信息.txt `
+    --intro 简介.txt --work S4_04 --book-dir "[S4_04]某暗部的少女共栖 4X" `
+    --jp-root .cache/epub-work/japanese-text --template "EPUB/[S4_03]某暗部的少女共栖 3X"
+python tools/import_docx_outline.py 交稿.docx --check
+python tools/import_docx_outline.py 交稿.docx --out .cache/epub-work/import/outline.tsv
+python tools/import_align_plan.py 交稿.docx --work S4_04 --book-dir "[S4_04]某暗部的少女共栖 4X" `
+    --out .cache/epub-work/import/plan.json --report .cache/epub-work/import/gaps.txt
+python tools/import_build_text.py .cache/epub-work/import/plan.json --out "EPUB/[S4_04]…" --apply
+python tools/import_images.py suggest --src 素材目录 --jp-dir .cache/…/item/image --work S4_04
+python tools/import_images.py apply .cache/epub-work/import/plan.json --out "EPUB/[S4_04]…" --apply
+python tools/import_build_wrappers.py .cache/epub-work/import/plan.json --template "EPUB/[S4_03]…" `
+    --info 制作信息.txt --intro 简介.txt --out "EPUB/[S4_04]…" --apply --calibre-id 197
+```
+
+- `import_materials.py` 是**材料门禁**：交稿、图片素材、制作信息、简介、作品号与书目录名、日文工作源、
+  模板书七项逐项核对。缺项非零退出，并把要补的东西列成可直接发给用户的清单——材料不齐不许开工，
+  不得自拟封面、简介或制作信息。三副本待发布状态需人工用 `publish_auto.py --dry-run` 确认。
+- `import_docx_outline.py` 只读诊断，写显式 `--out`。阻断项：无 Heading 1、段内换行（`w:br`）、
+  注音／译注记号未闭合；提示项：全角空格、段内制表符、独占成段的译注。
+- `import_align_plan.py` 按**日文物理行**逐行比对（日文一行＝一个行单元，中文侧允许 1:2），
+  输出 `1:1`／`1:2`／`1:0`／`0:1` 关系与建议改动，并生成计划骨架。改动类型只有
+  `split`／`merge_prev`／`insert_br_after`／`drop`／`note_to_prev` 五种，`para` 用清单里的段落序号。
+  计划是任务工作产物，放 `.cache/epub-work/import/`，不提交。
+- `import_build_text.py` 渲染正文（固定行模板、`<ruby>`、Note 页与脚注引用）。**写盘前逐章断言
+  物理行数与日文一致，任何一章不齐整批不写**；只清段落首尾的 ASCII 空格与不换行空格，
+  段内全角空格（对齐／分字）原样保留。
+- `import_images.py`：`suggest` 用 dHash 把素材对到日文原图给命名建议；`apply` 复制并校验
+  作品号前缀、可解码性与指纹，低置信项必须人工看图。
+- `import_build_wrappers.py` 从模板书取样式表、container 与 calibre 元数据块，生成四个包装页与
+  `nav.xhtml`／`toc.ncx`／`content.opf`／`mimetype`。`--info`／`--intro` 是页面 L4 起的内容行
+  （第 1 行 h1、第 2 行空行占位），由用户素材决定；manifest 的 item id 用 `id-t{n}`，避免与
+  metadata 的 `id-1`／`id-2` 冲突（calibre 会报 `DuplicateId`）。
+- 六步之后按「只读检查与诊断」跑 `text_norm.py`、`check_alignment.py --strict`、`check_epub_health.py --strict`、
+  `check_note_order.py`、`publish_preflight.py`、`check_epub_validity.py`，再走「同步与发布」。
 
 ### 固定模板规范化
 

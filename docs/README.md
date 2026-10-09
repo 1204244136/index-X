@@ -11,6 +11,7 @@
 | [`tools/README.md`](../tools/README.md) | 工具入口、参数、数据流、判定口径与可验证行为 | 运行任何 `tools/` 命令前 |
 | [`translation-term-unification/SKILL.md`](../.agents/skills/translation-term-unification/SKILL.md) | 流程：译名／术语统一**怎么做** | 收敛异译、统一角色口癖与专名、裁定敬称与术语分层 |
 | [`proofread-review/SKILL.md`](../.agents/skills/proofread-review/SKILL.md) | 流程：批量译文改动**怎么复核** | 复核校对产出、判定误改并回改 |
+| [`volume-import/SKILL.md`](../.agents/skills/volume-import/SKILL.md) | 流程：**新书成品怎么生成** | 交稿转成品、新书入库；材料核对与六步原子工具链 |
 
 ## 二、翻译类文档的分工
 

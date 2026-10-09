@@ -49,14 +49,12 @@ from pathlib import Path
 
 from epub_ids import book_id
 from check_alignment import check_file
+from docx_source import (RUBY_RE, esc, esc_ruby, extract_notes, is_body_style,
+                         is_heading_style, is_number, read_docx)
 from edit_safety import add_edit_mode, require_edit_target
 from epub_structure import artifact_contract_issues, container_contract_issues
 from package_cache_epubs import package_book, validate_book
 from path_safety import archive_member_destination
-
-_W = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
-_A = "{http://schemas.openxmlformats.org/drawingml/2006/main}"
-_R = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}"
 
 EPUB_MIMETYPE = b"application/epub+zip"
 
@@ -66,20 +64,11 @@ HEAD3 = ('<html xmlns="http://www.w3.org/1999/xhtml" '
          '<link href="../Styles/style.css" rel="stylesheet" type="text/css"/>'
          "<title></title></head><body>")
 
-# 交稿注音记号：|基文[注音] -> <ruby>基文<rt>注音</rt></ruby>
-_RUBY = re.compile(r"\|([^|\n]+?)\[([^\]]+)\]")
-
-# docx 正文里可信任的行内 HTML 标签（半校对稿直接以字面标签标注重点）
-_HTML_TAG = re.compile(r"(</?[a-zA-Z][a-zA-Z0-9]*\s*[^>]*>)")
-_HTML_KEEP = {"b", "i", "small", "sup", "sub", "strong", "em", "u"}
+# 交稿注音记号与行内标签、译注记号的定义见 docx_source.py（单一实现）
+_RUBY = RUBY_RE
 
 # 插图占位符：如 【插图-1】
 _ILLUS_RE = re.compile(r"^【插图-(\d+)】$")
-
-# 行内译注（交稿层面）：【*译注：...】 或 （*译注：...）
-# 成品中提取为 Note 脚注页引用（优先方括号，内容可含圆括号）
-_NOTE_BRACKET = re.compile(r"【\*?译注[：:](.*?)】", re.DOTALL)
-_NOTE_PAREN = re.compile(r"（\*?译注[：:]([^）]*)）", re.DOTALL)
 
 # 章标题识别：序章/第N章/行間/終章/あとがき 等（中日、简繁均可）
 _CHAPTER_RE = re.compile(
@@ -229,44 +218,6 @@ svg {
 """
 
 
-def esc(text: str) -> str:
-    """XML 文本转义（& < >），保留引号（元素文本无需转义引号）。"""
-    return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-
-
-def esc_ruby(text: str) -> str:
-    """先转义再还原 |基文[注音] -> <ruby>，保证注入的标签不被转义。
-
-    同时保留 docx 中直接写出的可信行内标签（<b>/<i>/<small>/<sup> 等），
-    其余尖括号内容一律转义，避免注入非法标签。
-    """
-    out: list[str] = []
-    for piece in _HTML_TAG.split(text):
-        if not piece:
-            continue
-        if _HTML_TAG.fullmatch(piece):
-            name = re.match(r"</?([a-zA-Z][a-zA-Z0-9]*)", piece).group(1).lower()
-            if name in _HTML_KEEP:
-                out.append(piece)
-                continue
-        out.append(_RUBY.sub(r"<ruby>\1<rt>\2</rt></ruby>", esc(piece)))
-    return "".join(out)
-
-
-def is_number(text: str) -> bool:
-    return bool(re.fullmatch(r"[0-9０-９]{1,4}", text))
-
-
-def is_heading_style(style: str) -> bool:
-    """识别 docx 标题段落样式：兼容 Heading 1 / Heading1 / 标题 1 等写法。"""
-    return bool(re.match(r"heading\s*\d*$", style, re.IGNORECASE)) or style.casefold() == "标题"
-
-
-def is_body_style(style: str) -> bool:
-    """识别普通正文样式（大小写不敏感，兼容 Word 的 normal / Normal）。"""
-    return style.casefold() in ("normal", "")
-
-
 def is_chapter_title(text: str) -> bool:
     return bool(_CHAPTER_RE.match(text.strip()))
 
@@ -325,69 +276,16 @@ def detect_language(sample: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# docx 解析
+# docx 解析（实现见 docx_source.py）
 # ---------------------------------------------------------------------------
 
 def parse_docx(path: Path) -> tuple[list[dict], dict, dict, dict]:
-    """读取 .docx，返回 (段落流, rId->media文件名, media文件名->字节, 核心元数据)。"""
-    with zipfile.ZipFile(path) as z:
-        names = set(z.namelist())
-        if "word/document.xml" not in names:
-            raise ValueError("缺少 word/document.xml，不是有效 docx")
-        doc_root = ET.fromstring(z.read("word/document.xml"))
-        rel_map: dict[str, str] = {}
-        if "word/_rels/document.xml.rels" in names:
-            for rel in ET.fromstring(z.read("word/_rels/document.xml.rels")):
-                rid = rel.get("Id")
-                target = rel.get("Target")
-                if rid and target:
-                    rel_map[rid] = target
-        media: dict[str, bytes] = {}
-        for name in names:
-            if name.startswith("word/media/"):
-                media[Path(name).name] = z.read(name)
-        core: dict[str, str] = {}
-        if "docProps/core.xml" in names:
-            try:
-                core_root = ET.fromstring(z.read("docProps/core.xml"))
-                dc = "{http://purl.org/dc/elements/1.1/}"
-                for tag, key in ((dc + "title", "title"), (dc + "creator", "creator")):
-                    el = core_root.find(tag)
-                    if el is not None and el.text:
-                        core[key] = el.text.strip()
-            except ET.ParseError:
-                pass
+    """读取 .docx，返回 (段落流, rId->media文件名, media文件名->字节, 核心元数据)。
 
-    paragraphs: list[dict] = []
-    for idx, p_el in enumerate(doc_root.iter(_W + "p")):
-        style = "Normal"
-        ppr = p_el.find(_W + "pPr")
-        if ppr is not None:
-            ps = ppr.find(_W + "pStyle")
-            if ps is not None:
-                style = ps.get(_W + "val") or "Normal"
-        parts: list[str] = []
-        for r_el in p_el.iter(_W + "r"):
-            for child in r_el:
-                tag = child.tag
-                if tag == _W + "t":
-                    parts.append(child.text or "")
-                elif tag == _W + "tab":
-                    parts.append(" ")
-                elif tag == _W + "br":
-                    parts.append(" ")
-        text = re.sub(r"\s+", " ", "".join(parts)).strip()
-        imgs: list[str] = []
-        for blip in p_el.iter(_A + "blip"):
-            rid = blip.get(_R + "embed")
-            if rid:
-                imgs.append(rid)
-        has_link = p_el.find(_W + "hyperlink") is not None
-        paragraphs.append({
-            "idx": idx, "style": style, "text": text,
-            "imgs": imgs, "has_link": has_link,
-        })
-    return paragraphs, rel_map, media, core
+    空白折叠沿用既有的交稿口径；逐字保真的导入入口用
+    `docx_source.read_docx(..., collapse_whitespace=False)`。
+    """
+    return read_docx(path)
 
 
 # ---------------------------------------------------------------------------
@@ -742,23 +640,6 @@ def render_illustrations(name_list: list[str]) -> str:
             lines.append(f'<p class="{cls}"><img alt="图片" class="fit" src="../Images/{name}"/></p>')
     lines.append("</body></html>")
     return "\n".join(lines) + "\n"
-
-
-def extract_notes(text: str, notes: list[str], header: str) -> str:
-    """把行内译注【*译注：...】提取为 Note 脚注页引用，返回替换后的文本。
-
-    notes 用于收集译注内容（顺序即 note 编号）；引用形如
-    <a class="nodeco" epub:type="noteref" href="{header}-Note.xhtml#noteN"><sup>㊟</sup></a>。
-    """
-    def repl(m: re.Match) -> str:
-        n = len(notes) + 1
-        notes.append(m.group(1).strip())
-        return (f'<a class="nodeco" epub:type="noteref" '
-                f'href="{header}-Note.xhtml#note{n}"><sup>㊟</sup></a>')
-
-    text = _NOTE_BRACKET.sub(repl, text)
-    text = _NOTE_PAREN.sub(repl, text)
-    return text
 
 
 def render_note_file(notes: list[str], header: str) -> str:
