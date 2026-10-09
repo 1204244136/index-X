@@ -412,7 +412,11 @@ P1–P25 与规范条款的完整对应表唯一维护于 [翻译规范](../docs
 
 **P17–P25 只对 `*-Note.xhtml` 判定**（口径见 [翻译规范](../docs/translation-spec.md) 三.2）。其中只有 **`P17`（中文语境半角括号）与 `P20`（括号不配对）是 error 级**并接入发布阻断——这两条在 Note 页回测为零误报。其余七项为 warning／info：`P23`（译注起句）存量 349 条、`P24`（谓语词收敛）81 条，属按批次收敛的存量项，**接入阻断会挡住全部 73 本**，故刻意留在报告级。
 
-词表与判据常量的唯一来源都在本文件：`P9_EVENT_SUFFIXES`（赛事项目名例外）、`P16_TRADITIONAL`（繁体字表，由 OpenCC `TSCharacters` 生成）、`NOTE_LANG_LABELS`（译注语言标签，取规范译名而非库内多数派）、`NOTE_PREDICATE_CONVERGENCE`（译注同义谓语词收敛）、`NOTE_LEAD_PATTERNS`（译注起句三类白名单）、`NOTE_INVIS_BAD`／`NOTE_INVIS_KEEP`（不可见字符）。只改集合不复制到文档；改变规则语义才更新规范与合同，并运行 `test_translation_spec.py`。
+词表与判据常量的唯一来源都在本文件：`P9_EVENT_SUFFIXES`（赛事项目名例外）、`P16_TRADITIONAL`（繁体字表，由 OpenCC `TSCharacters` 生成）、`NOTE_LANG_LABELS`（译注语言标签，取规范译名而非库内多数派）、`NOTE_PREDICATE_CONVERGENCE`（译注同义谓语词收敛）、`NOTE_PREDICATE_GUARD`（词表里的复合词陷阱豁免）、`NOTE_LEAD_PATTERNS`（译注起句三类白名单）、`NOTE_METADISCOURSE_LEAD`（元话语起句黑名单）、`NOTE_INVIS_BAD`／`NOTE_INVIS_KEEP`（不可见字符）。只改集合不复制到文档；改变规则语义才更新规范与合同，并运行 `test_translation_spec.py`。
+
+**P23 白名单必须配 `NOTE_METADISCOURSE_LEAD` 黑名单**：白名单只能判断「开头像不像甲类」，判断不了「开头是不是被注词」。2026-10 实测，甲类的 `[，]?指` 形式放宽后，`这里「龙王的一闪」指的就是…`、`本文中均指日文版的ISBN码`、`此处的抛物线花园可能是指…` 一类**元话语起句**会被白名单误放行；命中黑名单的一律作废，该轮拦下 49 条。
+
+**`NOTE_PREDICATE_CONVERGENCE` 里有两族不可盲替换，改写时须逐条判断**：`原文中`／`原文是`／`原文注释` 是**收敛目标**（统一为 `原文为`），但原句常带 `写作`／`误记为` 一类成分，直接替换会写出病句（`作者在原文中误记为Salvere000` → `作者在原文为误记为…`）；`原为` 表**词源变迁**，按三族划分归 `原指` 而非 `是`。
 
 ### 译名表落地核对与术语审计
 
@@ -473,6 +477,7 @@ python tools/text_norm.py --root EPUB --apply --report 显式报告.md
 
 - `nbsp-to-ideographic-space`：`U+00A0` → `U+3000`。日文原版以**全角空格**做散字排版（`S3_06-02.xhtml:58` 用 17 个 `U+3000`），中文侧误用 `U+00A0`——后者在 CJK 字体中宽度随字体浮动，多列分页下散开程度会因设备而异。全库 161 处已逐条核对（159 处散字排版或署名分隔，2 处在 `<h2>` 标题内、由存量修复删除）。
 - `tortoise-bracket-aside`：`〔〕` → `（）`。全库仅 `S1_05-Note.xhtml:21` 两处共 4 个字符。**刻意不纳入 `【】`／`〈〉`／`［］`**——`【】` 另有标题式标记的合法用途（`S0_00-Information.xhtml:5` 的「【汉化组招新】」即属此类，改写会破坏语义），`〈〉` 是国标单书名号；这三类由 `P18` 报告、人工判断，不得自动改写。
+- `xref-prev-text` / `xref-next-text`：`前文` → `上文`、`后文` → `下文`，依据 `docs/translation-spec.md` 三.2「互参」。全库实测 `前文` 1 处（在正文 `S5_01_02-04_Chapter3.xhtml`）、`后文` 7 处（均在 Note 页）、`前后文` 2 处——后者是复合词、不指涉，用负向后视 `(?<!前)` 豁免。替换值唯一确定、零歧义。
 
 ### 提交级校对复核
 

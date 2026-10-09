@@ -94,6 +94,11 @@ RULES: tuple[tuple[str, re.Pattern[str], str, str, str], ...] = (
     # 这三类由 `check_translation_spec.py` 的 P18 报告、人工判断，不得自动改写。
     ("tortoise-bracket-aside", re.compile("〔"), "（", "三.2", "〔 → （（补充说明用；【】〈〉［］不纳入）"),
     ("tortoise-bracket-aside", re.compile("〕"), "）", "三.2", "〕 → ）（补充说明用；【】〈〉［］不纳入）"),
+    # 前后文指涉统一为「上文」「下文」（`docs/translation-spec.md` 三.2「互参」）。
+    # 全库实测：前文 1 处（`S5_01_02-04_Chapter3.xhtml`）、后文 7 处（均在 Note 页）、
+    # 「前后文」2 处。后者是复合词、不指涉，用负向后视豁免；替换值唯一确定、零歧义。
+    ("xref-prev-text", re.compile("前文"), "上文", "三.2", "前文 → 上文（前后文指涉统一）"),
+    ("xref-next-text", re.compile("(?<!前)后文"), "下文", "三.2", "后文 → 下文（前后文指涉统一）"),
 )
 
 # ---------------------------------------------------------------------------
