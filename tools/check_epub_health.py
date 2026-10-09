@@ -5,7 +5,7 @@
 定位
 ----
 这是一个**汇总入口**，不是新判定口径的来源。每个检查项的判定标准都取自本项目
-既有规约（`AGENTS.md`）或既有工具，本文件只负责：
+既有规约（`AGENTS.md` 与 `docs/epub-*-spec.md`）或既有工具，本文件只负责：
   1. 在 `EPUB/` 上（而不是 `.cache/`）跑一遍单侧可判的机械检查；
   2. 把结果聚合成一张可提交的体检报告；
   3. 用显式豁免名单压掉已确认的合法例外，让「有新问题」这件事本身成为信号。
@@ -33,7 +33,7 @@
   dangling   XHTML/OPF/CSS 引用的资源或锚点不存在
   css-layout 样式表缺盒模型/分页类或含破坏性边距
   note-structure 译注页外壳/槽位/容器/属性/行内标签不合规（只对 `*-Note.xhtml`；
-             规范见 `AGENTS.md`「译注页（Note）结构规约」，编号连续性不在此判定）
+             规范见 `docs/epub-structure-spec.md`「译注页（Note）结构规约」，编号连续性不在此判定）
 
 刻意不纳入的检查项
 ------------------
@@ -395,7 +395,7 @@ NOTE_TAG_WHITELIST = frozenset({
 def find_note_structure_problems(lines: list[str], name: str) -> list[tuple[int, str]]:
     """译注页（Note）结构检查；只对 `*-Note.xhtml` 调用。
 
-    规范见 `AGENTS.md`「译注页（Note）结构规约」。**编号连续性不在这里判定**——
+    规范见 `docs/epub-structure-spec.md`「译注页（Note）结构规约」。**编号连续性不在这里判定**——
     `noteN` 从 1 起、无空号、与正文首引顺序一致由 `check_note_order.py` 与
     `notes_core.py` 唯一负责；本函数只查外壳、槽位、容器、属性与行内标签。
     """
@@ -419,7 +419,7 @@ def find_note_structure_problems(lines: list[str], name: str) -> list[tuple[int,
     elif not re.match(r"^\s*<ul\b", lines[4]):
         problems.append((5, "L5 不是 `<ul>` 列表容器：`%s`" % lines[4][:60]))
 
-    # 说明型条目：`AGENTS.md` 登记的唯一合法实例——S0_00-Note.xhtml 第 7 行
+    # 说明型条目：`docs/epub-structure-spec.md` 登记的唯一合法实例——S0_00-Note.xhtml 第 7 行
     # 「阅读器不支持弹注」提示，无 id、无 epub:type、不参与编号序列与重排。
     bare_ok = name == "S0_00-Note.xhtml"
     for i, line in enumerate(lines[5:], start=6):

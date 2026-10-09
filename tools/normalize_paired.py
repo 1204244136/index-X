@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Preview or normalize paired XHTML; the template contract lives in AGENTS.md.
+"""Preview or normalize paired XHTML; the template contract lives in
+`docs/epub-structure-spec.md`.
 
 Archive mode writes Chinese files only and reads the Japanese reference as-is.
 Explicit --staging may normalize both temporary sides. Every candidate is

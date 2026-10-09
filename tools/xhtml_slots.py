@@ -1,6 +1,6 @@
 """固定行模板 L1–L6 的槽位定义（唯一来源）。
 
-规范正文（模板本身、L5 槽位规则、L6 包装页边界）在 `AGENTS.md` 的「Agent 操作边界」；
+规范正文（模板本身、L5 槽位规则、L6 包装页边界）在 `docs/epub-structure-spec.md`；
 本模块只把**行号与槽位名**单一化，避免各校验入口各自散落 `6`、`lines[3]` 这类魔数。
 
 判定逻辑**不在这里**：配对契约（`check_alignment.check_file`）、分页与合并契约
@@ -10,7 +10,7 @@
 """
 from __future__ import annotations
 
-# 1-based 物理行号；取值即 AGENTS 规范里的「第 N 行」
+# 1-based 物理行号；取值即 `docs/epub-structure-spec.md` 固定行模板里的「第 N 行」
 LINE_XML = 1
 LINE_DOCTYPE = 2
 LINE_HEAD = 3
@@ -38,7 +38,7 @@ def slot_name(line_number: int) -> str:
 # ---------------------------------------------------------------------------
 # 译注页（Note）固定取值
 #
-# 规范正文见 `AGENTS.md`「译注页（Note）结构规约」。该 h1 在全库 73 个
+# 规范正文见 `docs/epub-structure-spec.md`「译注页（Note）结构规约」。该 h1 在全库 73 个
 # `S<作品号>-Note.xhtml` 上逐字一致，但原先只硬编码在 `docx2epub.py` 与
 # `import_build_text.py` 两个生成器里、无任何成文；在此单一化，两处生成器
 # 与检查器共用它。

@@ -6,7 +6,7 @@ description: index-X 新书成品生成工作流（交稿 docx＋图片素材＋
 # 新书成品生成（index-X）
 
 文档职责与入口见 [文档索引](../../../docs/README.md)。命令合同见 [工具说明](../../../tools/README.md)，
-仓库级规约（编号、表头、固定行模板、写入边界）见 [AGENTS.md](../../../AGENTS.md)。
+仓库级规约（编号、表头、固定行模板、写入边界）见 [AGENTS.md](../../../AGENTS.md)，版式条文见 [命名规范](../../../docs/epub-naming-spec.md)、[结构规范](../../../docs/epub-structure-spec.md) 与 [排版规范](../../../docs/epub-css-layout-spec.md)。
 
 本 skill 管「把一份交稿 + 一套素材做成一卷可发布的成品」。译文用词、译名取舍不在本流程内：
 那属于 `translation-term-unification` 与 `proofread-review`，本流程**只做结构**——不改译文用词，

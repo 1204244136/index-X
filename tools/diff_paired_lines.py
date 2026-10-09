@@ -236,7 +236,7 @@ class AlignedPair(NamedTuple):
 def align_lines(jp_lines: list[LineInfo], cn_lines: list[LineInfo]) -> list[AlignedPair]:
     """对齐中日两侧的行。
 
-    仓库契约（AGENTS.md「Agent 操作边界」的固定行模板条目）保证配对文件两侧总行数一致，行号即
+    仓库契约（`docs/epub-structure-spec.md`「固定行模板」）保证配对文件两侧总行数一致，行号即
     配对身份。因此**行数相等时直接按行号 1:1 对齐**，不再跑序列比对：
 
     - 正确性：Needleman-Wunsch 在行数相等时仍可能用「一个 gap + 一处错位匹配」

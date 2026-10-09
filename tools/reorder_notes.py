@@ -6,7 +6,7 @@
 - 按该顺序重排 <li> 条目并重编号为 note1..noteN；
 - 单遍映射更新正文引用。
 默认预览，--apply 才写盘；写前可备份，--no-backup 禁用备份。
-规范来源是 AGENTS.md 与 docs/translation-spec.md；CLI 合同见 tools/README.md。
+规范来源是 `docs/epub-structure-spec.md` 与 docs/translation-spec.md；CLI 合同见 tools/README.md。
 """
 import os
 import re
@@ -89,7 +89,7 @@ def process_book(book, text_dir, nf, dry_run, backup_dir):
         li = by_id[old]
         new_li = LI_ID_RE.sub(lambda m: m.group(1) + mapping[old] + m.group(3), li, count=1)
         new_lis.append(new_li)
-    # 容器必须是 <ul>…</ul>（见 AGENTS.md「译注页（Note）结构规约」）。
+    # 容器必须是 <ul>…</ul>（见 `docs/epub-structure-spec.md`「译注页（Note）结构规约」）。
     # 用 find 而非 index：`<ol>` 或结构异常时给出可读的拒绝理由，不抛未捕获异常
     # ——CI 的 normalize-epub-text.yml 每日会跑到本函数。
     ul_start = note_text.find("<ul>")

@@ -81,7 +81,7 @@ RULES: tuple[tuple[str, re.Pattern[str], str, str, str], ...] = (
     # （`S3_06-02.xhtml:58` 用 17 个 U+3000），中文侧误用 U+00A0——U+00A0 在 CJK
     # 字体中宽度随字体浮动，多列分页下散开程度会因设备而异，U+3000 固定一字宽。
     # 全库 161 处已逐条核对：159 处是散字排版或署名分隔，2 处在 `<h2>` 标题内
-    # （属明显错误，由 E1 一次性删除，不进本规则）。依据 `AGENTS.md` 同节。
+    # （属明显错误，由 E1 一次性删除，不进本规则）。依据 `docs/translation-spec.md` 同节。
     ("nbsp-to-ideographic-space", re.compile("\u00a0"), "\u3000", "三.2",
      "NBSP (U+00A0) → 全角空格 (U+3000)"),
     # 作补充说明用的六角括号统一为全角圆括号。全库仅 `S1_05-Note.xhtml:21`

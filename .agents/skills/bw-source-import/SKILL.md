@@ -6,7 +6,7 @@ description: index-X 日文 BW 源导入工作流（BookWalker 分页源 → 日
 # 日文 BW 源导入（index-X）
 
 文档职责与入口见 [文档索引](../../../docs/README.md)。命令合同见 [工具说明](../../../tools/README.md) 的 C2（导入与交稿往返），
-仓库级规约（作品号与表头、图片命名、固定行模板、写入边界）见 [AGENTS.md](../../../AGENTS.md)。
+仓库级规约（作品号与表头、图片命名、固定行模板、写入边界）见 [AGENTS.md](../../../AGENTS.md)，版式条文见 [命名规范](../../../docs/epub-naming-spec.md) 与 [结构规范](../../../docs/epub-structure-spec.md)。
 
 本 skill 管「把一份 BookWalker 分页源做成可配对、可对齐的日文工作源」。它**到日文侧进入
 `.cache/epub-work/japanese-text/<作品号>书目录` 且能跑单侧对齐检查为止**；之后的「交稿 → 成品」
@@ -57,7 +57,7 @@ python tools/merge_bw_pages.py 分页目录 --book S4_05 --dry-run
 python tools/merge_bw_pages.py 分页目录 --book S4_05 --out 显式章节输出 --apply --staging
 ```
 
-默认预览，`--apply` 必须显式 `--out`。输入须经过预处理；输出章节已套固定行模板。按 AGENTS 的换页衔接规则处理 `pb`、篇首图片与标题。文本跨页是否同一段断续、图片归属、标题边界与残留噪声会输出**待确认项**，不自动改译文。
+默认预览，`--apply` 必须显式 `--out`。输入须经过预处理；输出章节已套固定行模板。按 [EPUB 结构规范](../../../docs/epub-structure-spec.md)「换页衔接与场景分隔」处理 `pb`、篇首图片与标题。文本跨页是否同一段断续、图片归属、标题边界与残留噪声会输出**待确认项**，不自动改译文。
 
 合并后的目录若还要再校验，必须换契约：`python tools/bw_preprocess.py 显式章节目录 --merged --check`——**不能用分页契约检查已合并章节**。
 

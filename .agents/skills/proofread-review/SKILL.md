@@ -17,7 +17,7 @@ description: index-X 校对复核工作流。用于复核校对工具（BetweenL
 | --- | --- |
 | 复核成批、近重译级的译文改动（工作区未提交或已提交），判定每处改动的对错 | **本 skill** |
 | 同一日文锚点的异译收敛、术语／口癖／敬称裁定 | `translation-term-unification` skill |
-| 结构、行模板、中日对齐、图片行 | `AGENTS.md`「Agent 操作边界」＋ `check_alignment.py` |
+| 结构、行模板、中日对齐、图片行 | [EPUB 结构规范](../../../docs/epub-structure-spec.md)＋ `check_alignment.py` |
 | 标点／字形等字符级规范化 | `tools/text_norm.py`（复核时属 `spec` 级，可批量放行） |
 
 判据：改动是**批量的**、需要判断「改得对不对」，而不是「该改成哪个词」。
@@ -320,5 +320,5 @@ rg -n "小货车|旅行车" "EPUB/[S3_01]创约 某魔法的禁书目录 01X/OEB
 | 判定「这批校对改动对不对」，回改误改 | **本 skill** |
 | 判定「这个术语该译成什么」，全库异译收敛 | `translation-term-unification` |
 | 回改的执行方式（显式映射 + 逐条预检） | 复用 `translation-term-unification/references/unify_terms_template.py` |
-| 改动引起的结构／对齐问题 | `AGENTS.md`「Agent 操作边界」＋ `check_alignment.py` |
+| 改动引起的结构／对齐问题 | [EPUB 结构规范](../../../docs/epub-structure-spec.md)＋ `check_alignment.py` |
 | 语义级核对（一律强制切片并行） | **本 skill §六**（略读定切法、切片策略、子智能体契约、抽检与合并口径） |

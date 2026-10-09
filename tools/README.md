@@ -1,16 +1,17 @@
 # EPUB 维护工具
 
-文档职责与入口见 [文档索引](../docs/README.md)。本文件是 `tools/` 的**命令合同**：每个工具的入口、参数、读写范围、门禁与失败边界、测试与所属簇。规范与边界（写成什么样、什么不许做）唯一以 [AGENTS.md](../AGENTS.md) 为准，本文件只留指针、不复述条文；成品语言规范以 [翻译规范](../docs/translation-spec.md) 为准；需要判断分支的流程以 `.agents/skills/` 为准。历史验收与修改统计只在维护记录和提交中保存。
+文档职责与入口见 [文档索引](../docs/README.md)。本文件是 `tools/` 的**命令合同**：每个工具的入口、参数、读写范围、门禁与失败边界、测试与所属簇。规范与边界（写成什么样、什么不许做）以 [AGENTS.md](../AGENTS.md) 与版式规范三份文档（[EPUB 命名规范](../docs/epub-naming-spec.md)、[EPUB 结构规范](../docs/epub-structure-spec.md)、[EPUB 排版规范](../docs/epub-css-layout-spec.md)）为准，本文件只留指针、不复述条文；成品语言规范以 [翻译规范](../docs/translation-spec.md) 为准；需要判断分支的流程以 `.agents/skills/` 为准。历史验收与修改统计只在维护记录和提交中保存。
 
 ## 三层职责
 
 | 层 | 写什么 | 什么时候看 |
 | --- | --- | --- |
-| [AGENTS.md](../AGENTS.md) | **规范与边界**：系列编号、表头命名、固定行模板、数据流与编辑边界、提交边界 | 任何维护动作前；本文件不复述 |
+| [AGENTS.md](../AGENTS.md) | **规范与边界**：系列编号、版式规范指针、数据流与编辑边界、提交边界 | 任何维护动作前；本文件不复述 |
+| 版式规范三份 | **版式条文**：[命名规范](../docs/epub-naming-spec.md)（表头与文件名）、[结构规范](../docs/epub-structure-spec.md)（行模板与结构）、[排版规范](../docs/epub-css-layout-spec.md)（移动端 CSS） | 动 XHTML／文件名／图片／CSS 前 |
 | 本文件 | **命令合同**：入口、参数、读写范围、门禁与失败边界、测试、簇归属 | 运行任何 `tools/` 命令前 |
 | `.agents/skills/` | **流程与判断分支**：材料核对、执行顺序、人工确认点、失败退路 | 做对应任务时（新书导入、日文源导入、校对复核、术语统一） |
 
-同一规则只在一处写正文：规范在 AGENTS，命令在本文件，流程在 skill。本文的四个固定说法：**阻断** = 该工具或门禁直接非零退出；**只读** = 不修改输入书籍，允许写显式报告或系统临时产物；**预览** = 默认只报告、显式开关才写盘（写工具用 `--apply`，发布用 `--dry-run`，PowerShell 入口用 `-WhatIf`）；**成员表** = 各簇内「工具｜入口命令｜读写范围｜门禁与失败边界｜测试」五列表。
+同一规则只在一处写正文：规范在 AGENTS 与版式规范三份，命令在本文件，流程在 skill。本文的四个固定说法：**阻断** = 该工具或门禁直接非零退出；**只读** = 不修改输入书籍，允许写显式报告或系统临时产物；**预览** = 默认只报告、显式开关才写盘（写工具用 `--apply`，发布用 `--dry-run`，PowerShell 入口用 `-WhatIf`）；**成员表** = 各簇内「工具｜入口命令｜读写范围｜门禁与失败边界｜测试」五列表。
 
 ## 路由
 
@@ -33,7 +34,7 @@
 
 ## 阻塞与恢复
 
-工具停下来时的处置预案。每条的「判定」列只写命令，「禁止」列只写不许做的事；规范依据在 [AGENTS.md](../AGENTS.md)，本条不另立规则。
+工具停下来时的处置预案。每条的「判定」列只写命令，「禁止」列只写不许做的事；规范依据在 [AGENTS.md](../AGENTS.md) 与版式规范三份文档，本条不另立规则。
 
 | # | 触发信号 | 判定 | 允许动作 | 禁止动作 | 簇 | 证据留档 |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -201,7 +202,7 @@ python tools/bw_preprocess.py 显式章节目录 --merged --check
 
 默认分页契约要求 L3 的 `main` 容器，供合并器定位正文；`--merged` 只适用于目录，按合并后契约验证，不能用分页契约检查已合并章节。`--check` 在内存模拟转换、重命名和资源更新；正常产出使用同一门禁，不只验证标题槽位。
 
-`--book-id` 只用于已确认作品号和内容顺序的包。显式逐页映射保存在 `bw_page_header_overrides.json` 或 `--header-map` 指定文件中，正整数为内容序、null 为包装页；缺页、额外页或非法序号均阻断。图片前缀与全部引用同步更新。无标题尾声／附录边界必须按 AGENTS 的内容规则确认，不能以 h1 或页码猜测。
+`--book-id` 只用于已确认作品号和内容顺序的包。显式逐页映射保存在 `bw_page_header_overrides.json` 或 `--header-map` 指定文件中，正整数为内容序、null 为包装页；缺页、额外页或非法序号均阻断。图片前缀与全部引用同步更新。无标题尾声／附录边界必须按 [EPUB 命名规范](../docs/epub-naming-spec.md) 与 [EPUB 结构规范](../docs/epub-structure-spec.md) 的附录边界确认，不能以 h1 或页码猜测。
 
 整本纯图册没有文本输入时跳过，不输出产物；`--force-image-only` 是显式强制开关。`S6_24.12.10` 画集本身不归档，其中 SS 的独立转录 EPUB 已恢复常规配对，不能把画集例外套给 SS。
 
@@ -214,9 +215,9 @@ python tools/merge_bw_pages.py 分页目录 --book S4_05 --out 显式章节输�
 
 默认预览，`--apply` 必须显式 `--out`；目标在 `EPUB/` 无需暂存开关，临时输出加 `--staging`。输入须经过 BW 预处理，输出章节已套固定模板。带表头输入保留已确认内容序；作品号混用、非法零序号、冲突或重复序号阻断。没有表头的历史页仅生成临时顺序，最终语义命名须人工确认并更新资源引用。
 
-按 AGENTS 的源衔接规则处理 pb、篇首图片与标题；目录标题仅精确匹配单元首页时补入，缺失则保留槽位并报告。文本跨页是否同一段断续、图片归属、标题边界和残留噪声输出待确认项，不自动改译文。
+按 [EPUB 结构规范](../docs/epub-structure-spec.md) 的换页衔接与图片行规则处理 pb、篇首图片与标题；目录标题仅精确匹配单元首页时补入，缺失则保留槽位并报告。文本跨页是否同一段断续、图片归属、标题边界和残留噪声输出待确认项，不自动改译文。
 
-图片分页标记由共享 `add_class_pb` 写在既有外层块：p 包装图标在 p，整行 SVG 标在 SVG；保留原有 class、图片引用、尺寸与 viewBox，不额外包 p、不增删行。章尾整页图片也属于图片边界。BW 合并入口复用 `inject_pb_css` 注入分页样式及 `svg.pb` 块级显示保护，已有 `.pb` 规则不能成为漏掉 SVG 保护的理由。该合同落实 AGENTS 的换页衔接与图片排版规范，本文不另立规则。
+图片分页标记由共享 `add_class_pb` 写在既有外层块：p 包装图标在 p，整行 SVG 标在 SVG；保留原有 class、图片引用、尺寸与 viewBox，不额外包 p、不增删行。章尾整页图片也属于图片边界。BW 合并入口复用 `inject_pb_css` 注入分页样式及 `svg.pb` 块级显示保护，已有 `.pb` 规则不能成为漏掉 SVG 保护的理由。该合同落实 [EPUB 结构规范](../docs/epub-structure-spec.md) 的换页衔接与 [EPUB 排版规范](../docs/epub-css-layout-spec.md) 的图片排版，本文不另立规则。
 
 ### S5 合订卷拆分
 
@@ -274,7 +275,7 @@ python tools/normalize_paired.py --root EPUB --jp-root .cache/epub-work/japanese
 python tools/normalize_paired.py --cache 暂存根 --staging --apply
 ```
 
-single 只处理命令行指定文件或 `--dir`／`--pattern`，可用 `--side cn|jp` 明确重建侧；归档默认中文，未知暂存路径按路径识别，不保证双侧对齐。paired 负责作品／文件选择和配对约束，归档模式仅读日文，双侧暂存模式才可修改两侧。两者调用 `xhtml_template.py`，不承担历史多层标题语义迁移。行模板规则与豁免事实分别在 AGENTS 和 `alignment_rules.py`。
+single 只处理命令行指定文件或 `--dir`／`--pattern`，可用 `--side cn|jp` 明确重建侧；归档默认中文，未知暂存路径按路径识别，不保证双侧对齐。paired 负责作品／文件选择和配对约束，归档模式仅读日文，双侧暂存模式才可修改两侧。两者调用 `xhtml_template.py`，不承担历史多层标题语义迁移。行模板规则与豁免事实分别在 [EPUB 结构规范](../docs/epub-structure-spec.md) 和 `alignment_rules.py`。
 
 ### 多层标题迁移
 
@@ -283,7 +284,7 @@ python tools/migrate_heading_breaks.py --cache EPUB
 python tools/migrate_heading_breaks.py --cache EPUB --apply
 ```
 
-`--book GLOB` 可重复，`--verbose` 逐书列计划。按整书计划同时改变 XHTML／被引用 CSS，预检未知结构、路径越界、样式缺失和分层文字变化，任一失败不开始写入；写入失败回滚该书已写文件。它负责迁移合同，标题正文规范在 AGENTS。
+`--book GLOB` 可重复，`--verbose` 逐书列计划。按整书计划同时改变 XHTML／被引用 CSS，预检未知结构、路径越界、样式缺失和分层文字变化，任一失败不开始写入；写入失败回滚该书已写文件。它负责迁移合同，标题正文规范在 [EPUB 结构规范](../docs/epub-structure-spec.md)。
 
 ### 内容序平移与空页清理
 
@@ -347,7 +348,7 @@ python tools/check_alignment.py --strict
 python tools/check_alignment.py --root EPUB --jp-root .cache/epub-work/japanese-text --strict
 ```
 
-检查双侧模板及完整表头配对、行数和 h1/h2、图片、独占 br、pb 的物理位置。已确认配对规则只调整有依据的共同范围／顺序，其余结构差异照常阻断；位置规范唯一在 AGENTS。支持 `--cache` 旧双侧根、`--root` 中文与 `--jp-root` 日文独立根、重复 `--book` 与 `--output` 报告；L6 标准正文必须为 p，中文列表包装页可为 li；中文作品级包装页原有多段语义 div 的开标记与完整首段 p 同行也可保留。裸 div 或裸文字不作标准正文豁免。普通模式完整报告后返回成功，strict 有问题非零。缺侧目录按空集合处理，不应据未配对书宣布双侧通过。例外从 `alignment_rules.py` 读取，报告应保留实际检查与未配对范围。
+检查双侧模板及完整表头配对、行数和 h1/h2、图片、独占 br、pb 的物理位置。已确认配对规则只调整有依据的共同范围／顺序，其余结构差异照常阻断；位置规范唯一在 [EPUB 结构规范](../docs/epub-structure-spec.md)。支持 `--cache` 旧双侧根、`--root` 中文与 `--jp-root` 日文独立根、重复 `--book` 与 `--output` 报告；L6 标准正文必须为 p，中文列表包装页可为 li；中文作品级包装页原有多段语义 div 的开标记与完整首段 p 同行也可保留。裸 div 或裸文字不作标准正文豁免。普通模式完整报告后返回成功，strict 有问题非零。缺侧目录按空集合处理，不应据未配对书宣布双侧通过。例外从 `alignment_rules.py` 读取，报告应保留实际检查与未配对范围。
 
 ### 逐行漂移诊断
 
@@ -390,7 +391,7 @@ python tools/check_epub_health.py --only css-layout --tsv 显式报告.tsv
 
 汇总既有项目规则，检查 XML、ruby、正文原子块、标题、加粗、悬空引用、图片资源、CSS 分页保护与**译注页结构**；资源检查覆盖全部 CSS url／@import、SVG 和导航引用。主 `style.css` 检查完整布局声明，辅助 CSS 只阻断 html／body 非零左右边距，不能要求每份字体 CSS 重复主样式，不另立规则。`--pattern` 筛书、`--only` 选项、`--top` 控制样例、`--json`／`--tsv` 显式报告。strict 有 error 非零；每项必须有负向测试。
 
-`note-structure` 只对 `*-Note.xhtml` 判定，覆盖外壳（XML 声明引号、`<head>` 与 `<link>` 间距、空 `<title>`）、L4 固定 h1、L5 容器必须是 `<ul>`、`<li>` 属性顺序与完整性、缩进、行内标签白名单，规范见 [AGENTS.md](../AGENTS.md)「译注页（Note）结构规约」。**编号连续性不在本项**——`noteN` 从 1 起、无空号、与正文首引顺序一致由 `check_note_order.py` 唯一负责。`S0_00-Note.xhtml` 第 7 行的说明型条目是登记在案的唯一豁免。
+`note-structure` 只对 `*-Note.xhtml` 判定，覆盖外壳（XML 声明引号、`<head>` 与 `<link>` 间距、空 `<title>`）、L4 固定 h1、L5 容器必须是 `<ul>`、`<li>` 属性顺序与完整性、缩进、行内标签白名单，规范见 [EPUB 结构规范](../docs/epub-structure-spec.md)「译注页（Note）结构规约」。**编号连续性不在本项**——`noteN` 从 1 起、无空号、与正文首引顺序一致由 `check_note_order.py` 唯一负责。`S0_00-Note.xhtml` 第 7 行的说明型条目是登记在案的唯一豁免。
 
 ### 图片对应核对
 

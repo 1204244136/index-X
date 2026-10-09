@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """检查中日缓存 XHTML 是否符合统一固定行模板并保持对齐（只读）。
 
-模板（AGENTS.md「Agent 操作边界」的固定行模板条目）：
+模板（`docs/epub-structure-spec.md`「固定行模板」）：
     1  <?xml …?>
     2  <!DOCTYPE html>
     3  <html …><head>…</head><body…>   ← 可并入篇首图片
@@ -271,7 +271,7 @@ def apply_pair_rules(header: str, japanese: list[str], chinese: list[str],
 def pair_problems_raw(header: str, japanese: list[str], chinese: list[str]) -> list[str]:
     """两侧结构差异的原始判定，不含任何例外抵消。"""
     if header in TEXTUAL_IMAGE_HEADERS:
-        # 已确认的文本化图片例外（AGENTS.md）：中文侧把整页图片重排为样式文本行，
+        # 已确认的文本化图片例外（`docs/epub-structure-spec.md`）：中文侧把整页图片重排为样式文本行，
         # 行数/h2/图片行/<br/> 位置本就允许不同，配对检查整体豁免。
         return []
     problems: list[str] = []

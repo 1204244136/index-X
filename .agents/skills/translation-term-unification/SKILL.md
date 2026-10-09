@@ -15,7 +15,7 @@ description: index-X（某系列 EPUB 档案）译名／术语统一工作流。
 | --- | --- |
 | 同一日文锚点的多种中文异译收敛、角色口癖、专名／敬称、术语分层（阵营／侧 这类） | **本 skill** |
 | 标点、字形、加粗移出标点等字符级规范化 | `tools/text_norm.py`（有固定规则表，不要手改） |
-| 结构、行模板、中日对齐、图片行 | `AGENTS.md`「Agent 操作边界」＋ `tools/check_alignment.py` |
+| 结构、行模板、中日对齐、图片行 | [EPUB 结构规范](../../../docs/epub-structure-spec.md)＋ `tools/check_alignment.py` |
 | 错字／病句／整卷重新校对 | 逐条回原文判断，走 `tools/proofread_review.py` 复核口径，不是本 skill |
 
 判据：**改动是否需要一个「日文锚点」才能判定**。需要锚点就是本 skill 的活。

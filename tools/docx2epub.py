@@ -646,8 +646,8 @@ def render_illustrations(name_list: list[str]) -> str:
 def render_note_file(notes: list[str], header: str) -> str:
     """生成译注页 Note.xhtml（列表型包装页：h1 占 L4，ul 占 L5，条目自 L6 起）。
 
-    h1 取值来自 `xhtml_slots.NOTE_H1`（唯一来源，规范见 AGENTS.md「译注页（Note）
-    结构规约」）；容器固定 `<ul>`，不得改 `<ol>`——`reorder_notes.py` 依赖它定位条目。
+    h1 取值来自 `xhtml_slots.NOTE_H1`（唯一来源，规范见
+    `docs/epub-structure-spec.md`「译注页（Note）结构规约」）；容器固定 `<ul>`，不得改 `<ol>`——`reorder_notes.py` 依赖它定位条目。
     """
     lines = [
         "<?xml version='1.0' encoding='utf-8'?>",

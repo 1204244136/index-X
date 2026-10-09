@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """把日文侧的场景分隔独占 <br/> 补回配对中文文件（只读预览，--apply 才写盘）。
 
-规范来源是 AGENTS.md；CLI 合同与安全前提见 tools/README.md。
+规范来源是 `docs/epub-structure-spec.md`；CLI 合同与安全前提见 tools/README.md。
 计划由 plan 实现，共享物理行类型与配对例外在 xhtml_structure.py。
 
 用法：

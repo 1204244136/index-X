@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """删除中文归档中「旧合页方法」遗留的独立 <br/> 行（默认预览，--apply 才写盘）。
 
-规范来源是 AGENTS.md；CLI 合同与判定行为见 tools/README.md。
+规范来源是 `docs/epub-structure-spec.md`；CLI 合同与判定行为见 tools/README.md。
 判定由 find_legacy_br 实现，共享物理行类型与配对例外在 xhtml_structure.py。
 
 用法：

@@ -7,14 +7,24 @@
 | 文档 | 写什么 | 什么时候看 |
 | --- | --- | --- |
 | [`README.md`](../README.md) | 面向读者：项目介绍、下载、反馈、版本对比 | 了解 X 系列是什么、怎么获取 |
-| [`AGENTS.md`](../AGENTS.md) | 仓库级规约：系列编号、表头命名、固定行模板、数据流与编辑边界、版本控制边界 | 任何维护动作前；命名／落点／边界的**唯一规范来源** |
+| [`AGENTS.md`](../AGENTS.md) | 仓库级规约与入口：项目定位、目录约定、系列编号、版式规范指针、维护流程、数据流与编辑边界、版本控制边界 | 任何维护动作前；流程与落点／边界的**唯一规范来源** |
 | [`tools/README.md`](../tools/README.md) | 工具入口、参数、数据流、判定口径与可验证行为 | 运行任何 `tools/` 命令前 |
 | [`translation-term-unification/SKILL.md`](../.agents/skills/translation-term-unification/SKILL.md) | 流程：译名／术语统一**怎么做** | 收敛异译、统一角色口癖与专名、裁定敬称与术语分层 |
 | [`proofread-review/SKILL.md`](../.agents/skills/proofread-review/SKILL.md) | 流程：批量译文改动**怎么复核** | 复核校对产出、判定误改并回改 |
 | [`bw-source-import/SKILL.md`](../.agents/skills/bw-source-import/SKILL.md) | 流程：**日文 BW 源怎么导入** | 把某卷日文源做成工作源、BW 预处理与分页合并、交接给成品生成 |
 | [`volume-import/SKILL.md`](../.agents/skills/volume-import/SKILL.md) | 流程：**新书成品怎么生成** | 交稿转成品、新书入库；材料核对与六步原子工具链 |
 
-## 二、翻译类文档的分工
+## 二、版式规范的分工
+
+`EPUB/` 的版式规约按主题分三份维护；[`AGENTS.md`](../AGENTS.md)「版式规范」一节只留核心不变量与指向这三份的指针，不复制条文。
+
+| 文档 | 写什么 | 什么时候看 |
+| --- | --- | --- |
+| [EPUB 命名规范](epub-naming-spec.md) | 中日配对的**表头形态**、中文 XHTML 文件名与包装后缀、图片资源命名与引用 | 新增／重命名／配对文件、导入图片、处理历史别名时 |
+| [EPUB 结构规范](epub-structure-spec.md) | 固定行模板与 L5／L6 槽位、行对齐原子、标题分层、译注页结构、换页衔接、日文侧规范化、包装页与附录边界 | 改任何 XHTML 结构、合并分页源、修行对齐、写 Note 页时 |
+| [EPUB 排版规范](epub-css-layout-spec.md) | 移动端多列分页与插图的 CSS 防御规则及其门禁 | 动书籍 `style.css`、插图分页表现或 Reasily 类阅读器版式时 |
+
+## 三、翻译类文档的分工
 
 本索引统一登记文档职责；以下只描述各文件负责的主题，不复制规范条文：
 
@@ -36,7 +46,7 @@
 ## 四、维护约定
 
 - 本文件**不承载规范条文、裁定结论或工具参数**——那些仍在各自文档中维护，保持单一来源，不在本文件复制。
-- 同一规则只在一处写正文，其余处只留指针：规范条文以 `translation-spec.md` 为准，译名选取以 `translation-name-selection-spec.md` 为准，已决裁定以 `translation-name-rulings.md` 为准，机器可判定的词表以对应 `tools/check_*.py` 的常量为准。
+- 同一规则只在一处写正文，其余处只留指针：译文规范以 `translation-spec.md` 为准，版式规范以 `epub-naming-spec.md`／`epub-structure-spec.md`／`epub-css-layout-spec.md` 为准，译名选取以 `translation-name-selection-spec.md` 为准，已决裁定以 `translation-name-rulings.md` 为准，机器可判定的词表以对应 `tools/check_*.py` 的常量为准。
 - 职责变化只在本索引登记；其他入口保留指针，文件新增／改名时修复受影响的相对链接。工具行为变更更新 `tools/README.md` 合同和对应验证，不在索引复制参数。顶层文档登记与活跃文档回指由 `tools/check_project_docs.py` 机械检查，缺项在 CI 非零。
 - 外部规范、译名表和 BetweenLines 的动态定位、版本证据及缺失时的处理统一见 `translation-spec.md`「外部依赖与核验」；私人机器路径不写入活跃文档。
 - `maintenance-records/` 保留当次事实和当时口径；旧流程不能作为当前操作依据。允许修复链接或有提交证据的日期错误，必须保留更正说明。

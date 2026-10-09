@@ -80,7 +80,7 @@ JP_WRAPPER_RE = re.compile(
     rf"^(p-|navigation-documents|Anotherworld|(?:{S6_DATE}|{NUMBERED_BOOK})-(?:p-|navigation))",
     re.I,
 )
-# 已确认的文本化图片例外（AGENTS.md「Agent 操作边界」的图片行条目）：中文侧把分页源的整页图片
+# 已确认的文本化图片例外（`docs/epub-structure-spec.md`「图片行、篇首插图与纯图册」）：中文侧把分页源的整页图片
 # 重排为样式文本行，行数/h2/图片行/<br/> 本就允许与日文侧不同，配对检查整体豁免
 # （check_alignment.pair_problems）。
 #

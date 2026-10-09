@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """把中文侧「独占一行的裸 <img/>」规范为 <p> 包裹的图片行（只读预览，--apply 写盘）。
 
-规范来源是 AGENTS.md；CLI 合同与安全前提见 tools/README.md。
+规范来源是 `docs/epub-structure-spec.md`；CLI 合同与安全前提见 tools/README.md。
 --wrap-only 保证不删除物理行；允许清理容器时必须提供 --jp-root 日文参考。
 
 用法：

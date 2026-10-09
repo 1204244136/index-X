@@ -357,7 +357,7 @@ class AlignmentTests(unittest.TestCase):
         self.assertIn("<br/> 位置 JP[7] vs CN[6]", problems)
 
     def test_textual_image_headers_waive_pairing_checks(self):
-        """文本化图片例外（AGENTS.md）：配对检查整体豁免（行数/h2/图片行/<br/>）。"""
+        """文本化图片例外（`docs/epub-structure-spec.md`）：配对检查整体豁免（行数/h2/图片行/<br/>）。"""
         japanese = xhtml(["<p>一</p>", "<br/>", "<p>二</p>"]).splitlines()
         chinese = xhtml(["<br/>", "<p>一</p>", "<p>二</p>"]).splitlines()
         for header in ("S2_14-02", "S2_14-04", "S2_14-07", "S2_14-10", "S2_14-13"):

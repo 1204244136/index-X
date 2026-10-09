@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""分页源合并为章节文件：按 AGENTS.md「换页衔接处理」规则合并。
+"""分页源合并为章节文件：按 `docs/epub-structure-spec.md`「换页衔接与场景分隔」规则合并。
 
 输入 bw_preprocess 处理后的分页目录（p-NNN.xhtml），按章节标题（<h1>）分组，
 把分页合并为章节文件。页边界按衔接处两侧的页型定间距：
@@ -326,7 +326,7 @@ HEADING_RE = re.compile(r"^\s*<(h1|h2)\b", re.I)
 def check_edge_br(body: list[str], page_name: str, notes: list[str]) -> list[str]:
     """检查页首/页尾是否有残留填充 <br/>，若有则报告警告并去除。
 
-    语义：页首/页尾的填充 <br/> 属排版噪声（AGENTS.md「换页衔接处理」），
+    语义：页首/页尾的填充 <br/> 属排版噪声（`docs/epub-structure-spec.md`「换页衔接与场景分隔」），
     应由 bw_preprocess 清理。本函数检测残留，报告警告但仍予以删除，
     避免跨页间隔被残留 <br/> 叠加为 4+ 行。
     """
