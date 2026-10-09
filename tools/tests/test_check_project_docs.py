@@ -6,28 +6,131 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from check_project_docs import audit, single_source_issues, tool_matrix_issues
+from check_project_docs import audit, single_source_issues, tool_cluster_issues
+
+
+MEMBER_HEAD = "| 工具 | 入口命令 | 读写范围 | 门禁与失败边界 | 测试 |\n| --- | --- | --- | --- | --- |\n"
+
+
+def member(name: str, command: str = "`python tools/a.py --check`", boundary: str = "【无】") -> str:
+    return f"| `{name}` | {command} | 只读 | 边界{boundary} | `test_a.py` |\n"
+
+
+def cluster(name: str, rows: str) -> str:
+    return f"## {name}\n\n{MEMBER_HEAD}{rows}\n"
+
+
+def readme(*, index: str, router: str, clusters: str, plans: str = "| P1 | 信号 | 判定 | 允许 | 禁止 | C1 | — |\n") -> str:
+    return (
+        "# 工具\n\n"
+        "## 路由\n\n| 你要做什么 | 簇 | 入口 |\n| --- | --- | --- |\n" + router + "\n"
+        "## 阻塞与恢复\n\n| # | 触发信号 | 判定 | 允许动作 | 禁止动作 | 簇 | 证据留档 |\n"
+        "| --- | --- | --- | --- | --- | --- | --- |\n" + plans + "\n"
+        "## 簇索引\n\n| 簇 | 定位 | 入口数 | 主要门禁 |\n| --- | --- | --- | --- |\n" + index + "\n"
+        + clusters
+    )
+
+
+def write_tool(root: Path, name: str, main: bool = True) -> None:
+    (root / "tools" / name).write_text(
+        'if __name__ == "__main__":\n    pass\n' if main else "VALUE = 1\n", encoding="utf-8")
+
+
+class ClusterContractTests(unittest.TestCase):
+    """工具簇合同：每个工具一个归属格，索引、入口、预案与路由都必须自洽。"""
+
+    def case(self, *, index: str, router: str, clusters: str,
+             tools: tuple[tuple[str, bool], ...] = (("a.py", True),),
+             plans: str = "| P1 | 信号 | 判定 | 允许 | 禁止 | C1 | — |\n") -> list[str]:
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        root = Path(temporary.name)
+        (root / "tools").mkdir()
+        for name, main in tools:
+            write_tool(root, name, main)
+        return tool_cluster_issues(root, readme(index=index, router=router, clusters=clusters, plans=plans))
+
+    def test_compliant_document_has_no_issue(self):
+        issues = self.case(
+            index="| C1 同步与发布 | 定位 | 1 | 门禁 |\n",
+            router="| 发布 | C1 | `python tools/a.py` |\n",
+            clusters=cluster("C1 同步与发布", member("a.py")),
+        )
+        self.assertEqual(issues, [])
+
+    def test_member_tables_require_exactly_one_owner(self):
+        issues = self.case(
+            tools=(("a.py", True), ("b.py", True)),
+            index="| C1 同步与发布 | 定位 | 2 | 门禁 |\n",
+            router="| 发布 | C1 | `python tools/a.py` |\n",
+            clusters=cluster("C1 同步与发布", member("a.py") + member("a.py")),
+        )
+        self.assertTrue(any("重复登记" in issue and "a.py" in issue for issue in issues), issues)
+        self.assertTrue(any("未被任何簇成员表登记" in issue and "b.py" in issue for issue in issues), issues)
+
+    def test_main_boundary_and_entry_command_columns(self):
+        issues = self.case(
+            tools=(("m.py", False), ("c.py", True)),
+            index="| C1 同步与发布 | 定位 | 1 | 门禁 |\n| C0 共享内核 | 定位 | 1 | 门禁 |\n",
+            router="| 发布 | C1 | `python tools/c.py` |\n",
+            clusters=(
+                cluster("C1 同步与发布", member("m.py", command="`python tools/m.py`"))
+                + cluster("C0 共享内核", member("c.py"))
+            ),
+        )
+        self.assertTrue(any("无 __main__ 的模块必须登记在 C0" in issue for issue in issues), issues)
+        self.assertTrue(any("有 __main__ 的工具不得登记在 C0" in issue for issue in issues), issues)
+        self.assertTrue(any("C0 的入口命令列必须写" in issue for issue in issues), issues)
+
+    def test_index_counts_and_coverage(self):
+        issues = self.case(
+            index="| C1 同步与发布 | 定位 | 3 | 门禁 |\n| C9 幽灵簇 | 定位 | 1 | 门禁 |\n",
+            router="| 发布 | C1 | `python tools/a.py` |\n",
+            clusters=cluster("C1 同步与发布", member("a.py")),
+        )
+        self.assertTrue(any("入口数与成员表不一致" in issue for issue in issues), issues)
+        self.assertTrue(any("登记了没有成员表的 C9" in issue for issue in issues), issues)
+
+    def test_boundary_column_must_point_at_defined_plan(self):
+        issues = self.case(
+            index="| C1 同步与发布 | 定位 | 2 | 门禁 |\n",
+            router="| 发布 | C1 | `python tools/a.py` |\n",
+            clusters=cluster("C1 同步与发布", member("a.py", boundary="") + member("a.py", boundary="【P9】")),
+        )
+        self.assertTrue(any("门禁与失败边界必须写" in issue for issue in issues), issues)
+        self.assertTrue(any("P9 未在「阻塞与恢复」定义" in issue for issue in issues), issues)
+
+    def test_router_tools_must_exist_in_member_tables(self):
+        issues = self.case(
+            index="| C1 同步与发布 | 定位 | 1 | 门禁 |\n",
+            router="| 发布 | C1 | `python tools/zzz.py` |\n",
+            clusters=cluster("C1 同步与发布", member("a.py")),
+        )
+        self.assertTrue(any("路由表引用的工具不在任何簇成员表" in issue and "zzz.py" in issue for issue in issues), issues)
+
+    def test_missing_structure_is_reported_not_skipped(self):
+        legacy = "## 职责与覆盖矩阵\n\n| 工具 | 输入 | 写入 | 门禁 | 测试 |\n| --- | --- | --- | --- | --- |\n| `a.py` | | | | |\n"
+        issues = self.case(
+            index="| C1 同步与发布 | 定位 | 1 | 门禁 |\n",
+            router="| 发布 | C1 | `python tools/a.py` |\n",
+            clusters=legacy,
+        )
+        self.assertTrue(any("缺少簇节与成员表" in issue for issue in issues), issues)
+
+    def test_missing_index_is_reported(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        root = Path(temporary.name)
+        (root / "tools").mkdir()
+        write_tool(root, "a.py")
+        text = "# 工具\n## 路由\n\n| 你要做什么 | 簇 | 入口 |\n| --- | --- | --- |\n| 发布 | C1 | `python tools/a.py` |\n" \
+               + cluster("C1 同步与发布", member("a.py")) \
+               + "## 阻塞与恢复\n\n| # | 触发信号 | 判定 | 允许 | 禁止 | 簇 | 证据留档 |\n| --- | --- | --- | --- | --- | --- | --- |\n| P1 | 信号 | 判定 | 允许 | 禁止 | C1 | — |\n"
+        issues = tool_cluster_issues(root, text)
+        self.assertTrue(any("缺少「## 簇索引」表" in issue for issue in issues), issues)
 
 
 class DocumentationTests(unittest.TestCase):
-    def test_tool_matrix_requires_one_owner_per_file(self):
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            tools = root / "tools"
-            tools.mkdir()
-            (tools / "a.py").write_text("", encoding="utf-8")
-            (tools / "b.py").write_text("", encoding="utf-8")
-            text = (
-                "## 职责与覆盖矩阵\n"
-                "| 工具／能力 | 输入 | 写入 | 门禁 | 测试 |\n"
-                "| --- | --- | --- | --- | --- |\n"
-                "| `a.py`／`a.py` | | | | |\n"
-                "## 共享规则模块\n"
-            )
-            issues = tool_matrix_issues(root, text)
-            self.assertTrue(any("a.py" in issue and "重复" in issue for issue in issues))
-            self.assertTrue(any("b.py" in issue and "未登记" in issue for issue in issues))
-
     def test_links_anchors_and_missing_tool_contract(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -36,15 +139,21 @@ class DocumentationTests(unittest.TestCase):
             (root / "README.md").write_text("# 项目\n[有效](docs/spec.md#内容)\n[失效](missing.md)\n[锚点](docs/spec.md#错误)\n", encoding="utf-8")
             (root / "AGENTS.md").write_text("# 规约\n", encoding="utf-8")
             (root / "docs/spec.md").write_text("# 内容\n", encoding="utf-8")
-            (root / "tools/README.md").write_text("工具职责\n", encoding="utf-8")
-            (root / "tools/check_example.py").write_text("", encoding="utf-8")
+            (root / "tools/check_example.py").write_text('if __name__ == "__main__":\n    pass\n', encoding="utf-8")
+            # 结构合规、且已登记 check_example.py：只剩链接与锚点两条问题
+            (root / "tools/README.md").write_text(readme(
+                index="| C1 同步与发布 | 定位 | 1 | 门禁 |\n",
+                router="| 检查 | C1 | `python tools/check_example.py` |\n",
+                clusters=cluster("C1 同步与发布", member("check_example.py")),
+            ), encoding="utf-8")
             issues = audit(root)
-            self.assertEqual(len(issues), 3)
+            self.assertEqual(len(issues), 2, issues)
             self.assertTrue(any("missing.md" in issue for issue in issues))
             self.assertTrue(any("标题锚点" in issue for issue in issues))
-            self.assertTrue(any("check_example.py" in issue for issue in issues))
-            (root / "tools/README.md").write_text("`check_example.py`：只读检查\n", encoding="utf-8")
-            self.assertEqual(len(audit(root)), 2)
+            # 工具未登记 → 覆盖检查报出
+            (root / "tools/README.md").write_text("工具职责\n", encoding="utf-8")
+            issues = audit(root)
+            self.assertTrue(any("check_example.py" in issue for issue in issues), issues)
 
     def test_fenced_examples_and_external_links_are_not_local_dependencies(self):
         with tempfile.TemporaryDirectory() as temporary:
