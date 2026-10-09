@@ -37,7 +37,7 @@ from alignment_rules import (
     pairing_header_of,
     template_exempt,
 )
-from epub_ids import book_id, content_sequence, is_packaging_header, japanese_book_id
+from epub_ids import book_id, content_sequence, is_list_packaging_header, japanese_book_id
 from xhtml_slots import LINE_BODY_FIRST, LINE_H1, LINE_H2, SLOT_COUNT
 from xhtml_structure import line_kind, PB_RE, books_by_id
 
@@ -410,7 +410,7 @@ def audit_roots(cn_root: Path, jp_root: Path, work_ids: set[str] | None = None):
                 continue
             seen.add(path)
             checked += 1
-            allow_packaging = bool(allow_list) and is_packaging_header(header)
+            allow_packaging = bool(allow_list) and is_list_packaging_header(header)
             problems = [] if template_exempt(book) else check_file(lines, allow_packaging)
             add(side, book, relative(path), header, False, problems)
 
@@ -448,7 +448,7 @@ def audit_roots(cn_root: Path, jp_root: Path, work_ids: set[str] | None = None):
                     continue
                 seen.add(p_)
                 work = jp_id if side_ == "日" else cn_id
-                allow_list = side_ == "中" and is_packaging_header(h)
+                allow_list = side_ == "中" and is_list_packaging_header(h)
                 problems = [] if template_exempt(work) else check_file(lines_, allow_list)
                 add(side_, work, relative(p_), h, True, problems)
             # 配对检查（先算原始问题，再按已确认的例外抵消并给出备注）
@@ -466,7 +466,7 @@ def audit_roots(cn_root: Path, jp_root: Path, work_ids: set[str] | None = None):
                 add("对", cn_id, f"JP:{relative(jp_p)} | CN:{relative(cn_p)}",
                     h, True, [], note)
         # 该作品内未配对的中文文件（中文侧单有的包装页等）
-        check_side(cn_id, cn_all, "中", is_packaging_header)
+        check_side(cn_id, cn_all, "中", is_list_packaging_header)
         # 该作品内未配对的日文文件（如 S6 单文件作品）
         check_side(jp_id, jp_all, "日", False)
 
@@ -484,7 +484,7 @@ def audit_roots(cn_root: Path, jp_root: Path, work_ids: set[str] | None = None):
         cn_all = [p for p in cn_dir.rglob("*.xhtml") if p.name.lower() != "nav.xhtml"]
         content_index(cn_all, "中", cn_id)      # 仍要报告 -00 / 重复表头
         before = len(bad)
-        check_side(cn_id, cn_all, "中", is_packaging_header)
+        check_side(cn_id, cn_all, "中", is_list_packaging_header)
         if len(bad) == before:
             add("中", cn_id, relative(cn_dir), "-", False, [],
                 "无日文对应作品，仅单侧模板检查")

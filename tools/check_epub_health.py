@@ -31,6 +31,9 @@
   seq-gap    同一作品内内容序缺号
   img-prefix 图片文件名缺完整作品号前缀
   dangling   XHTML/OPF/CSS 引用的资源或锚点不存在
+  css-layout 样式表缺盒模型/分页类或含破坏性边距
+  note-structure 译注页外壳/槽位/容器/属性/行内标签不合规（只对 `*-Note.xhtml`；
+             规范见 `AGENTS.md`「译注页（Note）结构规约」，编号连续性不在此判定）
 
 刻意不纳入的检查项
 ------------------
@@ -71,8 +74,9 @@ from pathlib import Path
 
 from alignment_rules import TEMPLATE_EXEMPT_WORK_IDS, template_exempt  # noqa: F401
 from check_alignment import check_file as check_template
-from epub_ids import book_id, content_sequence, header_of, is_packaging_header, work_id
+from epub_ids import book_id, content_sequence, header_of, is_list_packaging_header, work_id
 from text_norm import split_bold_punct
+from xhtml_slots import NOTE_H1
 from epub_structure import resolve_reference, CSS_URL_RE
 from urllib.parse import unquote, urlsplit
 
@@ -91,7 +95,7 @@ RUBY_BLOCK_RE = re.compile(r"<ruby\b[^>]*>(.*?)</ruby\s*>", re.S | re.I)
 CHECK_ORDER = (
     "XML", "template", "bold-punct", "bold-empty", "bold-pair",
     "ruby", "seq-00", "dup-header", "seq-gap", "img-prefix", "dangling",
-    "css-layout",
+    "css-layout", "note-structure",
 )
 CHECK_DESC = {
     "XML": "XHTML 不是合法 XML 或 `<img>` 缺 src",
@@ -106,12 +110,16 @@ CHECK_DESC = {
     "img-prefix": "图片文件名缺作品号前缀",
     "dangling": "悬空资源/锚点引用",
     "css-layout": "样式表缺盒模型/分页类或含破坏性边距",
+    "note-structure": "译注页外壳/槽位/容器/属性/行内标签不合规",
 }
 SEVERITY = {
     "XML": "error", "template": "error", "bold-punct": "error",
     "bold-empty": "warning", "bold-pair": "error", "ruby": "error", "seq-00": "error",
     "dup-header": "error", "seq-gap": "warning", "img-prefix": "error",
     "dangling": "error", "css-layout": "error",
+    # 译注页结构：零误报的硬规则，与 template/XML/ruby 同级。
+    # 存量违规由 E1 一次性修正（见 docs/maintenance-records/）。
+    "note-structure": "error",
 }
 
 
@@ -377,6 +385,69 @@ def exempt(bid: str | None, check: str) -> bool:
     return check == "template" and template_exempt(bid)
 
 
+# 译注页（Note）行内标签白名单。实测全库 73 个 `*-Note.xhtml` 只用到这 13 种标签；
+# 白名单用于防回流——`h2`／`p`／`div`／`br`／`table`／`dl`／`a`／`img` 全库为 0。
+NOTE_TAG_WHITELIST = frozenset({
+    "html", "head", "title", "body", "link", "h1", "ul", "li", "ruby", "rt", "span", "i",
+})
+
+
+def find_note_structure_problems(lines: list[str], name: str) -> list[tuple[int, str]]:
+    """译注页（Note）结构检查；只对 `*-Note.xhtml` 调用。
+
+    规范见 `AGENTS.md`「译注页（Note）结构规约」。**编号连续性不在这里判定**——
+    `noteN` 从 1 起、无空号、与正文首引顺序一致由 `check_note_order.py` 与
+    `notes_core.py` 唯一负责；本函数只查外壳、槽位、容器、属性与行内标签。
+    """
+    problems: list[tuple[int, str]] = []
+    if len(lines) < 6:
+        return [(0, "行数不足 6，不满足固定行模板")]
+    if lines[0] != "<?xml version='1.0' encoding='utf-8'?>":
+        problems.append((1, "XML 声明应为单引号形式 `<?xml version='1.0' encoding='utf-8'?>`"))
+    head = lines[2]
+    if re.search(r"</head>\s+<link", head):
+        problems.append((3, "`<head>` 与 `<link>` 之间有多余空格"))
+    m = re.search(r"<title>(.*?)</title>", head)
+    if m and m.group(1):
+        problems.append((3, "`<title>` 应为空，实为 %r" % m.group(1)[:30]))
+    if lines[3] != NOTE_H1:
+        problems.append((4, "L4 应为 `%s`，实为 `%s`" % (NOTE_H1, lines[3][:60])))
+    if re.match(r"^\s*<ol\b", lines[4]):
+        problems.append((5, "容器是 `<ol>`；规范要求 `<ul>`（`reorder_notes.py` 依赖 `<ul>` 定位条目）"))
+    elif not re.match(r"^\s*<ul\b", lines[4]):
+        problems.append((5, "L5 不是 `<ul>` 列表容器：`%s`" % lines[4][:60]))
+
+    # 说明型条目：`AGENTS.md` 登记的唯一合法实例——S0_00-Note.xhtml 第 7 行
+    # 「阅读器不支持弹注」提示，无 id、无 epub:type、不参与编号序列与重排。
+    bare_ok = name == "S0_00-Note.xhtml"
+    for i, line in enumerate(lines[5:], start=6):
+        m = re.match(r"^(\s*)<li\b([^>]*)>", line)
+        if not m:
+            continue
+        indent, attrs = m.group(1), m.group(2).strip()
+        if indent:
+            problems.append((i, "`<li>` 有 %d 个空格缩进，规范要求顶格" % len(indent)))
+        if not attrs:
+            if not bare_ok:
+                problems.append((i, "`<li>` 无任何属性；只有 S0_00-Note.xhtml 的说明型条目可如此"))
+            continue
+        if attrs.startswith("id=") and "epub:type" in attrs:
+            problems.append((i, "`<li>` 属性顺序为 `id` 在前，规范要求 `epub:type=\"footnote\"` 在前"))
+        if 'epub:type="footnote"' not in attrs:
+            problems.append((i, "`<li>` 缺 `epub:type=\"footnote\"`"))
+        if not re.search(r'\bid\s*=\s*"note\d+"', attrs):
+            problems.append((i, "`<li>` 缺 `id=\"noteN\"`"))
+
+    for i, line in enumerate(lines, start=1):
+        for _slash, tag in re.findall(r"<(/?)([a-zA-Z][\w:.-]*)", line):
+            base = tag.split(":")[-1].casefold()
+            if base in NOTE_TAG_WHITELIST:
+                continue
+            problems.append((i, "出现白名单外的标签 `<%s>`" % tag))
+            break
+    return problems
+
+
 def audit_book(book_dir: Path, only: set[str] | None) -> tuple[list[tuple], Counter, Counter, Counter]:
     """返回 (findings, 命中计数, 豁免计数, 覆盖文件计数)。
 
@@ -435,7 +506,7 @@ def audit_book(book_dir: Path, only: set[str] | None) -> tuple[list[tuple], Coun
             if err:
                 add("XML", rel, 0, err)
 
-        allow_list = is_packaging_header(header_of(path.name))
+        allow_list = is_list_packaging_header(header_of(path.name))
         if want("template"):
             for err in check_template(lines, allow_list):
                 add("template", rel, 0, err)
@@ -452,6 +523,9 @@ def audit_book(book_dir: Path, only: set[str] | None) -> tuple[list[tuple], Coun
         if want("ruby"):
             for lineno, msg in find_ruby_problems(lines):
                 add("ruby", rel, lineno, msg)
+        if want("note-structure") and path.name.endswith("-Note.xhtml"):
+            for lineno, msg in find_note_structure_problems(lines, path.name):
+                add("note-structure", rel, lineno, msg)
     return findings, counts, exempted, covered
 
 

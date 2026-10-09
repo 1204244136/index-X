@@ -23,7 +23,7 @@ from alignment_rules import (JP_H1_BY_HEADER, MANUAL_ALIGNMENT_HEADERS,
 from check_alignment import check_file
 from edit_safety import (EditSafetyError, add_content_roots, add_edit_mode,
                          content_roots, require_edit_target)
-from epub_ids import is_packaging_header, japanese_book_id
+from epub_ids import is_list_packaging_header, japanese_book_id
 from xhtml_structure import books_by_id, header_index
 from xhtml_template import has_body, rebuild, write_lines
 
@@ -45,7 +45,7 @@ def main() -> int:
     def validate(path: Path, lines: list[str], wid: str, side: str, header: str) -> None:
         ET.fromstring("\n".join(lines))
         if not template_exempt(wid):
-            issues = check_file(lines, allow_list_wrap_slot=side == "cn" and is_packaging_header(header))
+            issues = check_file(lines, allow_list_wrap_slot=side == "cn" and is_list_packaging_header(header))
             if issues:
                 raise ValueError(f"{path}: {'; '.join(issues)}")
 

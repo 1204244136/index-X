@@ -33,3 +33,14 @@ SLOT_NAMES = {
 def slot_name(line_number: int) -> str:
     """把 1-based 行号转成规范里的槽位名，用于报错信息。"""
     return SLOT_NAMES.get(line_number, f"L{line_number}")
+
+
+# ---------------------------------------------------------------------------
+# 译注页（Note）固定取值
+#
+# 规范正文见 `AGENTS.md`「译注页（Note）结构规约」。该 h1 在全库 73 个
+# `S<作品号>-Note.xhtml` 上逐字一致，但原先只硬编码在 `docx2epub.py` 与
+# `import_build_text.py` 两个生成器里、无任何成文；在此单一化，两处生成器
+# 与检查器共用它。
+# ---------------------------------------------------------------------------
+NOTE_H1 = '<h1 class="center">译注</h1>'

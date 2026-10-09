@@ -60,7 +60,8 @@ try:
         pairing_header_of,
         template_exempt,
     )
-    from epub_ids import book_id, is_packaging_header, japanese_book_id, work_id as header_work_id
+    from epub_ids import (book_id, is_list_packaging_header, is_packaging_header,
+                          japanese_book_id, work_id as header_work_id)
 except ImportError:
     sys.path.insert(0, str(TOOLS_DIR))
     from alignment_rules import (
@@ -70,7 +71,8 @@ except ImportError:
         pairing_header_of,
         template_exempt,
     )
-    from epub_ids import book_id, is_packaging_header, japanese_book_id, work_id as header_work_id
+    from epub_ids import (book_id, is_list_packaging_header, is_packaging_header,
+                          japanese_book_id, work_id as header_work_id)
 
 from check_alignment import (
     afterword_offset, allowed_pair_differences, check_file, order_swap_offset,
@@ -528,7 +530,7 @@ def strict_pair_lines(
             problems.append(f"{side}: XML 解析失败：{exc}")
         if not template_exempt(work):
             problems.extend(f"{side}: {problem}" for problem in check_file(
-                lines, side == "CN" and is_packaging_header(header),
+                lines, side == "CN" and is_list_packaging_header(header),
             ))
     problems.extend(pair_problems(header, japanese, chinese))
     if problems:

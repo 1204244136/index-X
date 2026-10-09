@@ -9,6 +9,7 @@ from pathlib import Path
 from check_alignment import audit_roots
 from check_epub_health import audit_book, CHECK_ORDER
 from check_note_order import check_book
+from check_translation_spec import audit_book as audit_translation_spec
 from epub_ids import book_id
 from notes_core import NOTEFILE_RE
 from package_cache_epubs import PackageError, validate_book
@@ -54,6 +55,12 @@ def validate_publication(cn_root: Path, jp_root: Path | None = None,
                         for note in sorted(p for p in text.iterdir() if p.is_file() and NOTEFILE_RE.match(p.name)):
                             _entry, issues = check_book(book.name, str(text), note.name)
                             problems.extend(f"{key}: {note.name} {issue}" for issue in issues)
+                        # 翻译规范 error 级接入阻断（`docs/translation-spec.md` 七的
+                        # P1–P25）。warning／info 只报告、不阻断：P7／P9／P15／P16 一类
+                        # 属提示级，P23（译注起句）等存量批次项也在此列。
+                        for fn, ln, cat, sev, msg, ex in audit_translation_spec(text):
+                            if sev == "error":
+                                problems.append(f"{key}: {fn}:{ln} {cat} {msg}{ex}")
             except (OSError, UnicodeError, PackageError, ValueError) as exc:
                 problems.append(f"{key}: {exc}")
     if checked == 0 and not allow_removed:
@@ -67,7 +74,7 @@ def validate_publication(cn_root: Path, jp_root: Path | None = None,
                 problems.extend(f"{r[1]} {r[2]}: {r[5]}" for r in bad)
             except (OSError, UnicodeError, ValueError) as exc:
                 problems.append(f"中日对齐检查失败：{exc}")
-    scope = "容器/资源/单侧成品/译注" + ("/中日模板与对齐" if jp_root is not None else "（无日文参考）")
+    scope = "容器/资源/单侧成品/译注/翻译规范 error 级" + ("/中日模板与对齐" if jp_root is not None else "（无日文参考）")
     print(f"发布预检：{checked} 本；{scope}；问题 {len(problems)} 条")
     for problem in problems:
         print(f"  [阻断] {problem}", file=sys.stderr)

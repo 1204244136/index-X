@@ -96,6 +96,21 @@ def is_packaging_header(header: str | None) -> bool:
     return suffix in PACKAGING_SUFFIXES if suffix else False
 
 
+def is_list_packaging_header(header: str | None) -> bool:
+    """该表头能否在 L5 槽位写 `<ul>`/`<ol>` 列表包装。
+
+    与 `is_packaging_header` **刻意分开**：后者回答「这是不是包装页」（7 类，含
+    `cover`／`back_cover`／`illustrations`），本函数回答「它能不能在 L5 写列表」
+    （4 类）。纯图片页没有列表内容的真实用例，不得为其开放 L5 列表槽位。
+
+    规范见 `AGENTS.md`「译注页（Note）结构规约」与「Agent 操作边界」的 L5 槽位规则；
+    `check_alignment`、`check_epub_health`、`normalize_paired`、`check_semantic_alignment`
+    与模板重建（`xhtml_template`）必须共用本判据，不得各自取集合。
+    """
+    suffix = header_suffix(header)
+    return suffix in LIST_PACKAGING_SUFFIXES if suffix else False
+
+
 def is_list_packaging_path(path: Path) -> bool:
     """Whether a Chinese path may use a UL/OL opener in the L5 slot."""
     if "chinese-text" not in {part.casefold() for part in path.parts}:

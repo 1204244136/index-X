@@ -55,6 +55,7 @@ from edit_safety import add_edit_mode, require_edit_target
 from epub_structure import artifact_contract_issues, container_contract_issues
 from package_cache_epubs import package_book, validate_book
 from path_safety import archive_member_destination
+from xhtml_slots import NOTE_H1
 
 EPUB_MIMETYPE = b"application/epub+zip"
 
@@ -643,12 +644,16 @@ def render_illustrations(name_list: list[str]) -> str:
 
 
 def render_note_file(notes: list[str], header: str) -> str:
-    """生成译注页 Note.xhtml（列表型包装页：h1 占 L4，ul 占 L5，条目自 L6 起）。"""
+    """生成译注页 Note.xhtml（列表型包装页：h1 占 L4，ul 占 L5，条目自 L6 起）。
+
+    h1 取值来自 `xhtml_slots.NOTE_H1`（唯一来源，规范见 AGENTS.md「译注页（Note）
+    结构规约」）；容器固定 `<ul>`，不得改 `<ol>`——`reorder_notes.py` 依赖它定位条目。
+    """
     lines = [
         "<?xml version='1.0' encoding='utf-8'?>",
         "<!DOCTYPE html>",
         HEAD3,
-        '<h1 class="center">译注</h1>',
+        NOTE_H1,
         "<ul>",
     ]
     for i, note in enumerate(notes, 1):

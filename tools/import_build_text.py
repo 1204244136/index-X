@@ -23,6 +23,7 @@ from docx_source import chapter_kind, esc, esc_ruby, extract_notes, read_docx, s
 from edit_safety import EditSafetyError, add_edit_mode, require_edit_target
 from file_transaction import atomic_write_bytes, rollback_paths
 from import_plan import PlanError, apply_ops, body_images, load_plan
+from xhtml_slots import NOTE_H1
 
 HEAD3 = ('<html xmlns="http://www.w3.org/1999/xhtml" '
          'xmlns:epub="http://www.idpf.org/2007/ops"><head>'
@@ -78,8 +79,10 @@ def render_file(chapter: dict, rows: list[dict], notes: list[str], work_id: str,
 
 
 def render_notes(notes: list[str]) -> str:
+    """生成译注页 Note.xhtml。h1 取值来自 `xhtml_slots.NOTE_H1`（唯一来源），
+    容器固定 `<ul>`（`reorder_notes.py` 依赖它定位条目，不得改 `<ol>`）。"""
     lines = ["<?xml version='1.0' encoding='utf-8'?>", "<!DOCTYPE html>", HEAD3,
-             '<h1 class="center">译注</h1>', "<ul>"]
+             NOTE_H1, "<ul>"]
     for number, note in enumerate(notes, 1):
         lines.append(f'<li epub:type="footnote" id="note{number}">{esc_ruby(note)}</li>')
     lines += ["</ul>", "</body></html>", ""]

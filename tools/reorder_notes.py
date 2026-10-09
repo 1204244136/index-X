@@ -89,8 +89,14 @@ def process_book(book, text_dir, nf, dry_run, backup_dir):
         li = by_id[old]
         new_li = LI_ID_RE.sub(lambda m: m.group(1) + mapping[old] + m.group(3), li, count=1)
         new_lis.append(new_li)
-    ul_start = note_text.index("<ul>")
-    ul_end = note_text.index("</ul>") + len("</ul>")
+    # 容器必须是 <ul>…</ul>（见 AGENTS.md「译注页（Note）结构规约」）。
+    # 用 find 而非 index：`<ol>` 或结构异常时给出可读的拒绝理由，不抛未捕获异常
+    # ——CI 的 normalize-epub-text.yml 每日会跑到本函数。
+    ul_start = note_text.find("<ul>")
+    ul_end = note_text.find("</ul>")
+    if ul_start == -1 or ul_end == -1:
+        return None, "Note 文件容器不是 <ul>…</ul>（规范要求容器必须是 <ul>，不得用 <ol>），跳过"
+    ul_end += len("</ul>")
     new_note = note_text[:ul_start] + "<ul>\n" + "\n".join(new_lis) + "\n</ul>" + note_text[ul_end:]
 
     # 更新正文引用（单遍）

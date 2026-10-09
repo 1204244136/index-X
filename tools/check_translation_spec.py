@@ -165,6 +165,86 @@ P16_TRADITIONAL = (
 )
 P16_RE = re.compile("[%s]" % P16_TRADITIONAL)
 
+# ---------------------------------------------------------------------------
+# 译注页（Note）检查：词表与判定口径的唯一来源
+#
+# 规范正文见 `docs/translation-spec.md` 三.2 与 `AGENTS.md`「译注页（Note）结构规约」。
+# 本文件的常量是机器判定的唯一来源，规范与 `tools/README.md` 只留指针、不复制词表。
+# 全库基线：73 个 `S<作品号>-Note.xhtml` / 856 条。
+# ---------------------------------------------------------------------------
+
+# 语言标签词表：同一语言只取规范译名，**不取库内多数派**——`纳瓦特语`(4:1)、
+# `古诺斯语`(3:1) 的多数派写法恰好都不规范。`希腊语` 与 `古希腊语` **分列不合并**：
+# 前者配现代希腊语单音调写法、后者配古希腊语多音调（带气号）写法，是语言的历史阶段差异。
+NOTE_LANG_LABELS = {
+    "拉丁语": "拉丁语", "拉丁文": "拉丁语", "拉丁语名": "拉丁语",
+    "希伯来语": "希伯来语", "希伯来文": "希伯来语",
+    "纳瓦特语": "纳瓦特尔语", "纳瓦特尔语": "纳瓦特尔语",
+    "古诺斯语": "古诺尔斯语", "古诺尔斯语": "古诺尔斯语",
+    "希腊语": "希腊语", "古希腊语": "古希腊语",
+    "梵语": "梵语", "英语": "英语", "法语": "法语", "德语": "德语", "俄语": "俄语",
+    "意大利语": "意大利语", "西班牙语": "西班牙语", "葡萄牙语": "葡萄牙语",
+    "冰岛语": "冰岛语", "乌克兰语": "乌克兰语", "加泰罗尼亚语": "加泰罗尼亚语",
+    "越南语": "越南语", "弗里吉亚语": "弗里吉亚语", "匈牙利语": "匈牙利语", "日语": "日语",
+}
+NOTE_LANG_CANONICAL = frozenset(NOTE_LANG_LABELS.values())
+NOTE_LANG_LABEL_RE = re.compile(r"（([^（）：:]{1,10})[：:]([^（）]*)）")
+
+# 起句三类（三.2「起句」）：甲 复现被注词 / 乙 无主语界说 / 丙 引证。
+# 全库 372 条（43.5%）不满足本白名单，是「不同译者文风分裂」的主要形态。
+NOTE_LEAD_PATTERNS = (
+    re.compile(r"^[^，。；：]{1,26}（[^）]{1,40}）"),                          # 甲·带原文括注
+    re.compile(r"^[^，。；：]{1,22}(是|为|原指|原是)"),                        # 甲·带谓语
+    re.compile(r"^(指的是|指|即|意为|意思为|又称|也称|又名|亦称|俗称|原指|应该|应当|可能)"),  # 乙
+    re.compile(r"^原文(为|中|是|注释)"),                                     # 丙·引证原文
+    re.compile(r"^(据|根据|依据|出自|典出|引自|见于)"),                        # 丙·引证出处
+)
+
+# 同义谓语词收敛：库内写法 → 规范写法。**只在本表的键上判定**。
+# 三族刻意不合并（各承独立语义，合并会丢信息）：
+#   `即`（等号关系，如「Patriot Advanced Capability-3，即爱国者3型导弹。」）
+#   `意为`／`意思为`（词义翻译，如「ambulance意为救护车。」）
+#   `原指`（词源变迁，如「原指15～17世纪时…的武器。」）
+NOTE_PREDICATE_CONVERGENCE = {
+    "均为": "是", "则为": "是", "原为": "是",
+    "指的是": "指", "是指": "指", "指的就是": "指", "此处指": "指",
+    "也称": "又称", "又名": "又称", "亦称": "又称", "俗称": "又称",
+    "原文中": "原文为", "原文是": "原文为", "原文注释": "原文为",
+    "根据": "据",
+    "典出": "出自", "引自": "出自", "见于": "出自",
+}
+NOTE_PREDICATE_KEEP = frozenset({"即", "意为", "意思为", "原指"})
+
+# 不可见字符：LRM（希伯来文等 RTL 文本在 LTR 环境中的终止符）与 ZWJ（天城文
+# 半体合写）是排版所需，**保留**；ZWNJ、ZWSP、BOM 与 NBSP 违规。
+NOTE_INVIS_KEEP = frozenset({"\u200e", "\u200d"})
+NOTE_INVIS_BAD = {
+    "\u200c": "U+200C ZWNJ",
+    "\u00a0": "U+00A0 NBSP",
+    "\u200b": "U+200B ZWSP",
+    "\ufeff": "U+FEFF BOM/ZWNBSP",
+}
+
+# 区间连接符：全库 25 处三种写法并存，**只报告不自动改**——`1897-1982` 是生卒年
+# 通行写法、`1至1.8米` 改法不唯一，够不上 `text_norm.py`「替换值唯一确定」的门槛。
+NOTE_RANGE_PATTERNS = (
+    (re.compile(r"\d+\s*至\s*\d+"), "区间用「至」，建议统一为浪纹连接号 ～（生卒年除外）"),
+    (re.compile(r"\d{2,4}\s*-\s*\d{2,4}"), "区间用半角连字符，请确认是否为生卒年（生卒年可保留）"),
+)
+
+# 互参：依赖编号或顺序的文字指代会被 `reorder_notes.py` 静默改错——该工具按书
+# 重编号，且只重写正文 `href` 锚点与 Note 页 `id` 顺序，**注释正文里的中文文字引用一概不碰**。
+NOTE_XREF_BAD = (
+    (re.compile(r"(详见|参见|见)\s*注释\s*\d+"), "以数字注号互参：重排后会指错，应直接给出被注词"),
+    (re.compile(r"^(与)?前者|^后者"), "以「前者／后者」顺序指代互参：重排后会指错"),
+)
+
+# P17 半角括号判据的两项辅助字符类：
+#   LATIN_RE   —— `(N)Ever_Say_Good_bye.` 这类英文串里的半角括号是英文写法，合法；
+#   KAOMOJI_RE —— `(╯‵□′)╯︵┻━┻` 这类颜文字由半角 ASCII 符号构成，括号是组成部分，合法。
+LATIN_RE = re.compile(r"[A-Za-z]")
+KAOMOJI_RE = re.compile(r"[╯╰︵︶‵′□▽≧≦°∀Дﾟ⌒╭╮╲╱]")
+
 # 每条检查：pattern -> (category, severity, message, flags)
 # 全部在剥离标签的文本上执行；CJK 语境用后视/前视限定。
 CHECK_TEXT = [
@@ -245,6 +325,111 @@ def short(text, n=60):
     return text if len(text) <= n else text[:n] + "…"
 
 
+CJKX_RE = re.compile("[%s]" % CJKX)
+
+
+def check_note(text):
+    """译注页（Note）条目检查；只在 fkind == 'note' 时由 check_text 调用。
+
+    判定口径的唯一来源见本模块的 NOTE_* 常量与 `docs/translation-spec.md` 三.2。
+    P17/P20 需要配对逻辑，因此不做成 CHECK_TEXT 的纯正则项。
+    """
+    hits = []
+    body = text.strip()
+    # 外壳行（`<h1 class="center">译注</h1>`、`<ul>`、`</ul>`）不参与条目检查
+    if not body or body in ("译注", "</ul>"):
+        return hits
+
+    def add(cat, sev, msg, seg, n=72):
+        hits.append((cat, sev, msg, short(seg, n)))
+
+    # P17 半角括号：**两条并列的违规条件**，满足其一即违规，颜文字整体豁免。
+    #   ① 配对片段内含 CJK（含全角标点）——`（endorphins)`、`(Sir … Frazer）`
+    #   ② 片段是纯外文但**嵌在中文行文里**：前一个非空格字符是 CJK，且后一个
+    #      非空格字符不是拉丁字母——`赫朗格尼尔 (Hrungnir)，`、`赫朗格尼尔 (Hrungnir)是` 违规；
+    #      而 `(N)Ever_Say_Good_bye.` 后接 `E`、`Multiple Independently (Targetable) …`
+    #      前接 `y`，两者都合法。
+    # 未配对的孤立半角括号（`（endorphins)` 的 `)`、`(Sir … Frazer）` 的 `(`）用
+    # ±12 字窗口取片段——孤立括号必与全角括号混用，窗口内必含 CJK。
+    # 全库回测：Note 页 8 处半角括号 → 违规 6、合法 2，零误报零漏报。
+    paired = [(m.start(), m.end() - 1) for m in re.finditer(r"\(([^()]*)\)", body)]
+    covered = {k for a, b in paired for k in range(a, b + 1)}
+    targets = [(a, b, body[a:b + 1]) for a, b in paired]
+    for m in re.finditer(r"[()]", body):
+        k = m.start()
+        if k not in covered:
+            targets.append((k, k, body[max(0, k - 12):k + 13]))
+    for i, j, seg in targets:
+        # 颜文字豁免：(╯‵□′)╯︵┻━┻ 一类由半角 ASCII 符号构成，括号是组成部分
+        if KAOMOJI_RE.search(seg) or KAOMOJI_RE.search(body[max(0, i - 3):j + 4]):
+            continue
+        if CJKX_RE.search(seg):
+            bad = True
+        else:
+            k = i - 1
+            while k >= 0 and body[k] == " ":
+                k -= 1
+            n = j + 1
+            while n < len(body) and body[n] == " ":
+                n += 1
+            prev_ch = body[k] if k >= 0 else ""
+            next_ch = body[n] if n < len(body) else ""
+            bad = bool(prev_ch and CJKX_RE.match(prev_ch) and not LATIN_RE.match(next_ch))
+        if bad:
+            add("P17", "error",
+                "中文语境半角括号，应改为全角（）（纯外文串与颜文字内的半角括号合法），", seg)
+
+    # P20 括号配对：全角、半角各自的开闭数量必须相等。**分域判据**——Note 页的
+    # `<li>` 是自足单元，可用严格判据；正文存在跨段整段括注，不得套用本判据。
+    for op, cl, name in (("（", "）", "全角"), ("(", ")", "半角")):
+        if body.count(op) != body.count(cl):
+            add("P20", "error",
+                "%s括号不配对（开 %d / 闭 %d），" % (name, body.count(op), body.count(cl)), body)
+
+    # P18 括号字符白名单：`【】``〈〉``［］` 各有合法用途（标题式标记／国标单书名号），
+    # 只报告不自动改；`〔〕` 作补充说明时已由 text_norm.py 自动改为圆括号。
+    for m in re.finditer(r"[【】〈〉［］]", body):
+        add("P18", "warning",
+            "非常用括号字符，请确认是否为标题式标记或单书名号（〔〕已由 text_norm 自动处理），",
+            body[max(0, m.start() - 12):m.start() + 13])
+
+    # P19 不可见字符（LRM/ZWJ 是 RTL 与天城文排版所需，见 NOTE_INVIS_KEEP，不报）
+    for ch, nm in NOTE_INVIS_BAD.items():
+        if ch in body:
+            add("P19", "warning", "含不可见字符 %s，应删除或替换为全角空格，" % nm, body)
+
+    # P21 区间连接符（只报告：改法不唯一，够不上自动规范化的门槛）
+    for rx, msg in NOTE_RANGE_PATTERNS:
+        for m in rx.finditer(body):
+            add("P21", "info", msg + "，", body[max(0, m.start() - 10):m.end() + 10])
+
+    # P22 语言标签：同一语言只取规范译名（词表见 NOTE_LANG_LABELS）
+    for m in NOTE_LANG_LABEL_RE.finditer(body):
+        raw = m.group(1)
+        canon = NOTE_LANG_LABELS.get(raw)
+        if canon and canon != raw:
+            add("P22", "warning", "语言标签「%s」应统一为「%s」，" % (raw, canon), m.group(0))
+
+    # P23 起句：必须以三.2 的三类之一起句
+    if not any(rx.match(body) for rx in NOTE_LEAD_PATTERNS):
+        add("P23", "warning",
+            "起句不在三类白名单内（甲 复现被注词／乙 无主语界说／丙 引证），", body)
+
+    # P24 同义谓语词收敛（只查起句区，且不打散 NOTE_PREDICATE_KEEP 三族）
+    zone = body[:30]
+    for word, canon in NOTE_PREDICATE_CONVERGENCE.items():
+        if word in zone:
+            add("P24", "info", "谓语词「%s」应收敛为「%s」，" % (word, canon), zone)
+            break
+
+    # P25 互参：数字注号与顺序指代会被 reorder_notes.py 静默改错
+    for rx, msg in NOTE_XREF_BAD:
+        for m in rx.finditer(body):
+            add("P25", "warning", msg + "，", body[max(0, m.start() - 10):m.end() + 12])
+
+    return hits
+
+
 def check_text(line, fkind):
     """对剥离标签的文本跑 TEXT 检查，返回 (category, severity, message, example) 列表。
 
@@ -252,6 +437,7 @@ def check_text(line, fkind):
     类别级豁免：
     - P7 日文点号・：Note 页引用日文原文属合法，跳过；
     - P13 连续空格：仅对正文内容文件判定，且跳过 h1/h2 标题行。
+    Note 页另跑 check_note（P17–P25），因此不重复实现 Note 专属判据。
     """
     text = strip_to_text(line)
     hits = []
@@ -268,6 +454,8 @@ def check_text(line, fkind):
             s = max(0, m.start() - 12)
             example = text[s:m.end() + 12]
             hits.append((cat, sev, msg, short(example, 72)))
+    if fkind == "note":
+        hits.extend(check_note(text))
     return hits
 
 
@@ -299,6 +487,38 @@ def check_kana(text, line_no, fn):
                      short(example, 60)))
         break  # 每行只报一条
     return hits
+
+
+def audit_book(text_dir) -> list[tuple[str, int, str, str, str, str]]:
+    """检查一本书的 `OEBPS/Text/` 目录，返回全部命中；只读，不写任何文件。
+
+    返回 (file, line, category, severity, message, example) 列表，供本文件的
+    `main()` 与 `tools/publish_preflight.py` 共用——发布预检只取 `severity ==
+    "error"` 的项作阻断，warning／info 仍只报告（见 `tools/README.md` 的门禁列）。
+    """
+    findings: list[tuple[str, int, str, str, str, str]] = []
+    for fn in sorted(os.listdir(text_dir)):
+        if not fn.endswith(".xhtml"):
+            continue
+        fkind = classify(fn)
+        path = os.path.join(text_dir, fn)
+        try:
+            with open(path, encoding="utf-8-sig") as f:
+                lines = f.read().splitlines()
+        except Exception:
+            continue
+        for ln, line in enumerate(lines, 1):
+            # ruby 检查（原始行）
+            for cat, sev, msg, ex in check_ruby(line, fkind):
+                findings.append((fn, ln, cat, sev, msg, ex))
+            # 文本检查（先移除 <style>/<script>/<rt> 块再剥标签）
+            for cat, sev, msg, ex in check_text(line, fkind):
+                findings.append((fn, ln, cat, sev, msg, ex))
+            # 假名残留（仅正文内容文件）
+            if fkind == "content":
+                for cat, sev, msg, ex in check_kana(strip_to_text(line), ln, fn):
+                    findings.append((fn, ln, cat, sev, msg, ex))
+    return findings
 
 
 def main():
@@ -338,32 +558,9 @@ def main():
                 continue
         books_checked.add(book)
         per_book[book] = OrderedDict()
-        for fn in sorted(os.listdir(text_dir)):
-            if not fn.endswith(".xhtml"):
-                continue
-            fkind = classify(fn)
-            path = os.path.join(text_dir, fn)
-            try:
-                with open(path, encoding="utf-8-sig") as f:
-                    lines = f.read().splitlines()
-            except Exception:
-                continue
-            per_book[book][fn] = OrderedDict()
-            for ln, line in enumerate(lines, 1):
-                # ruby 检查（原始行）
-                for hit in check_ruby(line, fkind):
-                    cat, sev, msg, ex = hit
-                    emit(book, fn, ln, cat, sev, msg, ex)
-                # 文本检查（先移除 <style>/<script>/<rt> 块再剥标签）
-                text = strip_to_text(line)
-                for hit in check_text(line, fkind):
-                    cat, sev, msg, ex = hit
-                    emit(book, fn, ln, cat, sev, msg, ex)
-                # 假名残留（仅正文内容文件）
-                if fkind == "content":
-                    for hit in check_kana(text, ln, fn):
-                        cat, sev, msg, ex = hit
-                        emit(book, fn, ln, cat, sev, msg, ex)
+        for fn, ln, cat, sev, msg, ex in audit_book(text_dir):
+            per_book[book].setdefault(fn, OrderedDict())
+            emit(book, fn, ln, cat, sev, msg, ex)
 
     # ---- 终端摘要 ----
     print("共检查 %d 本书。命中 %d 条（按类别：%s）。" % (
@@ -423,6 +620,17 @@ def main():
         "P13": "连续 ASCII 空格",
         "P14": "小数应使用阿拉伯数字（非汉字数字+小数点）",
         "P15": "淘汰异形词残留（规范推荐词形，如「想象」不作「想像」）",
+        "P16": "繁体字残留（Note／Information 与含假名的原文引用行豁免）",
+        # P17–P25 只对 Note 页（`*-Note.xhtml`）判定，口径见 docs/translation-spec.md 三.2
+        "P17": "译注·中文语境半角括号（纯外文串与颜文字内合法）",
+        "P18": "译注·非常用括号字符（【】〈〉［］，需人工判断用途）",
+        "P19": "译注·不可见字符（LRM/ZWJ 为排版所需，不报）",
+        "P20": "译注·括号不配对",
+        "P21": "译注·区间连接符（只报告：改法不唯一）",
+        "P22": "译注·语言标签用词（应取规范译名，不取库内多数派）",
+        "P23": "译注·起句（须属三类白名单：甲 复现被注词／乙 无主语界说／丙 引证）",
+        "P24": "译注·谓语词未收敛（即／意为／原指 三族刻意保留，不报）",
+        "P25": "译注·互参用数字注号或顺序指代（重排后会指错）",
     }
     for cat in sorted(cat_desc, key=lambda x: int(x[1:])):
         lines.append("| %s | %s | %d |" % (cat, cat_desc[cat], category_counts.get(cat, 0)))

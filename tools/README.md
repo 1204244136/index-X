@@ -71,7 +71,7 @@
 | `publish_epub.py` | `python tools/publish_epub.py [--dry-run]` | 流程 C：归档中文 → 打包上传＋缓存增量镜像；日文只读 | 共享发布前检查、容器／XML／资源【P3】 | `test_sync_and_rename.py`、`test_publish_auto.py` |
 | `package_cache_epubs.py` | `python tools/package_cache_epubs.py --source … --output …` | 只读输入；写显式构建目录 | 容器、XML、资源引用；`mimetype` 首项不压缩【无】 | `test_package_cache_epubs.py` |
 | `manifest.py` | `python tools/manifest.py --update-books chinese-text/某书目录` | 写 `manifest.json` 基线 | 只按已确认状态更新，不得掩盖未发布变化【P2】 | `test_publish_auto.py`、`test_sync_and_rename.py` |
-| `publish_preflight.py` | `python tools/publish_preflight.py --source EPUB [--jp-root …]` | 只读；写显式报告 | 任一硬错误非零，不推进该书发布与基线【P3】 | `test_publish_preflight.py` |
+| `publish_preflight.py` | `python tools/publish_preflight.py --source EPUB [--jp-root …]` | 只读；写显式报告 | 任一硬错误非零，不推进该书发布与基线；**含 `check_translation_spec.audit_book` 的 error 级**（P1–P25）与 `check_epub_health` 的 `note-structure`【P3】 | `test_publish_preflight.py` |
 
 ### 统一入口
 
@@ -262,7 +262,7 @@ python tools/docx2epub.py 交稿.docx --out 显式构建输出 --unpacked 显式
 | `restore_cn_scene_breaks.py` | `python tools/restore_cn_scene_breaks.py --root EPUB --jp-root … --book S6_22.06.10 [--apply]` | 预览默认；只写中文 | 只补有源证据且总差额一致的场景分隔；条件不足拒绝【P4】 | `test_restore_cn_scene_breaks.py`、`test_edit_safety.py` |
 | `sync_pb_tags.py` | `python tools/sync_pb_tags.py --root EPUB --jp-root .cache/epub-work/japanese-text [--apply]` | 预览默认；只写中文 | 段落一一对应时补 class，不增删行；不一一对应即拒绝【P4】 | `test_xhtml_structure.py`、`test_edit_safety.py` |
 | `wrap_cn_image_lines.py` | `python tools/wrap_cn_image_lines.py --root EPUB [--wrap-only] [--apply]` | 预览默认；写中文归档／显式暂存中文 | 图片专用容器、配平与行数不变量；`--wrap-only` 仅包装裸 img、不删结构行【无】 | `test_wrap_cn_image_lines.py`、`test_edit_safety.py`（动态） |
-| `reorder_notes.py` | `python tools/reorder_notes.py --root EPUB [--apply] [--no-backup]` | 预览默认；写 Note 与正文引用；备份默认 `.cache/reorder-backup/` | 完整引用映射预检（条目、编号、正文引用），不通过不写【无】 | CLI：`test_edit_safety.py`；共享规则：`test_docx_and_notes.py` |
+| `reorder_notes.py` | `python tools/reorder_notes.py --root EPUB [--apply] [--no-backup]` | 预览默认；写 Note 与正文引用；备份默认 `.cache/reorder-backup/` | 完整引用映射预检（条目、编号、正文引用），不通过不写；**容器非 `<ul>…</ul>` 时显式拒绝并报告**（规范要求 `<ul>`，`<ol>` 不再抛异常）【无】 | CLI：`test_edit_safety.py`；共享规则：`test_docx_and_notes.py` |
 
 ### 固定模板规范化
 
@@ -334,7 +334,7 @@ python tools/reorder_notes.py --root EPUB --apply --no-backup
 | `check_semantic_alignment.py` | `python tools/check_semantic_alignment.py --work S3_01 --strict` | 只读；写语义诊断报告；L2 模型运行时只读 | strict 全范围 L2；环境失败及未通过结果非零【P4】 | `test_check_semantic_alignment.py`、`test_diff_paired_lines.py` |
 | `check_note_order.py` | `python tools/check_note_order.py --root EPUB` | 只读；写 TSV／JSON／Markdown | 未定义／重复／未引用与阅读顺序问题【无】 | `test_check_note_order.py`；共享规则：`test_docx_and_notes.py` |
 | `check_epub_health.py` | `python tools/check_epub_health.py --root EPUB --strict` | 只读；写显式 TSV／JSON | 单侧项目规约；strict 遇 error 非零【P4】 | `test_check_epub_health.py`（每项含负例） |
-| `check_translation_spec.py` | `python tools/check_translation_spec.py --cache EPUB --output 显式报告目录` | 只读；写 TSV／JSON／Markdown | P1–P16 规则报告；warning／info 不自动当缺陷【无】 | `test_translation_spec.py` |
+| `check_translation_spec.py` | `python tools/check_translation_spec.py --cache EPUB --output 显式报告目录` | 只读；写 TSV／JSON／Markdown | P1–P25 规则报告；**error 级由 `publish_preflight.py` 接入发布阻断**【P3】，warning／info 不自动当缺陷 | `test_translation_spec.py` |
 | `check_translation_table.py` | `python tools/check_translation_table.py --table 显式译名表.xlsx --strict` | 只读外部 xlsx＋日文缓存＋中文归档＋译名裁定总表；写本地核对报告 | 折叠 → 同形例外 → 裁定表（含注音判定）→ 译名表；strict 存在待判未落地项非零【无】 | `test_check_translation_table.py` |
 | `compare_epub_images.py` | `python tools/compare_epub_images.py --pattern "*S3_*" --output 显式报告目录` | 只读；写图片核对报告 | 字节／像素相同与感知候选分开；候选需视觉确认【无】 | `test_compare_epub_images.py` |
 | `check_epub_validity.py` | `python tools/check_epub_validity.py EPUB --structural --strict` | 只读；写显式报告；系统临时解包 | calibre 补充检查；strict 过滤后仍有问题为 1，环境／输入前提错误为 2【无】 | `test_calibre_validity.py` |
@@ -388,7 +388,9 @@ python tools/check_epub_health.py --root EPUB --strict
 python tools/check_epub_health.py --only css-layout --tsv 显式报告.tsv
 ```
 
-汇总既有项目规则，检查 XML、ruby、正文原子块、标题、加粗、悬空引用、图片资源和 CSS 分页保护；资源检查覆盖全部 CSS url／@import、SVG 和导航引用。主 `style.css` 检查完整布局声明，辅助 CSS 只阻断 html／body 非零左右边距，不能要求每份字体 CSS 重复主样式，不另立规则。`--pattern` 筛书、`--only` 选项、`--top` 控制样例、`--json`／`--tsv` 显式报告。strict 有 error 非零；每项必须有负向测试。
+汇总既有项目规则，检查 XML、ruby、正文原子块、标题、加粗、悬空引用、图片资源、CSS 分页保护与**译注页结构**；资源检查覆盖全部 CSS url／@import、SVG 和导航引用。主 `style.css` 检查完整布局声明，辅助 CSS 只阻断 html／body 非零左右边距，不能要求每份字体 CSS 重复主样式，不另立规则。`--pattern` 筛书、`--only` 选项、`--top` 控制样例、`--json`／`--tsv` 显式报告。strict 有 error 非零；每项必须有负向测试。
+
+`note-structure` 只对 `*-Note.xhtml` 判定，覆盖外壳（XML 声明引号、`<head>` 与 `<link>` 间距、空 `<title>`）、L4 固定 h1、L5 容器必须是 `<ul>`、`<li>` 属性顺序与完整性、缩进、行内标签白名单，规范见 [AGENTS.md](../AGENTS.md)「译注页（Note）结构规约」。**编号连续性不在本项**——`noteN` 从 1 起、无空号、与正文首引顺序一致由 `check_note_order.py` 唯一负责。`S0_00-Note.xhtml` 第 7 行的说明型条目是登记在案的唯一豁免。
 
 ### 图片对应核对
 
@@ -404,9 +406,13 @@ python tools/compare_epub_images.py --pattern "*S3_*" --output 显式报告目�
 python tools/check_translation_spec.py --cache EPUB --output 显式报告目录
 ```
 
-P1–P16 与规范条款的完整对应表唯一维护于 [翻译规范](../docs/translation-spec.md) 七。检查器只发现可机械形状，warning／info 与例外须人工判断，不自动改正文。`--pattern` 限定书名，`--top` 只控制样例显示；输出 TSV／JSON／Markdown。
+P1–P25 与规范条款的完整对应表唯一维护于 [翻译规范](../docs/translation-spec.md) 七。检查器只发现可机械形状，warning／info 与例外须人工判断，不自动改正文。`--pattern` 限定书名，`--top` 只控制样例显示；输出 TSV／JSON／Markdown。
 
-P9 赛事项目名的封闭例外集合唯一维护于 `check_translation_spec.py` 的 `P9_EVENT_SUFFIXES`；P16 繁体字表唯一维护于同文件的 `P16_TRADITIONAL`（由 OpenCC `TSCharacters` 生成，只留中文正文确属繁体形的字）；两处只改集合不复制到文档。改变规则语义才更新规范与合同，并运行 `test_translation_spec.py`。
+`audit_book(text_dir)` 是 `main()` 与 `publish_preflight.py` 共用的入口，返回 `(file, line, category, severity, message, example)`；发布预检只取 `severity == "error"`。**注意两处计数粒度不同**：`main()` 的 `emit` 按「行×类别」去重，`audit_book` 不去重、按命中逐条返回——引用计数时须注明粒度。
+
+**P17–P25 只对 `*-Note.xhtml` 判定**（口径见 [翻译规范](../docs/translation-spec.md) 三.2）。其中只有 **`P17`（中文语境半角括号）与 `P20`（括号不配对）是 error 级**并接入发布阻断——这两条在 Note 页回测为零误报。其余七项为 warning／info：`P23`（译注起句）存量 349 条、`P24`（谓语词收敛）81 条，属按批次收敛的存量项，**接入阻断会挡住全部 73 本**，故刻意留在报告级。
+
+词表与判据常量的唯一来源都在本文件：`P9_EVENT_SUFFIXES`（赛事项目名例外）、`P16_TRADITIONAL`（繁体字表，由 OpenCC `TSCharacters` 生成）、`NOTE_LANG_LABELS`（译注语言标签，取规范译名而非库内多数派）、`NOTE_PREDICATE_CONVERGENCE`（译注同义谓语词收敛）、`NOTE_LEAD_PATTERNS`（译注起句三类白名单）、`NOTE_INVIS_BAD`／`NOTE_INVIS_KEEP`（不可见字符）。只改集合不复制到文档；改变规则语义才更新规范与合同，并运行 `test_translation_spec.py`。
 
 ### 译名表落地核对与术语审计
 
@@ -462,6 +468,11 @@ python tools/text_norm.py --root EPUB --apply --report 显式报告.md
 ```
 
 只执行规范可确定的字符替换，XML、行数、标签、文件名与引用保持有效。规则实现唯一在 `text_norm.py`，不另写批量替换器。`--pattern` 限定书籍，`--summary` 供提交摘要，`--top` 控制报告样例。选词需原文的事项走术语或复核 skill。任何改写行内文字的改动写盘后必须重跑本工具并确认 0 命中。
+
+译注页相关规则两条，依据 [翻译规范](../docs/translation-spec.md) 三.2：
+
+- `nbsp-to-ideographic-space`：`U+00A0` → `U+3000`。日文原版以**全角空格**做散字排版（`S3_06-02.xhtml:58` 用 17 个 `U+3000`），中文侧误用 `U+00A0`——后者在 CJK 字体中宽度随字体浮动，多列分页下散开程度会因设备而异。全库 161 处已逐条核对（159 处散字排版或署名分隔，2 处在 `<h2>` 标题内、由存量修复删除）。
+- `tortoise-bracket-aside`：`〔〕` → `（）`。全库仅 `S1_05-Note.xhtml:21` 两处共 4 个字符。**刻意不纳入 `【】`／`〈〉`／`［］`**——`【】` 另有标题式标记的合法用途（`S0_00-Information.xhtml:5` 的「【汉化组招新】」即属此类，改写会破坏语义），`〈〉` 是国标单书名号；这三类由 `P18` 报告、人工判断，不得自动改写。
 
 ### 提交级校对复核
 
@@ -581,7 +592,7 @@ python -m unittest discover -s tools/tests -p "test_*.py" -v
 | `alignment_rules.py` | 无 CLI（共享模块） | 由调用方决定；只提供规则数据 | 【无】 | `test_alignment.py`、`test_check_epub_health.py`、`test_check_translation_table.py`、`test_epub_ids.py` |
 | `docx_source.py` | 无 CLI（共享模块） | 交稿 docx 段落流与行内记号的单一解析 | 【无】 | `test_docx_and_notes.py`、`test_import_tools.py`（间接） |
 | `edit_safety.py` | 无 CLI（共享模块，含 argparse 辅助） | 写目标与显式暂存范围的限制 | 【无】 | `test_edit_safety.py` |
-| `epub_ids.py` | 无 CLI（共享模块） | 作品号、表头、内容序与文件角色解析 | 【无】 | `test_epub_ids.py` |
+| `epub_ids.py` | 无 CLI（共享模块） | 作品号、表头、内容序与文件角色解析；`is_packaging_header`（是否包装页，7 类）与 `is_list_packaging_header`（能否在 L5 写列表，4 类）**刻意分开** | 【无】 | `test_epub_ids.py` |
 | `epub_structure.py` | 无 CLI（共享模块） | 容器／OPF spine／XML／资源引用检查 | 【无】 | `test_bw_preprocess.py`（间接） |
 | `file_transaction.py` | 无 CLI（共享模块） | 临时文件／临时目录与失败回滚 | 【无】 | 无专用测试；由调用方验证 |
 | `image_signature.py` | 无 CLI（共享模块） | 图片 dHash 指纹与尺寸（Pillow 可选） | 【无】 | 无专用测试；由调用方验证 |
@@ -589,7 +600,7 @@ python -m unittest discover -s tools/tests -p "test_*.py" -v
 | `notes_core.py` | 无 CLI（共享模块） | Note 解析和阅读顺序 | 【无】 | `test_docx_and_notes.py` |
 | `path_safety.py` | 无 CLI（共享模块） | ZIP 路径安全和解包残留识别 | 【无】 | `test_path_safety.py` |
 | `sync_core.py` | 无 CLI（共享模块） | 差异、镜像、上传状态与拉取状态 | 【无】 | `test_publish_auto.py`、`test_sync_and_rename.py` |
-| `xhtml_slots.py` | 无 CLI（共享模块） | 固定行模板 L1–L6 的槽位行号与名称常量 | 【无】 | 由调用方测试覆盖：`test_alignment.py`、`test_bw_preprocess.py`、`test_heading_breaks.py` |
+| `xhtml_slots.py` | 无 CLI（共享模块） | 固定行模板 L1–L6 的槽位行号与名称常量；译注页固定 h1 常量 `NOTE_H1` | 【无】 | 由调用方测试覆盖：`test_alignment.py`、`test_bw_preprocess.py`、`test_heading_breaks.py` |
 | `xhtml_structure.py` | 无 CLI（共享模块） | 物理行类型、保守配对与页边界修复前提 | 【无】 | `test_xhtml_structure.py` |
 | `xhtml_template.py` | 无 CLI（共享模块） | 固定模板纯重建 | 【无】 | `test_xhtml_and_merge.py` |
 | `xhtml_text.py` | 无 CLI（共享模块） | XHTML → 纯文本的唯一口径（保留注音／去注音／可见文本三种） | 【无】 | `test_xhtml_text.py`；另有调用方测试 |
@@ -598,13 +609,13 @@ python -m unittest discover -s tools/tests -p "test_*.py" -v
 
 | 模块 | 负责 | 不负责 |
 | --- | --- | --- |
-| `epub_ids.py` | 作品号、表头、内容序、文件角色与明确历史别名 | 猜测配对或按章名反推序号 |
+| `epub_ids.py` | 作品号、表头、内容序、文件角色与明确历史别名；`PACKAGING_SUFFIXES`（7 类，判定「是不是包装页」）与 `LIST_PACKAGING_SUFFIXES`（4 类，判定「能否在 L5 写列表」） | 猜测配对或按章名反推序号；**不得用 7 类集合放行 L5 列表槽位**——纯图片页无列表用例，`check_alignment`／`check_epub_health`／`normalize_paired`／`check_semantic_alignment`／`xhtml_template` 五处必须共用 `is_list_packaging_header` |
 | `docx_source.py` | 交稿 docx 段落流与行内记号（注音、译注、可信标签）的单一实现 | 章节装配、模板渲染、写盘与他人裁定 |
 | `import_plan.py` | 导入计划的结构校验与逐条改动装配 | 裁定改动对错、写盘、发布方向 |
 | `image_signature.py` | 图片 dHash 指纹与尺寸（Pillow 可选） | 判定图片语义角色、写盘 |
 | `alignment_rules.py` | 有依据的配对、模板与语义归属例外 | 为消除错误扩大豁免 |
 | `xhtml_template.py` | 固定模板纯重建 | 文件选择与历史标题语义迁移 |
-| `xhtml_slots.py` | 固定行模板 L1–L6 的槽位行号与名称常量（唯一来源） | 槽位判定策略：配对／分页／合并三类契约的宽严不同，留在各入口实现 |
+| `xhtml_slots.py` | 固定行模板 L1–L6 的槽位行号与名称常量（唯一来源）；译注页固定 h1 常量 `NOTE_H1`（唯一来源，`docx2epub.py` 与 `import_build_text.py` 共用） | 槽位判定策略：配对／分页／合并三类契约的宽严不同，留在各入口实现；译注页结构判据留在 `check_epub_health.find_note_structure_problems` |
 | `xhtml_structure.py` | 物理行类型、保守配对与页边界修复前提 | 语义拆合或猜测未确认偏移 |
 | `notes_core.py` | Note 解析和阅读顺序 | 同步、发布方向 |
 | `sync_core.py` | 差异、镜像、上传状态与拉取状态 | 冲突取舍和方向选择 |
