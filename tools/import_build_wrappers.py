@@ -7,12 +7,15 @@
 
 前置（缺一即阻断，不写盘）：
 * `<书目录>/OEBPS/Text/` 已有计划里的全部章节文件（`fname`）；
-* 计划里登记了 `role=cover` 与 `role=illustration` 的图片，且对应文件已在
-  `OEBPS/Images/`（先跑 `import_images.py`）；
+* 计划里登记了 `role=cover` 的封面，且文件已在 `OEBPS/Images/`（先跑
+  `import_images.py`）；`role=illustration` 的彩页为可选项，有则一并校验并多写
+  一个 Illustrations 页；
 * 模板书齐备（`OEBPS/Styles/style.css`、`OEBPS/content.opf`、`META-INF/container.xml`）。
 
 `--info`／`--intro` 是页面 **L4 起**的内容行（第 1 行 h1、第 2 行空行占位），
-由用户提供的素材决定，工具不内置汉化组署名或简介文本。
+由用户提供的素材决定，工具不内置汉化组署名或简介文本。简介页文件名默认
+`<作品号>-Introduction.xhtml`；需要让简介占某个内容序时（S5 外典书库用 `-01`）
+在计划里写 `intro_fname`。
 
 用法：
     python tools/import_build_wrappers.py plan.json --template "EPUB/[S4_03]…" \
@@ -225,15 +228,19 @@ def main(argv: list[str] | None = None) -> int:
     illustrations = [entry["dst"] for entry in plan["images"] if entry["role"] == "illustration"]
     if not cover:
         problems.append("计划里没有 role=cover 的图片（封面是必需材料）")
-    if not illustrations:
-        problems.append("计划里没有 role=illustration 的彩页图片")
+    # 彩页是**可选项**：日文源没有彩色插页时计划里就没有 role=illustration，
+    # 此时不生成 Illustrations 页（S5 外典书库各卷的既有形状）。
     for name in ([cover] if cover else []) + illustrations:
         if not (image_dir / name).is_file():
             problems.append(f"图片尚未就位：{name}；先跑 import_images.py")
 
-    for name in [f"{work_id}-Cover.xhtml", f"{work_id}-Information.xhtml",
-                 f"{work_id}-Introduction.xhtml", f"{work_id}-Illustrations.xhtml"]:
+    # 简介页文件名可由计划覆盖：S5 外典书库的日文源首个内容单元是整页作品扉页
+    # （内容序 -01），中文侧用「简介」页占同一内容序，故取 `<作品号>-01_Introduction.xhtml`。
+    intro_name = plan.get("intro_fname") or f"{work_id}-Introduction.xhtml"
+    for name in [f"{work_id}-Cover.xhtml", f"{work_id}-Information.xhtml", intro_name]:
         text_order.append(name)
+    if illustrations:
+        text_order.append(f"{work_id}-Illustrations.xhtml")
     for chapter in plan["chapters"]:
         path = text_dir / chapter["fname"]
         if not path.is_file():
@@ -256,13 +263,15 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     pages = {
-        text_order[0]: render_cover(cover),
-        text_order[1]: page_document(args.info.read_text(encoding="utf-8-sig").splitlines()),
-        text_order[2]: page_document(args.intro.read_text(encoding="utf-8-sig").splitlines()),
-        text_order[3]: render_illustrations(illustrations),
+        f"{work_id}-Cover.xhtml": render_cover(cover),
+        f"{work_id}-Information.xhtml": page_document(
+            args.info.read_text(encoding="utf-8-sig").splitlines()),
+        intro_name: page_document(args.intro.read_text(encoding="utf-8-sig").splitlines()),
     }
+    if illustrations:
+        pages[f"{work_id}-Illustrations.xhtml"] = render_illustrations(illustrations)
     nav_entries = [(f"{work_id}-Information.xhtml", "制作信息", 0),
-                   (f"{work_id}-Introduction.xhtml", "简介", 0)] + entries
+                   (intro_name, "简介", 0)] + entries
     uid = f"uuid:{uuid.uuid4()}"
     description = description_of(args.intro.read_text(encoding="utf-8-sig").splitlines())
     template_opf = (args.template / "OEBPS" / "content.opf").read_text(encoding="utf-8")

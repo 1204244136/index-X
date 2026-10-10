@@ -21,7 +21,7 @@ from pathlib import Path
 from edit_safety import EditSafetyError, add_edit_mode, require_edit_target
 from file_transaction import atomic_write_bytes, rollback_paths
 from image_signature import dimensions, dhash, hamming, image_files, pillow_available
-from import_plan import PlanError, body_images, load_plan
+from import_plan import PlanError, load_plan
 
 
 def sha256_bytes(data: bytes) -> str:
@@ -98,8 +98,9 @@ def apply(args) -> int:
             problems.append(f"归档名重复：{destination}")
             continue
         payloads[destination] = data
-    if not body_images(plan):
-        problems.append("计划里没有 role=body 的正文插图")
+    # 正文插图是**可选项**：部分作品（如 S5 外典书库各卷）日文源本身没有一页一图，
+    # 计划里只有封面。正文插图数量与计划的对应关系由 `import_build_text.py` 在渲染
+    # 时按行断言（用掉几张必须等于登记几张），这里不再另设「至少一张」的硬门槛。
     if problems:
         print("图片未落位：")
         for item in problems:

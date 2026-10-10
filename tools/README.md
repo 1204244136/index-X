@@ -81,7 +81,7 @@ python tools/publish_auto.py --dry-run
 python tools/publish_auto.py
 ```
 
-读取三处副本与 `manifest.json`／`pull-state.tsv` 的差异，输出逐书方向计划；只处理变更书和文件。同一本地书的缓存修改已包含在归档时选择 C，否则报告冲突；OneDrive 外部更新与本地未发布修改冲突时停止。冲突合并的操作边界在 AGENTS，`--from` 不代表可以丢弃另一边有效内容。
+读取三处副本与 `manifest.json`／`pull-state.tsv` 的差异，输出逐书方向计划；只处理变更书和文件。同一本地书的缓存修改已包含在归档时选择 C，否则报告冲突；OneDrive 外部更新与本地未发布修改冲突时停止。**例外**：OneDrive 的 `.epub` 与缓存同一本书逐字节相同（解压已完成、清单基线与 `pull-state` 未推进，典型是 `-SyncToEpub` 的下游门禁失败）时不算分叉，报「已完成的拉取」并按流程 A 补跑一次，不要求人工选边。冲突合并的操作边界在 AGENTS，`--from` 不代表可以丢弃另一边有效内容。
 
 参数：`--cache`／`--epub`、`--from auto|cache|epub|onedrive`、`--side`、`--pattern`、`--only-books`、`--dry-run`、`--no-upload`、`--force`（配合显式方向）、`--overwrite-cache`、`--chinese-onedrive`／`--japanese-onedrive`。退出码 1 表示被阻塞或失败；dry-run 只预览，不执行发布门禁与同步。
 
@@ -155,8 +155,8 @@ python tools/package_cache_epubs.py --source EPUB --output output/epubs --patter
 | `import_docx_outline.py` | `python tools/import_docx_outline.py 交稿.docx --check` | 只读；写显式 `--out` | 无 Heading 1、段内换行、注音／译注记号未闭合即阻断【无】 | `test_import_tools.py` |
 | `import_align_plan.py` | `python tools/import_align_plan.py 交稿.docx --work S4_04 --book-dir … --out …` | 只读；写显式清单／计划骨架／缺口报告 | 交稿形状门禁；章节一一对应与关系报告【无】 | `test_import_tools.py` |
 | `import_build_text.py` | `python tools/import_build_text.py 计划.json --out "EPUB/…" --apply` | 写 `<书目录>/OEBPS/Text/*.xhtml` | 逐章物理行数必须等于日文，任何一章不齐整批不写【无】 | `test_import_tools.py`（含不写盘反例） |
-| `import_images.py` | `python tools/import_images.py suggest --src 素材目录 --jp-dir … --work S4_04` | 写 `<书目录>/OEBPS/Images/*` | 归档名必须带作品号前缀、源文件可解码；低置信指纹需人工确认【无】 | `test_import_tools.py` |
-| `import_build_wrappers.py` | `python tools/import_build_wrappers.py 计划.json --template … --info … --intro … --out … --apply` | 写包装页、`nav.xhtml`／`toc.ncx`／`content.opf`／`mimetype`／`container.xml`／`style.css` | 正文／封面彩页缺失即阻断；manifest 与 spine 互指、id 唯一【无】 | `test_import_tools.py` |
+| `import_images.py` | `python tools/import_images.py suggest --src 素材目录 --jp-dir … --work S4_04` | 写 `<书目录>/OEBPS/Images/*` | 归档名必须带作品号前缀、源文件可解码；低置信指纹需人工确认。正文插图可为 0（数量是否与计划一致由 `import_build_text.py` 渲染时逐行断言）【无】 | `test_import_tools.py` |
+| `import_build_wrappers.py` | `python tools/import_build_wrappers.py 计划.json --template … --info … --intro … --out … --apply` | 写包装页、`nav.xhtml`／`toc.ncx`／`content.opf`／`mimetype`／`container.xml`／`style.css` | 正文／封面缺失即阻断；彩页为可选项；manifest 与 spine 互指、id 唯一【无】 | `test_import_tools.py` |
 | `docx2epub.py` | `python tools/docx2epub.py 交稿.docx --out … --apply --staging` | 预览默认；写显式成品构建输出 | 源不覆盖，资源／容器验证【无】 | `test_docx_and_notes.py`、`test_import_output_boundaries.py` |
 | `epub2docx.py` | `python tools/epub2docx.py 源.epub --out … --apply --staging` | 预览默认；写显式交稿输出 | 源不覆盖，需 calibre【无】 | 输出边界：`test_import_output_boundaries.py`；转换依赖外部 calibre |
 | `bw_extract_preprocess.json` | 无 CLI（配置，供 `bw_preprocess.py` 读取） | 只读配置 | 未知页不得默认继承上一内容单元【无】 | `test_bw_preprocess.py` |
@@ -183,10 +183,10 @@ python tools/import_build_wrappers.py .cache/epub-work/import/plan.json --templa
 
 - `import_materials.py` 是**材料门禁**：交稿、图片素材、制作信息、简介、作品号与书目录名、日文工作源、模板书七项逐项核对。缺项非零退出，并把要补的东西列成可直接发给用户的清单——材料不齐不许开工，不得自拟封面、简介或制作信息。三副本待发布状态需人工用 `publish_auto.py --dry-run` 确认。
 - `import_docx_outline.py` 只读诊断，写显式 `--out`。阻断项：无 Heading 1、段内换行（`w:br`）、注音／译注记号未闭合；提示项：全角空格、段内制表符、独占成段的译注。
-- `import_align_plan.py` 按**日文物理行**逐行比对（日文一行＝一个行单元，中文侧允许 1:2），输出 `1:1`／`1:2`／`1:0`／`0:1` 关系与建议改动，并生成计划骨架。改动类型只有 `split`／`merge_prev`／`insert_br_after`／`drop`／`note_to_prev` 五种，`para` 用清单里的段落序号。计划是任务工作产物，放 `.cache/epub-work/import/`，不提交。
-- `import_build_text.py` 渲染正文（固定行模板、`<ruby>`、Note 页与脚注引用）。**写盘前逐章断言物理行数与日文一致，任何一章不齐整批不写**；只清段落首尾的 ASCII 空格与不换行空格，段内全角空格（对齐／分字）原样保留。
+- `import_align_plan.py` 按**日文物理行**逐行比对（日文一行＝一个行单元，中文侧允许 1:2），输出 `1:1`／`1:2`／`1:0`／`0:1` 关系与建议改动，并生成计划骨架。改动类型只有 `split`／`merge_prev`／`insert_br_after`／`drop`／`note_to_prev` 五种，`para` 用清单里的段落序号。章标题识别覆盖 `引子／序章／第N章／行间（可带副标题，`行　间` 的排版空格先折叠）／深度N（外典书库的专用后缀，写作 `DepthN`）／终章／后记／尾声`；识别不出的条目骨架留空 `fname`，由人工在计划里补。计划是任务工作产物，放 `.cache/epub-work/import/`，不提交。
+- `import_build_text.py` 渲染正文（固定行模板、`<ruby>`、Note 页与脚注引用）。**写盘前逐章断言物理行数与日文一致，任何一章不齐整批不写**；只清段落首尾的 ASCII 空格与不换行空格，段内全角空格（对齐／分字）原样保留。译注正文在正文渲染时已由 `esc_ruby` 转成可安全嵌入的行内 XML（含 `<ruby>`／`<b>`），写 Note 页时**原样写入**，不得二次转义（否则译注里的注音会退化成 `&lt;ruby&gt;` 字面文本）。
 - `import_images.py`：`suggest` 用 dHash 把素材对到日文原图给命名建议；`apply` 复制并校验作品号前缀、可解码性与指纹，低置信项必须人工看图。
-- `import_build_wrappers.py` 从模板书取样式表、container 与 calibre 元数据块，生成四个包装页与 `nav.xhtml`／`toc.ncx`／`content.opf`／`mimetype`。`--info`／`--intro` 是页面 L4 起的内容行（第 1 行 h1、第 2 行空行占位），由用户素材决定；manifest 的 item id 用 `id-t{n}`，避免与 metadata 的 `id-1`／`id-2` 冲突（calibre 会报 `DuplicateId`）。
+- `import_build_wrappers.py` 从模板书取样式表、container 与 calibre 元数据块，生成包装页（Cover／Information／Introduction，计划里有 `role=illustration` 彩页时再加 Illustrations）与 `nav.xhtml`／`toc.ncx`／`content.opf`／`mimetype`。`--info`／`--intro` 是页面 L4 起的内容行（第 1 行 h1、第 2 行空行占位），由用户素材决定；简介页文件名默认 `<作品号>-Introduction.xhtml`，计划里写 `intro_fname` 可让它占某个内容序（S5 外典书库用 `-01`，与日文侧整页作品扉页同序）；manifest 的 item id 用 `id-t{n}`，避免与 metadata 的 `id-1`／`id-2` 冲突（calibre 会报 `DuplicateId`）。
 - 六步之后按 C4 跑 `text_norm.py`、`check_alignment.py --strict`、`check_epub_health.py --strict`、`check_note_order.py`、`publish_preflight.py`、`check_epub_validity.py`，再走 C1 的发布。
 
 ### BW 提取预处理
@@ -475,6 +475,8 @@ python tools/text_norm.py --root EPUB --apply --report 显式报告.md
 ```
 
 只执行规范可确定的字符替换，XML、行数、标签、文件名与引用保持有效。规则实现唯一在 `text_norm.py`，不另写批量替换器。`--pattern` 限定书籍，`--summary` 供提交摘要，`--top` 控制报告样例。选词需原文的事项走术语或复核 skill。任何改写行内文字的改动写盘后必须重跑本工具并确认 0 命中。
+
+规则必须**幂等**：同一份文本反复运行结果必须稳定。跨多个标记的连段要整段重排，不能只换相邻一对——`！[？?]` → `？！` 对 `！！！？？？` 既不收敛、产出的交错形态也不满足「问号始终在感叹号左边」，问叹顺序按整段「？在前、！在后」重排（`test_text_norm.py` 有幂等性反例）。
 
 译注页相关规则两条，依据 [翻译规范](../docs/translation-spec.md) 三.2：
 

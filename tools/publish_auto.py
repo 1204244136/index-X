@@ -46,6 +46,7 @@ from sync_core import (  # noqa: E402
     detect_changes,
     find_conflicts,
     missing_baseline_sides,
+    onedrive_book_matches_cache,
     read_pull_state,
 )
 
@@ -107,6 +108,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 # ---------------------------------------------------------------- 筛选与展示
+
+
+def onedrive_epub_path(source_dirs: dict[str, Path | None], book_key: str) -> Path:
+    """`side/book` → OneDrive 上的 `.epub` 路径（目录缺失时返回不可命中的路径）。"""
+    side, book = book_key.split("/", 1)
+    directory = source_dirs.get(side)
+    if directory is None:
+        return Path("/nonexistent") / f"{book}.epub"
+    return directory / f"{book}.epub"
 
 
 def in_scope(book_key: str, args: argparse.Namespace) -> bool:
@@ -414,8 +424,17 @@ def main(argv: list[str] | None = None) -> int:
         book_key for book_key, details in conflict_details.items() if details
     )
     converged = sorted(overlap - set(conflicts))
-    # 分叉：OneDrive 的 .epub 被外部更新，而本地对同一本书也有未发布改动
-    diverged = sorted(set(drifted) & (set(cache_changes) | set(epub_changes)))
+    # 分叉：OneDrive 的 .epub 被外部更新，而本地对同一本书也有未发布改动。
+    # 但「缓存修改」有时就是刚拉进来的 OneDrive 内容本身（解压成功、清单基线与
+    # pull-state 未推进，例如 -SyncToEpub 的下游门禁失败）：这种状态下没有任何会
+    # 被覆盖掉的本地改动，补跑一次流程 A 即可，不能当成需要人工选边的分叉。
+    touched = set(drifted) & (set(cache_changes) | set(epub_changes))
+    completed_pull = sorted(
+        book_key for book_key in touched
+        if onedrive_book_matches_cache(
+            onedrive_epub_path(source_dirs, book_key), cache / book_key) is True
+    )
+    diverged = sorted(touched - set(completed_pull))
 
     print("\n== 改动判别 ==")
     print_deltas("缓存有未发布修改", cache_changes, args.dry_run)
@@ -432,6 +451,13 @@ def main(argv: list[str] | None = None) -> int:
             f"{len(converged)} 本"
         )
         for book_key in converged:
+            print(f"    {describe_book(book_key)}")
+    if completed_pull:
+        print(
+            f"  已完成的拉取（缓存内容与 OneDrive 新内容逐字节相同，只缺基线推进）："
+            f"{len(completed_pull)} 本"
+        )
+        for book_key in completed_pull:
             print(f"    {describe_book(book_key)}")
     for note in drift_notes:
         print(f"  提示: {note}")
@@ -503,6 +529,17 @@ def main(argv: list[str] | None = None) -> int:
             "\n  提示: --only-books 无法约束流程 A（pull.ps1 按整本书解压），已跳过 OneDrive 拉取；"
             "如需拉回，请用 ./tools/pull.ps1 -SyncToEpub -Pattern 指定范围。"
         )
+
+    if completed_pull:
+        if run_pull:
+            # 流程 A 会重新解压这些书并推进清单基线与 pull-state，内容不再变化；
+            # 不需要再按流程 B 打包上传一遍。
+            cache_books = [key for key in cache_books if key not in set(completed_pull)]
+        else:
+            print(
+                f"\n  提示: {len(completed_pull)} 本已完成的拉取只缺基线推进，"
+                "本次方向不会执行流程 A；请用 ./tools/pull.ps1 补齐基线。"
+            )
     if run_pull:
         pull_command = build_pull_command(args, cache, epub_root, args.dry_run)
         if pull_command is None:

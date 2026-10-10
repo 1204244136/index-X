@@ -80,11 +80,17 @@ def render_file(chapter: dict, rows: list[dict], notes: list[str], work_id: str,
 
 def render_notes(notes: list[str]) -> str:
     """生成译注页 Note.xhtml。h1 取值来自 `xhtml_slots.NOTE_H1`（唯一来源），
-    容器固定 `<ul>`（`reorder_notes.py` 依赖它定位条目，不得改 `<ol>`）。"""
+    容器固定 `<ul>`（`reorder_notes.py` 依赖它定位条目，不得改 `<ol>`）。
+
+    `notes` 里的正文来自 `extract_notes(esc_ruby(...))`，**已经是可安全嵌入的行内
+    XML**（`&`/`<`/`>` 已转义，`<ruby>`、`<b>` 等语义标签是 `esc_ruby` 自己生成的）。
+    因此这里直接原样写入：再调一次 `esc_ruby` 会把 `<ruby>` 当成未知标签转义成
+    字面文本，译注里的注音就退化成 `&lt;ruby&gt;…` 显示出来。
+    """
     lines = ["<?xml version='1.0' encoding='utf-8'?>", "<!DOCTYPE html>", HEAD3,
              NOTE_H1, "<ul>"]
     for number, note in enumerate(notes, 1):
-        lines.append(f'<li epub:type="footnote" id="note{number}">{esc_ruby(note)}</li>')
+        lines.append(f'<li epub:type="footnote" id="note{number}">{note}</li>')
     lines += ["</ul>", "</body></html>", ""]
     return "\n".join(lines)
 

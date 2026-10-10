@@ -2,9 +2,11 @@
 """Change detection, tree mirroring, upload and pull-state helpers."""
 from __future__ import annotations
 
+import hashlib
 import os
 import shutil
 import tempfile
+import zipfile
 from pathlib import Path
 
 from file_transaction import atomic_write_bytes, rollback_paths
@@ -129,6 +131,39 @@ def missing_baseline_sides(
         if not any(path.startswith(prefix) for path in baseline):
             missing.append(side)
     return missing
+
+
+def onedrive_book_matches_cache(epub_path: Path, book_dir: Path) -> bool | None:
+    """OneDrive 的 `.epub` 解包后是否与缓存里同一本书逐字节相同。
+
+    用来区分两种「缓存有未发布修改 + OneDrive 已外部更新」的状态：
+
+    * 真分叉——缓存里还有 OneDrive 那份 `.epub` 不包含的本地改动，必须人工选边；
+    * 未走完的拉取——缓存内容就是新拉进来的 OneDrive 内容，解压成功但清单基线
+      与 `pull-state` 没推进（如 `-SyncToEpub` 的下游门禁失败），此时没有任何会
+      被覆盖掉的本地改动，补跑一次流程 A 即可。
+
+    读不了包（文件缺失、不是合法 ZIP）时返回 `None`：不可判定，调用方仍按人工
+    决断处理。
+    """
+    if not epub_path.is_file() or not book_dir.is_dir():
+        return None
+    try:
+        with zipfile.ZipFile(epub_path) as archive:
+            packed = {
+                info.filename: hashlib.sha256(archive.read(info)).hexdigest()
+                for info in archive.infolist()
+                if not info.is_dir() and info.filename
+            }
+    except (OSError, zipfile.BadZipFile, RuntimeError):
+        return None
+    current: dict[str, str] = {}
+    for path in book_dir.rglob("*"):
+        if not path.is_file() or is_extract_artifact(path, root=book_dir):
+            continue
+        current[path.relative_to(book_dir).as_posix()] = hashlib.sha256(
+            path.read_bytes()).hexdigest()
+    return packed == current
 
 
 def detect_changes(

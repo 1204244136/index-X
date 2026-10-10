@@ -89,8 +89,13 @@ def cn_to_int(text: str) -> int | None:
 # ---------------------------------------------------------------------------
 
 def split_title(title: str) -> tuple[str, str | None]:
-    parts = re.split(r"[\s\u3000]+", title.strip(), maxsplit=1)
+    """首段（章标识）与其余标题。`行　间` 的排版空格先折叠，否则首段会被切成「行」。"""
+    normalized = re.sub(r"^行[\s\u3000]+([间間])", r"行\1", title.strip())
+    parts = re.split(r"[\s\u3000]+", normalized, maxsplit=1)
     return parts[0], (parts[1].strip() if len(parts) > 1 and parts[1].strip() else None)
+
+
+DEPTH_RE = re.compile(r"^深度[\s\u3000]*([〇零一二三四五六七八九十百千0-9０-９]+)$")
 
 
 def suggest_chapter(title: str, sequence: int, interlude: int) -> dict:
@@ -107,10 +112,25 @@ def suggest_chapter(title: str, sequence: int, interlude: int) -> dict:
         main = "终　章"
     elif re.match(r"^第[〇零一二三四五六七八九十百千0-9０-９]+章$", head):
         main = head
+    elif (depth := DEPTH_RE.match(head)):
+        # 外典书库的「深度N」章：作品原有的专用语义后缀（S5_04_02），
+        # 不套 ChapterN，按命名规范「与正文标题对应的专用语义后缀」保留作品命名。
+        value = cn_to_int(depth.group(1))
+        main = f"{head}　{sub}" if sub else head
+        return {**base, "suffix": f"Depth{value}", "h1_main": main,
+                "h1_sub": None, "nav": main}
     elif re.match(r"^行[间間]", head):
-        numeral = head[1:] or (sub or "")
-        value = cn_to_int(numeral) or interlude or sequence
-        main = f"行间　{cn_numeral(value)}"
+        # `行間　一` 用序号；`行間　副标题`（S5_04_02、S6_24.06.07 一类）保留副标题，
+        # 不把副标题当序号丢掉。
+        tail = head[1:]
+        numeral_text = tail if cn_to_int(tail) is not None else (sub or "")
+        value = cn_to_int(numeral_text)
+        if value is None and sub:
+            main = f"行间　{sub}"
+            value = interlude or sequence
+        else:
+            value = value or interlude or sequence
+            main = f"行间　{cn_numeral(value)}"
         return {**base, "suffix": f"Between_the_Lines{value}", "h1_main": main,
                 "h1_sub": None, "nav": main}
     elif re.match(r"^后记$|^後記$|^あとがき$|^跋$", head):

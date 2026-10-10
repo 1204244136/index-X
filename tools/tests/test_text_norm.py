@@ -29,6 +29,27 @@ class TextNormTransformTests(unittest.TestCase):
         self.assertEqual(line, "<p>真的吗？！真的吗？！</p>")
         self.assertEqual(len(hits), 2)
 
+    def test_interrobang_long_run_is_reordered_and_idempotent(self):
+        """长连段整段重排为「？在前、！在后」，且反复运行结果稳定。
+
+        旧实现 `！[？?]` → `？！` 只换相邻一对：`！！！？？？` 替换一次得
+        `！！？！？？`，再跑又变，永远不收敛；交错形态也不满足
+        「问号始终在感叹号左边」（translation-spec 一.4）。
+        """
+        line, hits, _ = transform_line("<p>骗人的！！！？？？</p>", None)
+        self.assertEqual(line, "<p>骗人的？？？！！！</p>")
+        self.assertEqual([h[0] for h in hits], ["interrobang"])
+        again, hits_again, _ = transform_line(line, None)
+        self.assertEqual(again, line)
+        self.assertEqual(hits_again, [])
+
+        # 已经「？在前」的连段不改动、也不计入命中
+        for kept in ("？？？！！！", "？！", "？？！", "？！！"):
+            text = f"<p>{kept}</p>"
+            unchanged, kept_hits, _ = transform_line(text, None)
+            self.assertEqual(unchanged, text)
+            self.assertEqual(kept_hits, [])
+
     def test_ellipsis_period(self):
         # 删省略号后的单句号
         line, hits, _ = transform_line("<p>走吧……。</p>", None)
