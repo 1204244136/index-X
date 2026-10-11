@@ -8,6 +8,9 @@ name: Normalize EPUB Text
 #   - 译注自愈：在定义与引用完全一致的前提下，按正文首次引用顺序自愈 Note 编号与正文引用（tools/reorder_notes.py）。
 #   - 裸图包裹：单行独占裸 <img> 包裹 <p>，严格禁止删除任何结构行（tools/wrap_cn_image_lines.py --wrap-only）。
 #   - 不改变物理行数、不改模板、不改文件名、不动未引用的结构，因此不影响中日行数对齐。
+#   - 提交信息主语取实际 diff（改动文件数／行数），正文逐条列出三步各自的结论。三步都会
+#     写盘，只取单个工具的摘要当主语会在其 0 命中时误报（曾出现「文本 0 处」而实际包
+#     <p> 10 行的提交），因此任一步为 0 都不代表整体为 0。
 #   - 无命中时完全不提交，不制造空 commit。
 #   - 用 GITHUB_TOKEN 推送，GitHub 的防递归机制使该 push 不会触发
 #     build-epub-release.yml；即修复进仓库但不会自动发版，需要发版时手动
@@ -61,18 +64,20 @@ jobs:
 
       - name: 译注顺序与编号自愈
         run: |
+          set -o pipefail   # 默认 shell 无 pipefail，tee 会吞掉工具退出码
           if [ "${{ inputs.dry_run }}" = "true" ]; then
-            python tools/reorder_notes.py --root EPUB --no-backup --dry-run
+            python tools/reorder_notes.py --root EPUB --no-backup --dry-run 2>&1 | tee /tmp/step-reorder-notes.log
           else
-            python tools/reorder_notes.py --root EPUB --no-backup --apply
+            python tools/reorder_notes.py --root EPUB --no-backup --apply 2>&1 | tee /tmp/step-reorder-notes.log
           fi
 
       - name: 裸图行包裹自愈（纯包裹，不删行）
         run: |
+          set -o pipefail   # 同上：换掉裸调用后仍要让「拒绝写入」非零退出中断流程
           if [ "${{ inputs.dry_run }}" = "true" ]; then
-            python tools/wrap_cn_image_lines.py --root EPUB --wrap-only
+            python tools/wrap_cn_image_lines.py --root EPUB --wrap-only 2>&1 | tee /tmp/step-wrap-img.log
           else
-            python tools/wrap_cn_image_lines.py --root EPUB --wrap-only --apply
+            python tools/wrap_cn_image_lines.py --root EPUB --wrap-only --apply 2>&1 | tee /tmp/step-wrap-img.log
           fi
 
       - name: 修改后发布预检
@@ -103,18 +108,43 @@ jobs:
         id: msg
         if: steps.diff.outputs.changed == 'true'
         run: |
+          # 主语取实际 diff，不取单个工具的摘要：三步自愈都写盘，text_norm 0 命中不代表
+          # 整体 0 命中（历史问题：报「文本 0 处」而 wrap 实包 5 个文件 10 行）。
+          files=$(git diff --numstat EPUB/ | wc -l | tr -d ' ')
+          added=$(git diff --numstat EPUB/ | awk '{a += $1} END {print a + 0}')
+          deleted=$(git diff --numstat EPUB/ | awk '{d += $2} END {print d + 0}')
+          subject="style(epub): 自动规范化 EPUB 文本与结构自愈"
+          if [ "$files" -gt 0 ]; then
+            subject="${subject}（${files} 个文件，+${added}/-${deleted} 行）"
+          fi
+
           {
-            if [ -f /tmp/text-norm-summary.txt ] && [ -s /tmp/text-norm-summary.txt ]; then
-              cat /tmp/text-norm-summary.txt
-            else
-              echo "style(epub): 自动规范化 EPUB 文本与自愈结构"
+            echo "$subject"
+            details=""
+            norm=$(sed -n 's/^style(epub): //p' /tmp/text-norm-summary.txt 2>/dev/null | head -n 1 || true)
+            if [ -n "$norm" ]; then
+              details="${details}- 字符级规范化：${norm}"$'\n'
+            fi
+            reorder=$(grep -m1 -E '^(已写盘|预览)' /tmp/step-reorder-notes.log 2>/dev/null | sed 's/：$//' || true)
+            if [ -n "$reorder" ]; then
+              details="${details}- 译注编号自愈：${reorder}"$'\n'
+            fi
+            wrap=$(grep -m1 -E '^(已写盘|预览)' /tmp/step-wrap-img.log 2>/dev/null | sed 's/：$//' || true)
+            if [ -n "$wrap" ]; then
+              details="${details}- 裸图包裹：${wrap}"$'\n'
+            fi
+            if [ -n "$details" ]; then
+              echo ""
+              echo "各步结论："
+              printf '%s' "$details"
             fi
             echo ""
             echo "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           } > /tmp/text-norm-commit.txt
-          echo "message<<__DSH_EOF__" >> "$GITHUB_OUTPUT"
+
+          echo "message<<__COMMIT_MSG_EOF__" >> "$GITHUB_OUTPUT"
           cat /tmp/text-norm-commit.txt >> "$GITHUB_OUTPUT"
-          echo "__DSH_EOF__" >> "$GITHUB_OUTPUT"
+          echo "__COMMIT_MSG_EOF__" >> "$GITHUB_OUTPUT"
 
       - name: 提交并推送
         if: steps.diff.outputs.changed == 'true'
