@@ -41,10 +41,11 @@
   toc-entry  目录条目口径：首条目为「制作信息」、封面不入目录
               （error；存量已于 2026-10-12 补齐唯一偏离本后升级为阻断）
   ncx-doctitle `docTitle` 等于 `dc:title`（error；存量已于 2026-10-12 清零后升级为阻断）
-  identifier-unique 库内 `unique-identifier` 唯一（warning，跨书汇总，存量未清零）
+  identifier-unique 库内 `unique-identifier` 唯一
+              （error；跨书汇总，存量已于 2026-10-12 清零后升级为阻断）
 
-报告级只剩 `identifier-unique`：存量未清零（已裁定另立项），清零后升级为阻断；
-error 级会经 `publish_preflight.py` 接入发布阻断。
+六项均为 error 级：逐本项由 `audit_book` 判定，跨书项在 `main()` 层计算；
+发布阻断由 `publish_preflight.py` 承担——逐本取 error 级，库级再复核 `unique-identifier`。
 
 刻意不纳入的检查项
 ------------------
@@ -143,13 +144,12 @@ SEVERITY = {
     # 译注页结构：零误报的硬规则，与 template/XML/ruby 同级。
     # 存量违规由 E1 一次性修正（见 docs/maintenance-records/）。
     "note-structure": "error",
-    # 成品构成（`docs/epub-artifact-spec.md`）：以下五项存量均已清零，都是硬规则——
-    # 目录名、`dc:title` 对齐与必备部件 2026-10-12 实测 81/81；`docTitle` 对齐同日清理
-    # 68 本；目录条目口径同日补齐唯一偏离本 [S6_24.01.10]（见 docs/maintenance-records/），
-    # 故由报告级升级为阻断。余下一项（跨书 uuid）存量未清零，清零后同样升级。
+    # 成品构成（`docs/epub-artifact-spec.md`）：六项存量均已清零，全部是硬规则——
+    # 目录名、`dc:title` 对齐、必备部件 2026-10-12 实测 81/81；`docTitle` 对齐同日清理 68 本；
+    # 目录条目口径同日补齐 [S6_24.01.10]；跨书 `unique-identifier` 同日把 6 本的模板串值改回
+    # 各自 uuid（见 docs/maintenance-records/），故由报告级逐项升级为阻断。
     "dir-name": "error", "metadata-title": "error", "packaging-required": "error",
-    "ncx-doctitle": "error", "toc-entry": "error",
-    "identifier-unique": "warning",
+    "ncx-doctitle": "error", "toc-entry": "error", "identifier-unique": "error",
 }
 
 

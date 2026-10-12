@@ -35,6 +35,27 @@ class PreflightTests(unittest.TestCase):
         chapter.write_text(chapter.read_text(encoding="utf-8").replace("</body>", "<p>额外行</p>\n</body>"), encoding="utf-8")
         self.assertFalse(validate_publication(cn, jp))
 
+    def test_duplicate_unique_identifier_blocks_publication(self):
+        """跨书 uuid 重复必须阻断：逐本检查判不了，由 validate_publication 库级复核。"""
+        cn = self.root / "EPUB"
+        first = cn / "[S1_01]中文X"
+        second = cn / "[S1_02]中文X"
+        make_book(first, layout=True)
+        make_book(second, layout=True)
+        # 夹具的章节名固定为 S1_01-…：第二本改名并同步 manifest，否则会先撞上作品号表头规则
+        (second / "OEBPS/Text/S1_01-01_Chapter.xhtml").rename(second / "OEBPS/Text/S1_02-01_Chapter.xhtml")
+        opf = second / "OEBPS/content.opf"
+        opf.write_text(opf.read_text(encoding="utf-8").replace(
+            "Text/S1_01-01_Chapter.xhtml", "Text/S1_02-01_Chapter.xhtml"), encoding="utf-8")
+        self.assertTrue(validate_publication(cn))
+        shared = (first / "OEBPS/content.opf").read_text(encoding="utf-8").split('id="BookId">')[1].split("<")[0]
+        for book in (first, second):
+            path = book / "OEBPS/content.opf"
+            text = path.read_text(encoding="utf-8")
+            path.write_text(text.replace(text.split('id="BookId">')[1].split("<")[0], shared),
+                            encoding="utf-8")
+        self.assertFalse(validate_publication(cn))
+
     def test_both_publication_directions_fail_before_mutation(self):
         for side in ("cache", "epub"):
             with self.subTest(side=side):

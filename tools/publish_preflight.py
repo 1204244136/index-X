@@ -7,7 +7,7 @@ import subprocess
 from pathlib import Path
 
 from check_alignment import audit_roots
-from check_epub_health import audit_book, CHECK_ORDER
+from check_epub_health import audit_book, CHECK_ORDER, exempt, find_identifier_duplicates
 from check_note_order import check_book
 from check_translation_spec import audit_book as audit_translation_spec
 from epub_ids import book_id
@@ -29,6 +29,7 @@ def validate_publication(cn_root: Path, jp_root: Path | None = None,
     requested_ids = ({book_id(key.split("/", 1)[-1]) for key in selected}
                      if selected is not None else None)
     checked = 0
+    cn_books: list[Path] = []
     for side, root in roots.items():
         if root is None or not root.is_dir():
             continue
@@ -47,6 +48,7 @@ def validate_publication(cn_root: Path, jp_root: Path | None = None,
             try:
                 validate_book(book)
                 if side == "chinese-text":
+                    cn_books.append(book)
                     checks = set(CHECK_ORDER) - {"template"} if jp_root is not None else None
                     findings, _counts, _exempt, _covered = audit_book(book, checks)
                     problems.extend(f"{key}: {f[0]} {f[2]} {f[5]}" for f in findings if f[4] == "error")
@@ -65,6 +67,11 @@ def validate_publication(cn_root: Path, jp_root: Path | None = None,
                 problems.append(f"{key}: {exc}")
     if checked == 0 and not allow_removed:
         problems.append("没有匹配的书籍，未执行发布验证")
+    # 跨书项：`unique-identifier` 唯一（要跨书汇总，逐本的 `audit_book` 判不了）。
+    for name, msg in find_identifier_duplicates(cn_books):
+        if exempt(book_id(name), "identifier-unique"):
+            continue
+        problems.append(f"chinese-text/{name}: identifier-unique {msg}")
     if jp_root is not None:
         if not jp_root.is_dir():
             problems.append(f"日文参考目录不存在：{jp_root}")

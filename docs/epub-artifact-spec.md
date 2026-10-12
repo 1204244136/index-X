@@ -48,7 +48,7 @@
 
 判定实现、检查项名称、参数与失败边界统一见 [工具合同](../tools/README.md)；本文件不复制常量、正则与例外清单，已确认的例外只登记在 `tools/alignment_rules.py`。
 
-级别口径：**必备部件缺失、书目录名与 `dc:title` 不对齐、`docTitle` 与 `dc:title` 不对齐、目录条目口径**属阻断项（四项存量均已清零）；**`unique-identifier` 唯一性**现阶段为报告级——存量尚未清零（已裁定另立项），清零后升级为阻断。存量偏离与排队情况见 `docs/maintenance-records/`。
+级别口径：本节所有规则**均为阻断项**（六项存量已于 2026-10-12 全部清零）——必备部件缺失、书目录名与 `dc:title` 不对齐、`docTitle` 与 `dc:title` 不对齐、目录条目口径、`unique-identifier` 不唯一。判定实现、库级复核方式与例外清单见 [工具合同](../tools/README.md) 与 `tools/alignment_rules.py`；历史存量与排队情况见 `docs/maintenance-records/`。
 
 ## 六、构成变更的执行前置
 

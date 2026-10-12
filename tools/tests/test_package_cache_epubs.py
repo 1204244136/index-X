@@ -35,7 +35,8 @@ def make_book(book: Path, text: str = "<p>正文</p>", *, layout: bool = False) 
         items.append('<item id="css" href="style.css" media-type="text/css"/>')
     (book / "OEBPS/content.opf").write_text(
         '<package><metadata xmlns:dc="http://purl.org/dc/elements/1.1/">'
-        f'<dc:title id="id">{book.name}</dc:title></metadata>'
+        f'<dc:title id="id">{book.name}</dc:title>'
+        f'<dc:identifier id="BookId">uuid:test-{wid}</dc:identifier></metadata>'
         f'<manifest>{"".join(items)}</manifest>'
         '<spine toc="ncx"><itemref idref="cover"/><itemref idref="info"/>'
         '<itemref idref="chapter"/></spine></package>', encoding="utf-8")

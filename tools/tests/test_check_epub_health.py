@@ -200,6 +200,8 @@ class HealthCheckNegativeTests(unittest.TestCase):
         hits = check_epub_health.find_identifier_duplicates([a, b])
         self.assertEqual(len(hits), 2)
         self.assertTrue(all("共用" in msg for _name, msg in hits))
+        # 存量清零后由报告级升级为阻断（2026-10-12，见 docs/maintenance-records/）
+        self.assertEqual(check_epub_health.SEVERITY["identifier-unique"], "error")
 
     def test_artifact_exempt_registry_is_narrow(self):
         import alignment_rules
