@@ -53,7 +53,7 @@
 | 4 | 残留清零 | `manifest.json` 中文书键 81、`pull-state.tsv` 中文记录 81、缓存中文目录 81，均无旧键；`packed-epubs` 旧名产物 0（手工清理 79 个）；归档内旧名残留 0 处 |
 | 5 | 正文路径 | `text_norm.py --dry-run` 0 行命中；`check_alignment.py` 1129 个正文文件 0 问题；4 处引用抽查一致 |
 | 6 | 全库体检 | `check_epub_health.py --strict` 全部检查项 0 命中（退出 0） |
-| 7 | 阅读端 | 试点本 `S6_10.06.26` 经用户确认；全量 79 本待用户抽验 |
+| 7 | 阅读端 | 试点本 `S6_10.06.26` 经用户确认；全量 79 本经用户明确表示**不必抽验**（2026-10-12） |
 | 8 | 成品可打开 | `check_epub_validity.py` 抽查 2 本 `.epub`（`S1_01`、`S6_10.06.26`）0 问题 |
 
 同批门禁：`python -m unittest discover -s tools/tests -p "test_*.py"` 通过；`check_project_docs.py` 0 问题；技能模板回归 13/13 通过。
