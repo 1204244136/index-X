@@ -39,10 +39,10 @@
   packaging-required `content.opf`／`nav.xhtml`／`toc.ncx` 与封面、制作信息页齐备，
               且两张包装页已被 manifest 声明、已进 spine（error）
   toc-entry  目录条目口径：首条目为「制作信息」、封面不入目录（warning，存量未清零）
-  ncx-doctitle `docTitle` 等于 `dc:title`（warning，存量未清零）
+  ncx-doctitle `docTitle` 等于 `dc:title`（error；存量已于 2026-10-12 清零后升级为阻断）
   identifier-unique 库内 `unique-identifier` 唯一（warning，跨书汇总，存量未清零）
 
-后三项为报告级：存量未清零（排队见 `docs/maintenance-records/`），清零后升级为阻断；
+余下两项为报告级：存量未清零（排队见 `docs/maintenance-records/`），清零后升级为阻断；
 error 级会经 `publish_preflight.py` 接入发布阻断。
 
 刻意不纳入的检查项
@@ -142,11 +142,13 @@ SEVERITY = {
     # 译注页结构：零误报的硬规则，与 template/XML/ruby 同级。
     # 存量违规由 E1 一次性修正（见 docs/maintenance-records/）。
     "note-structure": "error",
-    # 成品构成（`docs/epub-artifact-spec.md`）：目录名、`dc:title` 对齐与必备部件是硬规则，
-    # 存量已清零（2026-10-12 实测 81/81）；后三项存量未清零，先报告级，
-    # 清零后升级为阻断（排队情况见 docs/maintenance-records/）。
+    # 成品构成（`docs/epub-artifact-spec.md`）：以下四项存量均已清零，都是硬规则——
+    # 目录名、`dc:title` 对齐与必备部件 2026-10-12 实测 81/81；`docTitle` 对齐同日
+    # 清理 68 本后为 0（见 docs/maintenance-records/doctitle-alignment-2026-10-12.md），
+    # 故由报告级升级为阻断。余下两项存量未清零，清零后同样升级。
     "dir-name": "error", "metadata-title": "error", "packaging-required": "error",
-    "toc-entry": "warning", "ncx-doctitle": "warning", "identifier-unique": "warning",
+    "ncx-doctitle": "error",
+    "toc-entry": "warning", "identifier-unique": "warning",
 }
 
 

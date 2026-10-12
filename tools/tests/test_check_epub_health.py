@@ -182,6 +182,8 @@ class HealthCheckNegativeTests(unittest.TestCase):
         findings, counts, _e, _c = audit_book(book, {"ncx-doctitle"})
         self.assertEqual(counts.get("ncx-doctitle"), 1)
         self.assertIn("`docTitle` 与 `dc:title` 不一致", findings[0][5])
+        # 存量清零后由报告级升级为阻断（2026-10-12，见 docs/maintenance-records/）
+        self.assertEqual(findings[0][4], "error")
 
     def test_identifier_duplicates_across_books(self):
         a = self.build("S1_01", {"OEBPS/Text/S1_01-01_Chapter1.xhtml": GOOD})
