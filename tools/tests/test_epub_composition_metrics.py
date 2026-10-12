@@ -8,6 +8,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from epub_char_count import EpubSource
 from epub_composition_metrics import (
+    DEFAULT_CSV_DIR,
+    default_csv_path,
     image_anchors,
     is_page_anchor,
     page_ref_of,
@@ -147,6 +149,32 @@ class PrintedPageAnalysisTests(unittest.TestCase):
         self.assertIn("S1_01-Cover", report["skipped"])
         report_all = scan_book(EpubSource(book), pages_per=400, include_all=True)
         self.assertEqual(len(report_all["components"]), 2)
+
+    def test_default_csv_path_never_writes_into_book_dir(self):
+        """默认落点固定：缓存书目录、`EPUB/` 书目录、散装 `.epub` 都写同一处。
+
+        回归背景：`EPUB/` 书目录曾被判为「非缓存」而把 CSV 写进书目录本身，
+        正好会被 `package_cache_epubs.py` 打进 EPUB（与文档承诺相反）。
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            epub_book = root / "EPUB" / "【S1_01】某魔法的禁书目录 01"
+            epub_book.mkdir(parents=True)
+            cache_book = root / ".cache" / "epub-work" / "chinese-text" / "【S1_01】某魔法的禁书目录 01"
+            cache_book.mkdir(parents=True)
+            loose = root / "out" / "【S1_01】某魔法的禁书目录 01.epub"
+            loose.parent.mkdir(parents=True)
+            loose.write_bytes(b"x")
+
+            for source, name in ((epub_book, "【S1_01】某魔法的禁书目录 01.csv"),
+                                 (cache_book, "【S1_01】某魔法的禁书目录 01.csv"),
+                                 (loose, "【S1_01】某魔法的禁书目录 01.csv")):
+                out = default_csv_path([{"source": str(source)}])
+                self.assertEqual(out.parent, DEFAULT_CSV_DIR, source)
+                self.assertEqual(out.name, name, source)
+            self.assertFalse((epub_book / "composition-metrics.csv").exists())
+            with self.assertRaises(SystemExit):
+                default_csv_path([{"source": str(epub_book)}, {"source": str(cache_book)}])
 
 
 if __name__ == "__main__":

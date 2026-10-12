@@ -25,7 +25,7 @@
 
     # 示例（日文分页源目录）
     python tools/epub_composition_metrics.py ".cache/epub-work/japanese-text/【S3_13】創約 とある魔術の禁書目録(13)"
-    # 默认 CSV 写到 .cache/epub-work/composition-metrics/<书目录名>.csv
+    # 默认 CSV 一律写到 .cache/epub-work/composition-metrics/<书目录名>.csv（要放别处用 --csv）
 """
 from __future__ import annotations
 
@@ -53,6 +53,12 @@ from epub_char_count import (  # noqa: E402
     spine_xhtml_items,
     text_of,
 )
+
+# 分析产物的**唯一默认落点**：无论输入是缓存书目录、`EPUB/` 书目录还是散装 `.epub`，
+# 默认都写到这里，绝不写进书籍目录（`EPUB/` 下的书目录会被 `package_cache_epubs.py`
+# 整本打进 EPUB，混进一个 CSV 就等于把构建产物写进发布源）。
+REPO_ROOT = Path(__file__).resolve().parent.parent
+DEFAULT_CSV_DIR = REPO_ROOT / ".cache" / "epub-work" / "composition-metrics"
 
 # 图片引用：src="../image/S3_13-i-045.jpg"（含 SVG 内 xlink:href）
 IMG_REF_RE = re.compile(
@@ -492,18 +498,16 @@ def main() -> int:
 
 
 def default_csv_path(reports: list[dict]) -> Path:
-    """默认输出路径：缓存书目录写到同级 `composition-metrics/<书>.csv`。
+    """默认输出路径：一律 `.cache/epub-work/composition-metrics/<书目录名>.csv`。
 
-    分析产物不放进书籍目录，避免被 `package_cache_epubs.py` 打进 EPUB。
+    分析产物不放进书籍目录，避免被 `package_cache_epubs.py` 打进 EPUB；
+    要放到别处（例如交给别人）请用 `--csv` 显式指定。
     """
     if len(reports) != 1:
         raise SystemExit("多本书请用 --csv 指定输出路径")
     base = Path(reports[0]["source"])
-    if base.is_dir():
-        if base.parent.name in ("japanese-text", "chinese-text"):
-            return base.parent.parent / "composition-metrics" / f"{base.name}.csv"
-        return base / "composition-metrics.csv"
-    return base.with_suffix(".composition-metrics.csv")
+    stem = base.name if base.is_dir() else base.stem
+    return DEFAULT_CSV_DIR / f"{stem}.csv"
 
 
 if __name__ == "__main__":
