@@ -82,7 +82,7 @@ def write_jp_page(path: Path, *, h1: str | None, items: list[tuple[str, str]]) -
 
 
 def jp_dir_for(root: Path, work: str = "S4_04") -> Path:
-    directory = root / f"[{work}]とある暗部の少女共棲(4)"
+    directory = root / f"【{work}】とある暗部の少女共棲(4)"
     (directory / "item" / "xhtml").mkdir(parents=True, exist_ok=True)
     return directory
 
@@ -90,7 +90,7 @@ def jp_dir_for(root: Path, work: str = "S4_04") -> Path:
 def sample_plan(jp_dir: Path, work: str = "S4_04", docx: Path | None = None) -> dict:
     return {
         "work_id": work,
-        "book_dir": f"[{work}]某暗部的少女共栖 4X",
+        "book_dir": f"【{work}】某暗部的少女共栖 4",
         "source_docx": str(docx) if docx else "",
         "jp_root": str(jp_dir.parent),
         "jp_dir": jp_dir.name,
@@ -204,7 +204,7 @@ class AlignPlanTests(unittest.TestCase):
             ])
             plan_path = root / "plan.json"
             code = import_align_plan.main([
-                str(docx), "--work", "S4_04", "--book-dir", "[S4_04]某暗部的少女共栖 4X",
+                str(docx), "--work", "S4_04", "--book-dir", "【S4_04】某暗部的少女共栖 4X",
                 "--jp-root", str(root), "--out", str(plan_path)])
             self.assertEqual(code, 0)
             plan = json.loads(plan_path.read_text(encoding="utf-8"))
@@ -231,10 +231,10 @@ class AlignPlanTests(unittest.TestCase):
             ])
             plan_path = root / "plan.json"
             import_align_plan.main([str(docx), "--work", "S4_04",
-                                    "--book-dir", "[S4_04]某暗部的少女共栖 4X",
+                                    "--book-dir", "【S4_04】某暗部的少女共栖 4X",
                                     "--jp-root", str(root), "--out", str(plan_path)])
             code = import_align_plan.main([str(docx), "--work", "S4_04",
-                                           "--book-dir", "[S4_04]某暗部的少女共栖 4X",
+                                           "--book-dir", "【S4_04】某暗部的少女共栖 4X",
                                            "--jp-root", str(root),
                                            "--plan", str(plan_path), "--check"])
             self.assertEqual(code, 1)
@@ -245,7 +245,7 @@ class BuildTextTests(unittest.TestCase):
         jp = jp_dir_for(root)
         write_jp_page(jp / "item/xhtml/S4_04-01.xhtml", h1=None,
                       items=[("p", "最初の段落である。")])
-        staged = root / "out" / "[S4_04]某暗部的少女共栖 4X"
+        staged = root / "out" / "【S4_04】某暗部的少女共栖 4X"
         write_jp_page(jp / "item/xhtml/S4_04-02.xhtml", h1="序　章",
                       items=[("p", "段落一。"), ("p", "段落二。")])
         docx = write_docx(root / "稿.docx", [
@@ -304,7 +304,7 @@ class WrappersTests(unittest.TestCase):
         jp = jp_dir_for(root)
         write_jp_page(jp / "item/xhtml/S4_04-01.xhtml", h1=None, items=[("p", "一。")])
         write_jp_page(jp / "item/xhtml/S4_04-02.xhtml", h1="序　章", items=[("p", "二。")])
-        staged = root / "out" / "[S4_04]某暗部的少女共栖 4X"
+        staged = root / "out" / "【S4_04】某暗部的少女共栖 4X"
         (staged / "OEBPS/Text").mkdir(parents=True)
         (staged / "OEBPS/Text/S4_04-01_Before_the_Prologue.xhtml").write_text(
             "<html><body>\n<p>一。</p>\n</body></html>\n", encoding="utf-8")
@@ -400,7 +400,7 @@ class ImagesTests(unittest.TestCase):
                     {"dst": "i-001.jpg", "src": "body.jpg", "role": "body"}],
             }
             plan_path = import_plan.write_plan(root / "plan.json", plan)
-            out = root / "out" / "[S4_04]某暗部的少女共栖 4X"
+            out = root / "out" / "【S4_04】某暗部的少女共栖 4X"
             code = import_images.main(["apply", str(plan_path), "--out", str(out),
                                        "--apply", "--staging"])
             self.assertEqual(code, 1)
@@ -419,7 +419,7 @@ class MaterialsTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             code = import_materials.main(["--work", "S4_04",
-                                          "--book-dir", "[S4_04]某暗部的少女共栖 4X",
+                                          "--book-dir", "【S4_04】某暗部的少女共栖 4X",
                                           "--jp-root", str(root)])
             self.assertEqual(code, 1)
 

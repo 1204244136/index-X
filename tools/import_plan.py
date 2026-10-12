@@ -11,7 +11,7 @@
 ```json
 {
   "work_id": "S4_04",
-  "book_dir": "[S4_04]某暗部的少女共栖 4",
+  "book_dir": "【S4_04】某暗部的少女共栖 4",
   "source_docx": "…/交稿.docx",
   "source_docx_sha256": "…",
   "jp_root": ".cache/epub-work/japanese-text",

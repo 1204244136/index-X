@@ -47,7 +47,7 @@ class XhtmlTemplateTests(unittest.TestCase):
     def test_chinese_note_list_uses_l5_slot(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = (
-                Path(tmp) / "chinese-text" / "[S1_01]书" / "OEBPS" / "Text"
+                Path(tmp) / "chinese-text" / "【S1_01】书" / "OEBPS" / "Text"
                 / "S1_01-Note.xhtml"
             )
             path.parent.mkdir(parents=True)

@@ -15,7 +15,7 @@ class NoteOrderTests(unittest.TestCase):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
-        self.text = self.root / "[S1_01]书" / "OEBPS" / "Text"
+        self.text = self.root / "【S1_01】书" / "OEBPS" / "Text"
         self.text.mkdir(parents=True)
         self.notes = self.text / "S1_01-Note.xhtml"
 

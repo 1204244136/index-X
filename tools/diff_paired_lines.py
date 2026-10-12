@@ -72,7 +72,7 @@ except ImportError:
             return m.group(1) if m else None
 
         def book_id(name: str) -> str | None:
-            m = re.search(r"[\[【]([^\]】]+)[\]】]", name)
+            m = re.search(r"【([^】]+)】", name)
             return m.group(1).upper() if m else None
 
         def japanese_book_id(chinese_id: str) -> str:

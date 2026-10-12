@@ -881,8 +881,9 @@ def _process_one(docx_path: Path, args: argparse.Namespace) -> int:
     stem = docx_path.stem
     out_dir = (args.out if args.out else docx_path.parent).resolve()
 
-    # 表头与书名：文件名 [S4_06]某书(6).docx -> header=S4_06, title=某书(6)
-    # 支持 S6 日期表头 [S6_22.06.10]xxx.docx -> header=S6_22.06.10
+    # 表头与书名：文件名 【S4_06】某书(6).docx -> header=S4_06, title=某书(6)
+    # 支持 S6 日期表头 【S6_22.06.10】xxx.docx -> header=S6_22.06.10
+    # （下方剥离前缀的那一步对半角 `[…]` 也容忍，方便处理历史交稿名）
     parsed_header = book_id(stem)
     if parsed_header:
         header = parsed_header

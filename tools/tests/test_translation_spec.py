@@ -68,7 +68,7 @@ class P9EndToEndTests(unittest.TestCase):
         self.out = self.tmp / "out"
 
     def build_book(self, paragraphs):
-        text_dir = self.cache / "[S1_10]测试书" / "OEBPS" / "Text"
+        text_dir = self.cache / "【S1_10】测试书" / "OEBPS" / "Text"
         text_dir.mkdir(parents=True, exist_ok=True)
         lines = [HEAD, DOCT, BODY_OPEN, "<h1>第一章</h1>", ""]
         lines += ["<p>%s</p>" % p for p in paragraphs]

@@ -103,8 +103,8 @@ class CollectTargetsTests(unittest.TestCase):
         """EPUB/ 这类解包归档：每本书目录都含 mimetype 与 META-INF/container.xml。"""
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
-            book = make_book(root, "[S1_01]某魔法的禁书目录 01X")
-            other = make_book(root, "[S1_02]某魔法的禁书目录 02X")
+            book = make_book(root, "【S1_01】某魔法的禁书目录 01X")
+            other = make_book(root, "【S1_02】某魔法的禁书目录 02X")
 
             targets, warnings = collect_targets([root])
 
@@ -142,12 +142,12 @@ class CollectTargetsTests(unittest.TestCase):
     def test_pattern_filters_by_name(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
-            make_book(root, "[S1_01]甲")
-            make_book(root, "[S3_01]乙")
+            make_book(root, "【S1_01】甲")
+            make_book(root, "【S3_01】乙")
 
             targets, _ = collect_targets([root], pattern="*S3_*")
 
-            self.assertEqual([target.path.name for target in targets], ["[S3_01]乙"])
+            self.assertEqual([target.path.name for target in targets], ["【S3_01】乙"])
 
     def test_display_is_relative_inside_repo_and_absolute_outside(self) -> None:
         inside = Target(Path(__file__).resolve(), "epub")

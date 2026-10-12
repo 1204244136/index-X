@@ -24,7 +24,7 @@
         [--csv 输出.csv] [--pages-per 400] [--all] [--json] [--chars-only]
 
     # 示例（日文分页源目录）
-    python tools/epub_composition_metrics.py ".cache/epub-work/japanese-text/[S3_13]創約 とある魔術の禁書目録(13)"
+    python tools/epub_composition_metrics.py ".cache/epub-work/japanese-text/【S3_13】創約 とある魔術の禁書目録(13)"
     # 默认 CSV 写到 .cache/epub-work/composition-metrics/<书目录名>.csv
 """
 from __future__ import annotations

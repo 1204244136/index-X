@@ -19,7 +19,7 @@ from epub_composition_metrics import (
 
 def make_book(root: Path, pages: dict[str, str]) -> Path:
     """最小解包书目录：`pages` 是 {文件名: body 内容}，按传入顺序进 spine。"""
-    book = root / "[S1_01]测试书"
+    book = root / "【S1_01】测试书"
     (book / "META-INF").mkdir(parents=True)
     (book / "OEBPS" / "Text").mkdir(parents=True)
     (book / "OEBPS" / "Images").mkdir(parents=True)

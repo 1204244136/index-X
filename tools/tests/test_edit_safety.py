@@ -189,8 +189,8 @@ class MutatorCliTests(unittest.TestCase):
     def test_pair_archive_mode_does_not_write_japanese_reference(self):
         with tempfile.TemporaryDirectory() as tmp:
             root, jp_root = Path(tmp) / "archive", Path(tmp) / "reference"
-            cn = root / "[S1_01]书" / "OEBPS" / "Text" / "S1_01-01_Chapter.xhtml"
-            jp = jp_root / "[S1_01]本" / "OEBPS" / "Text" / "S1_01-01.xhtml"
+            cn = root / "【S1_01】书" / "OEBPS" / "Text" / "S1_01-01_Chapter.xhtml"
+            jp = jp_root / "【S1_01】本" / "OEBPS" / "Text" / "S1_01-01.xhtml"
             for path in (cn, jp):
                 path.parent.mkdir(parents=True)
                 path.write_text(xhtml("<p>内容</p>"), encoding="utf-8")
@@ -211,7 +211,7 @@ class MutatorCliTests(unittest.TestCase):
     def test_pair_staging_explicitly_writes_both_sides(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            paths = [root / side / "[S1_01]书" / "S1_01-01.xhtml"
+            paths = [root / side / "【S1_01】书" / "S1_01-01.xhtml"
                      for side in ("chinese-text", "japanese-text")]
             for path in paths:
                 path.parent.mkdir(parents=True)
@@ -224,8 +224,8 @@ class MutatorCliTests(unittest.TestCase):
     def test_pb_default_preview_and_apply_are_idempotent(self):
         with tempfile.TemporaryDirectory() as tmp:
             root, jp_root = Path(tmp) / "cn", Path(tmp) / "jp"
-            cn = root / "[S1_01]书" / "S1_01-01_Chapter.xhtml"
-            jp = jp_root / "[S1_01]本" / "S1_01-01.xhtml"
+            cn = root / "【S1_01】书" / "S1_01-01_Chapter.xhtml"
+            jp = jp_root / "【S1_01】本" / "S1_01-01.xhtml"
             for path, paragraph in ((cn, '<p class="center">中文</p>'), (jp, '<p class="pb">日文</p>')):
                 path.parent.mkdir(parents=True)
                 path.write_text(xhtml(paragraph), encoding="utf-8")
@@ -248,8 +248,8 @@ class MutatorCliTests(unittest.TestCase):
                  xhtml('<p>甲</p>', '<p>乙</p>', '<br/>', '<p>丙</p>'))):
             with self.subTest(module=module.__name__), tempfile.TemporaryDirectory() as tmp:
                 root, jp_root = Path(tmp) / "cn", Path(tmp) / "jp"
-                cn = root / "[S1_01]书" / "S1_01-01_Chapter.xhtml"
-                jp = jp_root / "[S1_01]本" / "S1_01-01.xhtml"
+                cn = root / "【S1_01】书" / "S1_01-01_Chapter.xhtml"
+                jp = jp_root / "【S1_01】本" / "S1_01-01.xhtml"
                 cn.parent.mkdir(parents=True)
                 jp.parent.mkdir(parents=True)
                 cn.write_bytes(b'\xef\xbb\xbf' + chinese.encode('utf-8'))
@@ -267,7 +267,7 @@ class MutatorCliTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             repo = Path(tmp) / 'repo'
             root = repo / '.cache' / 'cn'
-            path = root / '[S1_01]书' / 'S1_01-01.xhtml'
+            path = root / '【S1_01】书' / 'S1_01-01.xhtml'
             path.parent.mkdir(parents=True)
             path.write_text(xhtml('<p>甲,乙</p>'), encoding='utf-8')
             original = path.read_bytes()
@@ -297,7 +297,7 @@ class MutatorCliTests(unittest.TestCase):
     def test_pair_duplicate_headers_stop_all_writes(self):
         with tempfile.TemporaryDirectory() as tmp:
             root, jp_root = Path(tmp) / 'cn', Path(tmp) / 'jp'
-            cn_book, jp_book = root / '[S1_01]书', jp_root / '[S1_01]本'
+            cn_book, jp_book = root / '【S1_01】书', jp_root / '【S1_01】本'
             cn_book.mkdir(parents=True)
             jp_book.mkdir(parents=True)
             paths = [cn_book / 'S1_01-01_Chapter1.xhtml', cn_book / 'S1_01-01_Chapter2.xhtml',
@@ -314,8 +314,8 @@ class MutatorCliTests(unittest.TestCase):
     def test_pair_duplicate_work_ids_stop_before_rebuilding(self):
         with tempfile.TemporaryDirectory() as tmp:
             root, jp_root = Path(tmp) / 'cn', Path(tmp) / 'jp'
-            (root / '[S1_01]书').mkdir(parents=True)
-            (root / '[S1_01]重复').mkdir()
+            (root / '【S1_01】书').mkdir(parents=True)
+            (root / '【S1_01】重复').mkdir()
             jp_root.mkdir()
             with patch.object(normalize_paired, 'rebuild') as rebuilder:
                 self.assertEqual(self.call(normalize_paired, '--root', root, '--jp-root', jp_root), 1)
@@ -324,7 +324,7 @@ class MutatorCliTests(unittest.TestCase):
     def test_archive_note_template_uses_explicit_chinese_side(self):
         with tempfile.TemporaryDirectory() as tmp:
             root, jp_root = Path(tmp) / 'archive', Path(tmp) / 'reference'
-            cn_book, jp_book = root / '[S1_01]书', jp_root / '[S1_01]本'
+            cn_book, jp_book = root / '【S1_01】书', jp_root / '【S1_01】本'
             cn_book.mkdir(parents=True)
             jp_book.mkdir(parents=True)
             chapter = cn_book / 'S1_01-01_Chapter.xhtml'
@@ -348,7 +348,7 @@ class MutatorCliTests(unittest.TestCase):
             root, jp_root = Path(tmp) / 'cn', Path(tmp) / 'jp'
             paths = []
             for base in (root, jp_root):
-                book = base / '[S1_01]书'
+                book = base / '【S1_01】书'
                 book.mkdir(parents=True)
                 for sequence in (1, 2):
                     path = book / f'S1_01-{sequence:02d}.xhtml'
@@ -370,7 +370,7 @@ class MutatorCliTests(unittest.TestCase):
     def test_pair_write_failure_rolls_back_all_written_files(self):
         with tempfile.TemporaryDirectory() as tmp:
             root, jp_root = Path(tmp) / 'cn', Path(tmp) / 'jp'
-            cn_book, jp_book = root / '[S1_01]书', jp_root / '[S1_01]本'
+            cn_book, jp_book = root / '【S1_01】书', jp_root / '【S1_01】本'
             cn_book.mkdir(parents=True)
             jp_book.mkdir(parents=True)
             cn_paths = []

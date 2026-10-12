@@ -349,7 +349,7 @@ class BilingualCorpus:
         if self.jp_dir.is_dir():
             for entry in self.jp_dir.iterdir():
                 if entry.is_dir():
-                    m = re.search(r"[\[【]([A-Za-z0-9_.]+)[\]】]", entry.name)
+                    m = re.search(r"【([A-Za-z0-9_.]+)】", entry.name)
                     w_id = m.group(1) if m else entry.name
                     self._work_dirs["jp"][w_id] = self._find_text_dir(entry)
 
@@ -358,7 +358,7 @@ class BilingualCorpus:
         if cn_source.is_dir():
             for entry in cn_source.iterdir():
                 if entry.is_dir():
-                    m = re.search(r"[\[【]([A-Za-z0-9_.]+)[\]】]", entry.name)
+                    m = re.search(r"【([A-Za-z0-9_.]+)】", entry.name)
                     w_id = m.group(1) if m else entry.name
                     text_dir = self._find_text_dir(entry)
                     # 如果该目录有 xhtml 文件，记录

@@ -103,7 +103,7 @@ class JapaneseSourceLookup:
             self._work_dir_cache[work] = None
             return None
 
-        # 匹配包含 [S3_03] 或 S3_03 的目录
+        # 匹配包含【S3_03】或 S3_03 的目录
         target_dir = None
         for entry in base.iterdir():
             if entry.is_dir() and work in entry.name:

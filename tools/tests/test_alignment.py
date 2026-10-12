@@ -30,7 +30,7 @@ class AlignmentTests(unittest.TestCase):
     def test_duplicate_book_directories_cannot_hide_a_broken_book(self):
         with tempfile.TemporaryDirectory() as temporary:
             cache = Path(temporary)
-            for name in ("[S1_01]A", "[S1_01]B"):
+            for name in ("【S1_01】A", "【S1_01】B"):
                 book = cache / "chinese-text" / name
                 book.mkdir(parents=True)
                 (book / "S1_01-01.xhtml").write_text(xhtml(["<p>正文</p>"]), encoding="utf-8")
@@ -113,8 +113,8 @@ class AlignmentTests(unittest.TestCase):
         """
         with tempfile.TemporaryDirectory() as tmp:
             cache = Path(tmp)
-            jp = cache / "japanese-text" / "[S1_01]日" / "OEBPS" / "Text"
-            cn = cache / "chinese-text" / "[S1_99]无日文对应" / "OEBPS" / "Text"
+            jp = cache / "japanese-text" / "【S1_01】日" / "OEBPS" / "Text"
+            cn = cache / "chinese-text" / "【S1_99】无日文对应" / "OEBPS" / "Text"
             jp.mkdir(parents=True)
             cn.mkdir(parents=True)
             (jp / "S1_01-01_p-001.xhtml").write_text(
@@ -133,7 +133,7 @@ class AlignmentTests(unittest.TestCase):
         """只有日文侧存在的作品同样要检查（S3_12 之后的新卷、S6 日文独有短篇）。"""
         with tempfile.TemporaryDirectory() as tmp:
             cache = Path(tmp)
-            jp = cache / "japanese-text" / "[S6_24.06.07]日文独有" / "OEBPS" / "Text"
+            jp = cache / "japanese-text" / "【S6_24.06.07】日文独有" / "OEBPS" / "Text"
             jp.mkdir(parents=True)
             broken = xhtml(["<p>一</p><p>二</p>"]).splitlines()
             (jp / "S6_24.06.07-01_Chapter.xhtml").write_text(
@@ -150,8 +150,8 @@ class AlignmentTests(unittest.TestCase):
         """
         with tempfile.TemporaryDirectory() as tmp:
             cache = Path(tmp)
-            cn = cache / "chinese-text" / "[S5_01_03]中" / "OEBPS" / "Text"
-            jp = cache / "japanese-text" / "[S5_01_03]日" / "OEBPS" / "Text"
+            cn = cache / "chinese-text" / "【S5_01_03】中" / "OEBPS" / "Text"
+            jp = cache / "japanese-text" / "【S5_01_03】日" / "OEBPS" / "Text"
             cn.mkdir(parents=True)
             jp.mkdir(parents=True)
             (cn / "S5_01_03-02_Chapter1.xhtml").write_text(
@@ -169,7 +169,7 @@ class AlignmentTests(unittest.TestCase):
         """S0_00 这类作品豁免模板项，但仍参与 -00 / 重复表头等其它检查。"""
         with tempfile.TemporaryDirectory() as tmp:
             cache = Path(tmp)
-            cn = cache / "chinese-text" / "[S0_00]无日文对应" / "OEBPS" / "Text"
+            cn = cache / "chinese-text" / "【S0_00】无日文对应" / "OEBPS" / "Text"
             cn.mkdir(parents=True)
             broken = xhtml(["<p>一</p><p>二</p>"]).splitlines()
             (cn / "S0_00-01_Chapter.xhtml").write_text(
@@ -255,8 +255,8 @@ class AlignmentTests(unittest.TestCase):
         """
         with tempfile.TemporaryDirectory() as tmp:
             cache = Path(tmp)
-            cn = cache / "chinese-text" / "[S1_01]中" / "OEBPS" / "Text"
-            jp = cache / "japanese-text" / "[S1_01]日" / "OEBPS" / "Text"
+            cn = cache / "chinese-text" / "【S1_01】中" / "OEBPS" / "Text"
+            jp = cache / "japanese-text" / "【S1_01】日" / "OEBPS" / "Text"
             cn.mkdir(parents=True)
             jp.mkdir(parents=True)
             # 日文：整页图片，无正文
@@ -290,8 +290,8 @@ class AlignmentTests(unittest.TestCase):
     def test_pair_difference_is_a_problem_record(self):
         with tempfile.TemporaryDirectory() as tmp:
             cache = Path(tmp)
-            cn = cache / "chinese-text" / "[S1_01]中" / "OEBPS" / "Text"
-            jp = cache / "japanese-text" / "[S1_01]日" / "OEBPS" / "Text"
+            cn = cache / "chinese-text" / "【S1_01】中" / "OEBPS" / "Text"
+            jp = cache / "japanese-text" / "【S1_01】日" / "OEBPS" / "Text"
             cn.mkdir(parents=True)
             jp.mkdir(parents=True)
             (cn / "S1_01-01_Chapter1.xhtml").write_text(
@@ -315,7 +315,7 @@ class AlignmentTests(unittest.TestCase):
     def test_missing_japanese_cache_side_does_not_crash(self):
         with tempfile.TemporaryDirectory() as tmp:
             cache = Path(tmp)
-            cn = cache / "chinese-text" / "[S1_01]中" / "OEBPS" / "Text"
+            cn = cache / "chinese-text" / "【S1_01】中" / "OEBPS" / "Text"
             cn.mkdir(parents=True)
             (cn / "S1_01-01_Chapter1.xhtml").write_text(
                 xhtml(["<p>一</p>"]), encoding="utf-8"
@@ -331,8 +331,8 @@ class AlignmentTests(unittest.TestCase):
     def test_zero_content_sequence_is_a_strict_error(self):
         with tempfile.TemporaryDirectory() as tmp:
             cache = Path(tmp)
-            cn = cache / "chinese-text" / "[S1_01]中" / "OEBPS" / "Text"
-            jp = cache / "japanese-text" / "[S1_01]日" / "OEBPS" / "Text"
+            cn = cache / "chinese-text" / "【S1_01】中" / "OEBPS" / "Text"
+            jp = cache / "japanese-text" / "【S1_01】日" / "OEBPS" / "Text"
             cn.mkdir(parents=True)
             jp.mkdir(parents=True)
             (cn / "S1_01-00_Prologue.xhtml").write_text(

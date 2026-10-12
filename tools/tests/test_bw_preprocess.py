@@ -530,15 +530,15 @@ class BookWalkerTemplateTests(unittest.TestCase):
         self.assertEqual(infer_book_id("とある暗部の少女共棲（２）"), "S4_02")
         self.assertEqual(infer_book_id("とある暗部の少女共棲(6)"), "S4_06")
         self.assertEqual(infer_book_id("創約 とある魔術の禁書目録(11)"), "S3_11")
-        self.assertEqual(infer_book_id("[S4_05]とある暗部の少女共棲"), "S4_05")
+        self.assertEqual(infer_book_id("【S4_05】とある暗部の少女共棲"), "S4_05")
 
     def test_infer_book_id_keeps_dated_work_id_intact(self):
         """日期作品号是整体标识：不得被截断成 S6_24 而与别的月份作品号混同。"""
         from bw_preprocess import BOOK_ID_RE, infer_book_id
         self.assertEqual(
-            infer_book_id("[S6_24.12.10]はいむらきよたか画集４　ＲＥＢＩＲＴＨ"),
+            infer_book_id("【S6_24.12.10】はいむらきよたか画集４　ＲＥＢＩＲＴＨ"),
             "S6_24.12.10")
-        self.assertEqual(infer_book_id("[S6_20.05.09]創約 とある魔術の禁書目録SS"),
+        self.assertEqual(infer_book_id("【S6_20.05.09】創約 とある魔術の禁書目録SS"),
                          "S6_20.05.09")
         self.assertIsNotNone(BOOK_ID_RE.fullmatch("S6_24.12.10"))
         self.assertIsNotNone(BOOK_ID_RE.fullmatch("S5_01_03"))

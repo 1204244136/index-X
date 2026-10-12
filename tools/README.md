@@ -39,7 +39,7 @@
 | # | 触发信号 | 判定 | 允许动作 | 禁止动作 | 簇 | 证据留档 |
 | --- | --- | --- | --- | --- | --- | --- |
 | P1 | `publish_auto.py` 退出 1：OneDrive 外部更新与本地未发布修改同时存在 | `python tools/publish_auto.py --dry-run` | 逐书逐文件比对三方，把合并结果写入 `EPUB/` 后重新发布 | 不得用 `--from`／`--overwrite-cache` 选边；曾直接改 OneDrive 时，未保全并比较双方改动前不得拉取 | C1 | [publish-auto-identical-change-conflict-2026-09-14.md](../docs/maintenance-records/publish-auto-identical-change-conflict-2026-09-14.md) |
-| P2 | 发布停止并给重建提示：某处理侧在清单中全无基线记录 | 侧名取值只有 `chinese-text`／`japanese-text`（`python tools/manifest.py --help`），重建写入 `python tools/manifest.py --update-books <侧>/<书目录>`，例如 `japanese-text/[S5_01]外典书库(1)` | 仅在已确认「缓存即已发布状态」后重建基线 | 不得用清单更新掩盖未发布变化；`--force` 也不跳过成品结构门禁 | C1 | [manifest-baseline-missing-side-2026-09-13.md](../docs/maintenance-records/manifest-baseline-missing-side-2026-09-13.md) |
+| P2 | 发布停止并给重建提示：某处理侧在清单中全无基线记录 | 侧名取值只有 `chinese-text`／`japanese-text`（`python tools/manifest.py --help`），重建写入 `python tools/manifest.py --update-books <侧>/<书目录>`，例如 `japanese-text/【S5_01】外典书库(1)` | 仅在已确认「缓存即已发布状态」后重建基线 | 不得用清单更新掩盖未发布变化；`--force` 也不跳过成品结构门禁 | C1 | [manifest-baseline-missing-side-2026-09-13.md](../docs/maintenance-records/manifest-baseline-missing-side-2026-09-13.md) |
 | P3 | `publish_preflight.py` 非零（预检失败不推进该书发布与基线） | `python tools/publish_preflight.py --source EPUB`（可加 `--jp-root`、`--only-books`） | 按报错类别转到 C3／C4 修，修完重跑预检 | 不得绕过预检发布；不得临时覆盖缓存来做检查 | C1→C3/C4 | — |
 | P4 | `check_alignment.py --strict` 或 `check_epub_health.py --strict` 非零 | 对齐用 `--root EPUB --jp-root .cache/epub-work/japanese-text --strict`；漂移定位用 `python tools/diff_paired_lines.py` | 按 C3 的对应工具处理：`fix_legacy_pagebreak_br.py`／`restore_cn_scene_breaks.py`／`sync_pb_tags.py`（页边界）、`wrap_cn_image_lines.py`（图片行）、`normalize_single.py`／`normalize_paired.py`（模板）、`migrate_heading_breaks.py`（标题）、`shift_content_sequences.py`／`fix_empty_placeholders.py`（序号与空页）、`reorder_notes.py`（Note） | 不得临时放宽门禁；不得为凑行数增删结构标签；语义未确认先人工确认 | C4 查→C3 修 | — |
 | P5 | `--jp-root` 缺目录或缺书；CI 结构上看不到日文侧 | `./tools/pull.ps1 -WhatIf`、`-Side japanese` | 先拉取建立缓存；确无日文源时只做单侧检查 | 不得据未配对书宣布「双侧通过」 | C1→C4 | — |
@@ -168,17 +168,17 @@ python tools/package_cache_epubs.py --source EPUB --output output/epubs --patter
 
 ```powershell
 python tools/import_materials.py --docx 交稿.docx --images 素材目录 --info 制作信息.txt `
-    --intro 简介.txt --work S4_04 --book-dir "[S4_04]某暗部的少女共栖 4X" `
-    --jp-root .cache/epub-work/japanese-text --template "EPUB/[S4_03]某暗部的少女共栖 3X"
+    --intro 简介.txt --work S4_04 --book-dir "【S4_04】某暗部的少女共栖 4" `
+    --jp-root .cache/epub-work/japanese-text --template "EPUB/【S4_03】某暗部的少女共栖 3"
 python tools/import_docx_outline.py 交稿.docx --check
 python tools/import_docx_outline.py 交稿.docx --out .cache/epub-work/import/outline.tsv
-python tools/import_align_plan.py 交稿.docx --work S4_04 --book-dir "[S4_04]某暗部的少女共栖 4X" `
+python tools/import_align_plan.py 交稿.docx --work S4_04 --book-dir "【S4_04】某暗部的少女共栖 4" `
     --out .cache/epub-work/import/plan.json --report .cache/epub-work/import/gaps.txt
-python tools/import_build_text.py .cache/epub-work/import/plan.json --out "EPUB/[S4_04]…" --apply
+python tools/import_build_text.py .cache/epub-work/import/plan.json --out "EPUB/【S4_04】…" --apply
 python tools/import_images.py suggest --src 素材目录 --jp-dir .cache/…/item/image --work S4_04
-python tools/import_images.py apply .cache/epub-work/import/plan.json --out "EPUB/[S4_04]…" --apply
-python tools/import_build_wrappers.py .cache/epub-work/import/plan.json --template "EPUB/[S4_03]…" `
-    --info 制作信息.txt --intro 简介.txt --out "EPUB/[S4_04]…" --apply --calibre-id 197
+python tools/import_images.py apply .cache/epub-work/import/plan.json --out "EPUB/【S4_04】…" --apply
+python tools/import_build_wrappers.py .cache/epub-work/import/plan.json --template "EPUB/【S4_03】…" `
+    --info 制作信息.txt --intro 简介.txt --out "EPUB/【S4_04】…" --apply --calibre-id 197
 ```
 
 - `import_materials.py` 是**材料门禁**：交稿、图片素材、制作信息、简介、作品号与书目录名、日文工作源、模板书七项逐项核对。缺项非零退出，并把要补的东西列成可直接发给用户的清单——材料不齐不许开工，不得自拟封面、简介或制作信息。三副本待发布状态需人工用 `publish_auto.py --dry-run` 确认。

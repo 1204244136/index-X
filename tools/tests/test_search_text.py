@@ -90,8 +90,8 @@ class SearchTextTests(unittest.TestCase):
             cn_dir = temp_path / "chinese"
             jp_dir = temp_path / "japanese"
 
-            cn_book = cn_dir / "[S1_01]某魔法的禁书目录 01" / "item" / "xhtml"
-            jp_book = jp_dir / "[S1_01]とある魔術の禁書目録(01)" / "item" / "xhtml"
+            cn_book = cn_dir / "【S1_01】某魔法的禁书目录 01" / "item" / "xhtml"
+            jp_book = jp_dir / "【S1_01】とある魔術の禁書目録(01)" / "item" / "xhtml"
             cn_book.mkdir(parents=True)
             jp_book.mkdir(parents=True)
 

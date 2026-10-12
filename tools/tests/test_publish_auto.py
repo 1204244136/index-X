@@ -15,9 +15,9 @@ import publish_auto  # noqa: E402
 from manifest import save_manifest, scan_cache, scan_epub  # noqa: E402
 from sync_core import UNIX_TO_DOTNET_TICKS_OFFSET  # noqa: E402
 
-BOOK_CN = "[S1_01]某书X"
-BOOK_CN2 = "[S1_02]他书X"
-BOOK_JP = "[S1_01]某書"
+BOOK_CN = "【S1_01】某书X"
+BOOK_CN2 = "【S1_02】他书X"
+BOOK_JP = "【S1_01】某書"
 
 
 class Fixture:
@@ -48,7 +48,7 @@ class Fixture:
     @staticmethod
     def _populate(book: Path, text: str) -> None:
         from docx2epub import _CSS
-        wid = book.name.replace("【", "[").replace("】", "]").split("]")[0].lstrip("[")
+        wid = book.name.split("】")[0][1:]
         name = f"{wid}-01_Chapter.xhtml"
         (book / "META-INF").mkdir(parents=True, exist_ok=True)
         (book / "mimetype").write_bytes(b"application/epub+zip")

@@ -21,8 +21,8 @@
 
 用法：
     python tools/import_materials.py --docx 交稿.docx --images 图片目录 --info info.txt \
-        --intro intro.txt --work S4_04 --book-dir "[S4_04]某暗部的少女共栖 4" \
-        --jp-root .cache/epub-work/japanese-text --template "EPUB/[S4_03]某暗部的少女共栖 3"
+        --intro intro.txt --work S4_04 --book-dir "【S4_04】某暗部的少女共栖 4" \
+        --jp-root .cache/epub-work/japanese-text --template "EPUB/【S4_03】某暗部的少女共栖 3"
 """
 from __future__ import annotations
 
@@ -101,7 +101,7 @@ def check_work(work: str, book_dir: str) -> tuple[bool, str]:
     if not book_dir:
         return False, "缺少 --book-dir（中文书目录名）"
     if book_id(book_dir) != work.upper():
-        return False, f"书目录名 {book_dir!r} 与作品号 {work} 不一致（应以 [{work}] 开头）"
+        return False, f"书目录名 {book_dir!r} 与作品号 {work} 不一致（应以 【{work}】 开头）"
     return True, f"{work} → {book_dir}"
 
 

@@ -20,7 +20,7 @@ import check_semantic_alignment as semantic
 def add_unit(cache: Path, work: str, sequence: int, *, drift: bool = False) -> None:
     header = f"{work}-{sequence:02d}"
     for side in ("japanese-text", "chinese-text"):
-        book = cache / side / f"[{work}]测试"
+        book = cache / side / f"【{work}】测试"
         book.mkdir(parents=True, exist_ok=True)
         body = "abcdefghijklmnopqrstuvwxyz" if drift and side == "japanese-text" else "正文"
         if drift and side == "chinese-text":
@@ -130,13 +130,13 @@ class SemanticPipelineTests(unittest.TestCase):
             cache = Path(tmp)
             add_unit(cache, "S1_01", 1)
             add_unit(cache, "S2_01", 1)
-            jp = next((cache / "japanese-text" / "[S2_01]测试").rglob("*.xhtml"))
+            jp = next((cache / "japanese-text" / "【S2_01】测试").rglob("*.xhtml"))
             jp.unlink()
             self.assertEqual(semantic.run_pipeline(cache, strict=True), 1)
             with patch.object(semantic, "get_embedding_model", return_value=object()), \
                     patch.object(semantic, "run_vector_analysis", return_value=PASS_ANALYSIS):
                 self.assertEqual(semantic.run_pipeline(cache, target_header="S1_01-01", strict=True), 0)
-            (cache / "japanese-text" / "[S2_01]测试").rmdir()
+            (cache / "japanese-text" / "【S2_01】测试").rmdir()
             self.assertEqual(semantic.run_pipeline(cache, works=["S2_*"], strict=True), 1)
 
     def test_corrupted_utf8_is_an_execution_failure(self):
@@ -175,7 +175,7 @@ class SemanticPipelineTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             cache = Path(tmp)
             add_unit(cache, "S1_01", 1)
-            duplicate = cache / "chinese-text" / "[S1_01]测试" / "S1_01-01_Second.xhtml"
+            duplicate = cache / "chinese-text" / "【S1_01】测试" / "S1_01-01_Second.xhtml"
             duplicate.write_text("<p>duplicate</p>", encoding="utf-8")
             self.assertEqual(semantic.run_pipeline(cache, l1_only=True), 2)
 

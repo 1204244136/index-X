@@ -16,8 +16,7 @@ def make_book(book: Path, text: str = "<p>正文</p>", *, layout: bool = False) 
     `dc:title` 等于书目录名，导航与封面／制作信息页齐备——发布预检会把成品构成的
     error 级纳入阻断，夹具不满足它就跑不出「成功发布」路径。
     """
-    norm = book.name.replace("【", "[").replace("】", "]")
-    wid = norm.split("]")[0].lstrip("[") if norm.startswith("[") else "S1_01"
+    wid = book.name.split("】")[0][1:] if book.name.startswith("【") else "S1_01"
     (book / "META-INF").mkdir(parents=True, exist_ok=True)
     (book / "OEBPS" / "Text").mkdir(parents=True, exist_ok=True)
     (book / "mimetype").write_bytes(b"application/epub+zip")
@@ -67,7 +66,7 @@ class PackageContractTests(unittest.TestCase):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
-        self.book = self.root / "[S1_01]测试"
+        self.book = self.root / "【S1_01】测试"
         self.text = make_book(self.book)
 
     def test_valid_book_uses_stored_first_mimetype(self):

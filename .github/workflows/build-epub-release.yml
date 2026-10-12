@@ -118,18 +118,13 @@ jobs:
             for PREFIX in ${PREFIXES}; do
               for file in output/epubs/${PREFIX}*.epub; do
                 filename=$(basename "$file")
-                # 作品号定界符 2026-10-12 起为全角 `【】`；迁移期同时接受半角 `[…]`。
-                if [[ "${filename}" != \[*\]* && "${filename}" != 【*】* ]]; then
+                # 作品号定界符为全角 `【】`（半角 `[]` 已于 2026-10-12 全库迁移，且不是 glob 元字符）。
+                if [[ "${filename}" != 【*】* ]]; then
                   echo "Unexpected EPUB directory name: ${filename}" >&2
                   exit 1
                 fi
-                if [[ "${filename}" == 【*】* ]]; then
-                  short_name="${filename%%】*}"
-                  short_name="${short_name#【}.epub"
-                else
-                  short_name="${filename%%]*}"
-                  short_name="${short_name:1}.epub"
-                fi
+                short_name="${filename%%】*}"
+                short_name="${short_name#【}.epub"
                 mv "${file}" "output/epubs/${short_name}"
                 name=$(basename "$filename" .epub)
                 NOTE="${NOTE}- [${name}](${BASE_URL}${short_name})\n"

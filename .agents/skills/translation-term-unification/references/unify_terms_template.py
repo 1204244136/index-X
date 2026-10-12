@@ -45,7 +45,7 @@ def locate(epub_root: Path, book: str, name: str) -> list[Path]:
     """按作品号 + 文件名在 EPUB/ 下定位，返回全部命中（要求恰好 1 个）。"""
     hits: list[Path] = []
     for book_dir in sorted(epub_root.iterdir()):
-        if not book_dir.is_dir() or (f"【{book}】" not in book_dir.name and f"[{book}]" not in book_dir.name):
+        if not book_dir.is_dir() or f"【{book}】" not in book_dir.name:
             continue
         candidate = book_dir / "OEBPS" / "Text" / name
         if candidate.is_file():

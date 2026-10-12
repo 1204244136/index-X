@@ -66,7 +66,7 @@ class SharedStructureTests(unittest.TestCase):
     def test_duplicate_headers_fail_instead_of_selecting_first(self):
         with tempfile.TemporaryDirectory() as tmp:
             cn, jp = Path(tmp) / 'cn', Path(tmp) / 'jp'
-            cn_book, jp_book = cn / '[S1_01]书', jp / '[S1_01]本'
+            cn_book, jp_book = cn / '【S1_01】书', jp / '【S1_01】本'
             cn_book.mkdir(parents=True)
             jp_book.mkdir(parents=True)
             for name in ('S1_01-01_Chapter1.xhtml', 'S1_01-01_Chapter2.xhtml'):
@@ -79,7 +79,7 @@ class SharedStructureTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             cn, jp = Path(tmp) / 'cn', Path(tmp) / 'jp'
             for side in (cn, jp):
-                book = side / '[S5_01_03]书'
+                book = side / '【S5_01_03】书'
                 book.mkdir(parents=True)
                 (book / 'S5_01_03-06.xhtml').write_text('')
             self.assertEqual(list(iter_content_pairs(cn, jp)), [])

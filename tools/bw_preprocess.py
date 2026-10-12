@@ -1048,7 +1048,7 @@ def check_epub(
 
 def infer_book_id(name: str) -> str | None:
     """根据书名或文件名规范推导作品号（如 S4_01）。"""
-    # 1. 直接匹配已有的 [S4_01] 或 S4_01
+    # 1. 直接匹配已有的【S4_01】或 S4_01
     m = BOOK_ID_RE.search(name)
     if m:
         return m.group(0).upper()
@@ -1121,8 +1121,8 @@ def clean_book_title(raw_title: str, book_id: str | None = None) -> str:
     # 移除作者/插画括号
     title = re.sub(r"\([^\)]*(?:鎌池|はいむら|ニリツ|冬川|近木)[^\)]*\)", "", title, flags=re.I)
     title = re.sub(r"\.preprocessed", "", title, flags=re.I)
-    # 移除已有的【S...】／[S...] 前缀
-    title = re.sub(r"^[\[【]S\d+[^\]】]*[\]】]\s*", "", title.strip(), flags=re.I)
+    # 移除已有的【S...】前缀
+    title = re.sub(r"^【S\d+[^】]*】\s*", "", title.strip(), flags=re.I)
     # 压缩多余空格
     title = re.sub(r"\s+", " ", title).strip()
 

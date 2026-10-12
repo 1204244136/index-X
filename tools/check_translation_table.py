@@ -74,7 +74,7 @@ DEFAULT_RULINGS = REPO_ROOT / "docs" / "translation-name-rulings.md"
 # 剥注音与标签：先整段移除 <rt>/<rp>（含内容，规则唯一实现在 xhtml_text），再剥其余标签
 TAG_RE = re.compile(r"<[^>]+>")
 WS_RE = re.compile(r"[\s\u3000]+")
-BOOK_RE = re.compile(r"^[\[【]([^\]】]+)[\]】]")
+BOOK_RE = re.compile(r"^【([^】]+)】")
 KANA_RE = re.compile(r"[\u3041-\u3096\u30a1-\u30fa\u30fc]")
 CJK_RE = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff]")
 BRACKET_CHARS = "【】「」『』"
@@ -201,14 +201,14 @@ def load_ruby_plain(path: Path) -> str:
 
 
 def book_id(dir_name: str) -> str:
-    """从 `[S3_06]创约 …` 取出作品号 `S3_06`。"""
+    """从 `【S3_06】创约 …` 取出作品号 `S3_06`。"""
     m = BOOK_RE.match(dir_name)
     return m.group(1) if m else ""
 
 
 def collect_books(root: Path, text_subdir: str, only: set[str],
                   ruby: bool = False) -> dict[str, str]:
-    """收集 {作品号: 全书纯文本}。目录名形如 `[S3_06]…`。
+    """收集 {作品号: 全书纯文本}。目录名形如 `【S3_06】…`。
 
     `ruby=True` 时输出**带注音的复合串文本**（`基文（注文）`），供注音判定使用。
     """

@@ -218,7 +218,7 @@ class CompareTests(unittest.TestCase):
         """锚点只出现在注音里时不得算命中（由 collect_books 剥 rt 保证）。"""
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            d = root / "[S1_01]书" / "item" / "xhtml"
+            d = root / "【S1_01】书" / "item" / "xhtml"
             d.mkdir(parents=True)
             (d / "a.xhtml").write_text(
                 "<p><ruby>漢字<rt>かんじ</rt></ruby></p>", encoding="utf-8")
@@ -238,9 +238,9 @@ class CompareTests(unittest.TestCase):
 
 class BookIdTests(unittest.TestCase):
     def test_book_id_variants(self):
-        self.assertEqual(book_id("[S3_06]创约 某魔法的禁书目录 06X"), "S3_06")
-        self.assertEqual(book_id("[S5_01_03]某魔法的禁书目录SS"), "S5_01_03")
-        self.assertEqual(book_id("[S6_24.06.07]某科学的超电磁炮 SS"), "S6_24.06.07")
+        self.assertEqual(book_id("【S3_06】创约 某魔法的禁书目录 06X"), "S3_06")
+        self.assertEqual(book_id("【S5_01_03】某魔法的禁书目录SS"), "S5_01_03")
+        self.assertEqual(book_id("【S6_24.06.07】某科学的超电磁炮 SS"), "S6_24.06.07")
         self.assertEqual(book_id("无方括号"), "")
 
 
@@ -249,7 +249,7 @@ class CollectBooksTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             for bid in ("S1_01", "S2_01"):
-                d = root / ("[%s]书" % bid) / "item" / "xhtml"
+                d = root / ("【%s】书" % bid) / "item" / "xhtml"
                 d.mkdir(parents=True)
                 (d / "a.xhtml").write_text("<p>本文</p>", encoding="utf-8")
             books = collect_books(root, "item/xhtml", {"S1_01"})
@@ -799,11 +799,11 @@ class EndToEndTests(unittest.TestCase):
         table = root / "table.xlsx"
         wb.save(table)
 
-        jp = root / "jp" / "[S1_01]日文书" / "item" / "xhtml"
+        jp = root / "jp" / "【S1_01】日文书" / "item" / "xhtml"
         jp.mkdir(parents=True)
         (jp / "p-001.xhtml").write_text("<p>最新スマホ・ミリフォン15</p>", encoding="utf-8")
 
-        cn = root / "cn" / "[S1_01]中文书" / "OEBPS" / "Text"
+        cn = root / "cn" / "【S1_01】中文书" / "OEBPS" / "Text"
         cn.mkdir(parents=True)
         (cn / "S1_01-01_Chapter1.xhtml").write_text(cn_text, encoding="utf-8")
         return table
@@ -840,10 +840,10 @@ class EndToEndTests(unittest.TestCase):
             ws.append(["", "ニック", "尼克", "人名/西式名字"])
             table = root / "table.xlsx"
             wb.save(table)
-            jp = root / "jp" / "[S1_01]日文书" / "item" / "xhtml"
+            jp = root / "jp" / "【S1_01】日文书" / "item" / "xhtml"
             jp.mkdir(parents=True)
             (jp / "p-001.xhtml").write_text("<p>パニックが起きる</p>", encoding="utf-8")
-            cn = root / "cn" / "[S1_01]中文书" / "OEBPS" / "Text"
+            cn = root / "cn" / "【S1_01】中文书" / "OEBPS" / "Text"
             cn.mkdir(parents=True)
             (cn / "a.xhtml").write_text("<p>发生了恐慌</p>", encoding="utf-8")
             base = ["--table", str(table), "--jp-dir", str(root / "jp"),

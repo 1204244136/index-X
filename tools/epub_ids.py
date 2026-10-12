@@ -8,10 +8,11 @@ from pathlib import Path
 
 S6_DATE = r"S6_\d{2}\.\d{2}\.\d{2}"
 NUMBERED_BOOK = r"S\d+_\d+(?:_\d+)?"
-# 书目录名与元数据标题的作品号定界符 2026-10-12 起统一为全角 `【】`（它不是文件系统、
-# PowerShell、glob 或正则的元字符）；迁移期本表同时接受半角 `[…]`，
-# 收窄提交后只保留 `【…】`。
-BOOK_ID_RE = re.compile(rf"[\[【]({S6_DATE}|{NUMBERED_BOOK})[\]】]", re.I)
+# 书目录名与元数据标题的作品号定界符：**只认全角 `【】`**（2026-10-12 由半角 `[…]`
+# 全库迁移而来；它不是文件系统、PowerShell、glob 或正则的元字符）。
+# 注意：`import_materials.py` 的素材图片前缀检查与 `docx2epub.py` 的交稿名剥离
+# 仍接受半角——那是**输入侧**（外部材料命名），成品侧一律只认全角。
+BOOK_ID_RE = re.compile(rf"【({S6_DATE}|{NUMBERED_BOOK})】", re.I)
 
 # These are explicit historical work-id aliases documented in docs/epub-naming-spec.md.
 # deliberately do not produce a pairing header: a file such as

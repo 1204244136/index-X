@@ -61,7 +61,7 @@ class HealthCheckNegativeTests(unittest.TestCase):
         files.setdefault("OEBPS/Styles/style.css", [_CSS])
         files.setdefault("OEBPS/Text/%s-Cover.xhtml" % bid, self.page("封面"))
         files.setdefault("OEBPS/Text/%s-Information.xhtml" % bid, self.page("制作信息"))
-        dir_name = "[%s]测试书X" % bid
+        dir_name = "【%s】测试书X" % bid
         rels = sorted(rel for rel in files if rel.startswith("OEBPS/Text/"))
         items, refs = [], []
         for i, rel in enumerate(rels, 1):
@@ -140,7 +140,7 @@ class HealthCheckNegativeTests(unittest.TestCase):
     def test_metadata_title_must_equal_dir_name(self):
         book = self.build("S1_01", {"OEBPS/Text/S1_01-01_Chapter1.xhtml": GOOD})
         opf = book / "OEBPS/content.opf"
-        opf.write_text(opf.read_text(encoding="utf-8").replace("[S1_01]测试书X", "某魔法的禁书目录 01X"),
+        opf.write_text(opf.read_text(encoding="utf-8").replace("【S1_01】测试书X", "某魔法的禁书目录 01X"),
                        encoding="utf-8")
         findings, counts, _e, _c = audit_book(book, {"metadata-title"})
         self.assertEqual(counts.get("metadata-title"), 1)
@@ -176,7 +176,7 @@ class HealthCheckNegativeTests(unittest.TestCase):
         book = self.build("S1_01", {"OEBPS/Text/S1_01-01_Chapter1.xhtml": GOOD})
         ncx = book / "toc.ncx"
         ncx.write_text(ncx.read_text(encoding="utf-8").replace(
-            "<text>[S1_01]测试书X</text>", "<text>某魔法的禁书目录 01X</text>"), encoding="utf-8")
+            "<text>【S1_01】测试书X</text>", "<text>某魔法的禁书目录 01X</text>"), encoding="utf-8")
         findings, counts, _e, _c = audit_book(book, {"ncx-doctitle"})
         self.assertEqual(counts.get("ncx-doctitle"), 1)
         self.assertIn("`docTitle` 与 `dc:title` 不一致", findings[0][5])
@@ -276,7 +276,7 @@ class HealthCheckNegativeTests(unittest.TestCase):
     def test_bold_punctuation_protects_entities_and_ids(self):
         """与每日 CI 同源：XML 实体、作品号、缩写点不得被误判为标点。"""
         for line in ("<p><b>R&amp;C</b>项目</p>",
-                     "<p><b>[S5_01_01]</b>标识</p>",
+                     "<p><b>【S5_01_01】</b>标识</p>",
                      "<p>Mr.<b>秘技酱</b></p>",
                      "<p><b>3.5</b>倍</p>"):
             _new, hits = check_epub_health.split_bold_punct(line)
@@ -441,7 +441,7 @@ class HealthCheckNegativeTests(unittest.TestCase):
             "OEBPS/Text/S1_01-01_Chapter1.xhtml": GOOD,
             "OEBPS/Styles/style.css": ["* { box-sizing: border-box; }", "body { margin: 0; }", ".fit { display: block; break-inside: avoid; }"],
         })
-        css_book = self.tmp / "[S1_01]测试书X"
+        css_book = self.tmp / "【S1_01】测试书X"
         hits, *_ = audit_book(css_book, {"css-layout"})
         self.assertTrue(any("`.pb`" in f[5] for f in hits))
 

@@ -21,20 +21,20 @@ from proofread_review import (  # noqa: E402
 )
 
 # 两个文件交错的 diff：用于验证片段不会串到别的文件上
-DIFF = '''diff --git "a/EPUB/[S3_01]x 01X/OEBPS/Text/S3_01-03_Chapter1.xhtml" "b/EPUB/[S3_01]x 01X/OEBPS/Text/S3_01-03_Chapter1.xhtml"
+DIFF = '''diff --git "a/EPUB/【S3_01】x 01X/OEBPS/Text/S3_01-03_Chapter1.xhtml" "b/EPUB/【S3_01】x 01X/OEBPS/Text/S3_01-03_Chapter1.xhtml"
 index 0000000..1111111 100644
---- "a/EPUB/[S3_01]x 01X/OEBPS/Text/S3_01-03_Chapter1.xhtml"
-+++ "b/EPUB/[S3_01]x 01X/OEBPS/Text/S3_01-03_Chapter1.xhtml"
+--- "a/EPUB/【S3_01】x 01X/OEBPS/Text/S3_01-03_Chapter1.xhtml"
++++ "b/EPUB/【S3_01】x 01X/OEBPS/Text/S3_01-03_Chapter1.xhtml"
 @@ -16 +16 @@
 -<p>不补课的话</p>
 +<p>要是不开门的话</p>
 @@ -54 +54 @@
 -<p>氢氦锂～铍～硼～</p>
 +<p>氢氦锂～铍～</p>
-diff --git "a/EPUB/[S3_01]x 01X/OEBPS/Text/S3_01-11_Epilogue.xhtml" "b/EPUB/[S3_01]x 01X/OEBPS/Text/S3_01-11_Epilogue.xhtml"
+diff --git "a/EPUB/【S3_01】x 01X/OEBPS/Text/S3_01-11_Epilogue.xhtml" "b/EPUB/【S3_01】x 01X/OEBPS/Text/S3_01-11_Epilogue.xhtml"
 index 2222222..3333333 100644
---- "a/EPUB/[S3_01]x 01X/OEBPS/Text/S3_01-11_Epilogue.xhtml"
-+++ "b/EPUB/[S3_01]x 01X/OEBPS/Text/S3_01-11_Epilogue.xhtml"
+--- "a/EPUB/【S3_01】x 01X/OEBPS/Text/S3_01-11_Epilogue.xhtml"
++++ "b/EPUB/【S3_01】x 01X/OEBPS/Text/S3_01-11_Epilogue.xhtml"
 @@ -101 +101 @@
 -<p>阴沉幼女的全裸装扮</p>
 +<p>阴沉幼女的装扮</p>
@@ -47,10 +47,10 @@ index 2222222..3333333 100644
 
 # 一个 hunk 含多行改动：`-`/`+` 行各占一行，行号必须逐行递增，
 # 不能整个 hunk 都沿用 `@@ -a,n` 的起始行号。
-MULTILINE_HUNK_DIFF = '''diff --git "a/EPUB/[S3_01]x 01X/OEBPS/Text/S3_01-03_Chapter1.xhtml" "b/EPUB/[S3_01]x 01X/OEBPS/Text/S3_01-03_Chapter1.xhtml"
+MULTILINE_HUNK_DIFF = '''diff --git "a/EPUB/【S3_01】x 01X/OEBPS/Text/S3_01-03_Chapter1.xhtml" "b/EPUB/【S3_01】x 01X/OEBPS/Text/S3_01-03_Chapter1.xhtml"
 index 0000000..1111111 100644
---- "a/EPUB/[S3_01]x 01X/OEBPS/Text/S3_01-03_Chapter1.xhtml"
-+++ "b/EPUB/[S3_01]x 01X/OEBPS/Text/S3_01-03_Chapter1.xhtml"
+--- "a/EPUB/【S3_01】x 01X/OEBPS/Text/S3_01-03_Chapter1.xhtml"
++++ "b/EPUB/【S3_01】x 01X/OEBPS/Text/S3_01-03_Chapter1.xhtml"
 @@ -13,2 +13,2 @@
 -<p>旧甲。</p>
 -<p>旧乙。</p>
@@ -64,10 +64,10 @@ index 0000000..1111111 100644
 '''
 
 # 纯删除行：新侧没有对应行，行号退回旧侧。
-PURE_DELETION_DIFF = '''diff --git "a/EPUB/[S3_01]x 01X/OEBPS/Text/S3_01-03_Chapter1.xhtml" "b/EPUB/[S3_01]x 01X/OEBPS/Text/S3_01-03_Chapter1.xhtml"
+PURE_DELETION_DIFF = '''diff --git "a/EPUB/【S3_01】x 01X/OEBPS/Text/S3_01-03_Chapter1.xhtml" "b/EPUB/【S3_01】x 01X/OEBPS/Text/S3_01-03_Chapter1.xhtml"
 index 0000000..1111111 100644
---- "a/EPUB/[S3_01]x 01X/OEBPS/Text/S3_01-03_Chapter1.xhtml"
-+++ "b/EPUB/[S3_01]x 01X/OEBPS/Text/S3_01-03_Chapter1.xhtml"
+--- "a/EPUB/【S3_01】x 01X/OEBPS/Text/S3_01-03_Chapter1.xhtml"
++++ "b/EPUB/【S3_01】x 01X/OEBPS/Text/S3_01-03_Chapter1.xhtml"
 @@ -30 +30 @@
 -<p>整段删掉。</p>
 '''
@@ -138,10 +138,10 @@ class MultilineHunkLineNumberTests(unittest.TestCase):
 
 class PathTests(unittest.TestCase):
     def test_quoted_path_with_spaces(self):
-        line = ('diff --git "a/EPUB/[S3_01]x 01X/OEBPS/Text/S3_01-03.xhtml" '
-                '"b/EPUB/[S3_01]x 01X/OEBPS/Text/S3_01-03.xhtml"')
+        line = ('diff --git "a/EPUB/【S3_01】x 01X/OEBPS/Text/S3_01-03.xhtml" '
+                '"b/EPUB/【S3_01】x 01X/OEBPS/Text/S3_01-03.xhtml"')
         self.assertEqual(parse_diff_file(line),
-                         "EPUB/[S3_01]x 01X/OEBPS/Text/S3_01-03.xhtml")
+                         "EPUB/【S3_01】x 01X/OEBPS/Text/S3_01-03.xhtml")
 
     def test_unquoted_path(self):
         self.assertEqual(parse_diff_file("diff --git a/EPUB/x.xhtml b/EPUB/x.xhtml"),

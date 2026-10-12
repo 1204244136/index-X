@@ -113,8 +113,8 @@ class BoldRulesTests(unittest.TestCase):
 
     def test_bold_protection(self):
         # 保护实体、作品号、缩写
-        line, hits = split_bold_punct("<p><b>&amp;</b><b>[S1_01]</b><b>Mr.</b></p>")
-        self.assertEqual(line, "<p><b>&amp;</b><b>[S1_01]</b><b>Mr.</b></p>")
+        line, hits = split_bold_punct("<p><b>&amp;</b><b>【S1_01】</b><b>Mr.</b></p>")
+        self.assertEqual(line, "<p><b>&amp;</b><b>【S1_01】</b><b>Mr.</b></p>")
         self.assertEqual(hits, [])
 
 

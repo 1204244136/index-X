@@ -26,7 +26,7 @@ def make_book(root: Path, pages: dict[str, str], *, nav: bool = True, fixed_layo
     `fixed_layout` 给出需要标成 pre-paginated 的文件名（固定版式包装页）；
     `title` 非空时写进 `<head><title>`，用于验证 head 文字是否计入。
     """
-    book = root / "[S1_01]测试书"
+    book = root / "【S1_01】测试书"
     (book / "META-INF").mkdir(parents=True)
     (book / "OEBPS" / "Text").mkdir(parents=True)
     (book / "META-INF" / "container.xml").write_text(

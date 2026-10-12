@@ -422,7 +422,7 @@ def iter_books(root: Path, pattern: str | None):
 # 成品构成（docs/epub-artifact-spec.md）
 # ---------------------------------------------------------------------------
 
-BOOK_ID_PREFIX_RE = re.compile(r"^[\[【][^\]】]+[\]】]")
+BOOK_ID_PREFIX_RE = re.compile(r"^【[^】]+】")
 DC_TITLE_RE = re.compile(r"<dc:title[^>]*>([^<]*)</dc:title>", re.S)
 NCX_DOCTITLE_RE = re.compile(r"<docTitle>\s*<text>([^<]*)</text>", re.S)
 NCX_UID_RE = re.compile(r'<meta name="dtb:uid" content="([^"]*)"')

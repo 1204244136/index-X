@@ -99,7 +99,7 @@ class BookMigrationTests(unittest.TestCase):
 
     def test_plan_and_apply_change_xhtml_and_css_together(self):
         with tempfile.TemporaryDirectory() as tmp:
-            book = Path(tmp) / "[S1_01]测试"
+            book = Path(tmp) / "【S1_01】测试"
             text = book / "OEBPS" / "Text"
             styles = book / "OEBPS" / "Styles"
             text.mkdir(parents=True)

@@ -215,7 +215,7 @@ class CollectBookTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
-        self.book = Path(temporary.name) / "[S1_01]测试"
+        self.book = Path(temporary.name) / "【S1_01】测试"
         write_png(self.book / "OEBPS/Images/S1_01-i-010.jpg")
         write_png(self.book / "OEBPS/Images/S1_01-kuchie-002.jpg", color=(10, 20, 30))
 
@@ -325,8 +325,8 @@ class ScanReportTests(unittest.TestCase):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         cache = Path(temporary.name) / "epub-work"
-        chinese = cache / "chinese-text" / "[S1_01]测试书"
-        japanese = cache / "japanese-text" / "[S1_01]テスト"
+        chinese = cache / "chinese-text" / "【S1_01】测试书"
+        japanese = cache / "japanese-text" / "【S1_01】テスト"
         write_png(chinese / "OEBPS/Images/S1_01-cover.jpg", size=(30, 40))
         write_png(japanese / "OEBPS/Images/S1_01-cover.jpg", size=(30, 40))
         for book, image in ((chinese, "S1_01-cover.jpg"), (japanese, "S1_01-cover.jpg")):
@@ -350,12 +350,12 @@ class ScanReportTests(unittest.TestCase):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         cache = Path(temporary.name) / "epub-work"
-        chinese = cache / "chinese-text" / "[S1_01]测试书"
+        chinese = cache / "chinese-text" / "【S1_01】测试书"
         write_png(chinese / "OEBPS/Images/S1_01-cover.jpg", size=(30, 40))
         (cache / "japanese-text").mkdir(parents=True)
         report = scan(cache, "*S1_01*")
         self.assertEqual(report["books"], [])
-        self.assertEqual([row["book"] for row in report["unpaired_books"]], ["[S1_01]测试书"])
+        self.assertEqual([row["book"] for row in report["unpaired_books"]], ["【S1_01】测试书"])
 
 
 if __name__ == "__main__":

@@ -158,14 +158,14 @@ class ImportOutputBoundaryTests(unittest.TestCase):
 
     def test_docx_default_preview_does_not_create_epub(self):
         with tempfile.TemporaryDirectory() as tmp:
-            source = make_docx(Path(tmp) / "[S1_01]测试.docx")
+            source = make_docx(Path(tmp) / "【S1_01】测试.docx")
             self.assertEqual(docx2epub.main([str(source)]), 0)
             self.assertFalse(list(Path(tmp).glob("*.epub")))
 
     def test_docx_pack_and_no_pack_validate_complete_generated_books(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            source = make_docx(root / "[S1_01]测试.docx")
+            source = make_docx(root / "【S1_01】测试.docx")
             output, unpacked = root / "out", root / "unpacked"
             self.assertEqual(docx2epub.main([str(source), "--out", str(output), "--unpacked", str(unpacked),
                                           "--apply", "--staging"]), 0)
@@ -179,7 +179,7 @@ class ImportOutputBoundaryTests(unittest.TestCase):
     def test_docx_invalid_generated_xml_does_not_write_pack_or_unpacked(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            source = make_docx(root / "[S1_01]测试.docx")
+            source = make_docx(root / "【S1_01】测试.docx")
             for no_pack in (False, True):
                 output = root / ("no-pack" if no_pack else "pack")
                 args = [str(source), "--unpacked", str(output), "--apply", "--staging"]
@@ -208,7 +208,7 @@ class ImportOutputBoundaryTests(unittest.TestCase):
     def test_epub_converter_failure_keeps_existing_docx(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            source = make_docx(root / "[S1_01]测试.docx")
+            source = make_docx(root / "【S1_01】测试.docx")
             docx2epub.main([str(source), "--out", str(root / "epubs"), "--apply", "--staging"])
             epub = root / "epubs" / "【S1_01】测试.epub"
             output = root / "docxs"
@@ -224,7 +224,7 @@ class ImportOutputBoundaryTests(unittest.TestCase):
     def test_epub_apply_keeps_intermediate_in_explicit_output(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            source = make_docx(root / "[S1_01]测试.docx")
+            source = make_docx(root / "【S1_01】测试.docx")
             docx2epub.main([str(source), "--out", str(root / "epubs"), "--apply", "--staging"])
             epub = root / "epubs" / "【S1_01】测试.epub"
             output = root / "docxs"
