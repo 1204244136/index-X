@@ -173,6 +173,8 @@ class HealthCheckNegativeTests(unittest.TestCase):
         findings, counts, _e, _c = audit_book(book, {"toc-entry"})
         self.assertTrue(any("首条目应为「制作信息」" in f[5] for f in findings))
         self.assertTrue(any("封面不进目录" in f[5] for f in findings))
+        # 存量清零后由报告级升级为阻断（2026-10-12，见 docs/maintenance-records/）
+        self.assertTrue(all(f[4] == "error" for f in findings))
 
     def test_ncx_doctitle_must_match_dc_title(self):
         book = self.build("S1_01", {"OEBPS/Text/S1_01-01_Chapter1.xhtml": GOOD})
