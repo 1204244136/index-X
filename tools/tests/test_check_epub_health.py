@@ -200,9 +200,10 @@ class HealthCheckNegativeTests(unittest.TestCase):
     def test_artifact_exempt_registry_is_narrow(self):
         import alignment_rules
         self.assertEqual(set(alignment_rules.HEALTH_EXEMPT_WORK_IDS),
-                         {"dir-name", "toc-entry", "ncx-doctitle"})
+                         {"dir-name", "toc-entry"})
         self.assertTrue(alignment_rules.health_exempt("dir-name", "S0_00"))
-        self.assertTrue(alignment_rules.health_exempt("ncx-doctitle", "s0_00"))
+        self.assertTrue(alignment_rules.health_exempt("toc-entry", "s0_00"))
+        self.assertFalse(alignment_rules.health_exempt("ncx-doctitle", "S0_00"))
         self.assertFalse(alignment_rules.health_exempt("metadata-title", "S0_00"))
         self.assertFalse(alignment_rules.health_exempt("dir-name", "S1_01"))
         self.assertFalse(alignment_rules.health_exempt("dir-name", None))

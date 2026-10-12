@@ -63,7 +63,7 @@ error 级会经 `publish_preflight.py` 接入发布阻断。
   豁免粒度按「书 + 检查项」，这两本只豁免 template，其余照查
   （如 `S0_00-00` 这类非法内容序仍会被 `check_alignment.py` 报出来）；`check_alignment.py` 与此共用一份。
 - `HEALTH_EXEMPT_WORK_IDS`：成品构成项按「检查项 → 作品」登记，当前只有 `S0_00` 的
-  `dir-name`／`toc-entry`／`ncx-doctitle` 三项（阅读说明非卷：目录名不带版本标记 X、
+  `dir-name`／`toc-entry` 两项（阅读说明非卷：目录名不带版本标记 X、
   目录首条目为「阅读器测试」）。加条目等于放宽检查口径，必须写明依据。
 
 用法

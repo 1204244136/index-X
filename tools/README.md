@@ -393,7 +393,7 @@ python tools/check_epub_health.py --only css-layout --tsv 显式报告.tsv
 
 汇总既有项目规则，检查 XML、ruby、正文原子块、标题、加粗、悬空引用、图片资源、CSS 分页保护、**译注页结构**与**成品构成**；资源检查覆盖全部 CSS url／@import、SVG 和导航引用。主 `style.css` 检查完整布局声明，辅助 CSS 只阻断 html／body 非零左右边距，不能要求每份字体 CSS 重复主样式，不另立规则。`--pattern` 筛书、`--only` 选项、`--top` 控制样例、`--json`／`--tsv` 显式报告。strict 有 error 非零；每项必须有负向测试。
 
-成品构成项（规范见 [EPUB 成品构成规范](../docs/epub-artifact-spec.md)）：`dir-name`（书目录名的 `[作品号]` 前缀与结尾 `X`）、`metadata-title`（`dc:title` 逐字节等于书目录名）、`packaging-required`（`content.opf`／`nav.xhtml`／`toc.ncx` 与封面、制作信息页存在，且两张包装页已被 manifest 声明、已在 spine 中）为 **error 级，接入发布预检**；`toc-entry`（首条目为制作信息、封面不入目录）、`ncx-doctitle`（`docTitle` 等于 `dc:title`）、`identifier-unique`（跨书 `unique-identifier` 唯一）为 **warning 级，只报告不阻断**——存量未清零，清零后升级为阻断。`identifier-unique` 需跨书汇总，在 `main()` 层计算；豁免按「作品 + 检查项」登记在 `alignment_rules.HEALTH_EXEMPT_WORK_IDS`（当前仅 `S0_00` 的三项）。
+成品构成项（规范见 [EPUB 成品构成规范](../docs/epub-artifact-spec.md)）：`dir-name`（书目录名的 `[作品号]` 前缀与结尾 `X`）、`metadata-title`（`dc:title` 逐字节等于书目录名）、`packaging-required`（`content.opf`／`nav.xhtml`／`toc.ncx` 与封面、制作信息页存在，且两张包装页已被 manifest 声明、已在 spine 中）为 **error 级，接入发布预检**；`toc-entry`（首条目为制作信息、封面不入目录）、`ncx-doctitle`（`docTitle` 等于 `dc:title`）、`identifier-unique`（跨书 `unique-identifier` 唯一）为 **warning 级，只报告不阻断**——存量未清零，清零后升级为阻断。`identifier-unique` 需跨书汇总，在 `main()` 层计算；豁免按「作品 + 检查项」登记在 `alignment_rules.HEALTH_EXEMPT_WORK_IDS`（当前仅 `S0_00` 的 `dir-name`／`toc-entry` 两项）。
 
 `note-structure` 只对 `*-Note.xhtml` 判定，覆盖外壳（XML 声明引号、`<head>` 与 `<link>` 间距、空 `<title>`）、L4 固定 h1、L5 容器必须是 `<ul>`、`<li>` 属性顺序与完整性、缩进、行内标签白名单，规范见 [EPUB 结构规范](../docs/epub-structure-spec.md)「译注页（Note）结构规约」。**编号连续性不在本项**——`noteN` 从 1 起、无空号、与正文首引顺序一致由 `check_note_order.py` 唯一负责。`S0_00-Note.xhtml` 第 7 行的说明型条目是登记在案的唯一豁免。
 
