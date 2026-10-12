@@ -6,7 +6,7 @@ description: index-X 日文 BW 源导入工作流（BookWalker 分页源 → 日
 # 日文 BW 源导入（index-X）
 
 文档职责与入口见 [文档索引](../../../docs/README.md)。命令合同见 [工具说明](../../../tools/README.md) 的 C2（导入与交稿往返），
-仓库级规约（作品号与表头、图片命名、固定行模板、写入边界）见 [AGENTS.md](../../../AGENTS.md)，版式条文见 [命名规范](../../../docs/epub-naming-spec.md) 与 [结构规范](../../../docs/epub-structure-spec.md)。
+仓库级规约（作品号与表头、图片命名、固定行模板、写入边界）见 [AGENTS.md](../../../AGENTS.md)，版式条文见 [命名规范](../../../docs/epub-naming-spec.md) 与 [结构规范](../../../docs/epub-structure-spec.md)；本流程产出的是日文工作源（`item/` 布局，只读参考），中文成品的构成口径见 [成品构成规范](../../../docs/epub-artifact-spec.md)。
 
 本 skill 管「把一份 BookWalker 分页源做成可配对、可对齐的日文工作源」。它**到日文侧进入
 `.cache/epub-work/japanese-text/<作品号>书目录` 且能跑单侧对齐检查为止**；之后的「交稿 → 成品」

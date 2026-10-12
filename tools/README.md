@@ -1,13 +1,13 @@
 # EPUB 维护工具
 
-文档职责与入口见 [文档索引](../docs/README.md)。本文件是 `tools/` 的**命令合同**：每个工具的入口、参数、读写范围、门禁与失败边界、测试与所属簇。规范与边界（写成什么样、什么不许做）以 [AGENTS.md](../AGENTS.md) 与版式规范三份文档（[EPUB 命名规范](../docs/epub-naming-spec.md)、[EPUB 结构规范](../docs/epub-structure-spec.md)、[EPUB 排版规范](../docs/epub-css-layout-spec.md)）为准，本文件只留指针、不复述条文；成品语言规范以 [翻译规范](../docs/translation-spec.md) 为准；需要判断分支的流程以 `.agents/skills/` 为准。历史验收与修改统计只在维护记录和提交中保存。
+文档职责与入口见 [文档索引](../docs/README.md)。本文件是 `tools/` 的**命令合同**：每个工具的入口、参数、读写范围、门禁与失败边界、测试与所属簇。规范与边界（写成什么样、什么不许做）以 [AGENTS.md](../AGENTS.md) 与版式规范四份文档（[EPUB 命名规范](../docs/epub-naming-spec.md)、[EPUB 结构规范](../docs/epub-structure-spec.md)、[EPUB 排版规范](../docs/epub-css-layout-spec.md)、[EPUB 成品构成规范](../docs/epub-artifact-spec.md)）为准，本文件只留指针、不复述条文；成品语言规范以 [翻译规范](../docs/translation-spec.md) 为准；需要判断分支的流程以 `.agents/skills/` 为准。历史验收与修改统计只在维护记录和提交中保存。
 
 ## 三层职责
 
 | 层 | 写什么 | 什么时候看 |
 | --- | --- | --- |
 | [AGENTS.md](../AGENTS.md) | **规范与边界**：系列编号、版式规范指针、数据流与编辑边界、提交边界 | 任何维护动作前；本文件不复述 |
-| 版式规范三份 | **版式条文**：[命名规范](../docs/epub-naming-spec.md)（表头与文件名）、[结构规范](../docs/epub-structure-spec.md)（行模板与结构）、[排版规范](../docs/epub-css-layout-spec.md)（移动端 CSS） | 动 XHTML／文件名／图片／CSS 前 |
+| 版式规范四份 | **版式条文**：[命名规范](../docs/epub-naming-spec.md)（表头与文件名）、[结构规范](../docs/epub-structure-spec.md)（行模板与结构）、[排版规范](../docs/epub-css-layout-spec.md)（移动端 CSS）、[成品构成规范](../docs/epub-artifact-spec.md)（部件与必备性、元数据对齐） | 动 XHTML／文件名／图片／CSS／容器文件前 |
 | 本文件 | **命令合同**：入口、参数、读写范围、门禁与失败边界、测试、簇归属 | 运行任何 `tools/` 命令前 |
 | `.agents/skills/` | **流程与判断分支**：材料核对、执行顺序、人工确认点、失败退路 | 做对应任务时（新书导入、日文源导入、校对复核、术语统一） |
 

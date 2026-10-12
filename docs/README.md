@@ -16,13 +16,14 @@
 
 ## 二、版式规范的分工
 
-`EPUB/` 的版式规约按主题分三份维护；[`AGENTS.md`](../AGENTS.md)「版式规范」一节只留核心不变量与指向这三份的指针，不复制条文。
+`EPUB/` 的版式规约按主题分四份维护；[`AGENTS.md`](../AGENTS.md)「版式规范」一节只留核心不变量与指向这四份的指针，不复制条文。
 
 | 文档 | 写什么 | 什么时候看 |
 | --- | --- | --- |
 | [EPUB 命名规范](epub-naming-spec.md) | 中日配对的**表头形态**、中文 XHTML 文件名与包装后缀、图片资源命名与引用 | 新增／重命名／配对文件、导入图片、处理历史别名时 |
 | [EPUB 结构规范](epub-structure-spec.md) | 固定行模板与 L5／L6 槽位、行对齐原子、标题分层、译注页结构、换页衔接、日文侧规范化、包装页与附录边界 | 改任何 XHTML 结构、合并分页源、修行对齐、写 Note 页时 |
 | [EPUB 排版规范](epub-css-layout-spec.md) | 移动端多列分页与插图的 CSS 防御规则及其门禁 | 动书籍 `style.css`、插图分页表现或 Reasily 类阅读器版式时 |
+| [EPUB 成品构成规范](epub-artifact-spec.md) | 成品的两种形态、部件清单与**必备性**、书目录名与 `dc:title`／`docTitle` 的对齐、目录条目口径、构成变更的执行前置 | 新增／改名书目录、动 `content.opf`／`nav.xhtml`／`toc.ncx`、补包装页时 |
 
 ## 三、翻译类文档的分工
 
@@ -46,7 +47,7 @@
 ## 四、维护约定
 
 - 本文件**不承载规范条文、裁定结论或工具参数**——那些仍在各自文档中维护，保持单一来源，不在本文件复制。
-- 同一规则只在一处写正文，其余处只留指针：译文规范以 `translation-spec.md` 为准，版式规范以 `epub-naming-spec.md`／`epub-structure-spec.md`／`epub-css-layout-spec.md` 为准，译名选取以 `translation-name-selection-spec.md` 为准，已决裁定以 `translation-name-rulings.md` 为准，机器可判定的词表以对应 `tools/check_*.py` 的常量为准。
+- 同一规则只在一处写正文，其余处只留指针：译文规范以 `translation-spec.md` 为准，版式规范以 `epub-naming-spec.md`／`epub-structure-spec.md`／`epub-css-layout-spec.md`／`epub-artifact-spec.md` 为准，译名选取以 `translation-name-selection-spec.md` 为准，已决裁定以 `translation-name-rulings.md` 为准，机器可判定的词表以对应 `tools/check_*.py` 的常量为准。
 - 职责变化只在本索引登记；其他入口保留指针，文件新增／改名时修复受影响的相对链接。工具行为变更更新 `tools/README.md` 合同和对应验证，不在索引复制参数。顶层文档登记与活跃文档回指由 `tools/check_project_docs.py` 机械检查，缺项在 CI 非零。
 - 外部规范、译名表和 BetweenLines 的动态定位、版本证据及缺失时的处理统一见 `translation-spec.md`「外部依赖与核验」；私人机器路径不写入活跃文档。
 - `maintenance-records/` 保留当次事实和当时口径；旧流程不能作为当前操作依据。允许修复链接或有提交证据的日期错误，必须保留更正说明。

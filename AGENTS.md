@@ -9,7 +9,7 @@
 ## 目录约定
 
 - `EPUB/`：版本化的 EPUB 解压目录，属于发布源文件。
-- `docs/`：规范、裁定与长期维护记录；各文件职责及新增／改名流程统一在 [文档索引](docs/README.md) 维护。版式规范正文在 `epub-naming-spec.md`／`epub-structure-spec.md`／`epub-css-layout-spec.md`；动任何译名前先查 `docs/translation-name-rulings.md`。
+- `docs/`：规范、裁定与长期维护记录；各文件职责及新增／改名流程统一在 [文档索引](docs/README.md) 维护。版式规范正文在 `epub-naming-spec.md`／`epub-structure-spec.md`／`epub-css-layout-spec.md`／`epub-artifact-spec.md`；动任何译名前先查 `docs/translation-name-rulings.md`。
 - `tools/`：可重复使用、经过验证的维护工具。
 - `.github/workflows/`：发布和自动化流程。
 - `.agents/skills/`：项目级任务流程与配套模板，属于项目规约、应提交。当前日文源导入、新书成品生成、术语统一与校对复核的流程在各 skill 维护；语言／取舍规范按文档索引定位。
@@ -35,6 +35,7 @@
 - 数字内容序从 `-01` 开始，`-00` 非法。
 - 中文文件名用 `<表头>_<语义后缀>.xhtml` 或 `<作品号>-<包装后缀>.xhtml`；语义后缀保留原有拼写，不为格式化批量改名。
 - 图片资源必须带完整作品号前缀，格式为 `<作品号>-<原稳定图片名>.<扩展名>`；重命名后同步 XHTML、OPF、NCX、nav、CSS 与 SVG 引用。
+- 书目录名形如 `[作品号]<标题>X`，`dc:title` 必须逐字节等于它（`file-as`、`toc.ncx` 的 `docTitle` 同值）；成品部件与必备性、目录条目口径见 [EPUB 成品构成规范](docs/epub-artifact-spec.md)。
 - 中日配对文件两侧总行数一致，L1–L6 固定行模板不随内容有无偏移。
 
 | 主题 | 规范正文 | 什么时候读 |
@@ -42,6 +43,7 @@
 | 表头、中文文件名与包装后缀、图片资源命名 | [EPUB 命名规范](docs/epub-naming-spec.md) | 新增／重命名／配对文件、导入图片、处理历史别名时 |
 | 固定行模板、行对齐原子、标题分层、译注页结构、换页衔接、日文侧规范化、包装页与附录边界 | [EPUB 结构规范](docs/epub-structure-spec.md) | 改任何 XHTML 结构、合并分页源、修行对齐、写 Note 页时 |
 | 移动端多列分页与插图 CSS 防御 | [EPUB 排版规范](docs/epub-css-layout-spec.md) | 动书籍 `style.css`、插图分页表现或 Reasily 类阅读器版式时 |
+| 成品部件与必备性、书目录名与元数据对齐、目录条目口径 | [EPUB 成品构成规范](docs/epub-artifact-spec.md) | 新增／改名书目录、动 `content.opf`／`nav.xhtml`／`toc.ncx`、补包装页时 |
 
 ## 维护流程
 
