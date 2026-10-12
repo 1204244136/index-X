@@ -1,6 +1,6 @@
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:title id="id">[S6_10.06.26]某自动贩卖机的存在证明X</dc:title>
+    <dc:title id="id">[S6_10.06.26]某自动贩卖机的存在证明</dc:title>
     <dc:creator id="id-1">成田良悟</dc:creator>
     <dc:identifier>calibre:100</dc:identifier>
     <dc:identifier>uuid:84ce2b3a-e379-4507-95eb-5f747e455cf6</dc:identifier>
@@ -9,7 +9,7 @@
     <dc:contributor id="id-3">calibre (8.12.0) [https://calibre-ebook.com]</dc:contributor>
     <dc:subject>重小说</dc:subject>
     <opf:meta refines="#id" property="title-type">main</opf:meta>
-    <opf:meta refines="#id" property="file-as">[S6_10.06.26]某自动贩卖机的存在证明X</opf:meta>
+    <opf:meta refines="#id" property="file-as">[S6_10.06.26]某自动贩卖机的存在证明</opf:meta>
     <meta name="Sigil version" content="0.9.17"/>
     <meta name="cover" content="GT_vol_1.jpg"/>
     <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-01-29T13:34:11Z</meta>
