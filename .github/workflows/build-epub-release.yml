@@ -55,12 +55,12 @@ jobs:
           shopt -s nullglob
 
           Collections=(
-            "All:["
-            "A_Certain_Magical_Index:[S1_"
-            "A_Certain_Magical_Index_New_Testament:[S2_"
-            "A_Certain_Magical_Index_Genesis_Testament:[S3_"
-            "A_Certain_Dark_Side_Item:[S4_"
-            "A_Certain_Magical_Index_SP:[S5_ [S6_"
+            "All:【"
+            "A_Certain_Magical_Index:【S1_"
+            "A_Certain_Magical_Index_New_Testament:【S2_"
+            "A_Certain_Magical_Index_Genesis_Testament:【S3_"
+            "A_Certain_Dark_Side_Item:【S4_"
+            "A_Certain_Magical_Index_SP:【S5_ 【S6_"
           )
           for entry in "${Collections[@]}"; do
             ARCHIVE_NAME="${entry%%:*}"
@@ -104,12 +104,12 @@ jobs:
 
           NOTE="${NOTE}\n## 单行本\n"
           SERIES_GROUPS=(
-            "说明:[S0_"
-            "某魔法的禁书目录 旧约:[S1_"
-            "某魔法的禁书目录 新约:[S2_"
-            "某魔法的禁书目录 创约:[S3_"
-            "某暗部的少女共栖:[S4_"
-            "某魔法的禁书目录 番外:[S5_ [S6_"
+            "说明:【S0_"
+            "某魔法的禁书目录 旧约:【S1_"
+            "某魔法的禁书目录 新约:【S2_"
+            "某魔法的禁书目录 创约:【S3_"
+            "某暗部的少女共栖:【S4_"
+            "某魔法的禁书目录 番外:【S5_ 【S6_"
           )
           for entry in "${SERIES_GROUPS[@]}"; do
             LABEL="${entry%%:*}"
