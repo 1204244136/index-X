@@ -96,7 +96,7 @@ from check_alignment import check_file as check_template
 from epub_ids import book_id, content_sequence, header_of, is_list_packaging_header, work_id
 from text_norm import split_bold_punct
 from xhtml_slots import NOTE_H1
-from epub_structure import resolve_reference, CSS_URL_RE
+from epub_structure import css_references, resolve_reference, xml_references
 from urllib.parse import unquote, urlsplit
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -297,21 +297,16 @@ def find_dangling(book_dir: Path, xhtmls: list[Path]) -> list[tuple[str, str]]:
     refs: list[tuple[Path, str, bool]] = []
     for path in sources:
         if path.suffix.lower() == ".css":
-            raw = re.sub(rb"/\*.*?\*/", b"", path.read_bytes(), flags=re.S)
-            values = [m.group(2).decode("utf-8") for m in CSS_URL_RE.finditer(raw)]
-            values += re.findall(r"@import\s+['\"]([^'\"]+)['\"]", raw.decode("utf-8"), re.I)
-            refs.extend((path, value, False) for value in values)
+            refs.extend((path, reference.value, reference.root_relative)
+                        for reference in css_references(path.read_bytes()))
             continue
         try:
             doc = ET.parse(path)
         except ET.ParseError:
             continue  # XML/OCF validation reports syntax failures separately.
         anchors[path.resolve()] = {e.get("id") for e in doc.iter() if e.get("id")}
-        for element in doc.iter():
-            for key, value in element.attrib.items():
-                attr = key.rsplit("}", 1)[-1].lower()
-                if attr in {"href", "src", "poster", "full-path"}:
-                    refs.append((path, value, attr == "full-path"))
+        refs.extend((path, reference.value, reference.root_relative)
+                    for reference in xml_references(doc.getroot(), attribute_case="lower"))
     for path, value, root_relative in refs:
         if re.match(r"^(?:[a-z][a-z0-9+.-]*:|//)", value, re.I):
             continue

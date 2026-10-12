@@ -5,6 +5,7 @@ import posixpath
 import re
 import zipfile
 import xml.etree.ElementTree as ET
+from typing import Literal, NamedTuple
 from urllib.parse import unquote, urlsplit
 from alignment_rules import JP_WRAPPER_RE
 
@@ -17,6 +18,43 @@ REFERENCE_SUFFIXES = frozenset(XML_SUFFIXES + (".css",))
 # （不带 `.htm`：本管线的编号页与其容器只用 `.xhtml`／`.opf`／`.ncx`）。
 METADATA_SUFFIXES = frozenset((".xhtml", ".html", ".opf", ".ncx"))
 CSS_URL_RE = re.compile(rb"url\(\s*(['\"]?)(.*?)\1\s*\)", re.I)
+
+
+class ResourceReference(NamedTuple):
+    """原始引用与根相对标记；不提前解析目标或判断其有效性。"""
+
+    value: str
+    root_relative: bool
+
+
+def xml_references(
+    root: ET.Element, *, attribute_case: Literal["lower", "casefold"],
+) -> tuple[ResourceReference, ...]:
+    """从已解析的 XML 采集引用，保留元素／属性顺序和重复项。
+
+    属性归一化由调用方明确选择，保持体检 lower、入库合同 casefold。
+    XML 解析、锚点采集和异常处理仍归调用方。
+    """
+    normalize = {"lower": str.lower, "casefold": str.casefold}[attribute_case]
+    references = []
+    for element in root.iter():
+        for raw_attr, raw_value in element.attrib.items():
+            attr = normalize(raw_attr.rsplit("}", 1)[-1])
+            if attr in {"href", "src", "poster", "full-path"}:
+                references.append(ResourceReference(raw_value, attr == "full-path"))
+    return tuple(references)
+
+
+def css_references(data: bytes) -> tuple[ResourceReference, ...]:
+    """字节级去注释后采集全部 url()，再采集引号形式的 @import。
+
+    保留原始值、重复项和严格 UTF-8 解码异常，不提前解析目标。
+    """
+    css = re.sub(rb"/\*.*?\*/", b"", data, flags=re.S)
+    values = [match.group(2).decode("utf-8") for match in CSS_URL_RE.finditer(css)]
+    values += re.findall(r"@import\s+['\"]([^'\"]+)['\"]", css.decode("utf-8"), re.I)
+    return tuple(ResourceReference(value, False) for value in values)
+
 
 def resolve_reference(source: str, value: str, *, root_relative: bool = False) -> str | None:
     """把 EPUB 内部引用解析为 ZIP POSIX 路径；外部 URL/纯锚点返回 None。"""
@@ -70,15 +108,11 @@ def artifact_contract_issues(entries: dict[str, bytes], book_id: str | None) -> 
             except ET.ParseError as exc:
                 issues.append((name, f"XML 解析失败：{exc}"))
                 continue
-            for element in root.iter():
-                for raw_attr, raw_value in element.attrib.items():
-                    attr = raw_attr.rsplit("}", 1)[-1].casefold()
-                    if attr not in {"href", "src", "poster", "full-path"}:
-                        continue
-                    target = resolve_reference(
-                        name, raw_value, root_relative=(attr == "full-path"))
-                    if target is not None and target not in names:
-                        issues.append((name, f"资源引用不存在：{raw_value} -> {target}"))
+            for reference in xml_references(root, attribute_case="casefold"):
+                target = resolve_reference(
+                    name, reference.value, root_relative=reference.root_relative)
+                if target is not None and target not in names:
+                    issues.append((name, f"资源引用不存在：{reference.value} -> {target}"))
             if lower.endswith(".opf"):
                 manifest_ids: dict[str, str] = {}
                 for element in root.iter():
@@ -101,13 +135,10 @@ def artifact_contract_issues(entries: dict[str, bytes], book_id: str | None) -> 
                         if idref not in manifest_ids:
                             issues.append((name, f"OPF spine idref 不存在于 manifest：{idref}"))
         if lower.endswith(".css"):
-            css = re.sub(rb"/\*.*?\*/", b"", data, flags=re.S)
-            values = [match.group(2).decode("utf-8") for match in CSS_URL_RE.finditer(css)]
-            values += re.findall(r"@import\s+['\"]([^'\"]+)['\"]", css.decode("utf-8"), re.I)
-            for raw_value in values:
-                target = resolve_reference(name, raw_value)
+            for reference in css_references(data):
+                target = resolve_reference(name, reference.value)
                 if target is not None and target not in names:
-                    issues.append((name, f"CSS 资源引用不存在：{raw_value} -> {target}"))
+                    issues.append((name, f"CSS 资源引用不存在：{reference.value} -> {target}"))
     for image_name in sorted(
             candidate for candidate in names
             if candidate.lower().endswith(IMAGE_SUFFIXES)):

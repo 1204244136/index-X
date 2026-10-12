@@ -343,6 +343,54 @@ class HealthCheckNegativeTests(unittest.TestCase):
         })
         self.assertIn("#nope", hit[5])
 
+    def test_dangling_keeps_htm_excluded_and_normalizes_attribute_names(self):
+        book = self.build("S1_01", {
+            "OEBPS/Text/S1_01-01_Chapter1.xhtml": body('<p><img SRC="missing.dat"/></p>'),
+            "OEBPS/Text/ignored.htm": ['<html src="ignored.dat"/>'],
+        })
+        self.assertEqual(check_epub_health.find_dangling(book, []), [
+            ("dangling", "`S1_01-01_Chapter1.xhtml` 引用不存在或越界的 `missing.dat`"),
+        ])
+
+    def test_dangling_checks_same_page_and_cross_page_fragments(self):
+        book = self.build("S1_01", {
+            "OEBPS/Text/S1_01-01_Chapter1.xhtml": body(
+                '<p id="present"><a href="#present"/><a href="#missing"/>'
+                '<a href="S1_01-02_Chapter2.xhtml#cross"/></p>'),
+            "OEBPS/Text/S1_01-02_Chapter2.xhtml": body('<p id="cross"/>'),
+        })
+        self.assertEqual(check_epub_health.find_dangling(book, []), [
+            ("dangling", "`S1_01-01_Chapter1.xhtml` 锚点 `#missing` 不存在"),
+        ])
+
+    def test_dangling_rejects_existing_files_outside_the_book(self):
+        (self.tmp / "outside.xhtml").write_text('<html id="present"/>', encoding="utf-8")
+        book = self.build("S1_01", {
+            "OEBPS/Text/S1_01-01_Chapter1.xhtml": body(
+                '<p><a href="../../../outside.xhtml#present"/></p>'),
+        })
+        self.assertEqual(check_epub_health.find_dangling(book, []), [
+            ("dangling", "`S1_01-01_Chapter1.xhtml` 引用不存在或越界的 `../../../outside.xhtml#present`"),
+        ])
+
+    def test_dangling_collects_all_sources_before_resolving(self):
+        book = self.build("S1_01", {
+            "OEBPS/Text/S1_01-01_Chapter1.xhtml": body('<p><a href=" http://[invalid"/></p>'),
+            "z.css": [],
+        })
+        (book / "z.css").write_bytes(b"\xff")
+        with self.assertRaises(UnicodeDecodeError):
+            check_epub_health.find_dangling(book, [])
+        (book / "z.css").unlink()
+        with self.assertRaises(ValueError):
+            check_epub_health.find_dangling(book, [])
+
+    def test_dangling_filters_raw_external_urls_before_url_parsing(self):
+        book = self.build("S1_01", {
+            "OEBPS/Text/S1_01-01_Chapter1.xhtml": body('<p><a href="http://[invalid"/></p>'),
+        })
+        self.assertEqual(check_epub_health.find_dangling(book, []), [])
+
     # ---- 豁免与 --only ----
     def test_exempt_books_suppress_template_only(self):
         """豁免按「书 + 检查项」：豁免 template 不等于豁免这本书的全部检查。
