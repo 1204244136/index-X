@@ -21,7 +21,7 @@ Usage:
     python tools/publish.py --force          # treat all files as changed (full rebuild)
     python tools/publish.py --no-upload      # skip OneDrive upload
     python tools/publish.py --sync-only      # only sync changed files to EPUB/, no packaging/upload
-    python tools/publish.py --only-books "chinese-text/[S1_01]..."  # restrict to these books
+    python tools/publish.py --only-books "chinese-text/【S1_01】..."  # restrict to these books
 """
 
 from __future__ import annotations

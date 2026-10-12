@@ -10,7 +10,7 @@
 
 用法：
     python tools/import_images.py suggest --src 素材目录 --jp-dir 缓存日文图目录 --work S4_04
-    python tools/import_images.py apply plan.json --out EPUB/[S4_04]… --apply
+    python tools/import_images.py apply plan.json --out EPUB/【S4_04】… --apply
 """
 from __future__ import annotations
 

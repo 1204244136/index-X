@@ -74,7 +74,7 @@ DEFAULT_RULINGS = REPO_ROOT / "docs" / "translation-name-rulings.md"
 # 剥注音与标签：先整段移除 <rt>/<rp>（含内容，规则唯一实现在 xhtml_text），再剥其余标签
 TAG_RE = re.compile(r"<[^>]+>")
 WS_RE = re.compile(r"[\s\u3000]+")
-BOOK_RE = re.compile(r"^\[([^\]]+)\]")
+BOOK_RE = re.compile(r"^[\[【]([^\]】]+)[\]】]")
 KANA_RE = re.compile(r"[\u3041-\u3096\u30a1-\u30fa\u30fc]")
 CJK_RE = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff]")
 BRACKET_CHARS = "【】「」『』"

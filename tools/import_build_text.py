@@ -11,7 +11,7 @@
 
 用法：
     python tools/import_build_text.py plan.json --out 暂存目录/书目录 --apply --staging
-    python tools/import_build_text.py plan.json --out EPUB/[S4_04]… --apply
+    python tools/import_build_text.py plan.json --out EPUB/【S4_04】… --apply
     python tools/import_build_text.py plan.json --report 预览.txt          # 只预览
 """
 from __future__ import annotations

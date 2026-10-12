@@ -21,7 +21,8 @@
     python lookup_source.py cn S3_01-07_Chapter3.xhtml --grep "小货车|旅行车"
 
 约定：日文工作源在 `.cache/epub-work/japanese-text/`，中文归档在 `EPUB/`；
-`[S3_01]` 这类目录名含方括号，**不能用 glob**（方括号会被当字符类），本脚本用 pathlib 遍历。
+书目录名的作品号定界符是**全角** `【…】`（2026-10-12 起由半角 `[…]` 统一而来，
+它不是 glob／正则的元字符），本脚本用 pathlib 遍历而非 glob 拼接。
 """
 
 from __future__ import annotations
@@ -42,7 +43,8 @@ CN_ROOT = REPO / "EPUB"
 def find_book(root: Path, work: str) -> Path:
     if not root.is_dir():
         sys.exit(f"目录不存在：{root}（日文侧先跑 tools/pull.ps1）")
-    hits = [d for d in sorted(root.iterdir()) if d.is_dir() and f"[{work}]" in d.name]
+    hits = [d for d in sorted(root.iterdir())
+            if d.is_dir() and (f"【{work}】" in d.name or f"[{work}]" in d.name)]
     if len(hits) != 1:
         sys.exit(f"作品 [{work}] 命中 {len(hits)} 个目录：{[d.name for d in hits]}")
     return hits[0]

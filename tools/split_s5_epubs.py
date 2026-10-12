@@ -101,7 +101,7 @@ class SplitPlan:
 
     @property
     def basename(self) -> str:
-        return f"[{self.book_id}]{self.title}"
+        return f"【{self.book_id}】{self.title}"
 
 
 def _zip_infos(entries: dict[str, bytes]) -> list[zipfile.ZipInfo]:

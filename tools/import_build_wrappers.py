@@ -18,7 +18,7 @@
 在计划里写 `intro_fname`。
 
 用法：
-    python tools/import_build_wrappers.py plan.json --template "EPUB/[S4_03]…" \
+    python tools/import_build_wrappers.py plan.json --template "EPUB/【S4_03】…" \
         --info info.txt --intro intro.txt --out 暂存目录/书目录 --apply --staging
 """
 from __future__ import annotations

@@ -8,7 +8,10 @@ from pathlib import Path
 
 S6_DATE = r"S6_\d{2}\.\d{2}\.\d{2}"
 NUMBERED_BOOK = r"S\d+_\d+(?:_\d+)?"
-BOOK_ID_RE = re.compile(rf"\[({S6_DATE}|{NUMBERED_BOOK})\]", re.I)
+# 书目录名与元数据标题的作品号定界符 2026-10-12 起统一为全角 `【】`（它不是文件系统、
+# PowerShell、glob 或正则的元字符）；迁移期本表同时接受半角 `[…]`，
+# 收窄提交后只保留 `【…】`。
+BOOK_ID_RE = re.compile(rf"[\[【]({S6_DATE}|{NUMBERED_BOOK})[\]】]", re.I)
 
 # These are explicit historical work-id aliases documented in docs/epub-naming-spec.md.
 # deliberately do not produce a pairing header: a file such as

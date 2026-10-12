@@ -16,7 +16,8 @@ def make_book(book: Path, text: str = "<p>正文</p>", *, layout: bool = False) 
     `dc:title` 等于书目录名，导航与封面／制作信息页齐备——发布预检会把成品构成的
     error 级纳入阻断，夹具不满足它就跑不出「成功发布」路径。
     """
-    wid = book.name.split("]")[0].lstrip("[") if book.name.startswith("[") else "S1_01"
+    norm = book.name.replace("【", "[").replace("】", "]")
+    wid = norm.split("]")[0].lstrip("[") if norm.startswith("[") else "S1_01"
     (book / "META-INF").mkdir(parents=True, exist_ok=True)
     (book / "OEBPS" / "Text").mkdir(parents=True, exist_ok=True)
     (book / "mimetype").write_bytes(b"application/epub+zip")

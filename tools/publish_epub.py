@@ -21,7 +21,7 @@ Usage:
     python tools/publish_epub.py --force            # treat all EPUB files as changed (full mirror)
     python tools/publish_epub.py --no-upload        # only overwrite cache + update manifest
     python tools/publish_epub.py --overwrite-cache  # clobber un-published cache edits
-    python tools/publish_epub.py --only-books "chinese-text/[S1_01]..."  # restrict books
+    python tools/publish_epub.py --only-books "chinese-text/【S1_01】..."  # restrict books
 """
 
 from __future__ import annotations

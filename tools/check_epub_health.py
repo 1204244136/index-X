@@ -34,7 +34,7 @@
   css-layout 样式表缺盒模型/分页类或含破坏性边距
   note-structure 译注页外壳/槽位/容器/属性/行内标签不合规（只对 `*-Note.xhtml`；
              规范见 `docs/epub-structure-spec.md`「译注页（Note）结构规约」，编号连续性不在此判定）
-  dir-name   书目录名的 `[作品号]` 前缀（error；规范见 `docs/epub-artifact-spec.md` 第三节）
+  dir-name   书目录名的 `【作品号】` 前缀（error；规范见 `docs/epub-artifact-spec.md` 第三节）
   metadata-title `dc:title` 逐字节等于书目录名（error）
   packaging-required `content.opf`／`nav.xhtml`／`toc.ncx` 与封面、制作信息页齐备，
               且两张包装页已被 manifest 声明、已进 spine（error）
@@ -132,7 +132,7 @@ CHECK_DESC = {
     "dangling": "悬空资源/锚点引用",
     "css-layout": "样式表缺盒模型/分页类或含破坏性边距",
     "note-structure": "译注页外壳/槽位/容器/属性/行内标签不合规",
-    "dir-name": "书目录名的 `[作品号]` 前缀",
+    "dir-name": "书目录名的 `【作品号】` 前缀",
     "metadata-title": "`dc:title` 逐字节等于书目录名",
     "packaging-required": "必备部件存在且被 manifest/spine 引用",
     "nav-structure": "`nav.xhtml` 头部结构（html 只含 head/body、head 只含元数据）",
@@ -422,7 +422,7 @@ def iter_books(root: Path, pattern: str | None):
 # 成品构成（docs/epub-artifact-spec.md）
 # ---------------------------------------------------------------------------
 
-BOOK_ID_PREFIX_RE = re.compile(r"^\[[^\]]+\]")
+BOOK_ID_PREFIX_RE = re.compile(r"^[\[【][^\]】]+[\]】]")
 DC_TITLE_RE = re.compile(r"<dc:title[^>]*>([^<]*)</dc:title>", re.S)
 NCX_DOCTITLE_RE = re.compile(r"<docTitle>\s*<text>([^<]*)</text>", re.S)
 NCX_UID_RE = re.compile(r'<meta name="dtb:uid" content="([^"]*)"')
@@ -459,7 +459,7 @@ def find_artifact_problems(book_dir: Path) -> list[tuple[str, str]]:
     name = book_dir.name
     bid = book_id(name)
     if not BOOK_ID_PREFIX_RE.match(name):
-        out.append(("dir-name", "书目录名缺少 `[作品号]` 前缀：%s" % name))
+        out.append(("dir-name", "书目录名缺少 `【作品号】` 前缀：%s" % name))
 
     opf = book_dir / "OEBPS" / "content.opf"
     if not opf.is_file():

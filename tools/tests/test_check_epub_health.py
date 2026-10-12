@@ -49,7 +49,7 @@ class HealthCheckNegativeTests(unittest.TestCase):
         return GOOD[:3] + ["<h1>%s</h1>" % title, "", "<p>%s占位。</p>" % title, "</body></html>"]
 
     def build(self, bid: str, files: dict[str, list[str]], root: Path | None = None) -> Path:
-        """造一本**构成合规**的最小书：目录名带 `[作品号]` 前缀（结尾字符不参与判定），
+        """造一本**构成合规**的最小书：目录名带 `【作品号】` 前缀（结尾字符不参与判定），
         且有包文档／导航／NCX／封面／制作信息页。
 
         构成规则见 `docs/epub-artifact-spec.md`。`assert_detects` 只跑单个检查项，
@@ -135,7 +135,7 @@ class HealthCheckNegativeTests(unittest.TestCase):
         renamed = book.parent / "测试书X"
         book.rename(renamed)
         findings, counts, _e, _c = audit_book(renamed, {"dir-name"})
-        self.assertTrue(any("缺少 `[作品号]` 前缀" in f[5] for f in findings))
+        self.assertTrue(any("缺少 `【作品号】` 前缀" in f[5] for f in findings))
 
     def test_metadata_title_must_equal_dir_name(self):
         book = self.build("S1_01", {"OEBPS/Text/S1_01-01_Chapter1.xhtml": GOOD})

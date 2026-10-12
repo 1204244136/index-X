@@ -48,7 +48,7 @@ class Fixture:
     @staticmethod
     def _populate(book: Path, text: str) -> None:
         from docx2epub import _CSS
-        wid = book.name.split("]")[0].lstrip("[")
+        wid = book.name.replace("【", "[").replace("】", "]").split("]")[0].lstrip("[")
         name = f"{wid}-01_Chapter.xhtml"
         (book / "META-INF").mkdir(parents=True, exist_ok=True)
         (book / "mimetype").write_bytes(b"application/epub+zip")

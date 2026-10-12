@@ -40,7 +40,7 @@ description: index-X 校对复核工作流。用于复核校对工具（BetweenL
 ```powershell
 # 工作区未提交的改动（校对结果刚应用、还没提交）
 python tools/proofread_review.py --worktree
-python tools/proofread_review.py --worktree --path "EPUB/[S3_01]创约 某魔法的禁书目录 01"
+python tools/proofread_review.py --worktree --path "EPUB/【S3_01】创约 某魔法的禁书目录 01"
 python tools/proofread_review.py --worktree --out .cache/epub-work/proofread-review-s301
 
 # 已提交的批量校对（可一次给多个提交）
@@ -208,8 +208,8 @@ python tools/publish_auto.py            # 打包上传 OneDrive + 回流缓存
 路径（注意两侧目录结构不同）：
 
 ```
-日文：.cache/epub-work/japanese-text/[S3_01]創約 とある魔術の禁書目録(01)/item/xhtml/S3_01-07.xhtml
-中文：EPUB/[S3_01]创约 某魔法的禁书目录 01/OEBPS/Text/S3_01-07_Chapter3.xhtml
+日文：.cache/epub-work/japanese-text/【S3_01】創約 とある魔術の禁書目録(01)/item/xhtml/S3_01-07.xhtml
+中文：EPUB/【S3_01】创约 某魔法的禁书目录 01/OEBPS/Text/S3_01-07_Chapter3.xhtml
 ```
 
 取纯文本要**先剥 `<rt>` 注音再 `text_of`**——`xhtml_text.text_of` 只去标签，不剥注音，带注音的词会被拆成「魔術 まじゆつ」而检索不到。用本 skill 附带的查证脚本（已封装路径、内容序、剥注音）：
@@ -222,7 +222,7 @@ python .agents/skills/proofread-review/references/lookup_source.py jp S3_01 07 �
 python .agents/skills/proofread-review/references/lookup_source.py cn S3_01-07_Chapter3.xhtml --line 56
 
 # 也可以直接在中文侧检索关键字，再回日文确认
-rg -n "小货车|旅行车" "EPUB/[S3_01]创约 某魔法的禁书目录 01/OEBPS/Text"
+rg -n "小货车|旅行车" "EPUB/【S3_01】创约 某魔法的禁书目录 01/OEBPS/Text"
 ```
 
 几条纪律：
@@ -241,7 +241,7 @@ rg -n "小货车|旅行车" "EPUB/[S3_01]创约 某魔法的禁书目录 01/OEBP
 
 - 生成时间：<日期>（含第 N 轮查证修正）
 - 复核对象：<N> 个提交，全部落在 `EPUB/[S3_01]…/`
-- 原文依据：`.cache/epub-work/japanese-text/[S3_01]…/item/xhtml/S3_01-01..12.xhtml`
+- 原文依据：`.cache/epub-work/japanese-text/【S3_01】…/item/xhtml/S3_01-01..12.xhtml`
 - 工具：`python tools/proofread_review.py <commits>`
 - 原始数据：`.cache/epub-work/proofread-review/`
 
@@ -287,7 +287,7 @@ rg -n "小货车|旅行车" "EPUB/[S3_01]创约 某魔法的禁书目录 01/OEBP
 | 用「只差标点」的直觉放行数字改动 | 数字不是标点，事实层逐条核 |
 | 抽样后就宣布整批通过 | 结论里必须写明未覆盖范围（尤其明显删减） |
 | 只剥标签不剥 `<rt>` 就检索 | 用 §七 的脚本；带注音的词会被拆开 |
-| 用 `glob` 匹配 `[S3_01]` 路径 | 方括号是字符类，改用 `pathlib` / `os.listdir` |
+| 用 `glob` 匹配书目录名 | 作品号定界符 2026-10-12 起为全角 `【…】`，不再是 glob 的字符类；旧的半角 `[…]` 形态已废弃，历史提交里的路径照旧要按字符类处理 |
 | 为复核历史提交新建 worktree | 工具直接读 git 历史，不需要额外工作树 |
 | 把复核报告写进仓库或别的 agent 的工作目录 | 工作产物放 `.cache/epub-work/proofread-review/`；需要长期保留的结论按「维护流程」的留档与提交项进 `docs/maintenance-records/`（跨本）或提交信息（单本） |
 | 复核报告自己的结论不再核对 | 报告自身也要回原文核（第二轮修正的教训） |

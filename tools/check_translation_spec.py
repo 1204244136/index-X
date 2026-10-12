@@ -429,7 +429,11 @@ def check_note(text):
 
     # P18 括号字符白名单：`【】``〈〉``［］` 各有合法用途（标题式标记／国标单书名号），
     # 只报告不自动改；`〔〕` 作补充说明时已由 text_norm.py 自动改为圆括号。
+    # 作品号定界符 `【S…】`（书目录名与跨书引用用）是标识符而非标点，按 span 跳过。
+    id_spans = [(m.start(), m.end()) for m in re.finditer(r"【S\d+_[0-9A-Za-z_.]*】", body)]
     for m in re.finditer(r"[【】〈〉［］]", body):
+        if any(start <= m.start() < end for start, end in id_spans):
+            continue
         add("P18", "warning",
             "非常用括号字符，请确认是否为标题式标记或单书名号（〔〕已由 text_norm 自动处理），",
             body[max(0, m.start() - 12):m.start() + 13])

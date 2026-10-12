@@ -12,7 +12,7 @@
     python .cache/_unify_terms.py --apply --tsv .cache/_unify.tsv
 
 MAPPINGS 每项 = (作品号, 文件名, 行号, 原串, 新串)
-    作品号   如 "S3_05"、"S5_01_03"、"S6_14.09.10"（与 `[S3_05]…` 目录名方括号内一致）
+    作品号   如 "S3_05"、"S5_01_03"、"S6_14.09.10"（与 `【S3_05】…` 目录名内一致）
     文件名   如 "S3_05-05_Chapter2.xhtml"（EPUB/<书>/OEBPS/Text/ 下的实际文件名）
     行号     EPUB/ 中该文件的物理行号，1 起
     原串/新串 行内文字片段，**不含标签**
@@ -45,7 +45,7 @@ def locate(epub_root: Path, book: str, name: str) -> list[Path]:
     """按作品号 + 文件名在 EPUB/ 下定位，返回全部命中（要求恰好 1 个）。"""
     hits: list[Path] = []
     for book_dir in sorted(epub_root.iterdir()):
-        if not book_dir.is_dir() or f"[{book}]" not in book_dir.name:
+        if not book_dir.is_dir() or (f"【{book}】" not in book_dir.name and f"[{book}]" not in book_dir.name):
             continue
         candidate = book_dir / "OEBPS" / "Text" / name
         if candidate.is_file():

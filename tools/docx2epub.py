@@ -886,7 +886,7 @@ def _process_one(docx_path: Path, args: argparse.Namespace) -> int:
     parsed_header = book_id(stem)
     if parsed_header:
         header = parsed_header
-        title = (re.sub(r"^\[[^\]]+\]", "", stem, count=1) or stem).strip()
+        title = (re.sub(r"^[\[【][^\]】]+[\]】]", "", stem, count=1) or stem).strip()
     else:
         if not (args.series and args.volume):
             print(f"[跳过] {label}：文件名不含 [S..] 表头，请用 --series/--volume 指定",
@@ -895,7 +895,7 @@ def _process_one(docx_path: Path, args: argparse.Namespace) -> int:
         header = f"{args.series}_{args.volume}"
         title = stem
     header = header.upper()
-    if book_id(f"[{header}]") != header:
+    if book_id(f"【{header}】") != header:
         raise ValueError(f"无效作品号：{header}")
 
     title = args.title or title
@@ -1029,7 +1029,7 @@ def _process_one(docx_path: Path, args: argparse.Namespace) -> int:
     sample = "".join(blk["text"] for blk in paragraphs)
     language = args.language or detect_language(sample)
     book_name = title or stem
-    out_stem = f"[{header}]{book_name}"
+    out_stem = f"【{header}】{book_name}"
     uid = str(uuid.uuid4())
     meta = {"title": book_name, "creator": creator or core.get("creator", ""),
             "language": language, "uuid": uid}

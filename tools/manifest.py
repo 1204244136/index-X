@@ -127,7 +127,7 @@ def main() -> int:
         "--update-books",
         nargs="*",
         metavar="SIDE/BOOK",
-        help="only re-hash these book directories (e.g. chinese-text/[S1_01]...), "
+        help="only re-hash these book directories (e.g. chinese-text/【S1_01】...), "
         "preserving all other manifest entries",
     )
     args = parser.parse_args()

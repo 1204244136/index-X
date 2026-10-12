@@ -22,7 +22,7 @@ description: index-X 新书成品生成工作流（交稿 docx＋图片素材＋
 | 图片素材 | 目录，含封面、彩页（Contents／Illustrations）、正文插图 | 用日文原图顶替用户指定的压缩版、漏掉封面 |
 | 制作信息 | 制作信息页正文块（L4 起，含「翻译：／校对：／美工：」署名） | 抄上一卷的署名、留空占位 |
 | 简介 | 简介页正文块（L4 起：h1 ＋ 空行 ＋ 导语 ＋ 正文段） | 自己写简介、拿后记凑 |
-| 作品号与书目录名 | 如 `S4_04` 与 `[S4_04]某暗部的少女共栖 4` | 猜卷号、按中文标题编目录名 |
+| 作品号与书目录名 | 如 `S4_04` 与 `【S4_04】某暗部的少女共栖 4` | 猜卷号、按中文标题编目录名 |
 | 日文原文 | 已同步进 `.cache/epub-work/japanese-text` 的该作品号书目录 | 拿另一卷日文对齐、跳过对齐直接写 |
 | 模板书 | 同系列已入库的一卷（取样式表、容器形状与 calibre 元数据块） | 凭空写 style.css／content.opf |
 
@@ -31,8 +31,8 @@ description: index-X 新书成品生成工作流（交稿 docx＋图片素材＋
 ```powershell
 python tools/import_materials.py --docx 交稿.docx --images 图片素材目录 `
     --info 制作信息.txt --intro 简介.txt --work S4_04 `
-    --book-dir "[S4_04]某暗部的少女共栖 4" `
-    --jp-root .cache/epub-work/japanese-text --template "EPUB/[S4_03]某暗部的少女共栖 3"
+    --book-dir "【S4_04】某暗部的少女共栖 4" `
+    --jp-root .cache/epub-work/japanese-text --template "EPUB/【S4_03】某暗部的少女共栖 3"
 ```
 
 **缺项时的动作**：把缺失清单原样转达用户并停下，例如「还缺：图片素材目录（封面／彩页／正文插图）、
@@ -67,7 +67,7 @@ python tools/import_docx_outline.py 交稿.docx --out .cache/epub-work/import/ou
 ### 2. 结构比对与计划
 
 ```powershell
-python tools/import_align_plan.py 交稿.docx --work S4_04 --book-dir "[S4_04]某暗部的少女共栖 4" `
+python tools/import_align_plan.py 交稿.docx --work S4_04 --book-dir "【S4_04】某暗部的少女共栖 4" `
     --out .cache/epub-work/import/plan.json --report .cache/epub-work/import/gaps.txt
 ```
 
@@ -97,7 +97,7 @@ python tools/import_align_plan.py 交稿.docx --work S4_04 --book-dir "[S4_04]�
 
 ```powershell
 python tools/import_build_text.py .cache/epub-work/import/plan.json `
-    --out "EPUB/[S4_04]某暗部的少女共栖 4" --apply
+    --out "EPUB/【S4_04】某暗部的少女共栖 4" --apply
 ```
 
 写盘前逐章比对物理行数：**任何一章与日文不符就整批不写**，非零退出。段落首尾的 ASCII 空格
@@ -107,7 +107,7 @@ python tools/import_build_text.py .cache/epub-work/import/plan.json `
 
 ```powershell
 python tools/import_images.py suggest --src 图片素材目录 --jp-dir .cache/epub-work/japanese-text/[S4_04]…/item/image --work S4_04
-python tools/import_images.py apply .cache/epub-work/import/plan.json --out "EPUB/[S4_04]某暗部的少女共栖 4" --apply
+python tools/import_images.py apply .cache/epub-work/import/plan.json --out "EPUB/【S4_04】某暗部的少女共栖 4" --apply
 ```
 
 `dst` 必须带作品号前缀（`S4_04-cover` 形式）；封面／彩页／正文插图在计划里用
@@ -118,8 +118,8 @@ python tools/import_images.py apply .cache/epub-work/import/plan.json --out "EPU
 
 ```powershell
 python tools/import_build_wrappers.py .cache/epub-work/import/plan.json `
-    --template "EPUB/[S4_03]某暗部的少女共栖 3" --info 制作信息.txt --intro 简介.txt `
-    --out "EPUB/[S4_04]某暗部的少女共栖 4" --apply --calibre-id 197
+    --template "EPUB/【S4_03】某暗部的少女共栖 3" --info 制作信息.txt --intro 简介.txt `
+    --out "EPUB/【S4_04】某暗部的少女共栖 4" --apply --calibre-id 197
 ```
 
 生成 Cover／Illustrations／Information／Introduction 四个包装页与 `nav.xhtml`、`toc.ncx`、
@@ -132,13 +132,13 @@ python tools/import_build_wrappers.py .cache/epub-work/import/plan.json `
 ### 6. 规范化与门禁
 
 ```powershell
-python tools/text_norm.py --root "EPUB/[S4_04]某暗部的少女共栖 4" --apply   # 或 --staging 处理暂存
+python tools/text_norm.py --root "EPUB/【S4_04】某暗部的少女共栖 4" --apply   # 或 --staging 处理暂存
 python tools/check_alignment.py --root EPUB --jp-root .cache/epub-work/japanese-text --book S4_04 --strict
 python tools/check_epub_health.py --root EPUB --pattern "*S4_04*" --strict
 python tools/check_note_order.py --root EPUB --pattern "*S4_04*"
 python tools/check_translation_spec.py --cache EPUB --pattern "*S4_04*"
 python tools/publish_preflight.py --source EPUB --jp-root .cache/epub-work/japanese-text
-python tools/check_epub_validity.py "EPUB/[S4_04]某暗部的少女共栖 4" --structural --strict
+python tools/check_epub_validity.py "EPUB/【S4_04】某暗部的少女共栖 4" --structural --strict
 ```
 
 门禁非零就修内容或计划后重跑，不得放宽门禁。`check_translation_spec` 的 P6／P7／P15 之类

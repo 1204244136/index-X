@@ -34,7 +34,7 @@ CN = (
     "</body></html>\r\n"
 )
 NAME = "S3_05-01_Chapter1.xhtml"
-FILE = ROOT / "[S3_05]测试书" / "OEBPS" / "Text" / NAME
+FILE = ROOT / "【S3_05】测试书" / "OEBPS" / "Text" / NAME
 
 
 def load_template():

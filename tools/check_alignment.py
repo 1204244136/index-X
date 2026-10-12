@@ -181,7 +181,7 @@ def afterword_offset(japanese: list[str], chinese: list[str]) -> int | None:
       3. 截断后的 `<br/>` 位置与中文侧一致。
 
     中文侧的后记被有意合并到同一合订卷的另一部作品里
-    （`S5_01_03-Information.xhtml` 明写「（后记在 [S5_01_01]…神裂火织篇X 中）」）。
+    （`S5_01_03-Information.xhtml` 明写「（后记在【S5_01_01】…神裂火织篇 中）」）。
     """
     def without_closing(lines: list[str]) -> list[str]:
         return lines[:-1] if lines and re.match(r"^\s*</body", lines[-1], re.I) else lines

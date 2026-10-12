@@ -1121,8 +1121,8 @@ def clean_book_title(raw_title: str, book_id: str | None = None) -> str:
     # 移除作者/插画括号
     title = re.sub(r"\([^\)]*(?:鎌池|はいむら|ニリツ|冬川|近木)[^\)]*\)", "", title, flags=re.I)
     title = re.sub(r"\.preprocessed", "", title, flags=re.I)
-    # 移除已有的 [S...] 前缀
-    title = re.sub(r"^\[S\d+[^\]]*\]\s*", "", title.strip(), flags=re.I)
+    # 移除已有的【S...】／[S...] 前缀
+    title = re.sub(r"^[\[【]S\d+[^\]】]*[\]】]\s*", "", title.strip(), flags=re.I)
     # 压缩多余空格
     title = re.sub(r"\s+", " ", title).strip()
 
@@ -1328,7 +1328,7 @@ def main(argv: list[str] | None = None) -> int:
                 clean_title = clean_book_title(p.stem, cur_book_id)
                 if not output_is_file:
                     if cur_book_id:
-                        out = target_dir / f"[{cur_book_id}]{clean_title}.epub"
+                        out = target_dir / f"【{cur_book_id}】{clean_title}.epub"
                     else:
                         out = target_dir / (p.stem + ".preprocessed" + p.suffix)
                 else:
@@ -1342,7 +1342,7 @@ def main(argv: list[str] | None = None) -> int:
                 unpacked_dir = None
                 if args.unpacked and not args.dry_run:
                     unpacked_target_dir = args.unpacked_dir if args.unpacked_dir else target_dir
-                    unpacked_name = f"[{cur_book_id}]{clean_title}" if cur_book_id else (p.stem + ".preprocessed")
+                    unpacked_name = f"【{cur_book_id}】{clean_title}" if cur_book_id else (p.stem + ".preprocessed")
                     unpacked_dir = unpacked_target_dir / unpacked_name
                 stats = process_epub(
                     p, rules, out, args.dry_run, cur_book_id, cur_page_map,

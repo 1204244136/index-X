@@ -13,7 +13,7 @@
 | 图片素材 | `--images` | 目录存在且非空，图片可解码（无 Pillow 时只查存在与后缀） |
 | 制作信息 | `--info` | 含 `<h1` 的 Information 正文块，且带「翻译：／校对：／美工：」署名 |
 | 简介 | `--intro` | ≥2 行（首行导语＋正文段） |
-| 作品号 | `--work` | 形如 `S4_04`，且 `--book-dir` 以 `[作品号]` 开头 |
+| 作品号 | `--work` | 形如 `S4_04`，且 `--book-dir` 以 `【作品号】` 开头 |
 | 日文工作源 | `--jp-root`（＋`--work`） | 根目录下存在该作品号的日文书目录，且含内容 XHTML |
 | 模板书 | `--template` | 同系列已入库书目录：`OEBPS/Styles/style.css`、`OEBPS/content.opf`、`META-INF/container.xml` 齐备 |
 
@@ -63,7 +63,7 @@ def check_images(directory: Path) -> tuple[bool, str]:
     broken = [p.name for p in files if dimensions(p) is None]
     if broken:
         return False, f"{len(files)} 张，其中无法解码：{broken[:5]}"
-    prefixed = sum(1 for p in files if re.match(r"^\[?S\d+_\d+", p.name))
+    prefixed = sum(1 for p in files if re.match(r"^[\[【]?S\d+_\d+", p.name))
     return True, f"{len(files)} 张（{prefixed} 张已带作品号前缀，其余须在计划里映射）"
 
 

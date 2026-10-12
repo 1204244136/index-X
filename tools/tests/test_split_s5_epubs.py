@@ -93,7 +93,7 @@ class SplitPreflightTests(unittest.TestCase):
             create_source(root / "source")
             packed, unpacked = root / "packed", root / "unpacked"
             packed.mkdir()
-            old = packed / "[S5_01_01]作品一.epub"
+            old = packed / "【S5_01_01】作品一.epub"
             old.write_bytes(b"previous output")
             with patch.object(splitter, "SPLIT_SPECS", SPECS), \
                     patch.object(splitter, "artifact_contract_issues", return_value=[("x.xhtml", "bad contract")]):
@@ -125,7 +125,7 @@ class SplitPreflightTests(unittest.TestCase):
                     self.assertEqual(archive.infolist()[0].filename, "mimetype")
                     self.assertEqual(archive.infolist()[0].compress_type, zipfile.ZIP_STORED)
                     entries = {name: archive.read(name) for name in archive.namelist()}
-                    work = epub.stem.split("]", 1)[0][1:]
+                    work = epub.stem.split("】", 1)[0][1:]
                     self.assertEqual(splitter.artifact_contract_issues(entries, work), [])
                     self.assertIn(f"item/xhtml/{work}-01.xhtml", entries)
                 self.assertTrue((unpacked / epub.stem / "mimetype").is_file())

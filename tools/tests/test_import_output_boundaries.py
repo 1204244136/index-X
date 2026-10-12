@@ -169,12 +169,12 @@ class ImportOutputBoundaryTests(unittest.TestCase):
             output, unpacked = root / "out", root / "unpacked"
             self.assertEqual(docx2epub.main([str(source), "--out", str(output), "--unpacked", str(unpacked),
                                           "--apply", "--staging"]), 0)
-            self.assertTrue((output / "[S1_01]测试.epub").is_file())
-            self.assertTrue((unpacked / "[S1_01]测试" / "mimetype").is_file())
+            self.assertTrue((output / "【S1_01】测试.epub").is_file())
+            self.assertTrue((unpacked / "【S1_01】测试" / "mimetype").is_file())
             no_pack = root / "no-pack"
             self.assertEqual(docx2epub.main([str(source), "--unpacked", str(no_pack), "--no-pack",
                                           "--apply", "--staging"]), 0)
-            self.assertTrue((no_pack / "[S1_01]测试" / "mimetype").is_file())
+            self.assertTrue((no_pack / "【S1_01】测试" / "mimetype").is_file())
 
     def test_docx_invalid_generated_xml_does_not_write_pack_or_unpacked(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -210,10 +210,10 @@ class ImportOutputBoundaryTests(unittest.TestCase):
             root = Path(tmp)
             source = make_docx(root / "[S1_01]测试.docx")
             docx2epub.main([str(source), "--out", str(root / "epubs"), "--apply", "--staging"])
-            epub = root / "epubs" / "[S1_01]测试.epub"
+            epub = root / "epubs" / "【S1_01】测试.epub"
             output = root / "docxs"
             output.mkdir()
-            old = output / "[S1_01]测试.docx"
+            old = output / "【S1_01】测试.docx"
             old.write_bytes(b"old document")
             with patch.object(epub2docx, "find_ebook_convert", return_value="fake-converter"), \
                     patch.object(epub2docx.subprocess, "run", return_value=subprocess.CompletedProcess([], 1, "", "conversion failed")):
@@ -226,7 +226,7 @@ class ImportOutputBoundaryTests(unittest.TestCase):
             root = Path(tmp)
             source = make_docx(root / "[S1_01]测试.docx")
             docx2epub.main([str(source), "--out", str(root / "epubs"), "--apply", "--staging"])
-            epub = root / "epubs" / "[S1_01]测试.epub"
+            epub = root / "epubs" / "【S1_01】测试.epub"
             output = root / "docxs"
 
             def convert(command, **_kwargs):
@@ -236,8 +236,8 @@ class ImportOutputBoundaryTests(unittest.TestCase):
             with patch.object(epub2docx, "find_ebook_convert", return_value="fake-converter"), \
                     patch.object(epub2docx.subprocess, "run", side_effect=convert):
                 self.assertEqual(epub2docx.main([str(epub), "--out", str(output), "--apply", "--staging", "--keep-src-epub"]), 0)
-            self.assertTrue((output / "[S1_01]测试.docx").is_file())
-            self.assertTrue((output / "[S1_01]测试.ruby.epub").is_file())
+            self.assertTrue((output / "【S1_01】测试.docx").is_file())
+            self.assertTrue((output / "【S1_01】测试.ruby.epub").is_file())
             self.assertFalse(list(epub.parent.glob("*.ruby.epub")))
 
     def test_epub_apply_requires_explicit_output_before_conversion(self):
