@@ -8,8 +8,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from epub_structure import (  # noqa: E402
-    ResourceReference, artifact_contract_issues, css_references,
-    resolve_reference, xml_references,
+    ManifestItem, OpfRelations, ResourceReference, SpineItemref,
+    artifact_contract_issues, container_contract_issues, css_references,
+    opf_relations, resolve_reference, xml_references,
 )
 
 
@@ -133,6 +134,165 @@ class ArtifactReferenceContractTests(unittest.TestCase):
                 "first.xhtml": b'<html href=" http://[invalid"/>',
                 "last.css": b"\xff",
             }, None)
+
+
+class OpfRelationTests(unittest.TestCase):
+    def test_direct_scope_uses_only_the_first_direct_sections(self):
+        root = ET.fromstring(
+            '<package xmlns="urn:opf"><metadata><item id="outside" href="outside.dat"/></metadata>'
+            '<manifest><item id="first" href="first.dat" media-type="text/plain"/>'
+            '<group><item id="nested" href="nested.dat"/></group></manifest>'
+            '<manifest><item id="later" href="later.dat"/></manifest>'
+            '<spine><itemref idref="first"/><group><itemref idref="nested"/></group></spine>'
+            '<spine><itemref idref="later"/></spine></package>'
+        )
+        self.assertEqual(opf_relations(root, scope="direct", tag_case="exact"), OpfRelations(
+            (ManifestItem("first", "first.dat", "text/plain"),),
+            (SpineItemref("first"),),
+        ))
+
+    def test_descendants_keep_duplicates_empty_values_and_tag_case(self):
+        root = ET.fromstring(
+            '<package><metadata><item id="same" href="first.dat"/></metadata>'
+            '<manifest><group><item id="same" href="second.dat"/></group>'
+            '<ITEM id="upper" href="upper.dat"/><item/></manifest>'
+            '<spine><itemref idref="same"/><ITEMREF idref="upper"/><itemref/></spine></package>'
+        )
+        self.assertEqual(opf_relations(root, scope="descendants", tag_case="casefold"), OpfRelations(
+            (ManifestItem("same", "first.dat", ""), ManifestItem("same", "second.dat", ""),
+             ManifestItem("upper", "upper.dat", ""), ManifestItem("", "", "")),
+            (SpineItemref("same"), SpineItemref("upper"), SpineItemref("")),
+        ))
+        exact = opf_relations(root, scope="descendants", tag_case="exact")
+        self.assertEqual([item.id for item in exact.items], ["same", "same", ""])
+        self.assertEqual([ref.idref for ref in exact.itemrefs], ["same", ""])
+
+    def test_xml_facts_use_precise_attributes_and_ignore_comments(self):
+        root = ET.fromstring(
+            "<o:package xmlns:o='urn:opf' xmlns:x='urn:attrs'>"
+            "<!-- <item id='fake' href='fake.dat'/> -->"
+            "<o:manifest><o:item data-id='wrong' x:id='wrong' id = 'real' "
+            "data-href='wrong.dat' href = 'a&amp;b.dat'/></o:manifest>"
+            "<o:spine><o:itemref data-idref='wrong' idref='real'/></o:spine></o:package>"
+        )
+        self.assertEqual(opf_relations(root, scope="direct", tag_case="exact"), OpfRelations(
+            (ManifestItem("real", "a&b.dat", ""),), (SpineItemref("real"),),
+        ))
+
+    def test_results_copy_values_without_enforcing_opf_contracts(self):
+        root = ET.fromstring('<other><manifest><item id="a" href="before"/></manifest></other>')
+        result = opf_relations(root, scope="direct", tag_case="exact")
+        root.find("manifest/item").set("href", "after")
+        self.assertEqual(result, OpfRelations((ManifestItem("a", "before", ""),), ()))
+        self.assertEqual(opf_relations(ET.fromstring("<other/>"), scope="direct", tag_case="exact"),
+                         OpfRelations((), ()))
+
+    def test_unknown_scope_or_tag_case_is_a_programming_error(self):
+        root = ET.fromstring("<package/>")
+        for scope, tag_case in (("all", "exact"), ("direct", "lower")):
+            with self.subTest(scope=scope, tag_case=tag_case), self.assertRaises(ValueError):
+                opf_relations(root, scope=scope, tag_case=tag_case)
+
+
+class OpfCallerContractTests(unittest.TestCase):
+    @staticmethod
+    def entries(text: str, resources: tuple[str, ...] = ("a.xhtml", "b.dat")) -> dict[str, bytes]:
+        result = {
+            "mimetype": b"application/epub+zip",
+            "META-INF/container.xml": (
+                b'<container><rootfiles><rootfile full-path="OEBPS/content.opf"/>'
+                b'</rootfiles></container>'),
+            "OEBPS/content.opf": text.encode("utf-8"),
+        }
+        result.update(("OEBPS/" + name, b"<html/>" if name.endswith(".xhtml") else b"asset")
+                      for name in resources)
+        return result
+
+    def test_container_keeps_last_media_type_for_duplicate_ids(self):
+        entries = self.entries(
+            '<package><manifest><item id="a" href="a.xhtml" media-type="application/xhtml+xml"/>'
+            '<item id="a" href="b.dat" media-type="image/png"/></manifest>'
+            '<spine><itemref idref="a"/></spine></package>'
+        )
+        self.assertEqual(container_contract_issues(entries), [
+            ("OEBPS/content.opf", "无效或重复 manifest item：a"),
+            ("OEBPS/content.opf", "spine 引用不存在或不是内容文档：a"),
+        ])
+        self.assertEqual(artifact_contract_issues(entries, None), [
+            ("OEBPS/content.opf", "OPF manifest id 重复：a"),
+        ])
+
+    def test_artifact_keeps_image_targets_from_all_duplicate_items(self):
+        entries = self.entries(
+            '<package><manifest><item id="image" href="one.png" media-type="image/png"/>'
+            '<item id="image" href="two.png" media-type="image/png"/></manifest>'
+            '<spine><itemref idref="image"/></spine></package>', ("one.png", "two.png"),
+        )
+        self.assertEqual(artifact_contract_issues(entries, None), [
+            ("OEBPS/content.opf", "OPF manifest id 重复：image"),
+        ])
+
+    def test_empty_ids_keep_the_callers_different_membership_rules(self):
+        entries = self.entries(
+            '<package><manifest><item href="a.xhtml" media-type="application/xhtml+xml"/></manifest>'
+            '<spine><itemref/></spine></package>'
+        )
+        self.assertEqual(container_contract_issues(entries), [
+            ("OEBPS/content.opf", "无效或重复 manifest item："),
+        ])
+        self.assertEqual(artifact_contract_issues(entries, None), [
+            ("OEBPS/content.opf", "OPF spine idref 不存在于 manifest："),
+        ])
+
+    def test_missing_href_is_only_blocked_by_the_container_contract(self):
+        entries = self.entries(
+            '<package><manifest><item id="a" media-type="application/xhtml+xml"/></manifest>'
+            '<spine><itemref idref="a"/></spine></package>'
+        )
+        self.assertEqual(container_contract_issues(entries), [
+            ("OEBPS/content.opf", "无效或重复 manifest item：a"),
+            ("OEBPS/content.opf", "manifest 资源不存在："),
+        ])
+        self.assertEqual(artifact_contract_issues(entries, None), [])
+
+    def test_nested_later_and_uppercase_sections_keep_different_scopes(self):
+        for manifest, spine, errors in (
+            ('<manifest><group><item id="a" href="a.xhtml" media-type="application/xhtml+xml"/>'
+             '</group></manifest>', '<spine><itemref idref="a"/></spine>', [
+                 ("OEBPS/content.opf", "OPF 缺少非空 manifest/spine"),
+                 ("OEBPS/content.opf", "spine 引用不存在或不是内容文档：a"),
+             ]),
+            ('<manifest/><manifest><item id="a" href="a.xhtml" '
+             'media-type="application/xhtml+xml"/></manifest>', '<spine><itemref idref="a"/></spine>', [
+                 ("OEBPS/content.opf", "OPF 缺少非空 manifest/spine"),
+                 ("OEBPS/content.opf", "spine 引用不存在或不是内容文档：a"),
+             ]),
+            ('<MANIFEST><ITEM id="a" href="a.xhtml" media-type="application/xhtml+xml"/></MANIFEST>',
+             '<SPINE><ITEMREF idref="a"/></SPINE>', [
+                 ("OEBPS/content.opf", "OPF 缺少非空 manifest/spine"),
+             ]),
+        ):
+            with self.subTest(manifest=manifest):
+                entries = self.entries("<package>" + manifest + spine + "</package>")
+                self.assertEqual(container_contract_issues(entries), errors)
+                self.assertEqual(artifact_contract_issues(entries, None), [])
+
+    def test_invalid_xml_keeps_each_error_message_and_continues(self):
+        entries = self.entries("<package>")
+        entries["META-INF/container.xml"] = (
+            b'<container><rootfiles><rootfile full-path="OEBPS/content.opf"/>'
+            b'<rootfile full-path="OEBPS/second.opf"/></rootfiles></container>')
+        entries["OEBPS/second.opf"] = (
+            b'<package><manifest><item id="a" href="a.xhtml" media-type="application/xhtml+xml"/>'
+            b'</manifest><spine><itemref idref="a"/></spine></package>')
+        container = container_contract_issues(entries)
+        artifact = artifact_contract_issues(entries, None)
+        self.assertEqual(len(container), 1)
+        self.assertEqual(container[0][0], "OEBPS/content.opf")
+        self.assertTrue(container[0][1].startswith("无法解析 OPF："))
+        self.assertEqual(len(artifact), 1)
+        self.assertEqual(artifact[0][0], "OEBPS/content.opf")
+        self.assertTrue(artifact[0][1].startswith("XML 解析失败："))
 
 
 if __name__ == "__main__":

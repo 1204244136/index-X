@@ -161,6 +161,21 @@ class HealthCheckNegativeTests(unittest.TestCase):
         self.assertTrue(any("未在 manifest 中声明" in f[5] for f in findings))
         self.assertTrue(any("未进 spine" in f[5] for f in findings))
 
+    def test_packaging_spine_accepts_single_quoted_xml(self):
+        book = self.build("S1_01", {"OEBPS/Text/S1_01-01_Chapter1.xhtml": GOOD})
+        opf = book / "OEBPS/content.opf"
+        opf.write_text(opf.read_text(encoding="utf-8").replace('"', "'"), encoding="utf-8")
+        findings, *_ = audit_book(book, {"packaging-required"})
+        self.assertEqual(findings, [])
+
+    def test_invalid_opf_does_not_hide_missing_packaging_spine(self):
+        book = self.build("S1_01", {"OEBPS/Text/S1_01-01_Chapter1.xhtml": GOOD})
+        opf = book / "OEBPS/content.opf"
+        opf.write_text(opf.read_text(encoding="utf-8").replace("</package>", ""), encoding="utf-8")
+        findings, *_ = audit_book(book, {"packaging-required"})
+        self.assertEqual(len(findings), 2)
+        self.assertTrue(all(f[4] == "error" and "未进 spine" in f[5] for f in findings))
+
     def test_toc_first_entry_and_cover_entry(self):
         book = self.build("S1_01", {"OEBPS/Text/S1_01-01_Chapter1.xhtml": GOOD})
         ncx = book / "toc.ncx"
@@ -536,6 +551,71 @@ class HealthCheckNegativeTests(unittest.TestCase):
         with patch.object(sys, "argv", ["check_epub_health.py", "--only", "nope"]):
             with self.assertRaises(SystemExit):
                 check_epub_health.main()
+
+
+class OpfSpineReadingTests(unittest.TestCase):
+    def test_xml_quotes_namespaces_entities_and_attribute_spacing(self):
+        for prefix, namespace, quote in (
+            ("", 'xmlns="urn:opf"', '"'),
+            ("", "xmlns='urn:opf'", "'"),
+            ("o:", "xmlns:o='urn:opf'", "'"),
+        ):
+            text = (
+                f"<{prefix}package {namespace}><{prefix}manifest>"
+                f"<{prefix}item href = {quote}a&amp;b.xhtml{quote} id = {quote}a{quote}/>"
+                f"</{prefix}manifest><{prefix}spine><{prefix}itemref idref = {quote}a{quote}/>"
+                f"</{prefix}spine></{prefix}package>"
+            )
+            with self.subTest(prefix=prefix, quote=quote):
+                self.assertEqual(check_epub_health.opf_spine_hrefs(text), ["a&b.xhtml"])
+
+    def test_comments_and_cdata_do_not_declare_items_or_spine(self):
+        text = (
+            '<package><!-- <item id="comment" href="comment.xhtml"/><itemref idref="comment"/> -->'
+            '<metadata><text><![CDATA[<item id="text" href="text.xhtml"/><itemref idref="text"/>]]>'
+            '</text></metadata><manifest><item id="real" href="real.xhtml"/></manifest>'
+            '<spine><itemref idref="real"/></spine></package>'
+        )
+        self.assertEqual(check_epub_health.opf_spine_hrefs(text), ["real.xhtml"])
+
+    def test_only_precise_xml_attributes_define_relations(self):
+        text = (
+            '<package xmlns:x="urn:attrs"><manifest>'
+            '<item data-id="fake" x:id="fake" id="real" data-href="fake.xhtml" href="real.xhtml"/>'
+            '<item data-id="fake" data-href="fake.xhtml"/></manifest>'
+            '<spine><itemref data-idref="fake" idref="real"/><itemref idref="fake"/>'
+            '<itemref data-idref="fake"/></spine></package>'
+        )
+        self.assertEqual(check_epub_health.opf_spine_hrefs(text), ["real.xhtml", ""])
+
+    def test_last_nonempty_href_and_empty_idref_rules_are_kept(self):
+        text = (
+            '<package><manifest><item id="a" href="first.xhtml"/>'
+            '<item id="a" href="second.xhtml"/><item id="a" href=""/>'
+            '<item href="ignored.xhtml"/><item id="missing-href"/></manifest>'
+            '<spine><itemref idref="a"/><itemref idref="unknown"/>'
+            '<itemref idref=""/><itemref/></spine></package>'
+        )
+        self.assertEqual(check_epub_health.opf_spine_hrefs(text), ["second.xhtml", ""])
+
+    def test_whole_tree_scope_and_exact_tag_case_are_kept(self):
+        text = (
+            '<package><metadata><item id="metadata" href="metadata.xhtml"/>'
+            '<itemref idref="metadata"/></metadata><manifest><group>'
+            '<item id="nested" href="nested.xhtml"/></group>'
+            '<ITEM id="upper" href="upper.xhtml"/></manifest>'
+            '<spine><itemref idref="nested"/><ITEMREF idref="upper"/></spine></package>'
+        )
+        self.assertEqual(check_epub_health.opf_spine_hrefs(text), ["metadata.xhtml", "nested.xhtml"])
+
+    def test_invalid_xml_returns_no_partial_relations(self):
+        for text in (
+            "", "<package>",
+            '<package><manifest><item id="a" href="a.xhtml"/></manifest>'
+            '<spine><itemref idref="a"/></spine>',
+        ):
+            with self.subTest(text=text):
+                self.assertEqual(check_epub_health.opf_spine_hrefs(text), [])
 
 
 if __name__ == "__main__":

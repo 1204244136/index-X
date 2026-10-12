@@ -27,6 +27,56 @@ class ResourceReference(NamedTuple):
     root_relative: bool
 
 
+class ManifestItem(NamedTuple):
+    id: str
+    href: str
+    media_type: str
+
+
+class SpineItemref(NamedTuple):
+    idref: str
+
+
+class OpfRelations(NamedTuple):
+    """有序的 OPF 声明；保留重复项与空值，不选择 ID 的优先项。"""
+
+    items: tuple[ManifestItem, ...]
+    itemrefs: tuple[SpineItemref, ...]
+
+
+def opf_relations(
+    opf: ET.Element, *, scope: Literal["direct", "descendants"],
+    tag_case: Literal["exact", "casefold"],
+) -> OpfRelations:
+    """采集已解析 XML 的 manifest/spine 事实，不执行合同判定。
+
+    direct 只取首个直接 manifest/spine 的直接条目；descendants 取全树条目。
+    去元素命名空间后按指定大小写口径匹配，属性只读精确名称。
+    """
+    if scope not in {"direct", "descendants"}:
+        raise ValueError(f"Unknown OPF scope: {scope}")
+    if tag_case not in {"exact", "casefold"}:
+        raise ValueError(f"Unknown OPF tag case: {tag_case}")
+
+    def local_tag(element: ET.Element) -> str:
+        tag = element.tag.rsplit("}", 1)[-1]
+        return tag.casefold() if tag_case == "casefold" else tag
+
+    if scope == "direct":
+        manifest = next((e for e in opf if local_tag(e) == "manifest"), None)
+        spine = next((e for e in opf if local_tag(e) == "spine"), None)
+        item_nodes = () if manifest is None else (e for e in manifest if local_tag(e) == "item")
+        ref_nodes = () if spine is None else (e for e in spine if local_tag(e) == "itemref")
+    else:
+        item_nodes = (e for e in opf.iter() if local_tag(e) == "item")
+        ref_nodes = (e for e in opf.iter() if local_tag(e) == "itemref")
+    return OpfRelations(
+        tuple(ManifestItem(e.get("id", ""), e.get("href", ""), e.get("media-type", ""))
+              for e in item_nodes),
+        tuple(SpineItemref(e.get("idref", "")) for e in ref_nodes),
+    )
+
+
 def xml_references(
     root: ET.Element, *, attribute_case: Literal["lower", "casefold"],
 ) -> tuple[ResourceReference, ...]:
@@ -114,13 +164,10 @@ def artifact_contract_issues(entries: dict[str, bytes], book_id: str | None) -> 
                 if target is not None and target not in names:
                     issues.append((name, f"资源引用不存在：{reference.value} -> {target}"))
             if lower.endswith(".opf"):
+                relations = opf_relations(root, scope="descendants", tag_case="casefold")
                 manifest_ids: dict[str, str] = {}
-                for element in root.iter():
-                    tag = element.tag.rsplit("}", 1)[-1].casefold()
-                    if tag != "item":
-                        continue
-                    item_id = element.attrib.get("id", "")
-                    href = element.attrib.get("href", "")
+                for item in relations.items:
+                    item_id, href = item.id, item.href
                     if item_id in manifest_ids:
                         issues.append((name, f"OPF manifest id 重复：{item_id}"))
                     elif item_id:
@@ -128,12 +175,9 @@ def artifact_contract_issues(entries: dict[str, bytes], book_id: str | None) -> 
                     target = resolve_reference(name, href)
                     if target is not None:
                         manifest_targets.add(target)
-                for element in root.iter():
-                    tag = element.tag.rsplit("}", 1)[-1].casefold()
-                    if tag == "itemref":
-                        idref = element.attrib.get("idref", "")
-                        if idref not in manifest_ids:
-                            issues.append((name, f"OPF spine idref 不存在于 manifest：{idref}"))
+                for ref in relations.itemrefs:
+                    if ref.idref not in manifest_ids:
+                        issues.append((name, f"OPF spine idref 不存在于 manifest：{ref.idref}"))
         if lower.endswith(".css"):
             for reference in css_references(data):
                 target = resolve_reference(name, reference.value)
@@ -192,23 +236,20 @@ def container_contract_issues(entries: dict[str, bytes]) -> list[tuple[str, str]
         local = lambda tag: tag.rsplit("}", 1)[-1]
         if local(opf.tag) != "package":
             issues.append((name, "rootfile 不是 OPF package"))
-        manifest = next((e for e in opf if local(e.tag) == "manifest"), None)
-        spine = next((e for e in opf if local(e.tag) == "spine"), None)
-        items = [] if manifest is None else [e for e in manifest if local(e.tag) == "item"]
-        refs = [] if spine is None else [e for e in spine if local(e.tag) == "itemref"]
-        if not items or not refs:
+        relations = opf_relations(opf, scope="direct", tag_case="exact")
+        if not relations.items or not relations.itemrefs:
             issues.append((name, "OPF 缺少非空 manifest/spine"))
         ids: dict[str, str] = {}
-        for item in items:
-            item_id, href = item.get("id", ""), item.get("href", "")
-            if not item_id or item_id in ids or not href or not item.get("media-type"):
+        for item in relations.items:
+            item_id, href = item.id, item.href
+            if not item_id or item_id in ids or not href or not item.media_type:
                 issues.append((name, f"无效或重复 manifest item：{item_id}"))
-            ids[item_id] = item.get("media-type", "")
+            ids[item_id] = item.media_type
             target = resolve_reference(name, href)
             if target is None or target not in entries:
                 issues.append((name, f"manifest 资源不存在：{href}"))
-        for ref in refs:
-            idref = ref.get("idref", "")
+        for ref in relations.itemrefs:
+            idref = ref.idref
             if ids.get(idref) not in {"application/xhtml+xml", "image/svg+xml"}:
                 issues.append((name, f"spine 引用不存在或不是内容文档：{idref}"))
     return issues

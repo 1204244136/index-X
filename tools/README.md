@@ -605,7 +605,7 @@ python -m unittest discover -s tools/tests -p "test_*.py" -v
 | `docx_source.py` | 无 CLI（共享模块） | 交稿 docx 段落流与行内记号的单一解析 | 【无】 | `test_docx_and_notes.py`、`test_import_tools.py`（间接） |
 | `edit_safety.py` | 无 CLI（共享模块，含 argparse 辅助） | 写目标与显式暂存范围的限制 | 【无】 | `test_edit_safety.py` |
 | `epub_ids.py` | 无 CLI（共享模块） | 作品号、表头、内容序与文件角色解析；`is_packaging_header`（是否包装页，7 类）与 `is_list_packaging_header`（能否在 L5 写列表，4 类）**刻意分开** | 【无】 | `test_epub_ids.py` |
-| `epub_structure.py` | 无 CLI（共享模块） | 容器／OPF spine／XML／资源引用采集、解析与检查 | 【无】 | `test_epub_structure.py`；调用方：`test_check_epub_health.py`、`test_package_cache_epubs.py`、`test_bw_preprocess.py` |
+| `epub_structure.py` | 无 CLI（共享模块） | 容器／OPF manifest-spine 事实／XML／资源引用采集、解析与检查 | 【无】 | `test_epub_structure.py`；调用方：`test_check_epub_health.py`、`test_package_cache_epubs.py`、`test_bw_preprocess.py` |
 | `file_transaction.py` | 无 CLI（共享模块） | 临时文件／临时目录与失败回滚 | 【无】 | 无专用测试；由调用方验证 |
 | `image_signature.py` | 无 CLI（共享模块） | 图片 dHash 指纹与尺寸（Pillow 可选） | 【无】 | 无专用测试；由调用方验证 |
 | `import_plan.py` | 无 CLI（共享模块） | 导入计划的结构校验与逐条改动装配 | 【无】 | `test_import_tools.py` |
@@ -633,10 +633,14 @@ python -m unittest discover -s tools/tests -p "test_*.py" -v
 | `sync_core.py` | 差异、镜像、上传状态与拉取状态 | 冲突取舍和方向选择 |
 | `edit_safety.py` | 写目标与显式暂存范围的限制 | 决定修改语义是否正确 |
 | `path_safety.py` | ZIP 路径安全和解包残留识别 | 内容／语言规范 |
-| `epub_structure.py` | 共用的容器、OPF spine、XML 与资源引用检查；`xml_references`／`css_references` 返回有序原始引用，`resolve_reference` 解析书内路径 | 工具编排与成品模板选择；引用采集入口不负责文件选择、XML 解析与异常处理、锚点采集及体检的存在性／越界／fragment 策略 |
+| `epub_structure.py` | 共用的容器、OPF spine、XML 与资源引用检查；`opf_relations` 返回有序 manifest/spine 事实，`xml_references`／`css_references` 返回有序原始引用，`resolve_reference` 解析书内路径 | 工具编排与成品模板选择；事实采集入口不负责文件选择、XML 解析与异常处理、重复 ID／缺项／媒体类型判定、锚点采集及体检的存在性／越界／fragment 策略 |
 | `xhtml_text.py` | XHTML → 纯文本的三种口径（保留注音／去注音／可见文本）；`<rt>`、`<rp>` 剥除规则的唯一实现 | 扫描与报告；该用哪种口径由调用方决定 |
 | `file_transaction.py` | 异常安全的文件系统写入（临时文件／目录 + 回滚） | 发布策略与冲突取舍 |
 
 `tools/README.md` 自身的说明覆盖、簇归属与单一来源合同由 C4 的 `check_project_docs.py` 检查；改本文件的结构后先跑它。
 
 资源引用采集不检查目标存在性，也不提前解析 URL。`xml_references(root, attribute_case=...)` 接收已解析的 XML，调用方必须明确选择 `lower`（体检）或 `casefold`（入库合同）；保留元素与属性顺序、重复引用及 `full-path` 的根相对标记。`css_references(data)` 在原始字节上去注释后先返回全部 `url()`、再返回引号形式的 `@import`，保留重复项并严格 UTF-8 解码。`ResourceReference` 只含原始 `value` 与 `root_relative`；采集不吞掉解码异常。体检先收齐引用再判定，入库／打包逐文件判定；两侧保留各自的后缀范围、XML 错误处理与诊断顺序。
+
+`opf_relations(root, scope=..., tag_case=...)` 接收已解析 XML，返回 `OpfRelations.items`／`itemrefs`：每条 manifest 声明保留 `id`、`href`、`media_type`，每条 spine 声明保留 `idref`；缺值以空字符串表示，保留文档顺序与全部重复项，不预先折叠 ID。`scope="direct"` 只取首个直接 manifest/spine 的直接条目，`"descendants"` 取全树条目；`tag_case="exact"|"casefold"` 在去元素命名空间后控制标签匹配。非法选项抛 `ValueError`，不转成 EPUB 诊断。
+
+容器合同使用 direct/exact，保留最后一条重复 ID 的媒体类型；入库合同使用 descendants/casefold，所有重复声明的资源目标都参与图片声明检查。体检的 `opf_spine_hrefs` 使用 XML 读取与 descendants/exact，按精确属性名读取，支持单引号、命名空间前缀、实体解码与属性间空白，忽略注释／CDATA；最后一个非空 ID/href 生效，空 idref 忽略，未知 idref 返回空 href。非法 OPF 返回空 spine，容器／入库入口继续按原合同报告 XML 错误；体检继续检查必备包装页。其他包装页存在性、manifest 声明判定与诊断口径保留在原调用方。

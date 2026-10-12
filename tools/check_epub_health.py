@@ -96,7 +96,7 @@ from check_alignment import check_file as check_template
 from epub_ids import book_id, content_sequence, header_of, is_list_packaging_header, work_id
 from text_norm import split_bold_punct
 from xhtml_slots import NOTE_H1
-from epub_structure import css_references, resolve_reference, xml_references
+from epub_structure import css_references, opf_relations, resolve_reference, xml_references
 from urllib.parse import unquote, urlsplit
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -423,8 +423,6 @@ NCX_DOCTITLE_RE = re.compile(r"<docTitle>\s*<text>([^<]*)</text>", re.S)
 NCX_UID_RE = re.compile(r'<meta name="dtb:uid" content="([^"]*)"')
 NCX_FIRST_ENTRY_RE = re.compile(r"<navMap>.*?<text>([^<]*)</text>", re.S)
 NAV_FIRST_ENTRY_RE = re.compile(r"<ol>\s*<li><a[^>]*>([^<]*)</a>", re.S)
-OPF_ITEM_RE = re.compile(r"<item\b([^>]*)>")
-OPF_ITEMREF_RE = re.compile(r'<itemref\b[^>]*\bidref="([^"]+)"')
 BOOK_ID_META_RE = re.compile(r'<dc:identifier[^>]*id="BookId"[^>]*>([^<]*)</dc:identifier>')
 
 
@@ -434,15 +432,14 @@ def opf_title(opf: Path) -> str | None:
 
 
 def opf_spine_hrefs(text: str) -> list[str]:
-    """spine 里每个 itemref 对应的 href（相对 `OEBPS/`）；`<item>` 的两种属性顺序都要认。"""
-    hrefs: dict[str, str] = {}
-    for m in OPF_ITEM_RE.finditer(text):
-        attrs = m.group(1)
-        idm = re.search(r'\bid="([^"]+)"', attrs)
-        hm = re.search(r'\bhref="([^"]+)"', attrs)
-        if idm and hm:
-            hrefs[idm.group(1)] = hm.group(1)
-    return [hrefs.get(m.group(1), "") for m in OPF_ITEMREF_RE.finditer(text)]
+    """按 XML 读取 spine 的 href；非法 OPF 返回空列表，不从坏文本猜测关系。"""
+    try:
+        root = ET.fromstring(text)
+    except ET.ParseError:
+        return []  # 容器／入库合同报告 XML 错误，体检继续判定必备包装页。
+    relations = opf_relations(root, scope="descendants", tag_case="exact")
+    hrefs = {item.id: item.href for item in relations.items if item.id and item.href}
+    return [hrefs.get(ref.idref, "") for ref in relations.itemrefs if ref.idref]
 
 
 def find_artifact_problems(book_dir: Path) -> list[tuple[str, str]]:
