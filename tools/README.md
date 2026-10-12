@@ -66,7 +66,7 @@
 
 | 工具 | 入口命令 | 读写范围 | 门禁与失败边界 | 测试 |
 | --- | --- | --- | --- | --- |
-| `publish_auto.py` | `python tools/publish_auto.py [--dry-run]` | 预览默认；调用 A／B／C 同步器写缓存、归档与 OneDrive | 冲突与方向计划，失败非零；预览不发布【P1】 | `test_publish_auto.py` |
+| `publish_auto.py` | `python tools/publish_auto.py [--dry-run]` | `--dry-run` 只预览；执行时调用 A／B／C 同步器写缓存、归档与 OneDrive | 完整计划、冲突与范围保护；失败非零，预览不发布【P1】 | `test_publish_auto.py` |
 | `pull.ps1` | `./tools/pull.ps1 [-WhatIf] [-Side …] [-SyncToEpub]` | 写缓存；`-SyncToEpub` 时写归档 | 解包路径安全、保全未发布变化；增量更新基线【P5】 | 共享能力：`test_sync_and_rename.py`／`test_path_safety.py`；PowerShell 入口无专用测试 |
 | `publish.py` | `python tools/publish.py [--dry-run] [--sync-only]` | 流程 B：缓存 → 归档中文＋打包上传 | 共享发布前检查、基线缺失与冲突阻断【P2】 | `test_sync_and_rename.py`、`test_publish_preflight.py` |
 | `publish_epub.py` | `python tools/publish_epub.py [--dry-run]` | 流程 C：归档中文 → 打包上传＋缓存增量镜像；日文只读 | 共享发布前检查、容器／XML／资源【P3】 | `test_sync_and_rename.py`、`test_publish_auto.py` |
@@ -84,6 +84,10 @@ python tools/publish_auto.py
 读取三处副本与 `manifest.json`／`pull-state.tsv` 的差异，输出逐书方向计划；只处理变更书和文件。同一本地书的缓存修改已包含在归档时选择 C，否则报告冲突；OneDrive 外部更新与本地未发布修改冲突时停止。**例外**：OneDrive 的 `.epub` 与缓存同一本书逐字节相同（解压已完成、清单基线与 `pull-state` 未推进，典型是 `-SyncToEpub` 的下游门禁失败）时不算分叉，报「已完成的拉取」并按流程 A 补跑一次，不要求人工选边。冲突合并的操作边界在 AGENTS，`--from` 不代表可以丢弃另一边有效内容。
 
 参数：`--cache`／`--epub`、`--from auto|cache|epub|onedrive`、`--side`、`--pattern`、`--only-books`、`--dry-run`、`--no-upload`、`--force`（配合显式方向）、`--overwrite-cache`、`--chinese-onedrive`／`--japanese-onedrive`。退出码 1 表示被阻塞或失败；dry-run 只预览，不执行发布门禁与同步。
+
+`prepare_plan(args)` 只读观察本地副本与基线，不输出、不写盘、不调用子命令，返回不可变 `PublicationPlan`：`ready` 包含完整命令，`blocked`／`noop` 的命令为空；预览模式和诊断同时固定。`run_plan(plan)` 只呈现和消费该计划，不重新扫描、选择方向或拼参数。预览零执行，A 预览命令保留 `-WhatIf`；真实执行按 A／B／C 顺序，首个子命令非零后停止。业务阻塞返回 1，空操作与成功返回 0；扫描、解析与进程启动异常不新增吞没处理。
+
+普通和 `--force` 共用命令装配与执行：B 传递所选 `--side` 及两侧 OneDrive 目标，C 只传中文目标，不传它不支持的 side／日文参数；目标目录在计划中解析为绝对路径。`--only-books` 无法约束 A：普通模式保持跳过 A 并提示，`--force --from onedrive --only-books` 阻断且不生成命令（退出 1），必须改用 `--side`／`--pattern` 明确拉取范围。发布预检仍由实际执行的下游入口承担，准备计划不代表磁盘状态已锁定或完成同步。
 
 ### 底层 A／B／C
 

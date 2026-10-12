@@ -32,6 +32,7 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+from typing import Literal, NamedTuple
 
 TOOLS_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(TOOLS_DIR))
@@ -60,6 +61,57 @@ DIRECTION_LABELS = {
     "B": "流程 B：缓存 -> EPUB/ + OneDrive",
     "C": "流程 C：EPUB/ -> OneDrive + 缓存",
 }
+
+
+class PublicationStep(NamedTuple):
+    direction: Literal["A", "B", "C"]
+    argv: tuple[str, ...]
+
+
+class PlanDiagnostic(NamedTuple):
+    stream: Literal["stdout", "stderr"]
+    text: str
+
+
+class PublicationPlan(NamedTuple):
+    """本次调用的完整计划；预览模式、命令与诊断均在准备时固定。"""
+
+    status: Literal["ready", "blocked", "noop"]
+    preview: bool
+    steps: tuple[PublicationStep, ...]
+    diagnostics: tuple[PlanDiagnostic, ...]
+
+
+class _PlanBuilder:
+    def __init__(self, preview: bool):
+        self.preview = preview
+        self.diagnostics: list[PlanDiagnostic] = []
+
+    def emit(self, text: str, *, error: bool = False) -> None:
+        self.diagnostics.append(PlanDiagnostic("stderr" if error else "stdout", text))
+
+    def extend(self, messages: tuple[str, ...]) -> None:
+        for message in messages:
+            self.emit(message)
+
+    def finish(
+        self, status: Literal["ready", "blocked", "noop"],
+        steps: tuple[PublicationStep, ...] = (),
+    ) -> PublicationPlan:
+        if (status == "ready") != bool(steps):
+            raise ValueError("Only ready publication plans may contain commands")
+        return PublicationPlan(status, self.preview, steps, tuple(self.diagnostics))
+
+    def ready(
+        self, commands: list[tuple[str, list[str]]], *, forced: bool = False,
+    ) -> PublicationPlan:
+        steps = tuple(PublicationStep(direction, tuple(argv)) for direction, argv in commands)
+        self.emit("\n== 发布计划 ==")
+        for step in steps:
+            scope = ("全量重做（--force）" if forced else
+                     "OneDrive 外部更新" if step.direction == "A" else "本地改动")
+            self.emit(f"  [{DIRECTION_LABELS[step.direction]}] {scope}")
+        return self.finish("ready", steps)
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -151,16 +203,18 @@ def describe_book(book_key: str) -> str:
     return f"{SIDE_LABELS[side]} {book}"
 
 
-def print_deltas(title: str, changes: dict[str, dict[str, str]], verbose: bool) -> None:
+def _delta_messages(
+    title: str, changes: dict[str, dict[str, str]], verbose: bool,
+) -> tuple[str, ...]:
     if not changes:
-        print(f"  {title}：无改动")
-        return
-    print(f"  {title}：{len(changes)} 本")
+        return (f"  {title}：无改动",)
+    messages = [f"  {title}：{len(changes)} 本"]
     for book_key in sorted(changes):
-        print(f"    {describe_book(book_key)}：{summarize(changes[book_key])}")
+        messages.append(f"    {describe_book(book_key)}：{summarize(changes[book_key])}")
         if verbose:
             for file_in_book, status in sorted(changes[book_key].items()):
-                print(f"      {STATUS_LABELS[status]}: {file_in_book}")
+                messages.append(f"      {STATUS_LABELS[status]}: {file_in_book}")
+    return tuple(messages)
 
 
 def display_command(cmd: list[str]) -> str:
@@ -241,9 +295,9 @@ def build_pull_command(
     if dry_run:
         cmd.append("-WhatIf")
     if args.chinese_onedrive.resolve() != ONEDRIVE_DEFAULTS["chinese-text"].resolve():
-        cmd += ["-ChineseSourceDirectory", str(args.chinese_onedrive)]
+        cmd += ["-ChineseSourceDirectory", str(args.chinese_onedrive.resolve())]
     if args.japanese_onedrive.resolve() != ONEDRIVE_DEFAULTS["japanese-text"].resolve():
-        cmd += ["-JapaneseSourceDirectory", str(args.japanese_onedrive)]
+        cmd += ["-JapaneseSourceDirectory", str(args.japanese_onedrive.resolve())]
     return cmd
 
 
@@ -259,6 +313,12 @@ def build_publish_command(
         str(epub_root),
         "--only-books",
         ",".join(books),
+        "--side",
+        args.side,
+        "--chinese-onedrive",
+        str(args.chinese_onedrive.resolve()),
+        "--japanese-onedrive",
+        str(args.japanese_onedrive.resolve()),
     ]
     if args.no_upload:
         cmd.append("--no-upload")
@@ -279,6 +339,8 @@ def build_reverse_command(
         str(epub_root),
         "--only-books",
         ",".join(books),
+        "--chinese-onedrive",
+        str(args.chinese_onedrive.resolve()),
     ]
     if args.no_upload:
         cmd.append("--no-upload")
@@ -297,56 +359,68 @@ def run_command(cmd: list[str]) -> int:
 # ---------------------------------------------------------------------- 主流程
 
 
-def report_conflict(conflicts: list[str], cache_changes, epub_changes) -> None:
-    print("\n== 冲突：同一本书在缓存与 EPUB/ 两侧都有改动 ==")
+def _conflict_messages(conflicts: list[str], cache_changes, epub_changes) -> tuple[str, ...]:
+    messages: list[str] = []
+    messages.append("\n== 冲突：同一本书在缓存与 EPUB/ 两侧都有改动 ==")
     for book_key in conflicts:
-        print(f"  {describe_book(book_key)}")
-        print(f"    缓存：{summarize(cache_changes.get(book_key, {}))}")
-        print(f"    EPUB/：{summarize(epub_changes.get(book_key, {}))}")
-    print("\n  两侧内容不一致，未自动选择方向。请确认以哪一侧为准后重跑：")
-    print("    以缓存为准  ：python tools/publish_auto.py --from cache")
-    print(
+        messages.append(f"  {describe_book(book_key)}")
+        messages.append(f"    缓存：{summarize(cache_changes.get(book_key, {}))}")
+        messages.append(f"    EPUB/：{summarize(epub_changes.get(book_key, {}))}")
+    messages.append("\n  两侧内容不一致，未自动选择方向。请确认以哪一侧为准后重跑：")
+    messages.append("    以缓存为准  ：python tools/publish_auto.py --from cache")
+    messages.append(
         "    以 EPUB/ 为准：python tools/publish_auto.py --from epub --overwrite-cache"
         "（会丢弃缓存中这些书的未发布修改）"
     )
+    return tuple(messages)
 
 
-def report_diverged(diverged: list[str]) -> None:
-    print("\n== OneDrive 与本地对同一本书都有改动 ==")
+def _diverged_messages(diverged: list[str]) -> tuple[str, ...]:
+    messages: list[str] = []
+    messages.append("\n== OneDrive 与本地对同一本书都有改动 ==")
     for book_key in diverged:
-        print(f"  {describe_book(book_key)}")
-    print(
+        messages.append(f"  {describe_book(book_key)}")
+    messages.append(
         "\n  这些书的 OneDrive .epub 已被外部更新（pull-state 不一致），"
         "本地也有未发布修改；两份副本已分叉，未自动选择方向。请确认以哪一份为准后重跑："
     )
-    print(
+    messages.append(
         "    以本地为准：python tools/publish_auto.py --from cache"
         "（发布本地内容，覆盖 OneDrive 上的外部更新）"
     )
-    print(
+    messages.append(
         "    以 OneDrive 为准：python tools/publish_auto.py --from onedrive --overwrite-cache"
         "（会丢弃缓存中这些书的未发布修改）"
     )
+    return tuple(messages)
 
 
-def main(argv: list[str] | None = None) -> int:
-    args = parse_args(argv)
+def prepare_plan(args: argparse.Namespace) -> PublicationPlan:
+    """只读观察副本并生成完整命令与诊断，不输出、不执行子命令。"""
+    builder = _PlanBuilder(args.dry_run)
     cache = args.cache.resolve()
     epub_root = args.epub.resolve()
 
     if args.force and args.source == "auto":
-        print(
+        builder.emit(
             "错误: --force 需要配合 --from 指定方向（cache / epub / onedrive）；"
             "忽略基线后没有可判别的改动位置。",
-            file=sys.stderr,
+            error=True,
         )
-        return 1
+        return builder.finish('blocked')
+    if args.force and args.source == "onedrive" and args.only_books:
+        builder.emit(
+            "错误: --force --from onedrive 不能与 --only-books 合用；"
+            "pull.ps1 不支持精确书籍列表，请改用 --side / --pattern 指定范围。",
+            error=True,
+        )
+        return builder.finish("blocked")
     if not cache.is_dir():
-        print(f"错误: 缓存目录不存在: {cache}", file=sys.stderr)
-        return 1
+        builder.emit(f"错误: 缓存目录不存在: {cache}", error=True)
+        return builder.finish('blocked')
     if not epub_root.is_dir():
-        print(f"错误: EPUB 目录不存在: {epub_root}", file=sys.stderr)
-        return 1
+        builder.emit(f"错误: EPUB 目录不存在: {epub_root}", error=True)
+        return builder.finish('blocked')
 
     source_dirs: dict[str, Path | None] = {
         "chinese-text": args.chinese_onedrive,
@@ -357,16 +431,16 @@ def main(argv: list[str] | None = None) -> int:
     baseline = load_manifest(cache)
     if baseline is None:
         if args.force:
-            print("警告: 未找到清单，--force 模式按方向全量重做。")
+            builder.emit("警告: 未找到清单，--force 模式按方向全量重做。")
             baseline = {}
         else:
-            print(
+            builder.emit(
                 "错误: 未找到清单。请先运行 ./tools/pull.ps1，或使用 --force --from 指定方向。",
-                file=sys.stderr,
+                error=True,
             )
-            return 1
+            return builder.finish('blocked')
     elif args.force:
-        print("警告: --force 模式，忽略已有清单。")
+        builder.emit("警告: --force 模式，忽略已有清单。")
         baseline = {}
 
     # 与 publish.py / publish_epub.py 同一项前置检查：某一侧基线整侧缺失时，
@@ -376,29 +450,29 @@ def main(argv: list[str] | None = None) -> int:
         missing = missing_baseline_sides(cache, baseline, scope_sides)
         if missing:
             labels = "、".join(f"{SIDE_LABELS[m]}（{m}）" for m in missing)
-            print(
+            builder.emit(
                 f"错误: 清单基线缺少整侧记录: {labels}。"
                 "该侧全部文件都会被判为新增，无法判别真实改动位置。",
-                file=sys.stderr,
+                error=True,
             )
-            print(
+            builder.emit(
                 "  修复: python tools/manifest.py --cache "
                 f"{cache} --update-books "
                 + " ".join(f"{m}/<书籍名>" for m in missing)
                 + "（确认该侧缓存已是已发布状态后再重建基线）",
-                file=sys.stderr,
+                error=True,
             )
-            print("  若确实要整侧重发，使用 --force --from cache。", file=sys.stderr)
-            return 1
+            builder.emit("  若确实要整侧重发，使用 --force --from cache。", error=True)
+            return builder.finish('blocked')
 
-    print("扫描缓存与 EPUB/ ...")
+    builder.emit("扫描缓存与 EPUB/ ...")
     cache_current = scan_cache(cache)
     epub_current = scan_epub(epub_root)
-    print(f"  缓存 {len(cache_current)} 个文件 | EPUB/ {len(epub_current)} 个文件"
+    builder.emit(f"  缓存 {len(cache_current)} 个文件 | EPUB/ {len(epub_current)} 个文件"
           f" | 清单基线 {len(baseline)} 个文件")
 
     if args.force:
-        return run_forced(args, cache, epub_root, cache_current, epub_current)
+        return _prepare_forced(args, cache, epub_root, cache_current, epub_current, builder)
 
     cache_changes = {
         key: value
@@ -436,66 +510,66 @@ def main(argv: list[str] | None = None) -> int:
     )
     diverged = sorted(touched - set(completed_pull))
 
-    print("\n== 改动判别 ==")
-    print_deltas("缓存有未发布修改", cache_changes, args.dry_run)
-    print_deltas("EPUB/ 有改动", epub_changes, args.dry_run)
+    builder.emit("\n== 改动判别 ==")
+    builder.extend(_delta_messages("缓存有未发布修改", cache_changes, args.dry_run))
+    builder.extend(_delta_messages("EPUB/ 有改动", epub_changes, args.dry_run))
     if drifted:
-        print(f"  OneDrive 有外部更新（pull-state 不一致）：{len(drifted)} 本")
+        builder.emit(f"  OneDrive 有外部更新（pull-state 不一致）：{len(drifted)} 本")
         for book_key in drifted:
-            print(f"    {describe_book(book_key)}")
+            builder.emit(f"    {describe_book(book_key)}")
     else:
-        print("  OneDrive 有外部更新（pull-state 不一致）：无")
+        builder.emit("  OneDrive 有外部更新（pull-state 不一致）：无")
     if converged:
-        print(
+        builder.emit(
             f"  同一本书两侧都有改动，但缓存侧内容已包含在 EPUB/ 中："
             f"{len(converged)} 本"
         )
         for book_key in converged:
-            print(f"    {describe_book(book_key)}")
+            builder.emit(f"    {describe_book(book_key)}")
     if completed_pull:
-        print(
+        builder.emit(
             f"  已完成的拉取（缓存内容与 OneDrive 新内容逐字节相同，只缺基线推进）："
             f"{len(completed_pull)} 本"
         )
         for book_key in completed_pull:
-            print(f"    {describe_book(book_key)}")
+            builder.emit(f"    {describe_book(book_key)}")
     for note in drift_notes:
-        print(f"  提示: {note}")
+        builder.emit(f"  提示: {note}")
 
     # 冲突：同一本书两侧都有改动，且缓存侧仍有 EPUB/ 未包含的内容。
     if conflicts and args.source == "auto":
-        report_conflict(conflicts, cache_changes, epub_changes)
-        return 1
+        builder.extend(_conflict_messages(conflicts, cache_changes, epub_changes))
+        return builder.finish('blocked')
     if conflicts and args.source == "epub" and not args.overwrite_cache:
-        print(
+        builder.emit(
             "\n错误: 已指定以 EPUB/ 为准，但这些书的缓存里还有未发布修改，"
             "反向覆盖会丢失它们。",
-            file=sys.stderr,
+            error=True,
         )
         for book_key in conflicts:
-            print(f"  {describe_book(book_key)}", file=sys.stderr)
-        print(
+            builder.emit(f"  {describe_book(book_key)}", error=True)
+        builder.emit(
             "  确认要丢弃缓存修改时加上 --overwrite-cache；"
             "或先用 --from cache 把缓存修改发布出去。",
-            file=sys.stderr,
+            error=True,
         )
-        return 1
+        return builder.finish('blocked')
 
     # 分叉：OneDrive 与本地对同一本书都有改动
     if diverged and args.source == "auto":
-        report_diverged(diverged)
-        return 1
+        builder.extend(_diverged_messages(diverged))
+        return builder.finish('blocked')
     if diverged and args.source == "onedrive" and not args.overwrite_cache:
-        report_diverged(diverged)
-        return 1
+        builder.extend(_diverged_messages(diverged))
+        return builder.finish('blocked')
 
     if conflicts:
         if args.source == "cache":
-            print(
+            builder.emit(
                 f"\n  冲突书共 {len(conflicts)} 本，以缓存为准：缓存内容将覆盖 EPUB/ 中对应文件。"
             )
         elif args.source == "epub":
-            print(
+            builder.emit(
                 f"\n  冲突书共 {len(conflicts)} 本，以 EPUB/ 为准：EPUB/ 内容将覆盖缓存（含未发布修改）。"
             )
 
@@ -512,7 +586,7 @@ def main(argv: list[str] | None = None) -> int:
         epub_books -= overlap
     elif args.source == "onedrive":
         if cache_books or epub_books:
-            print(
+            builder.emit(
                 f"\n  注意: --from onedrive 只执行流程 A，本地 {len(cache_books)} 本缓存改动与 "
                 f"{len(epub_books)} 本 EPUB/ 改动本次不发布，仍保持未发布状态。"
             )
@@ -525,7 +599,7 @@ def main(argv: list[str] | None = None) -> int:
     if run_pull and args.only_books:
         # pull.ps1 以整本书为单位解压，没有单本参数；用 --only-books 时宁可不拉，也不越界写入。
         run_pull = False
-        print(
+        builder.emit(
             "\n  提示: --only-books 无法约束流程 A（pull.ps1 按整本书解压），已跳过 OneDrive 拉取；"
             "如需拉回，请用 ./tools/pull.ps1 -SyncToEpub -Pattern 指定范围。"
         )
@@ -536,19 +610,19 @@ def main(argv: list[str] | None = None) -> int:
             # 不需要再按流程 B 打包上传一遍。
             cache_books = [key for key in cache_books if key not in set(completed_pull)]
         else:
-            print(
+            builder.emit(
                 f"\n  提示: {len(completed_pull)} 本已完成的拉取只缺基线推进，"
                 "本次方向不会执行流程 A；请用 ./tools/pull.ps1 补齐基线。"
             )
     if run_pull:
         pull_command = build_pull_command(args, cache, epub_root, args.dry_run)
         if pull_command is None:
-            print(
+            builder.emit(
                 "错误: 未找到 pwsh/powershell，无法执行流程 A；"
                 "请手动运行 ./tools/pull.ps1 -SyncToEpub。",
-                file=sys.stderr,
+                error=True,
             )
-            return 1
+            return builder.finish('blocked')
         commands.append(("A", pull_command))
     if cache_books:
         commands.append(("B", build_publish_command(args, cache, epub_root, cache_books)))
@@ -558,7 +632,7 @@ def main(argv: list[str] | None = None) -> int:
         )
 
     if drifted and args.source in ("cache", "epub"):
-        print(
+        builder.emit(
             f"\n  提示: OneDrive 有 {len(drifted)} 本外部更新。"
             "先发布本地改动，再运行 ./tools/pull.ps1 -SyncToEpub 拉回；"
             "或直接用 python tools/publish_auto.py --from onedrive。"
@@ -566,48 +640,25 @@ def main(argv: list[str] | None = None) -> int:
 
     if not commands:
         if drifted:
-            print(
+            builder.emit(
                 f"\n没有检测到需要发布的本地改动；OneDrive 有 {len(drifted)} 本外部更新，"
                 "用 --from onedrive 执行流程 A 拉回。"
             )
         else:
-            print("\n没有检测到需要发布的内容。")
-        return 0
+            builder.emit("\n没有检测到需要发布的内容。")
+        return builder.finish('noop')
 
-    print("\n== 发布计划 ==")
-    for direction, cmd in commands:
-        scope = "OneDrive 外部更新" if direction == "A" else "本地改动"
-        print(f"  [{DIRECTION_LABELS[direction]}] {scope}")
-
-    if args.dry_run:
-        for _, cmd in commands:
-            print(f"\n[dry-run] 将执行:\n  $ {display_command(cmd)}")
-        print("\n[dry-run] 未执行任何操作。")
-        return 0
-
-    print("\n== 发布 ==")
-    failed: list[str] = []
-    for direction, cmd in commands:
-        if run_command(cmd) != 0:
-            failed.append(DIRECTION_LABELS[direction])
-            print(f"  [失败] {DIRECTION_LABELS[direction]}", file=sys.stderr)
-            break
-
-    print("\n== 完成 ==")
-    if failed:
-        print(f"  失败: {'、'.join(failed)}")
-        return 1
-    print("  全部方向执行成功。")
-    return 0
+    return builder.ready(commands)
 
 
-def run_forced(
+def _prepare_forced(
     args: argparse.Namespace,
     cache: Path,
     epub_root: Path,
     cache_current: dict[str, str],
     epub_current: dict[str, str],
-) -> int:
+    builder: _PlanBuilder,
+) -> PublicationPlan:
     """--force：忽略基线，只按 --from 指定方向全量重做。"""
     def books_of(paths: dict[str, str]) -> list[str]:
         keys = {path.split("/", 2)[0] + "/" + path.split("/", 2)[1] for path in paths
@@ -617,43 +668,59 @@ def run_forced(
     if args.source == "cache":
         books = books_of(cache_current)
         if not books:
-            print("\n没有检测到需要发布的内容（范围内没有书籍）。")
-            return 0
+            builder.emit("\n没有检测到需要发布的内容（范围内没有书籍）。")
+            return builder.finish('noop')
         commands = [("B", build_publish_command(args, cache, epub_root, books))]
     elif args.source == "epub":
         books = books_of({k: v for k, v in epub_current.items()
                           if k.startswith("chinese-text/")})
         if not books:
-            print("\n没有检测到需要发布的内容（范围内没有书籍）。")
-            return 0
+            builder.emit("\n没有检测到需要发布的内容（范围内没有书籍）。")
+            return builder.finish('noop')
         commands = [("C", build_reverse_command(args, cache, epub_root, books))]
     else:
         pull_command = build_pull_command(args, cache, epub_root, args.dry_run)
         if pull_command is None:
-            print(
+            builder.emit(
                 "错误: 未找到 pwsh/powershell，无法执行流程 A；"
                 "请手动运行 ./tools/pull.ps1 -SyncToEpub -Force。",
-                file=sys.stderr,
+                error=True,
             )
-            return 1
+            return builder.finish('blocked')
         commands = [("A", pull_command)]
 
-    print("\n== 发布计划 ==")
-    for direction, _ in commands:
-        print(f"  [{DIRECTION_LABELS[direction]}] 全量重做（--force）")
-    if args.dry_run:
-        for _, cmd in commands:
-            print(f"\n[dry-run] 将执行:\n  $ {display_command(cmd)}")
+    return builder.ready(commands, forced=True)
+
+
+def run_plan(plan: PublicationPlan) -> int:
+    """只消费准备好的计划；不重新扫描、选择方向或构造命令。"""
+    if plan.status not in {"ready", "blocked", "noop"} or ((plan.status == "ready") != bool(plan.steps)):
+        raise ValueError("Invalid publication plan status or commands")
+    for diagnostic in plan.diagnostics:
+        print(diagnostic.text, file=sys.stderr if diagnostic.stream == "stderr" else sys.stdout)
+    if plan.status == "blocked":
+        return 1
+    if plan.status == "noop":
+        return 0
+    if plan.preview:
+        for step in plan.steps:
+            print(f"\n[dry-run] 将执行:\n  $ {display_command(list(step.argv))}")
         print("\n[dry-run] 未执行任何操作。")
         return 0
 
     print("\n== 发布 ==")
-    for direction, cmd in commands:
-        if run_command(cmd) != 0:
-            print(f"  [失败] {DIRECTION_LABELS[direction]}", file=sys.stderr)
+    for step in plan.steps:
+        if run_command(list(step.argv)) != 0:
+            label = DIRECTION_LABELS[step.direction]
+            print(f"  [失败] {label}", file=sys.stderr)
+            print(f"\n== 完成 ==\n  失败: {label}")
             return 1
     print("\n== 完成 ==\n  全部方向执行成功。")
     return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    return run_plan(prepare_plan(parse_args(argv)))
 
 
 if __name__ == "__main__":

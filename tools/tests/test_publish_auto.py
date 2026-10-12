@@ -409,5 +409,227 @@ class IntegrationTests(unittest.TestCase):
         self.assertEqual(self.run_tool("--side", "chinese", "--no-upload"), 0)
 
 
+class PublicationPlanTests(ToolTestCase):
+    def prepare(self, *extra: str, powershell: str | None = "pwsh"):
+        args = publish_auto.parse_args(self.fx.argv(*extra))
+        with patch.object(publish_auto, "find_powershell", return_value=powershell):
+            return publish_auto.prepare_plan(args)
+
+    @staticmethod
+    def option(argv, name):
+        return argv[argv.index(name) + 1]
+
+    def test_prepare_is_read_only_and_does_not_print_or_execute(self):
+        self.fx.write_cache_book("chinese-text", BOOK_CN, "<p>中文B</p>")
+        before = {p.relative_to(self.fx.root): p.read_bytes()
+                  for p in self.fx.root.rglob("*") if p.is_file()}
+        output = io.StringIO()
+        with patch.object(publish_auto, "run_command", side_effect=AssertionError("executed")), \
+                contextlib.redirect_stdout(output), contextlib.redirect_stderr(output):
+            plan = self.prepare("--side", "chinese")
+        after = {p.relative_to(self.fx.root): p.read_bytes()
+                 for p in self.fx.root.rglob("*") if p.is_file()}
+        self.assertEqual(before, after)
+        self.assertEqual(output.getvalue(), "")
+        self.assertEqual(plan.status, "ready")
+
+    def test_normal_and_forced_commands_keep_supported_config_and_scope(self):
+        for source in ("cache", "epub"):
+            for forced in (False, True):
+                with self.subTest(source=source, forced=forced):
+                    self.fx.write_cache_book("chinese-text", BOOK_CN, "<p>中文A</p>")
+                    self.fx.write_epub_book(BOOK_CN, "<p>中文A</p>")
+                    if source == "cache":
+                        self.fx.write_cache_book("chinese-text", BOOK_CN, "<p>中文B</p>")
+                    else:
+                        self.fx.write_epub_book(BOOK_CN, "<p>归档新</p>")
+                    options = ["--from", source, "--side", "chinese",
+                               "--pattern", "*S1_01*", "--no-upload", "--overwrite-cache"]
+                    if forced:
+                        options.append("--force")
+                    plan = self.prepare(*options)
+                    self.assertEqual(plan.status, "ready")
+                    self.assertEqual(len(plan.steps), 1)
+                    step = plan.steps[0]
+                    self.assertEqual(step.direction, "B" if source == "cache" else "C")
+                    self.assertEqual(self.option(step.argv, "--only-books"), f"chinese-text/{BOOK_CN}")
+                    self.assertEqual(self.option(step.argv, "--chinese-onedrive"),
+                                     str(self.fx.onedrive_cn.resolve()))
+                    self.assertIn("--no-upload", step.argv)
+                    self.assertEqual("--force" in step.argv, forced)
+                    if source == "cache":
+                        self.assertEqual(self.option(step.argv, "--side"), "chinese")
+                        self.assertEqual(self.option(step.argv, "--japanese-onedrive"),
+                                         str(self.fx.onedrive_jp.resolve()))
+                        self.assertNotIn("--overwrite-cache", step.argv)
+                    else:
+                        self.assertNotIn("--side", step.argv)
+                        self.assertNotIn("--japanese-onedrive", step.argv)
+                        self.assertIn("--overwrite-cache", step.argv)
+
+    def test_force_a_only_books_is_blocked_for_preview_and_execution(self):
+        for preview in (False, True):
+            options = ["--from", "onedrive", "--force", "--only-books", f"chinese-text/{BOOK_CN}"]
+            if preview:
+                options.append("--dry-run")
+            plan = self.prepare(*options)
+            self.assertEqual(plan.status, "blocked")
+            self.assertEqual(plan.steps, ())
+            output = io.StringIO()
+            with patch.object(publish_auto, "run_command") as run, \
+                    contextlib.redirect_stdout(output), contextlib.redirect_stderr(output):
+                self.assertEqual(publish_auto.run_plan(plan), 1)
+            run.assert_not_called()
+            self.assertIn("--only-books", output.getvalue())
+
+    def test_force_a_preview_keeps_side_pattern_sources_and_whatif(self):
+        plan = self.prepare("--from", "onedrive", "--force", "--side", "chinese",
+                            "--pattern", "*S1_01*", "--dry-run")
+        self.assertEqual(plan.status, "ready")
+        self.assertEqual([step.direction for step in plan.steps], ["A"])
+        argv = plan.steps[0].argv
+        self.assertEqual(self.option(argv, "-Side"), "chinese")
+        self.assertEqual(self.option(argv, "-Pattern"), "*S1_01*")
+        self.assertEqual(self.option(argv, "-ChineseSourceDirectory"), str(self.fx.onedrive_cn.resolve()))
+        self.assertEqual(self.option(argv, "-JapaneseSourceDirectory"), str(self.fx.onedrive_jp.resolve()))
+        self.assertIn("-Force", argv)
+        self.assertIn("-WhatIf", argv)
+        with patch.object(publish_auto, "run_command") as run, \
+                contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(publish_auto.run_plan(plan), 0)
+        run.assert_not_called()
+
+    def test_preview_and_argv_are_fixed_after_preparation(self):
+        self.fx.write_cache_book("chinese-text", BOOK_CN, "<p>中文B</p>")
+        args = publish_auto.parse_args(self.fx.argv("--dry-run", "--side", "chinese"))
+        plan = publish_auto.prepare_plan(args)
+        args.dry_run = False
+        args.chinese_onedrive = Path("other")
+        with self.assertRaises(AttributeError):
+            plan.preview = False
+        output = io.StringIO()
+        with patch.object(publish_auto, "run_command") as run, \
+                patch.object(publish_auto, "scan_cache", side_effect=AssertionError("rescanned")), \
+                patch.object(publish_auto, "build_publish_command", side_effect=AssertionError("rebuilt")), \
+                contextlib.redirect_stdout(output):
+            self.assertEqual(publish_auto.run_plan(plan), 0)
+        run.assert_not_called()
+        self.assertIn(publish_auto.display_command(list(plan.steps[0].argv)), output.getvalue())
+        self.assertEqual(self.option(plan.steps[0].argv, "--chinese-onedrive"),
+                         str(self.fx.onedrive_cn.resolve()))
+
+    def test_runner_uses_prepared_argv_and_stops_at_first_failure(self):
+        self.fx.onedrive_jp.mkdir()
+        (self.fx.onedrive_jp / f"{BOOK_JP}.epub").write_bytes(b"external")
+        self.fx.write_cache_book("chinese-text", BOOK_CN, "<p>中文B</p>")
+        self.fx.write_epub_book(BOOK_CN2, "<p>归档新</p>")
+        plan = self.prepare()
+        self.assertEqual([step.direction for step in plan.steps], ["A", "B", "C"])
+        for failure in (-1, 0, 1, 2):
+            calls = []
+
+            def run(argv):
+                calls.append(tuple(argv))
+                return 7 if len(calls) - 1 == failure else 0
+
+            with patch.object(publish_auto, "run_command", run), \
+                    patch.object(publish_auto, "scan_cache", side_effect=AssertionError("rescanned")), \
+                    contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                self.assertEqual(publish_auto.run_plan(plan), 0 if failure == -1 else 1)
+            count = 3 if failure == -1 else failure + 1
+            self.assertEqual(calls, [step.argv for step in plan.steps[:count]])
+
+    def test_blocked_and_noop_plans_never_execute(self):
+        noop = self.prepare()
+        (self.fx.cache / "manifest.json").unlink()
+        blocked = self.prepare()
+        for plan, status, code in ((noop, "noop", 0), (blocked, "blocked", 1)):
+            self.assertEqual(plan.status, status)
+            self.assertEqual(plan.steps, ())
+            with patch.object(publish_auto, "run_command") as run, \
+                    contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                self.assertEqual(publish_auto.run_plan(plan), code)
+            run.assert_not_called()
+
+    def test_completed_pull_is_not_reuploaded_when_a_will_run(self):
+        from package_cache_epubs import package_book
+        self.fx.write_cache_book("chinese-text", BOOK_CN, "<p>中文B</p>")
+        package_book(self.fx.cache / "chinese-text" / BOOK_CN,
+                     self.fx.onedrive_cn / f"{BOOK_CN}.epub")
+        plan = self.prepare("--side", "chinese")
+        self.assertEqual([step.direction for step in plan.steps], ["A"])
+        self.assertTrue(any("已完成的拉取" in message.text for message in plan.diagnostics))
+        scoped = self.prepare("--side", "chinese", "--only-books", f"chinese-text/{BOOK_CN}")
+        self.assertEqual([step.direction for step in scoped.steps], ["B"])
+        self.assertTrue(any("本次方向不会执行流程 A" in message.text for message in scoped.diagnostics))
+
+    def test_powershell_is_required_only_for_a(self):
+        self.fx.write_cache_book("chinese-text", BOOK_CN, "<p>中文B</p>")
+        local = self.prepare("--side", "chinese", powershell=None)
+        self.assertEqual([step.direction for step in local.steps], ["B"])
+        self.fx.onedrive_jp.mkdir()
+        (self.fx.onedrive_jp / f"{BOOK_JP}.epub").write_bytes(b"external")
+        mixed = self.prepare(powershell=None)
+        self.assertEqual(mixed.status, "blocked")
+        self.assertEqual(mixed.steps, ())
+
+
+class ConfiguredTargetIntegrationTests(unittest.TestCase):
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+
+    def run_local_plan(self, fx, *extra):
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            plan = publish_auto.prepare_plan(publish_auto.parse_args(fx.argv(*extra)))
+            self.assertEqual(plan.status, "ready")
+            # 真实执行前先验证每条命令的全部目录，禁止测试落到任何默认工作区／OneDrive。
+            for step in plan.steps:
+                self.assertIn(step.direction, ("B", "C"))
+                for name, expected in (("--cache", fx.cache), ("--epub", fx.epub),
+                                       ("--chinese-onedrive", fx.onedrive_cn)):
+                    self.assertEqual(Path(step.argv[step.argv.index(name) + 1]), expected.resolve())
+                if step.direction == "B":
+                    name = "--japanese-onedrive"
+                    self.assertEqual(Path(step.argv[step.argv.index(name) + 1]), fx.onedrive_jp.resolve())
+                else:
+                    self.assertNotIn("--japanese-onedrive", step.argv)
+            return publish_auto.run_plan(plan)
+
+    def test_normal_and_forced_publish_use_configured_temp_targets(self):
+        for source in ("cache", "epub"):
+            for forced in (False, True):
+                with self.subTest(source=source, forced=forced):
+                    fx = Fixture(Path(self._tmp.name) / f"{source}-{forced}")
+                    fx.onedrive_cn.mkdir()
+                    fx.onedrive_jp.mkdir()
+                    if source == "cache":
+                        fx.write_cache_book("chinese-text", BOOK_CN, "<p>中文B</p>")
+                    else:
+                        fx.write_epub_book(BOOK_CN, "<p>归档新</p>")
+                    options = ["--from", source, "--side", "chinese", "--pattern", "*S1_01*"]
+                    if forced:
+                        options.append("--force")
+                    self.assertEqual(self.run_local_plan(fx, *options), 0)
+                    self.assertTrue((fx.onedrive_cn / f"{BOOK_CN}.epub").is_file())
+                    self.assertEqual(list(fx.onedrive_jp.iterdir()), [])
+                    cache_text = fx.cache / "chinese-text" / BOOK_CN / "OEBPS/Text/S1_01-01_Chapter.xhtml"
+                    epub_text = fx.epub / BOOK_CN / "OEBPS/Text/S1_01-01_Chapter.xhtml"
+                    self.assertEqual(cache_text.read_bytes(), epub_text.read_bytes())
+
+    def test_chinese_b_does_not_require_a_japanese_baseline(self):
+        from manifest import load_manifest
+        fx = Fixture(Path(self._tmp.name) / "chinese-only")
+        fx.onedrive_cn.mkdir()
+        fx.onedrive_jp.mkdir()
+        baseline = load_manifest(fx.cache)
+        save_manifest(fx.cache, {key: value for key, value in baseline.items()
+                                 if key.startswith("chinese-text/")})
+        fx.write_cache_book("chinese-text", BOOK_CN, "<p>中文B</p>")
+        self.assertEqual(self.run_local_plan(fx, "--side", "chinese"), 0)
+        self.assertTrue((fx.onedrive_cn / f"{BOOK_CN}.epub").is_file())
+        self.assertFalse(any(key.startswith("japanese-text/") for key in load_manifest(fx.cache)))
+
+
 if __name__ == "__main__":
     unittest.main()
