@@ -42,11 +42,11 @@
               （error；存量已于 2026-10-12 补齐唯一偏离本后升级为阻断）
   ncx-doctitle `docTitle` 等于 `dc:title`（error；存量已于 2026-10-12 清零后升级为阻断）
   ncx-uid    `toc.ncx` 的 `dtb:uid` 等于包文档 `unique-identifier`
-              （warning；存量 61 本未清零，清零后升级为阻断）
+              （error；存量 61 本已于 2026-10-12 对齐后升级为阻断）
   identifier-unique 库内 `unique-identifier` 唯一
               （error；跨书汇总，存量已于 2026-10-12 清零后升级为阻断）
 
-除 `ncx-uid` 外均为 error 级：逐本项由 `audit_book` 判定，跨书项在 `main()` 层计算；
+七项均为 error 级：逐本项由 `audit_book` 判定，跨书项在 `main()` 层计算；
 发布阻断由 `publish_preflight.py` 承担——逐本取 error 级，库级再复核 `unique-identifier`。
 
 刻意不纳入的检查项
@@ -153,9 +153,8 @@ SEVERITY = {
     # 各自 uuid（见 docs/maintenance-records/），故由报告级逐项升级为阻断。
     "dir-name": "error", "metadata-title": "error", "packaging-required": "error",
     "ncx-doctitle": "error", "toc-entry": "error", "identifier-unique": "error",
-    # `dtb:uid` 对齐（规范第三节）：存量 61 本未清零（见 docs/maintenance-records/），
-    # 先报告级；清零后与其余各项一样升级为阻断。
-    "ncx-uid": "warning",
+    # `dtb:uid` 对齐（规范第三节）：存量 61 本已于 2026-10-12 对齐，故同样升级为阻断。
+    "ncx-uid": "error",
 }
 
 
