@@ -76,6 +76,24 @@ def template_exempt(work_id_value: str | None) -> bool:
     """This work is out of scope for the fixed-line-template check."""
     return bool(work_id_value) and work_id_value.upper() in TEMPLATE_EXEMPT_WORK_IDS
 
+
+# 成品构成检查（`docs/epub-artifact-spec.md`）的豁免：粒度同样是「作品 + 检查项」，
+# 但与 template 豁免分开维护——构成口径的例外必须逐条写明依据，且不得演变成忽略项。
+# 这份名单是唯一事实来源，`check_epub_health.py` 从这里取。
+HEALTH_EXEMPT_WORK_IDS: dict[str, frozenset[str]] = {
+    # 读前必看是阅读说明、非卷：目录名不带版本标记 X、目录首条目为「阅读器测试」、
+    # docTitle 亦不等于书目录名。依据见 docs/epub-artifact-spec.md 第三节的具名例外。
+    "dir-name": frozenset({"S0_00"}),
+    "toc-entry": frozenset({"S0_00"}),
+    "ncx-doctitle": frozenset({"S0_00"}),
+}
+
+
+def health_exempt(check: str, work_id_value: str | None) -> bool:
+    """This work is exempt from one artifact-composition check."""
+    ids = HEALTH_EXEMPT_WORK_IDS.get(check, frozenset())
+    return bool(work_id_value) and work_id_value.upper() in ids
+
 JP_WRAPPER_RE = re.compile(
     rf"^(p-|navigation-documents|Anotherworld|(?:{S6_DATE}|{NUMBERED_BOOK})-(?:p-|navigation))",
     re.I,

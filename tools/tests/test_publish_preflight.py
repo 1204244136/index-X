@@ -29,7 +29,7 @@ class PreflightTests(unittest.TestCase):
 
     def test_alignment_reads_archive_not_previous_cache(self):
         cn, jp = self.root / "EPUB", self.root / "japanese"
-        chapter = make_book(cn / "[S1_01]中文", layout=True)
+        chapter = make_book(cn / "[S1_01]中文X", layout=True)
         make_book(jp / "[S1_01]日文")
         self.assertTrue(validate_publication(cn, jp))
         chapter.write_text(chapter.read_text(encoding="utf-8").replace("</body>", "<p>额外行</p>\n</body>"), encoding="utf-8")
@@ -53,7 +53,7 @@ class PreflightTests(unittest.TestCase):
                 self.assertFalse((fx.cache / "packed-epubs").exists())
 
     def test_calibre_failure_is_propagated(self):
-        make_book(self.root / "[S1_01]中文", layout=True)
+        make_book(self.root / "[S1_01]中文X", layout=True)
         with patch("publish_preflight.subprocess.run") as run:
             run.return_value.returncode = 2
             self.assertEqual(main(["--source", str(self.root), "--calibre"]), 2)

@@ -43,11 +43,63 @@ class HealthCheckNegativeTests(unittest.TestCase):
         self.tmp = Path(self._tmp.name)
         self.addCleanup(self._tmp.cleanup)
 
+    @staticmethod
+    def page(title: str) -> list[str]:
+        """作品级包装页的最小合规形态（同样是 L4 标题 / L5 空行 / L6 正文首行）。"""
+        return GOOD[:3] + ["<h1>%s</h1>" % title, "", "<p>%s占位。</p>" % title, "</body></html>"]
+
     def build(self, bid: str, files: dict[str, list[str]], root: Path | None = None) -> Path:
+        """造一本**构成合规**的最小书：目录名带 X，且有包文档／导航／NCX／封面／制作信息页。
+
+        构成规则见 `docs/epub-artifact-spec.md`。`assert_detects` 只跑单个检查项，
+        多数用例不依赖这些默认件；`test_clean_sample_reports_nothing` 要求整本书在
+        **全部**检查项下零命中，所以默认件本身必须是合规形态。
+        """
         from docx2epub import _CSS
         files = dict(files)
         files.setdefault("OEBPS/Styles/style.css", [_CSS])
-        book = (root or self.tmp) / ("[%s]测试书" % bid)
+        files.setdefault("OEBPS/Text/%s-Cover.xhtml" % bid, self.page("封面"))
+        files.setdefault("OEBPS/Text/%s-Information.xhtml" % bid, self.page("制作信息"))
+        dir_name = "[%s]测试书X" % bid
+        rels = sorted(rel for rel in files if rel.startswith("OEBPS/Text/"))
+        items, refs = [], []
+        for i, rel in enumerate(rels, 1):
+            items.append('    <item id="id%d" href="%s" media-type="application/xhtml+xml"/>'
+                         % (i, rel.split("OEBPS/", 1)[1]))
+            refs.append('    <itemref idref="id%d"/>' % i)
+        files["OEBPS/content.opf"] = [
+            HEAD,
+            '<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId">',
+            '  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">',
+            '    <dc:title id="id">%s</dc:title>' % dir_name,
+            '    <dc:identifier id="BookId">uuid:test-%s</dc:identifier>' % bid,
+            "    <dc:language>zh-CN</dc:language>",
+            "  </metadata>",
+            "  <manifest>", *items, "  </manifest>",
+            '  <spine toc="ncx">', *refs, "  </spine>",
+            "</package>",
+        ]
+        files["nav.xhtml"] = [
+            "<!DOCTYPE html>",
+            '<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">',
+            "<head><title>Navigation</title></head>",
+            "<body>", '<nav epub:type="toc">', "<ol>",
+            '<li><a href="OEBPS/Text/%s-Information.xhtml">制作信息</a></li>' % bid,
+            "</ol>", "</nav>", "</body></html>",
+        ]
+        files["toc.ncx"] = [
+            HEAD,
+            '<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1" xml:lang="zh">',
+            "  <docTitle>", "    <text>%s</text>" % dir_name, "  </docTitle>",
+            "  <navMap>",
+            '    <navPoint id="num_1" playOrder="1">',
+            "      <navLabel>", "        <text>制作信息</text>", "      </navLabel>",
+            '      <content src="OEBPS/Text/%s-Information.xhtml"/>' % bid,
+            "    </navPoint>",
+            "  </navMap>",
+            "</ncx>",
+        ]
+        book = (root or self.tmp) / dir_name
         for rel, lines in files.items():
             path = book / Path(rel)
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -73,13 +125,95 @@ class HealthCheckNegativeTests(unittest.TestCase):
         self.assertIn(check, {f[0] for f in hits})
         return hits[0]
 
+    # ---- 成品构成（docs/epub-artifact-spec.md）----
+    def test_dir_name_without_version_marker(self):
+        book = self.build("S1_01", {"OEBPS/Text/S1_01-01_Chapter1.xhtml": GOOD})
+        renamed = book.parent / "[S1_01]测试书"
+        book.rename(renamed)
+        findings, counts, _e, _c = audit_book(renamed, {"dir-name"})
+        self.assertGreaterEqual(counts.get("dir-name", 0), 1)
+        self.assertTrue(any("未以版本标记 `X` 结尾" in f[5] for f in findings))
+
+    def test_dir_name_without_work_id_prefix(self):
+        book = self.build("S1_01", {"OEBPS/Text/S1_01-01_Chapter1.xhtml": GOOD})
+        renamed = book.parent / "测试书X"
+        book.rename(renamed)
+        findings, counts, _e, _c = audit_book(renamed, {"dir-name"})
+        self.assertTrue(any("缺少 `[作品号]` 前缀" in f[5] for f in findings))
+
+    def test_metadata_title_must_equal_dir_name(self):
+        book = self.build("S1_01", {"OEBPS/Text/S1_01-01_Chapter1.xhtml": GOOD})
+        opf = book / "OEBPS/content.opf"
+        opf.write_text(opf.read_text(encoding="utf-8").replace("[S1_01]测试书X", "某魔法的禁书目录 01X"),
+                       encoding="utf-8")
+        findings, counts, _e, _c = audit_book(book, {"metadata-title"})
+        self.assertEqual(counts.get("metadata-title"), 1)
+        self.assertIn("与书目录名不一致", findings[0][5])
+
+    def test_missing_information_page_is_blocking(self):
+        book = self.build("S1_01", {"OEBPS/Text/S1_01-01_Chapter1.xhtml": GOOD})
+        (book / "OEBPS/Text/S1_01-Information.xhtml").unlink()
+        findings, counts, _e, _c = audit_book(book, {"packaging-required"})
+        self.assertTrue(any("缺少必备包装页" in f[5] and "Information" in f[5] for f in findings))
+
+    def test_packaging_page_must_be_declared_and_in_spine(self):
+        book = self.build("S1_01", {"OEBPS/Text/S1_01-01_Chapter1.xhtml": GOOD})
+        opf = book / "OEBPS/content.opf"
+        opf.write_text(opf.read_text(encoding="utf-8").replace(
+            "Text/S1_01-Information.xhtml", "Text/S1_01-Elsewhere.xhtml"), encoding="utf-8")
+        findings, counts, _e, _c = audit_book(book, {"packaging-required"})
+        self.assertTrue(any("未在 manifest 中声明" in f[5] for f in findings))
+        self.assertTrue(any("未进 spine" in f[5] for f in findings))
+
+    def test_toc_first_entry_and_cover_entry(self):
+        book = self.build("S1_01", {"OEBPS/Text/S1_01-01_Chapter1.xhtml": GOOD})
+        ncx = book / "toc.ncx"
+        ncx.write_text(ncx.read_text(encoding="utf-8").replace(
+            "<text>制作信息</text>", "<text>封面</text>"), encoding="utf-8")
+        findings, counts, _e, _c = audit_book(book, {"toc-entry"})
+        self.assertTrue(any("首条目应为「制作信息」" in f[5] for f in findings))
+        self.assertTrue(any("封面不进目录" in f[5] for f in findings))
+
+    def test_ncx_doctitle_must_match_dc_title(self):
+        book = self.build("S1_01", {"OEBPS/Text/S1_01-01_Chapter1.xhtml": GOOD})
+        ncx = book / "toc.ncx"
+        ncx.write_text(ncx.read_text(encoding="utf-8").replace(
+            "<text>[S1_01]测试书X</text>", "<text>某魔法的禁书目录 01X</text>"), encoding="utf-8")
+        findings, counts, _e, _c = audit_book(book, {"ncx-doctitle"})
+        self.assertEqual(counts.get("ncx-doctitle"), 1)
+        self.assertIn("`docTitle` 与 `dc:title` 不一致", findings[0][5])
+
+    def test_identifier_duplicates_across_books(self):
+        a = self.build("S1_01", {"OEBPS/Text/S1_01-01_Chapter1.xhtml": GOOD})
+        b = self.build("S1_02", {"OEBPS/Text/S1_02-01_Chapter1.xhtml": GOOD})
+        self.assertEqual(check_epub_health.find_identifier_duplicates([a, b]), [])
+        opf_a = a / "OEBPS/content.opf"
+        shared = opf_a.read_text(encoding="utf-8").split('id="BookId">')[1].split("<")[0]
+        opf_b = b / "OEBPS/content.opf"
+        text = opf_b.read_text(encoding="utf-8")
+        opf_b.write_text(text.replace(text.split('id="BookId">')[1].split("<")[0], shared),
+                         encoding="utf-8")
+        hits = check_epub_health.find_identifier_duplicates([a, b])
+        self.assertEqual(len(hits), 2)
+        self.assertTrue(all("共用" in msg for _name, msg in hits))
+
+    def test_artifact_exempt_registry_is_narrow(self):
+        import alignment_rules
+        self.assertEqual(set(alignment_rules.HEALTH_EXEMPT_WORK_IDS),
+                         {"dir-name", "toc-entry", "ncx-doctitle"})
+        self.assertTrue(alignment_rules.health_exempt("dir-name", "S0_00"))
+        self.assertTrue(alignment_rules.health_exempt("ncx-doctitle", "s0_00"))
+        self.assertFalse(alignment_rules.health_exempt("metadata-title", "S0_00"))
+        self.assertFalse(alignment_rules.health_exempt("dir-name", "S1_01"))
+        self.assertFalse(alignment_rules.health_exempt("dir-name", None))
+
     # ---- 正常样本不得误报 ----
     def test_clean_sample_reports_nothing(self):
         book = self.build("S1_01", {"OEBPS/Text/S1_01-01_Chapter1.xhtml": GOOD})
         findings, counts, _exempt, covered = audit_book(book, None)
         self.assertEqual(findings, [])
         self.assertEqual(sum(counts.values()), 0)
-        self.assertEqual(covered["files"], 1)
+        self.assertEqual(covered["files"], 3)  # 正文 + 封面 + 制作信息
 
     # ---- 每个检查项一个反例 ----
     def test_xml_parse_failure(self):
@@ -275,7 +409,7 @@ class HealthCheckNegativeTests(unittest.TestCase):
             "OEBPS/Text/S1_01-01_Chapter1.xhtml": GOOD,
             "OEBPS/Styles/style.css": ["* { box-sizing: border-box; }", "body { margin: 0; }", ".fit { display: block; break-inside: avoid; }"],
         })
-        css_book = self.tmp / "[S1_01]测试书"
+        css_book = self.tmp / "[S1_01]测试书X"
         hits, *_ = audit_book(css_book, {"css-layout"})
         self.assertTrue(any("`.pb`" in f[5] for f in hits))
 

@@ -15,8 +15,8 @@ import publish_auto  # noqa: E402
 from manifest import save_manifest, scan_cache, scan_epub  # noqa: E402
 from sync_core import UNIX_TO_DOTNET_TICKS_OFFSET  # noqa: E402
 
-BOOK_CN = "[S1_01]某书"
-BOOK_CN2 = "[S1_02]他书"
+BOOK_CN = "[S1_01]某书X"
+BOOK_CN2 = "[S1_02]他书X"
 BOOK_JP = "[S1_01]某書"
 
 
@@ -57,11 +57,35 @@ class Fixture:
         (book / "OEBPS" / "Text").mkdir(parents=True, exist_ok=True)
         (book / "OEBPS" / "Styles").mkdir(parents=True, exist_ok=True)
         (book / "OEBPS" / "Styles" / "style.css").write_text(_CSS, encoding="utf-8")
+        # 构成合规（docs/epub-artifact-spec.md）：dc:title 等于书目录名，导航与两张必备包装页齐备。
+        # 发布预检会把成品构成的 error 级一并纳入阻断，夹具不满足它就跑不出「成功发布」路径。
         (book / "OEBPS" / "content.opf").write_text(
-            f'<package><manifest><item id="text" href="Text/{name}" media-type="application/xhtml+xml"/>'
+            '<package><metadata xmlns:dc="http://purl.org/dc/elements/1.1/">'
+            f'<dc:title id="id">{book.name}</dc:title></metadata><manifest>'
+            f'<item id="cover" href="Text/{wid}-Cover.xhtml" media-type="application/xhtml+xml"/>'
+            f'<item id="info" href="Text/{wid}-Information.xhtml" media-type="application/xhtml+xml"/>'
+            f'<item id="text" href="Text/{name}" media-type="application/xhtml+xml"/>'
             '<item id="css" href="Styles/style.css" media-type="text/css"/>'
-            '</manifest><spine><itemref idref="text"/></spine></package>', encoding="utf-8")
+            '<item id="nav" href="../nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>'
+            '<item id="ncx" href="../toc.ncx" media-type="application/x-dtbncx+xml"/>'
+            '</manifest><spine toc="ncx">'
+            '<itemref idref="cover"/><itemref idref="info"/><itemref idref="text"/>'
+            '</spine></package>', encoding="utf-8")
         (book / "OEBPS" / "Text" / name).write_text(Fixture.xhtml(text), encoding="utf-8")
+        (book / "OEBPS" / "Text" / f"{wid}-Cover.xhtml").write_text(
+            Fixture.xhtml("<p>封面</p>"), encoding="utf-8")
+        (book / "OEBPS" / "Text" / f"{wid}-Information.xhtml").write_text(
+            Fixture.xhtml("<p>制作信息</p>"), encoding="utf-8")
+        (book / "nav.xhtml").write_text(
+            '<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">'
+            '<body><nav epub:type="toc"><ol>'
+            f'<li><a href="OEBPS/Text/{wid}-Information.xhtml">制作信息</a></li>'
+            '</ol></nav></body></html>', encoding="utf-8")
+        (book / "toc.ncx").write_text(
+            f'<ncx><docTitle><text>{book.name}</text></docTitle><navMap>'
+            '<navPoint id="num_1" playOrder="1"><navLabel><text>制作信息</text></navLabel>'
+            f'<content src="OEBPS/Text/{wid}-Information.xhtml"/></navPoint>'
+            '</navMap></ncx>', encoding="utf-8")
 
     def write_cache_book(self, side: str, name: str, text: str) -> Path:
         book = self.cache / side / name

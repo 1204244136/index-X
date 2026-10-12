@@ -34,6 +34,16 @@
   css-layout 样式表缺盒模型/分页类或含破坏性边距
   note-structure 译注页外壳/槽位/容器/属性/行内标签不合规（只对 `*-Note.xhtml`；
              规范见 `docs/epub-structure-spec.md`「译注页（Note）结构规约」，编号连续性不在此判定）
+  dir-name   书目录名的 `[作品号]` 前缀与结尾 `X`（error；规范见 `docs/epub-artifact-spec.md` 第三节）
+  metadata-title `dc:title` 逐字节等于书目录名（error）
+  packaging-required `content.opf`／`nav.xhtml`／`toc.ncx` 与封面、制作信息页齐备，
+              且两张包装页已被 manifest 声明、已进 spine（error）
+  toc-entry  目录条目口径：首条目为「制作信息」、封面不入目录（warning，存量未清零）
+  ncx-doctitle `docTitle` 等于 `dc:title`（warning，存量未清零）
+  identifier-unique 库内 `unique-identifier` 唯一（warning，跨书汇总，存量未清零）
+
+后三项为报告级：存量未清零（排队见 `docs/maintenance-records/`），清零后升级为阻断；
+error 级会经 `publish_preflight.py` 接入发布阻断。
 
 刻意不纳入的检查项
 ------------------
@@ -47,12 +57,14 @@
               顺序」判定，口径更强。
   换行符      项目对换行符不敏感（Git 出口已统一设为 LF），不检查也不报告。
 
-豁免名单（`alignment_rules.TEMPLATE_EXEMPT_WORK_IDS`）
+豁免名单（`alignment_rules.py`，唯一事实来源）
 --------------------------------------------------
-`S0_00`（读前必看，非正文）、`S6_10.06.26`（无 BW 分页源，保持原始结构）。
-豁免粒度按「书 + 检查项」，这两本只豁免 template，其余照查
-（如 `S0_00-00` 这类非法内容序仍会被 `check_alignment.py` 报出来）。名单本体放在
-`alignment_rules.py`，`check_alignment.py` 与 `check_epub_health.py` 共用一份。
+- `TEMPLATE_EXEMPT_WORK_IDS`：`S0_00`（读前必看，非正文）、`S6_10.06.26`（无 BW 分页源，保持原始结构）。
+  豁免粒度按「书 + 检查项」，这两本只豁免 template，其余照查
+  （如 `S0_00-00` 这类非法内容序仍会被 `check_alignment.py` 报出来）；`check_alignment.py` 与此共用一份。
+- `HEALTH_EXEMPT_WORK_IDS`：成品构成项按「检查项 → 作品」登记，当前只有 `S0_00` 的
+  `dir-name`／`toc-entry`／`ncx-doctitle` 三项（阅读说明非卷：目录名不带版本标记 X、
+  目录首条目为「阅读器测试」）。加条目等于放宽检查口径，必须写明依据。
 
 用法
 ----
@@ -72,7 +84,9 @@ import xml.etree.ElementTree as ET
 from collections import Counter, defaultdict
 from pathlib import Path
 
-from alignment_rules import TEMPLATE_EXEMPT_WORK_IDS, template_exempt  # noqa: F401
+from alignment_rules import (  # noqa: F401
+    HEALTH_EXEMPT_WORK_IDS, TEMPLATE_EXEMPT_WORK_IDS, health_exempt, template_exempt,
+)
 from check_alignment import check_file as check_template
 from epub_ids import book_id, content_sequence, header_of, is_list_packaging_header, work_id
 from text_norm import split_bold_punct
@@ -96,6 +110,8 @@ CHECK_ORDER = (
     "XML", "template", "bold-punct", "bold-empty", "bold-pair",
     "ruby", "seq-00", "dup-header", "seq-gap", "img-prefix", "dangling",
     "css-layout", "note-structure",
+    "dir-name", "metadata-title", "packaging-required",
+    "toc-entry", "ncx-doctitle", "identifier-unique",
 )
 CHECK_DESC = {
     "XML": "XHTML 不是合法 XML 或 `<img>` 缺 src",
@@ -111,6 +127,12 @@ CHECK_DESC = {
     "dangling": "悬空资源/锚点引用",
     "css-layout": "样式表缺盒模型/分页类或含破坏性边距",
     "note-structure": "译注页外壳/槽位/容器/属性/行内标签不合规",
+    "dir-name": "书目录名的 `[作品号]` 前缀与结尾 `X`",
+    "metadata-title": "`dc:title` 逐字节等于书目录名",
+    "packaging-required": "必备部件存在且被 manifest/spine 引用",
+    "toc-entry": "目录条目口径（首条目为制作信息、封面不入目录）",
+    "ncx-doctitle": "`docTitle` 等于 `dc:title`",
+    "identifier-unique": "库内 `unique-identifier` 唯一",
 }
 SEVERITY = {
     "XML": "error", "template": "error", "bold-punct": "error",
@@ -120,6 +142,11 @@ SEVERITY = {
     # 译注页结构：零误报的硬规则，与 template/XML/ruby 同级。
     # 存量违规由 E1 一次性修正（见 docs/maintenance-records/）。
     "note-structure": "error",
+    # 成品构成（`docs/epub-artifact-spec.md`）：目录名、`dc:title` 对齐与必备部件是硬规则，
+    # 存量已清零（2026-10-12 实测 81/81）；后三项存量未清零，先报告级，
+    # 清零后升级为阻断（排队情况见 docs/maintenance-records/）。
+    "dir-name": "error", "metadata-title": "error", "packaging-required": "error",
+    "toc-entry": "warning", "ncx-doctitle": "warning", "identifier-unique": "warning",
 }
 
 
@@ -380,9 +407,125 @@ def iter_books(root: Path, pattern: str | None):
         yield book
 
 
+# ---------------------------------------------------------------------------
+# 成品构成（docs/epub-artifact-spec.md）
+# ---------------------------------------------------------------------------
+
+BOOK_ID_PREFIX_RE = re.compile(r"^\[[^\]]+\]")
+DC_TITLE_RE = re.compile(r"<dc:title[^>]*>([^<]*)</dc:title>", re.S)
+NCX_DOCTITLE_RE = re.compile(r"<docTitle>\s*<text>([^<]*)</text>", re.S)
+NCX_FIRST_ENTRY_RE = re.compile(r"<navMap>.*?<text>([^<]*)</text>", re.S)
+NAV_FIRST_ENTRY_RE = re.compile(r"<ol>\s*<li><a[^>]*>([^<]*)</a>", re.S)
+OPF_ITEM_RE = re.compile(r"<item\b([^>]*)>")
+OPF_ITEMREF_RE = re.compile(r'<itemref\b[^>]*\bidref="([^"]+)"')
+BOOK_ID_META_RE = re.compile(r'<dc:identifier[^>]*id="BookId"[^>]*>([^<]*)</dc:identifier>')
+
+
+def opf_title(opf: Path) -> str | None:
+    m = DC_TITLE_RE.search(read_text(opf))
+    return m.group(1) if m else None
+
+
+def opf_spine_hrefs(text: str) -> list[str]:
+    """spine 里每个 itemref 对应的 href（相对 `OEBPS/`）；`<item>` 的两种属性顺序都要认。"""
+    hrefs: dict[str, str] = {}
+    for m in OPF_ITEM_RE.finditer(text):
+        attrs = m.group(1)
+        idm = re.search(r'\bid="([^"]+)"', attrs)
+        hm = re.search(r'\bhref="([^"]+)"', attrs)
+        if idm and hm:
+            hrefs[idm.group(1)] = hm.group(1)
+    return [hrefs.get(m.group(1), "") for m in OPF_ITEMREF_RE.finditer(text)]
+
+
+def find_artifact_problems(book_dir: Path) -> list[tuple[str, str]]:
+    """目录名、`dc:title` 对齐与必备部件；返回 (检查项, 说明) 列表。
+
+    规范见 `docs/epub-artifact-spec.md`。`[S0_00]读前必看` 的目录名例外登记在
+    `alignment_rules.HEALTH_EXEMPT_WORK_IDS`，不在这里硬编码。
+    """
+    out: list[tuple[str, str]] = []
+    name = book_dir.name
+    bid = book_id(name)
+    if not BOOK_ID_PREFIX_RE.match(name):
+        out.append(("dir-name", "书目录名缺少 `[作品号]` 前缀：%s" % name))
+    elif not name.endswith("X"):
+        out.append(("dir-name", "书目录名未以版本标记 `X` 结尾：%s" % name))
+
+    opf = book_dir / "OEBPS" / "content.opf"
+    if not opf.is_file():
+        out.append(("packaging-required", "缺少包文档 `OEBPS/content.opf`"))
+        return out
+    text = read_text(opf)
+    title = opf_title(opf)
+    if title is None:
+        out.append(("metadata-title", "`OEBPS/content.opf` 缺少 `<dc:title>`"))
+    elif title != name:
+        out.append(("metadata-title", "`dc:title` 与书目录名不一致：%r ≠ %r" % (title, name)))
+    for rel, label in (("nav.xhtml", "导航文档"), ("toc.ncx", "NCX 目录")):
+        if not (book_dir / rel).is_file():
+            out.append(("packaging-required", "缺少%s `%s`" % (label, rel)))
+
+    text_dir = book_dir / "OEBPS" / "Text"
+    spine = opf_spine_hrefs(text)
+    for suffix, label in (("Cover", "封面"), ("Information", "制作信息")):
+        fname = "%s-%s.xhtml" % (bid, suffix) if bid else ""
+        if not fname or not (text_dir / fname).is_file():
+            out.append(("packaging-required",
+                        "缺少必备包装页 `%s`（%s）" % (fname or "<作品号>-%s.xhtml" % suffix, label)))
+            continue
+        if fname not in text:
+            out.append(("packaging-required", "`%s` 未在 manifest 中声明" % fname))
+        if "Text/%s" % fname not in spine:
+            out.append(("packaging-required", "`%s` 未进 spine" % fname))
+    return out
+
+
+def find_toc_problems(book_dir: Path) -> list[tuple[str, str]]:
+    """目录条目口径与 `docTitle`（报告级）；规范见 `docs/epub-artifact-spec.md` 第四节。"""
+    out: list[tuple[str, str]] = []
+    ncx = book_dir / "toc.ncx"
+    nav = book_dir / "nav.xhtml"
+    ncx_text = read_text(ncx) if ncx.is_file() else ""
+    nav_text = read_text(nav) if nav.is_file() else ""
+    opf = book_dir / "OEBPS" / "content.opf"
+    title = opf_title(opf) if opf.is_file() else None
+    doc = NCX_DOCTITLE_RE.search(ncx_text)
+    if title and doc and doc.group(1) != title:
+        out.append(("ncx-doctitle", "`docTitle` 与 `dc:title` 不一致：%r ≠ %r" % (doc.group(1), title)))
+    for label, first in (("toc.ncx", NCX_FIRST_ENTRY_RE.search(ncx_text)),
+                         ("nav.xhtml", NAV_FIRST_ENTRY_RE.search(nav_text))):
+        if first and first.group(1) != "制作信息":
+            out.append(("toc-entry", "%s 首条目应为「制作信息」，实为 %r" % (label, first.group(1))))
+    if "<text>封面</text>" in ncx_text:
+        out.append(("toc-entry", "`toc.ncx` 列了封面条目；封面不进目录"))
+    return out
+
+
+def find_identifier_duplicates(books: list[Path]) -> list[tuple[str, str]]:
+    """跨书检查：同一 `unique-identifier` 被多本共用时逐本报出（报告级）。"""
+    seen: dict[str, list[str]] = defaultdict(list)
+    for book_dir in books:
+        opf = book_dir / "OEBPS" / "content.opf"
+        if not opf.is_file():
+            continue
+        m = BOOK_ID_META_RE.search(read_text(opf))
+        if m and m.group(1).strip():
+            seen[m.group(1).strip()].append(book_dir.name)
+    out: list[tuple[str, str]] = []
+    for value, names in sorted(seen.items()):
+        if len(names) > 1:
+            out.extend(
+                (name, "`unique-identifier` 与另外 %d 本共用：%s" % (len(names) - 1, value))
+                for name in names)
+    return out
+
+
 def exempt(bid: str | None, check: str) -> bool:
-    """只有 template 项有豁免名单，其余检查项对所有作品一律生效。"""
-    return check == "template" and template_exempt(bid)
+    """豁免按「作品 + 检查项」：template 走 `TEMPLATE_EXEMPT_WORK_IDS`，其余走 `HEALTH_EXEMPT_WORK_IDS`。"""
+    if check == "template":
+        return template_exempt(bid)
+    return health_exempt(check, bid)
 
 
 # 译注页（Note）行内标签白名单。实测全库 73 个 `*-Note.xhtml` 只用到这 13 种标签；
@@ -487,6 +630,14 @@ def audit_book(book_dir: Path, only: set[str] | None) -> tuple[list[tuple], Coun
     if want("css-layout"):
         for check, msg in find_css_layout_problems(book_dir):
             add(check, "-", 0, msg)
+    if want("dir-name") or want("metadata-title") or want("packaging-required"):
+        for check, msg in find_artifact_problems(book_dir):
+            if want(check):
+                add(check, "-", 0, msg)
+    if want("toc-entry") or want("ncx-doctitle"):
+        for check, msg in find_toc_problems(book_dir):
+            if want(check):
+                add(check, "-", 0, msg)
 
     for path in xhtmls:
         covered["files"] += 1
@@ -559,13 +710,26 @@ def main() -> int:
     exempted: Counter = Counter()
     books = 0
     files = 0
+    book_dirs: list[Path] = []
     for book_dir in iter_books(root, args.pattern):
         books += 1
+        book_dirs.append(book_dir)
         book_findings, book_counts, book_exempted, covered = audit_book(book_dir, only)
         findings.extend(book_findings)
         counts.update(book_counts)
         exempted.update(book_exempted)
         files += covered["files"]
+
+    # `unique-identifier` 唯一性要跨书汇总，`audit_book` 判不了，故在 main() 层算（报告级）。
+    if only is None or "identifier-unique" in only:
+        for name, msg in find_identifier_duplicates(book_dirs):
+            bid = book_id(name)
+            if exempt(bid, "identifier-unique"):
+                exempted["identifier-unique"] += 1
+                continue
+            counts["identifier-unique"] += 1
+            findings.append(("identifier-unique", bid or name, "OEBPS/content.opf", 0,
+                             SEVERITY["identifier-unique"], msg))
 
     errors = sum(1 for f in findings if f[4] == "error")
     warnings = len(findings) - errors
