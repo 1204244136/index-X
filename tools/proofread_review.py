@@ -434,6 +434,9 @@ def main(argv: list[str] | None = None) -> int:
 
     rows = collect(args.repo, args.commits, args.path, args.worktree)
     for r in rows:
+        # 注意：`file` 是 **basename**（见 parse_diff_rows），作品号来自正文文件名的表头
+        # （`S1_01-07_Chapter3.xhtml` → `S1_01`）；元数据文件（`content.opf`／`toc.ncx`／
+        # `nav.xhtml`）没有表头，因此 `work` 为 `-` 是预期行为，与作品号定界符无关。
         r["work"] = work_id(r["file"]) or "-"
         r["grade"], r["kind"] = grade(r)
 

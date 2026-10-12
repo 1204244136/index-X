@@ -176,6 +176,16 @@ class ImportOutputBoundaryTests(unittest.TestCase):
                                           "--apply", "--staging"]), 0)
             self.assertTrue((no_pack / "【S1_01】测试" / "mimetype").is_file())
 
+    def test_historical_docx_name_is_still_accepted(self):
+        """交稿名属**外部材料**：历史半角写法仍要能解析表头，但产物名一律全角。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = make_docx(root / "[S1_01]测试.docx")
+            output = root / "out"
+            self.assertEqual(docx2epub.main([str(source), "--out", str(output),
+                                             "--apply", "--staging"]), 0)
+            self.assertTrue((output / "【S1_01】测试.epub").is_file())
+
     def test_docx_invalid_generated_xml_does_not_write_pack_or_unpacked(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

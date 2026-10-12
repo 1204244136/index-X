@@ -11,6 +11,7 @@ from epub_ids import (  # noqa: E402
     book_id,
     content_sequence,
     header_of,
+    historical_work_id,
     japanese_book_id,
     work_id,
 )
@@ -21,6 +22,22 @@ class EpubIdTests(unittest.TestCase):
     def test_complete_book_ids(self):
         self.assertEqual(book_id("【S5_01_03】作品"), "S5_01_03")
         self.assertEqual(book_id("【S6_24.06.07】短篇"), "S6_24.06.07")
+
+    def test_current_form_only_accepts_full_width(self):
+        """当前归档只认全角【】：半角是历史形态，收窄后必须解析不出来。"""
+        self.assertIsNone(book_id("[S1_01]某魔法的禁书目录 01"))
+        self.assertIsNone(work_id("[S1_01]某魔法的禁书目录 01"))
+        self.assertEqual(work_id("【S1_01】某魔法的禁书目录 01"), "S1_01")
+
+    def test_historical_work_id_covers_all_naming_eras(self):
+        """读历史 diff／外部材料名时要认三个命名世代（供 proofread_review／docx2epub）。"""
+        self.assertEqual(historical_work_id("[S1_01]某魔法的禁书目录 01X"), "S1_01")
+        self.assertEqual(historical_work_id("[S1_01]某魔法的禁书目录 01"), "S1_01")
+        self.assertEqual(historical_work_id("【S1_01】某魔法的禁书目录 01"), "S1_01")
+        self.assertEqual(
+            historical_work_id("EPUB/[S5_02_03]某科学的超电磁炮 ColdGame/OEBPS/Text/a.xhtml"),
+            "S5_02_03")
+        self.assertIsNone(historical_work_id("某魔法的禁书目录 01"))
 
     def test_japanese_side_uses_the_same_work_id(self):
         """日文侧不是合订卷目录，而是 split_s5_epubs.py 拆出的独立作品目录。

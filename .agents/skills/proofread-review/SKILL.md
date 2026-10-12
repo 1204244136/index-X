@@ -240,7 +240,7 @@ rg -n "小货车|旅行车" "EPUB/【S3_01】创约 某魔法的禁书目录 01/
 # <作品>「重新校对」提交复核报告
 
 - 生成时间：<日期>（含第 N 轮查证修正）
-- 复核对象：<N> 个提交，全部落在 `EPUB/[S3_01]…/`
+- 复核对象：<N> 个提交，全部落在 `EPUB/【S3_01】…/`
 - 原文依据：`.cache/epub-work/japanese-text/【S3_01】…/item/xhtml/S3_01-01..12.xhtml`
 - 工具：`python tools/proofread_review.py <commits>`
 - 原始数据：`.cache/epub-work/proofread-review/`

@@ -57,7 +57,7 @@ _HERE = Path(__file__).resolve().parent
 if str(_HERE) not in sys.path:
     sys.path.insert(0, str(_HERE))
 from edit_safety import add_edit_mode, require_edit_target
-from epub_ids import book_id
+from epub_ids import historical_work_id
 from epub_structure import artifact_contract_issues, container_contract_issues, epub_zip_issues
 from package_cache_epubs import package_book
 
@@ -268,7 +268,7 @@ def process_one(book: Path, args: argparse.Namespace, exe: str | None) -> int:
 
             entries, infos, stats = rewrite_epub_entries(src)
             issues = (epub_zip_issues(infos, entries) + container_contract_issues(entries)
-                      + artifact_contract_issues(entries, book_id(stem)))
+                      + artifact_contract_issues(entries, historical_work_id(stem)))
             if stats["issues"] or issues:
                 raise ValueError(f"转换输入/中间 EPUB 契约不满足：{stats['issues'] or issues[:10]}")
 

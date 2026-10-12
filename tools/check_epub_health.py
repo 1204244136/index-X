@@ -151,7 +151,7 @@ SEVERITY = {
     "note-structure": "error",
     # 成品构成（`docs/epub-artifact-spec.md`）：六项存量均已清零，全部是硬规则——
     # 目录名、`dc:title` 对齐、必备部件 2026-10-12 实测 81/81；`docTitle` 对齐同日清理 68 本；
-    # 目录条目口径同日补齐 [S6_24.01.10]；跨书 `unique-identifier` 同日把 6 本的模板串值改回
+    # 目录条目口径同日补齐 【S6_24.01.10】；跨书 `unique-identifier` 同日把 6 本的模板串值改回
     # 各自 uuid（见 docs/maintenance-records/），故由报告级逐项升级为阻断。
     "dir-name": "error", "metadata-title": "error", "packaging-required": "error",
     "nav-structure": "error",

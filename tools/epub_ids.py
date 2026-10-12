@@ -41,14 +41,26 @@ def book_id(name: str) -> str | None:
     return match.group(1).upper() if match else None
 
 
+# 读 **外部材料名** 时用（`docx2epub` 处理历史交稿名、`epub2docx` 处理历史归档名）：
+# 库内名字跨三个命名世代——`[S…]标题X` → `[S…]标题` → `【S…】标题`，外部材料可能仍是旧写法。
+# 当前归档的判定一律用上面的 `BOOK_ID_RE`（只认 `【】`），不要用本表去放宽现状检查。
+BOOK_ID_ANY_ERA_RE = re.compile(rf"[\[【]({S6_DATE}|{NUMBERED_BOOK})[\]】]", re.I)
+
+
+def historical_work_id(name: str) -> str | None:
+    """历史 diff 路径或历史材料名里的作品号（两形态都认）。"""
+    match = BOOK_ID_ANY_ERA_RE.search(name)
+    return match.group(1).upper() if match else None
+
+
 def japanese_book_id(chinese_id: str) -> str:
     """Chinese and Japanese sides use the same work id; this is the identity map.
 
     It used to collapse ``S5_AA_BB`` (Chinese independent work) to ``S5_AA``
-    (Japanese collected volume, ``[S5_01]外典書庫(1)``). That intermediate form
+    (Japanese collected volume, ``【S5_01】外典書庫(1)``). That intermediate form
     is not what the archive holds: ``tools/split_s5_epubs.py`` splits each
     collected volume into independent works and **names each output with the
-    two-part id**, e.g. ``[S5_01_01]とある魔術の禁書目録SS 神裂火織編``. So both
+    two-part id**, e.g. ``【S5_01_01】とある魔術の禁書目録SS 神裂火織編``. So both
     sides key on the same ``S5_AA_BB``.
 
     The old collapse did not fail loudly: lookup simply missed, and every caller

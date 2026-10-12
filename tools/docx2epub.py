@@ -47,7 +47,7 @@ import zipfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-from epub_ids import book_id
+from epub_ids import book_id, historical_work_id
 from check_alignment import check_file
 from docx_source import (RUBY_RE, esc, esc_ruby, extract_notes, is_body_style,
                          is_heading_style, is_number, read_docx)
@@ -883,14 +883,15 @@ def _process_one(docx_path: Path, args: argparse.Namespace) -> int:
 
     # 表头与书名：文件名 【S4_06】某书(6).docx -> header=S4_06, title=某书(6)
     # 支持 S6 日期表头 【S6_22.06.10】xxx.docx -> header=S6_22.06.10
-    # （下方剥离前缀的那一步对半角 `[…]` 也容忍，方便处理历史交稿名）
-    parsed_header = book_id(stem)
+    # 交稿名属**外部材料**：历史写法 `[S4_06]某书(6).docx` 也认（`historical_work_id`），
+    # 但产出的书目录名一律用全角【】。
+    parsed_header = historical_work_id(stem)
     if parsed_header:
         header = parsed_header
         title = (re.sub(r"^[\[【][^\]】]+[\]】]", "", stem, count=1) or stem).strip()
     else:
         if not (args.series and args.volume):
-            print(f"[跳过] {label}：文件名不含 [S..] 表头，请用 --series/--volume 指定",
+            print(f"[跳过] {label}：文件名不含 【S..】 表头，请用 --series/--volume 指定",
                   file=sys.stderr)
             return 1
         header = f"{args.series}_{args.volume}"

@@ -106,7 +106,7 @@ python tools/import_build_text.py .cache/epub-work/import/plan.json `
 ### 4. 图片
 
 ```powershell
-python tools/import_images.py suggest --src 图片素材目录 --jp-dir .cache/epub-work/japanese-text/[S4_04]…/item/image --work S4_04
+python tools/import_images.py suggest --src 图片素材目录 --jp-dir .cache/epub-work/japanese-text/【S4_04】…/item/image --work S4_04
 python tools/import_images.py apply .cache/epub-work/import/plan.json --out "EPUB/【S4_04】某暗部的少女共栖 4" --apply
 ```
 
