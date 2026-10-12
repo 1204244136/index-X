@@ -34,7 +34,7 @@
   css-layout 样式表缺盒模型/分页类或含破坏性边距
   note-structure 译注页外壳/槽位/容器/属性/行内标签不合规（只对 `*-Note.xhtml`；
              规范见 `docs/epub-structure-spec.md`「译注页（Note）结构规约」，编号连续性不在此判定）
-  dir-name   书目录名的 `[作品号]` 前缀与结尾 `X`（error；规范见 `docs/epub-artifact-spec.md` 第三节）
+  dir-name   书目录名的 `[作品号]` 前缀（error；规范见 `docs/epub-artifact-spec.md` 第三节）
   metadata-title `dc:title` 逐字节等于书目录名（error）
   packaging-required `content.opf`／`nav.xhtml`／`toc.ncx` 与封面、制作信息页齐备，
               且两张包装页已被 manifest 声明、已进 spine（error）
@@ -68,8 +68,8 @@
   豁免粒度按「书 + 检查项」，这两本只豁免 template，其余照查
   （如 `S0_00-00` 这类非法内容序仍会被 `check_alignment.py` 报出来）；`check_alignment.py` 与此共用一份。
 - `HEALTH_EXEMPT_WORK_IDS`：成品构成项按「检查项 → 作品」登记，当前只有 `S0_00` 的
-  `dir-name`／`toc-entry` 两项（阅读说明非卷：目录名不带版本标记 X、
-  目录首条目为「阅读器测试」）。加条目等于放宽检查口径，必须写明依据。
+  `toc-entry` 一项（阅读说明非卷：目录首条目为「阅读器测试」）。
+  加条目等于放宽检查口径，必须写明依据。
 
 用法
 ----
@@ -132,7 +132,7 @@ CHECK_DESC = {
     "dangling": "悬空资源/锚点引用",
     "css-layout": "样式表缺盒模型/分页类或含破坏性边距",
     "note-structure": "译注页外壳/槽位/容器/属性/行内标签不合规",
-    "dir-name": "书目录名的 `[作品号]` 前缀与结尾 `X`",
+    "dir-name": "书目录名的 `[作品号]` 前缀",
     "metadata-title": "`dc:title` 逐字节等于书目录名",
     "packaging-required": "必备部件存在且被 manifest/spine 引用",
     "nav-structure": "`nav.xhtml` 头部结构（html 只含 head/body、head 只含元数据）",
@@ -453,16 +453,13 @@ def opf_spine_hrefs(text: str) -> list[str]:
 def find_artifact_problems(book_dir: Path) -> list[tuple[str, str]]:
     """目录名、`dc:title` 对齐与必备部件；返回 (检查项, 说明) 列表。
 
-    规范见 `docs/epub-artifact-spec.md`。`[S0_00]读前必看` 的目录名例外登记在
-    `alignment_rules.HEALTH_EXEMPT_WORK_IDS`，不在这里硬编码。
+    规范见 `docs/epub-artifact-spec.md`。
     """
     out: list[tuple[str, str]] = []
     name = book_dir.name
     bid = book_id(name)
     if not BOOK_ID_PREFIX_RE.match(name):
         out.append(("dir-name", "书目录名缺少 `[作品号]` 前缀：%s" % name))
-    elif not name.endswith("X"):
-        out.append(("dir-name", "书目录名未以版本标记 `X` 结尾：%s" % name))
 
     opf = book_dir / "OEBPS" / "content.opf"
     if not opf.is_file():

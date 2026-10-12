@@ -40,7 +40,7 @@ description: index-X 校对复核工作流。用于复核校对工具（BetweenL
 ```powershell
 # 工作区未提交的改动（校对结果刚应用、还没提交）
 python tools/proofread_review.py --worktree
-python tools/proofread_review.py --worktree --path "EPUB/[S3_01]创约 某魔法的禁书目录 01X"
+python tools/proofread_review.py --worktree --path "EPUB/[S3_01]创约 某魔法的禁书目录 01"
 python tools/proofread_review.py --worktree --out .cache/epub-work/proofread-review-s301
 
 # 已提交的批量校对（可一次给多个提交）
@@ -209,7 +209,7 @@ python tools/publish_auto.py            # 打包上传 OneDrive + 回流缓存
 
 ```
 日文：.cache/epub-work/japanese-text/[S3_01]創約 とある魔術の禁書目録(01)/item/xhtml/S3_01-07.xhtml
-中文：EPUB/[S3_01]创约 某魔法的禁书目录 01X/OEBPS/Text/S3_01-07_Chapter3.xhtml
+中文：EPUB/[S3_01]创约 某魔法的禁书目录 01/OEBPS/Text/S3_01-07_Chapter3.xhtml
 ```
 
 取纯文本要**先剥 `<rt>` 注音再 `text_of`**——`xhtml_text.text_of` 只去标签，不剥注音，带注音的词会被拆成「魔術 まじゆつ」而检索不到。用本 skill 附带的查证脚本（已封装路径、内容序、剥注音）：
@@ -222,7 +222,7 @@ python .agents/skills/proofread-review/references/lookup_source.py jp S3_01 07 �
 python .agents/skills/proofread-review/references/lookup_source.py cn S3_01-07_Chapter3.xhtml --line 56
 
 # 也可以直接在中文侧检索关键字，再回日文确认
-rg -n "小货车|旅行车" "EPUB/[S3_01]创约 某魔法的禁书目录 01X/OEBPS/Text"
+rg -n "小货车|旅行车" "EPUB/[S3_01]创约 某魔法的禁书目录 01/OEBPS/Text"
 ```
 
 几条纪律：

@@ -49,7 +49,8 @@ class HealthCheckNegativeTests(unittest.TestCase):
         return GOOD[:3] + ["<h1>%s</h1>" % title, "", "<p>%s占位。</p>" % title, "</body></html>"]
 
     def build(self, bid: str, files: dict[str, list[str]], root: Path | None = None) -> Path:
-        """造一本**构成合规**的最小书：目录名带 X，且有包文档／导航／NCX／封面／制作信息页。
+        """造一本**构成合规**的最小书：目录名带 `[作品号]` 前缀（结尾字符不参与判定），
+        且有包文档／导航／NCX／封面／制作信息页。
 
         构成规则见 `docs/epub-artifact-spec.md`。`assert_detects` 只跑单个检查项，
         多数用例不依赖这些默认件；`test_clean_sample_reports_nothing` 要求整本书在
@@ -129,14 +130,6 @@ class HealthCheckNegativeTests(unittest.TestCase):
         return hits[0]
 
     # ---- 成品构成（docs/epub-artifact-spec.md）----
-    def test_dir_name_without_version_marker(self):
-        book = self.build("S1_01", {"OEBPS/Text/S1_01-01_Chapter1.xhtml": GOOD})
-        renamed = book.parent / "[S1_01]测试书"
-        book.rename(renamed)
-        findings, counts, _e, _c = audit_book(renamed, {"dir-name"})
-        self.assertGreaterEqual(counts.get("dir-name", 0), 1)
-        self.assertTrue(any("未以版本标记 `X` 结尾" in f[5] for f in findings))
-
     def test_dir_name_without_work_id_prefix(self):
         book = self.build("S1_01", {"OEBPS/Text/S1_01-01_Chapter1.xhtml": GOOD})
         renamed = book.parent / "测试书X"
@@ -239,13 +232,12 @@ class HealthCheckNegativeTests(unittest.TestCase):
     def test_artifact_exempt_registry_is_narrow(self):
         import alignment_rules
         self.assertEqual(set(alignment_rules.HEALTH_EXEMPT_WORK_IDS),
-                         {"dir-name", "toc-entry"})
-        self.assertTrue(alignment_rules.health_exempt("dir-name", "S0_00"))
+                         {"toc-entry"})
         self.assertTrue(alignment_rules.health_exempt("toc-entry", "s0_00"))
         self.assertFalse(alignment_rules.health_exempt("ncx-doctitle", "S0_00"))
         self.assertFalse(alignment_rules.health_exempt("metadata-title", "S0_00"))
-        self.assertFalse(alignment_rules.health_exempt("dir-name", "S1_01"))
-        self.assertFalse(alignment_rules.health_exempt("dir-name", None))
+        self.assertFalse(alignment_rules.health_exempt("toc-entry", "S1_01"))
+        self.assertFalse(alignment_rules.health_exempt("toc-entry", None))
 
     # ---- 正常样本不得误报 ----
     def test_clean_sample_reports_nothing(self):

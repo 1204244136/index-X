@@ -21,8 +21,8 @@
 
 用法：
     python tools/import_materials.py --docx 交稿.docx --images 图片目录 --info info.txt \
-        --intro intro.txt --work S4_04 --book-dir "[S4_04]某暗部的少女共栖 4X" \
-        --jp-root .cache/epub-work/japanese-text --template "EPUB/[S4_03]某暗部的少女共栖 3X"
+        --intro intro.txt --work S4_04 --book-dir "[S4_04]某暗部的少女共栖 4" \
+        --jp-root .cache/epub-work/japanese-text --template "EPUB/[S4_03]某暗部的少女共栖 3"
 """
 from __future__ import annotations
 

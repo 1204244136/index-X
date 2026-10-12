@@ -81,11 +81,10 @@ def template_exempt(work_id_value: str | None) -> bool:
 # 但与 template 豁免分开维护——构成口径的例外必须逐条写明依据，且不得演变成忽略项。
 # 这份名单是唯一事实来源，`check_epub_health.py` 从这里取。
 HEALTH_EXEMPT_WORK_IDS: dict[str, frozenset[str]] = {
-    # 读前必看是阅读说明、非卷：目录名不带版本标记 X、目录首条目为「阅读器测试」。
+    # 读前必看是阅读说明、非卷：目录首条目为「阅读器测试」。
     # 依据见 docs/epub-artifact-spec.md 第三节的具名例外。`ncx-doctitle` **不在**名单里——
     # 该书 docTitle 已于 2026-10-12 对齐书名（见 docs/maintenance-records/），
     # 留一条空条目只会掩盖将来的回归。
-    "dir-name": frozenset({"S0_00"}),
     "toc-entry": frozenset({"S0_00"}),
 }
 

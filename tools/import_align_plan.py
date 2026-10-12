@@ -21,7 +21,7 @@ BetweenLines 的跨语言对齐同形（原日文一行 = 一个行单元，中�
 
 用法：
     python tools/import_align_plan.py 暗少4翻译.docx --work S4_04 \
-        --book-dir "[S4_04]某暗部的少女共栖 4X" --out plan.json --report gaps.txt
+        --book-dir "[S4_04]某暗部的少女共栖 4" --out plan.json --report gaps.txt
     python tools/import_align_plan.py 暗少4翻译.docx --work S4_04 --plan plan.json --check
 """
 from __future__ import annotations
@@ -554,7 +554,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="交稿 × 日文工作源 → 缺口报告与导入计划骨架（只读预览）")
     parser.add_argument("docx", type=Path, help="交稿 .docx")
     parser.add_argument("--work", required=True, help="作品号，如 S4_04")
-    parser.add_argument("--book-dir", default="", help="中文书目录名，如 [S4_04]某暗部的少女共栖 4X")
+    parser.add_argument("--book-dir", default="", help="中文书目录名，如 [S4_04]某暗部的少女共栖 4")
     parser.add_argument("--jp-root", type=Path, default=Path(".cache/epub-work/japanese-text"),
                         help="日文只读参考根目录")
     parser.add_argument("--jp-dir", type=Path, default=None, help="日文书目录；缺省按 --work 在 --jp-root 下查找")
