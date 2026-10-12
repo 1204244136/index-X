@@ -90,6 +90,9 @@ class HealthCheckNegativeTests(unittest.TestCase):
         files["toc.ncx"] = [
             HEAD,
             '<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1" xml:lang="zh">',
+            "  <head>",
+            '    <meta name="dtb:uid" content="uuid:test-%s"/>' % bid,
+            "  </head>",
             "  <docTitle>", "    <text>%s</text>" % dir_name, "  </docTitle>",
             "  <navMap>",
             '    <navPoint id="num_1" playOrder="1">',
@@ -186,6 +189,17 @@ class HealthCheckNegativeTests(unittest.TestCase):
         self.assertIn("`docTitle` 与 `dc:title` 不一致", findings[0][5])
         # 存量清零后由报告级升级为阻断（2026-10-12，见 docs/maintenance-records/）
         self.assertEqual(findings[0][4], "error")
+
+    def test_ncx_uid_must_match_unique_identifier(self):
+        """`dtb:uid` 应与包文档 unique-identifier 同值；存量 61 本未清零，故为报告级。"""
+        book = self.build("S1_01", {"OEBPS/Text/S1_01-01_Chapter1.xhtml": GOOD})
+        ncx = book / "toc.ncx"
+        ncx.write_text(ncx.read_text(encoding="utf-8").replace(
+            "uuid:test-S1_01", "uuid:afa76961-fe51-4f63-a4c8-42cdfdd47768"), encoding="utf-8")
+        findings, counts, _e, _c = audit_book(book, {"ncx-uid"})
+        self.assertEqual(counts.get("ncx-uid"), 1)
+        self.assertIn("`dtb:uid` 与包文档 `unique-identifier` 不一致", findings[0][5])
+        self.assertEqual(findings[0][4], "warning")
 
     def test_identifier_duplicates_across_books(self):
         a = self.build("S1_01", {"OEBPS/Text/S1_01-01_Chapter1.xhtml": GOOD})

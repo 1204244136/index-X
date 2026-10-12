@@ -41,10 +41,12 @@
   toc-entry  目录条目口径：首条目为「制作信息」、封面不入目录
               （error；存量已于 2026-10-12 补齐唯一偏离本后升级为阻断）
   ncx-doctitle `docTitle` 等于 `dc:title`（error；存量已于 2026-10-12 清零后升级为阻断）
+  ncx-uid    `toc.ncx` 的 `dtb:uid` 等于包文档 `unique-identifier`
+              （warning；存量 61 本未清零，清零后升级为阻断）
   identifier-unique 库内 `unique-identifier` 唯一
               （error；跨书汇总，存量已于 2026-10-12 清零后升级为阻断）
 
-六项均为 error 级：逐本项由 `audit_book` 判定，跨书项在 `main()` 层计算；
+除 `ncx-uid` 外均为 error 级：逐本项由 `audit_book` 判定，跨书项在 `main()` 层计算；
 发布阻断由 `publish_preflight.py` 承担——逐本取 error 级，库级再复核 `unique-identifier`。
 
 刻意不纳入的检查项
@@ -113,7 +115,7 @@ CHECK_ORDER = (
     "ruby", "seq-00", "dup-header", "seq-gap", "img-prefix", "dangling",
     "css-layout", "note-structure",
     "dir-name", "metadata-title", "packaging-required",
-    "toc-entry", "ncx-doctitle", "identifier-unique",
+    "toc-entry", "ncx-doctitle", "ncx-uid", "identifier-unique",
 )
 CHECK_DESC = {
     "XML": "XHTML 不是合法 XML 或 `<img>` 缺 src",
@@ -134,6 +136,7 @@ CHECK_DESC = {
     "packaging-required": "必备部件存在且被 manifest/spine 引用",
     "toc-entry": "目录条目口径（首条目为制作信息、封面不入目录）",
     "ncx-doctitle": "`docTitle` 等于 `dc:title`",
+    "ncx-uid": "`dtb:uid` 等于包文档 `unique-identifier`",
     "identifier-unique": "库内 `unique-identifier` 唯一",
 }
 SEVERITY = {
@@ -150,6 +153,9 @@ SEVERITY = {
     # 各自 uuid（见 docs/maintenance-records/），故由报告级逐项升级为阻断。
     "dir-name": "error", "metadata-title": "error", "packaging-required": "error",
     "ncx-doctitle": "error", "toc-entry": "error", "identifier-unique": "error",
+    # `dtb:uid` 对齐（规范第三节）：存量 61 本未清零（见 docs/maintenance-records/），
+    # 先报告级；清零后与其余各项一样升级为阻断。
+    "ncx-uid": "warning",
 }
 
 
@@ -417,6 +423,7 @@ def iter_books(root: Path, pattern: str | None):
 BOOK_ID_PREFIX_RE = re.compile(r"^\[[^\]]+\]")
 DC_TITLE_RE = re.compile(r"<dc:title[^>]*>([^<]*)</dc:title>", re.S)
 NCX_DOCTITLE_RE = re.compile(r"<docTitle>\s*<text>([^<]*)</text>", re.S)
+NCX_UID_RE = re.compile(r'<meta name="dtb:uid" content="([^"]*)"')
 NCX_FIRST_ENTRY_RE = re.compile(r"<navMap>.*?<text>([^<]*)</text>", re.S)
 NAV_FIRST_ENTRY_RE = re.compile(r"<ol>\s*<li><a[^>]*>([^<]*)</a>", re.S)
 OPF_ITEM_RE = re.compile(r"<item\b([^>]*)>")
@@ -496,6 +503,12 @@ def find_toc_problems(book_dir: Path) -> list[tuple[str, str]]:
     doc = NCX_DOCTITLE_RE.search(ncx_text)
     if title and doc and doc.group(1) != title:
         out.append(("ncx-doctitle", "`docTitle` 与 `dc:title` 不一致：%r ≠ %r" % (doc.group(1), title)))
+    # `dtb:uid` 应与包文档的 unique-identifier 同值（规范第三节）；存量未清零，报告级。
+    book_id_meta = BOOK_ID_META_RE.search(read_text(opf)) if opf.is_file() else None
+    uid = NCX_UID_RE.search(ncx_text)
+    if uid and book_id_meta and uid.group(1) != book_id_meta.group(1):
+        out.append(("ncx-uid", "`dtb:uid` 与包文档 `unique-identifier` 不一致：%r ≠ %r"
+                    % (uid.group(1), book_id_meta.group(1))))
     for label, first in (("toc.ncx", NCX_FIRST_ENTRY_RE.search(ncx_text)),
                          ("nav.xhtml", NAV_FIRST_ENTRY_RE.search(nav_text))):
         if first and first.group(1) != "制作信息":
@@ -637,7 +650,7 @@ def audit_book(book_dir: Path, only: set[str] | None) -> tuple[list[tuple], Coun
         for check, msg in find_artifact_problems(book_dir):
             if want(check):
                 add(check, "-", 0, msg)
-    if want("toc-entry") or want("ncx-doctitle"):
+    if want("toc-entry") or want("ncx-doctitle") or want("ncx-uid"):
         for check, msg in find_toc_problems(book_dir):
             if want(check):
                 add(check, "-", 0, msg)
