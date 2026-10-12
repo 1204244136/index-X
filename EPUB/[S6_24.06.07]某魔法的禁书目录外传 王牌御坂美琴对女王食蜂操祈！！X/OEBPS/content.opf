@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" unique-identifier="BookId" version="3.0" prefix="calibre: https://calibre-ebook.com">
   <metadata xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:opf="http://www.idpf.org/2007/opf">
-    <dc:title id="id-1">某魔法的禁书目录外传　王牌御坂美琴对女王食蜂操祈！！</dc:title>
+    <dc:title id="id-1">[S6_24.06.07]某魔法的禁书目录外传 王牌御坂美琴对女王食蜂操祈！！X</dc:title>
     <dc:creator id="id-2">镰池和马</dc:creator>
     <dc:identifier>calibre:998</dc:identifier>
     <dc:identifier>uuid:5e62a170-ca6c-4ecb-9345-6f0f1b924940</dc:identifier>
@@ -18,7 +18,7 @@
 &lt;p&gt;如果第三位和第五位在这学园都市里毫无顾虑毫不留情拼尽全力，究竟哪边更强呢！&lt;/p&gt;&lt;/div&gt;</dc:description>
     <dc:subject>重小说</dc:subject>
     <meta refines="#id-1" property="title-type">main</meta>
-    <meta refines="#id-1" property="file-as">某魔法的禁书目录外传　王牌御坂美琴对女王食蜂操祈！！</meta>
+    <meta refines="#id-1" property="file-as">[S6_24.06.07]某魔法的禁书目录外传 王牌御坂美琴对女王食蜂操祈！！X</meta>
     <meta property="calibre:timestamp" scheme="dcterms:W3CDTF">2022-09-09T06:17:52Z</meta>
     <meta property="dcterms:modified" scheme="dcterms:W3CDTF">2025-04-20T14:23:08Z</meta>
     <meta property="calibre:author_link_map">{"镰池和马": ""}</meta>

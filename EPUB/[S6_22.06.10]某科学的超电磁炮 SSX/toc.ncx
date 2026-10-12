@@ -5,14 +5,14 @@
     <meta name="dtb:depth" content="3"/>
   </head>
   <docTitle>
-    <text>某科学的超电磁炮 SS</text>
+    <text>[S6_22.06.10]某科学的超电磁炮 SSX</text>
   </docTitle>
   <navMap>
     <navPoint id="num_1" playOrder="1">
       <navLabel>
-        <text>封面</text>
+        <text>制作信息</text>
       </navLabel>
-      <content src="OEBPS/Text/S6_22.06.10-Cover.xhtml"/>
+      <content src="OEBPS/Text/S6_22.06.10-Information.xhtml"/>
     </navPoint>
     <navPoint id="num_2" playOrder="2">
       <navLabel>

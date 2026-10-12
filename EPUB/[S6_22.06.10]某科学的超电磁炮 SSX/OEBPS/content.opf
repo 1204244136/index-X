@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId">
   <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:title id="id">某科学的超电磁炮 SS</dc:title>
+    <dc:title id="id">[S6_22.06.10]某科学的超电磁炮 SSX</dc:title>
     <dc:creator id="id-1">镰池和马</dc:creator>
     <dc:identifier id="BookId">uuid:b2789f07-47e1-4619-abc1-d87417d9f467</dc:identifier>
     <dc:language>zh-CN</dc:language>
@@ -10,6 +10,7 @@
   </metadata>
   <manifest>
     <item id="id1" href="Text/S6_22.06.10-Cover.xhtml" media-type="application/xhtml+xml"/>
+    <item id="id37" href="Text/S6_22.06.10-Information.xhtml" media-type="application/xhtml+xml"/>
     <item id="id2" href="Text/S6_22.06.10-Illustrations.xhtml" media-type="application/xhtml+xml"/>
     <item id="id3" href="Text/S6_22.06.10-01_Prologue.xhtml" media-type="application/xhtml+xml" properties="svg"/>
     <item id="id4" href="Text/S6_22.06.10-02_Chapter1.xhtml" media-type="application/xhtml+xml" properties="svg"/>
@@ -48,6 +49,7 @@
   </manifest>
   <spine toc="id23">
     <itemref idref="id1"/>
+    <itemref idref="id37"/>
     <itemref idref="id2"/>
     <itemref idref="id3"/>
     <itemref idref="id4"/>
