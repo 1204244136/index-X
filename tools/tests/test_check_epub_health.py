@@ -202,6 +202,24 @@ class HealthCheckNegativeTests(unittest.TestCase):
         # 存量清零后由报告级升级为阻断（2026-10-12，见 docs/maintenance-records/）
         self.assertEqual(findings[0][4], "error")
 
+    def test_nav_structure_rejects_stray_elements(self):
+        """nav 头部只允许 head/body 与元数据类元素；裸 <br/> 是最常见的历史违规。"""
+        book = self.build("S1_01", {"OEBPS/Text/S1_01-01_Chapter1.xhtml": GOOD})
+        nav = book / "nav.xhtml"
+        good = nav.read_text(encoding="utf-8")
+        nav.write_text(good.replace("<head>", "<head>\n<br/>"), encoding="utf-8")
+        findings, counts, _e, _c = audit_book(book, {"nav-structure"})
+        self.assertEqual(counts.get("nav-structure"), 1)
+        self.assertIn("非元数据元素", findings[0][5])
+        nav.write_text(good.replace("<html ", "<html ").replace("</head>", "</head>\n<br/>"),
+                       encoding="utf-8")
+        findings2, counts2, _e2, _c2 = audit_book(book, {"nav-structure"})
+        self.assertEqual(counts2.get("nav-structure"), 1)
+        self.assertIn("`<html>` 的直接子元素应为", findings2[0][5])
+        nav.write_text(good, encoding="utf-8")
+        _f3, counts3, _e3, _c3 = audit_book(book, {"nav-structure"})
+        self.assertEqual(sum(counts3.values()), 0)
+
     def test_identifier_duplicates_across_books(self):
         a = self.build("S1_01", {"OEBPS/Text/S1_01-01_Chapter1.xhtml": GOOD})
         b = self.build("S1_02", {"OEBPS/Text/S1_02-01_Chapter1.xhtml": GOOD})

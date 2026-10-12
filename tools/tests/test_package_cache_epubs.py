@@ -49,6 +49,7 @@ def make_book(book: Path, text: str = "<p>正文</p>", *, layout: bool = False) 
             encoding="utf-8")
     (book / "nav.xhtml").write_text(
         '<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">'
+        '<head><title>Navigation</title></head>'
         '<body><nav epub:type="toc"><ol>'
         f'<li><a href="OEBPS/Text/{wid}-Information.xhtml">制作信息</a></li>'
         '</ol></nav></body></html>', encoding="utf-8")

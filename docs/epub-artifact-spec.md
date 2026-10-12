@@ -41,6 +41,7 @@
 ## 四、目录条目口径
 
 - `nav.xhtml` 与 `toc.ncx` 的条目集合与顺序必须一致。
+- `nav.xhtml` 必须符合 HTML5 的 XHTML 语法：`<html>` 的直接子元素只有 `head` 与 `body`，`<head>` 内只放元数据类元素（`title`／`meta`／`link`／`style`／`base`／`script` 等），且 `<title>` 非空。历史遗留的杂散元素（如 `head` 或 `html` 下的裸 `<br/>`）属阻断项。
 - 首条目为「制作信息」；**封面不进目录**（封面是阅读起点，不作为跳转项）。
 - 中文独有的作品级包装页（制作信息、简介、译注）不参与中日行对齐；日文独有的原样快照包装页（`p-fmatter-*` 等）不受本节约束。
 - 译注页排在 `spine` 末尾；是否进目录按现有各卷口径，不在本规范强制。
@@ -49,7 +50,7 @@
 
 判定实现、检查项名称、参数与失败边界统一见 [工具合同](../tools/README.md)；本文件不复制常量、正则与例外清单，已确认的例外只登记在 `tools/alignment_rules.py`。
 
-级别口径：**必备部件缺失、书目录名与 `dc:title` 不对齐、`docTitle` 与 `dc:title` 不对齐、目录条目口径、`unique-identifier` 不唯一、`dtb:uid` 与包文档 identifier 不对齐**属阻断项（七项存量已于 2026-10-12 全部清零）。判定实现、库级复核方式与例外清单见 [工具合同](../tools/README.md) 与 `tools/alignment_rules.py`；历史存量与排队情况见 `docs/maintenance-records/`。
+级别口径：**必备部件缺失、书目录名与 `dc:title` 不对齐、`docTitle` 与 `dc:title` 不对齐、目录条目口径、`nav.xhtml` 头部结构不合 HTML5 语法、`unique-identifier` 不唯一、`dtb:uid` 与包文档 identifier 不对齐**属阻断项（八项存量已于 2026-10-12 全部清零）。判定实现、库级复核方式与例外清单见 [工具合同](../tools/README.md) 与 `tools/alignment_rules.py`；历史存量与排队情况见 `docs/maintenance-records/`。
 
 ## 六、构成变更的执行前置
 

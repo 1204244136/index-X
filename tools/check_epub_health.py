@@ -38,6 +38,7 @@
   metadata-title `dc:title` 逐字节等于书目录名（error）
   packaging-required `content.opf`／`nav.xhtml`／`toc.ncx` 与封面、制作信息页齐备，
               且两张包装页已被 manifest 声明、已进 spine（error）
+  nav-structure `nav.xhtml` 的 html 只含 head/body、head 只含元数据、title 非空（error）
   toc-entry  目录条目口径：首条目为「制作信息」、封面不入目录
               （error；存量已于 2026-10-12 补齐唯一偏离本后升级为阻断）
   ncx-doctitle `docTitle` 等于 `dc:title`（error；存量已于 2026-10-12 清零后升级为阻断）
@@ -46,7 +47,7 @@
   identifier-unique 库内 `unique-identifier` 唯一
               （error；跨书汇总，存量已于 2026-10-12 清零后升级为阻断）
 
-七项均为 error 级：逐本项由 `audit_book` 判定，跨书项在 `main()` 层计算；
+八项均为 error 级：逐本项由 `audit_book` 判定，跨书项在 `main()` 层计算；
 发布阻断由 `publish_preflight.py` 承担——逐本取 error 级，库级再复核 `unique-identifier`。
 
 刻意不纳入的检查项
@@ -114,7 +115,7 @@ CHECK_ORDER = (
     "XML", "template", "bold-punct", "bold-empty", "bold-pair",
     "ruby", "seq-00", "dup-header", "seq-gap", "img-prefix", "dangling",
     "css-layout", "note-structure",
-    "dir-name", "metadata-title", "packaging-required",
+    "dir-name", "metadata-title", "packaging-required", "nav-structure",
     "toc-entry", "ncx-doctitle", "ncx-uid", "identifier-unique",
 )
 CHECK_DESC = {
@@ -134,6 +135,7 @@ CHECK_DESC = {
     "dir-name": "书目录名的 `[作品号]` 前缀与结尾 `X`",
     "metadata-title": "`dc:title` 逐字节等于书目录名",
     "packaging-required": "必备部件存在且被 manifest/spine 引用",
+    "nav-structure": "`nav.xhtml` 头部结构（html 只含 head/body、head 只含元数据）",
     "toc-entry": "目录条目口径（首条目为制作信息、封面不入目录）",
     "ncx-doctitle": "`docTitle` 等于 `dc:title`",
     "ncx-uid": "`dtb:uid` 等于包文档 `unique-identifier`",
@@ -152,6 +154,7 @@ SEVERITY = {
     # 目录条目口径同日补齐 [S6_24.01.10]；跨书 `unique-identifier` 同日把 6 本的模板串值改回
     # 各自 uuid（见 docs/maintenance-records/），故由报告级逐项升级为阻断。
     "dir-name": "error", "metadata-title": "error", "packaging-required": "error",
+    "nav-structure": "error",
     "ncx-doctitle": "error", "toc-entry": "error", "identifier-unique": "error",
     # `dtb:uid` 对齐（规范第三节）：存量 61 本已于 2026-10-12 对齐，故同样升级为阻断。
     "ncx-uid": "error",
@@ -517,6 +520,43 @@ def find_toc_problems(book_dir: Path) -> list[tuple[str, str]]:
     return out
 
 
+NAV_ALLOWED_HEAD_TAGS = frozenset({
+    "title", "meta", "link", "style", "base", "script", "noscript", "template",
+})
+
+
+def find_nav_structure_problems(book_dir: Path) -> list[tuple[str, str]]:
+    """`nav.xhtml` 的头部结构（error）。
+
+    HTML5 的 XHTML 语法下，`<html>` 的直接子元素只有 `head` 与 `body`，`<head>` 内只放
+    元数据类元素。历史遗留的裸 `<br/>`（79 本曾挂在 head 或 html 下）随手补回即违规，
+    故列入门禁防回流；清理与依据见 `docs/maintenance-records/`。
+    """
+    nav = book_dir / "nav.xhtml"
+    if not nav.is_file():
+        return []  # 缺文件由 packaging-required 报，这里不重复
+    try:
+        root = ET.fromstring(read_text(nav))
+    except ET.ParseError as exc:
+        return [("nav-structure", "`nav.xhtml` 不是合法 XML：%s" % exc)]
+    tag = lambda element: element.tag.split("}")[-1].casefold()  # noqa: E731
+    out: list[tuple[str, str]] = []
+    kids = [tag(child) for child in root]
+    if kids != ["head", "body"]:
+        out.append(("nav-structure", "`<html>` 的直接子元素应为 `head`、`body`，实为 %s"
+                    % ("、".join(kids) or "空")))
+    head = next((child for child in root if tag(child) == "head"), None)
+    if head is None:
+        return out + [("nav-structure", "缺少 `<head>`")]
+    bad = [child.tag.split("}")[-1] for child in head if tag(child) not in NAV_ALLOWED_HEAD_TAGS]
+    if bad:
+        out.append(("nav-structure", "`<head>` 内出现非元数据元素：%s" % "、".join(bad)))
+    title = next((child for child in head if tag(child) == "title"), None)
+    if title is None or not (title.text or "").strip():
+        out.append(("nav-structure", "`<head>` 缺少非空 `<title>`"))
+    return out
+
+
 def find_identifier_duplicates(books: list[Path]) -> list[tuple[str, str]]:
     """跨书检查：同一 `unique-identifier` 被多本共用时逐本报出（报告级）。"""
     seen: dict[str, list[str]] = defaultdict(list)
@@ -649,6 +689,9 @@ def audit_book(book_dir: Path, only: set[str] | None) -> tuple[list[tuple], Coun
         for check, msg in find_artifact_problems(book_dir):
             if want(check):
                 add(check, "-", 0, msg)
+    if want("nav-structure"):
+        for check, msg in find_nav_structure_problems(book_dir):
+            add(check, "-", 0, msg)
     if want("toc-entry") or want("ncx-doctitle") or want("ncx-uid"):
         for check, msg in find_toc_problems(book_dir):
             if want(check):
