@@ -13,7 +13,7 @@
   <navMap>
     <navPoint id="num_1" playOrder="1">
       <navLabel>
-        <text>阅读器测试</text>
+        <text>广告</text>
       </navLabel>
       <content src="OEBPS/Text/S0_00-Information.xhtml"/>
     </navPoint>
@@ -72,7 +72,7 @@
       </navPoint>
       <navPoint id="num_11" playOrder="11">
         <navLabel>
-          <text>各版本对比</text>
+          <text>各版本对比（电子版）</text>
         </navLabel>
         <content src="OEBPS/Text/S0_00-Information.xhtml#toc_11"/>
       </navPoint>

@@ -127,7 +127,7 @@
     </navPoint>
     <navPoint id="num_20" playOrder="20">
       <navLabel>
-        <text>第二章 「暗部」Ghost,Android,and……</text>
+        <text>第二章 「暗部」 Ghost,Android,and……</text>
       </navLabel>
       <content src="OEBPS/Text/S3_03-04_Chapter2.xhtml"/>
       <navPoint id="num_21" playOrder="21">

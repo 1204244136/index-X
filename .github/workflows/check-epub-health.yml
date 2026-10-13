@@ -8,7 +8,7 @@ name: Check EPUB Health
 #     这个只做不需要判断的**检查**，包括那些「不该自动改」的项（模板/结构/引用）。
 #   - 判定标准与既有工具同源：模板复用 check_alignment.check_file，
 #     加粗标点复用 text_norm.split_bold_punct（与每日规范化 CI 完全一致），
-#     因此体检报告说「有 N 处」时，规范化 CI 一定会去改同样这 N 处。
+#     仅加粗标点等共享字符规则会由规范化 CI 改写；标题样式与目录一致性只读阻断。
 #
 # 检出能力上限：
 #   CI 只有中文 EPUB/，看不到 .cache/ 里的日文侧，因此**中日行错位、加粗范围是否
@@ -31,7 +31,7 @@ on:
       - ".agents/**"
       - "AGENTS.md"
       - "README.md"
-      - ".github/workflows/check-epub-health.yml"
+      - ".github/workflows/*.yml"
   pull_request:
     branches: [main, master]
     paths:
@@ -41,7 +41,7 @@ on:
       - ".agents/**"
       - "AGENTS.md"
       - "README.md"
-      - ".github/workflows/check-epub-health.yml"
+      - ".github/workflows/*.yml"
 
 permissions:
   contents: read

@@ -38,9 +38,7 @@ def slot_name(line_number: int) -> str:
 # ---------------------------------------------------------------------------
 # 译注页（Note）固定取值
 #
-# 规范正文见 `docs/epub-structure-spec.md`「译注页（Note）结构规约」。该 h1 在全库 73 个
-# `S<作品号>-Note.xhtml` 上逐字一致，但原先只硬编码在 `docx2epub.py` 与
-# `import_build_text.py` 两个生成器里、无任何成文；在此单一化，两处生成器
-# 与检查器共用它。
+# 规范正文见 `docs/epub-structure-spec.md`「译注页（Note）结构规约」。
+# 生成器 `docx2epub.py`、`import_build_text.py` 与检查器共用标题取值。
 # ---------------------------------------------------------------------------
-NOTE_H1 = '<h1 class="center">译注</h1>'
+NOTE_H1 = '<h1>译注</h1>'

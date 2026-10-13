@@ -109,13 +109,13 @@
     </navPoint>
     <navPoint id="num_17" playOrder="17">
       <navLabel>
-        <text>行间 一</text>
+        <text>行间　一</text>
       </navLabel>
       <content src="OEBPS/Text/S2_18-04_Between_the_Lines1.xhtml"/>
     </navPoint>
     <navPoint id="num_18" playOrder="18">
       <navLabel>
-        <text>第三章 「黄金」A.D.1900_Invisible_War.</text>
+        <text>第三章 「黄金」 A.D.1900_Invisible_War.</text>
       </navLabel>
       <content src="OEBPS/Text/S2_18-05_Chapter3.xhtml"/>
       <navPoint id="num_19" playOrder="19">
@@ -229,7 +229,7 @@
     </navPoint>
     <navPoint id="num_37" playOrder="37">
       <navLabel>
-        <text>行间 二</text>
+        <text>行间　二</text>
       </navLabel>
       <content src="OEBPS/Text/S2_18-06_Between_the_Lines2.xhtml"/>
     </navPoint>

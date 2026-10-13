@@ -97,7 +97,7 @@
     </navPoint>
     <navPoint id="num_15" playOrder="15">
       <navLabel>
-        <text>第二章 惩罚游戏是何滋味？Pair_Contract.</text>
+        <text>第二章 惩罚游戏是何滋味？ Pair_Contract.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_12-04_Chapter2.xhtml"/>
       <navPoint id="num_16" playOrder="16">

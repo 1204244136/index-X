@@ -290,11 +290,29 @@ class BuildTextTests(unittest.TestCase):
 
 
 class WrappersTests(unittest.TestCase):
+    def test_title_contract_failure_blocks_wrappers_before_writes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            jp, staged, template, materials = self._material(root)
+            materials.mkdir(parents=True)
+            info = materials / "info.txt"
+            intro = materials / "intro.txt"
+            info.write_text('<h1 class="color1">制作信息</h1>\n\n<p>制作署名</p>\n', encoding="utf-8")
+            intro.write_text('<h1>简介</h1>\n\n<p>简介正文。</p>\n', encoding="utf-8")
+            plan_path = import_plan.write_plan(root / "plan.json", sample_plan(jp))
+            before = {p.relative_to(staged): p.read_bytes() for p in staged.rglob("*") if p.is_file()}
+            code = import_build_wrappers.main([str(plan_path), "--template", str(template),
+                                               "--info", str(info), "--intro", str(intro),
+                                               "--out", str(staged), "--apply", "--staging"])
+            self.assertEqual(code, 1)
+            self.assertEqual({p.relative_to(staged): p.read_bytes() for p in staged.rglob("*") if p.is_file()}, before)
+
     def _template(self, root: Path) -> Path:
         template = root / "template"
         (template / "OEBPS/Styles").mkdir(parents=True)
         (template / "META-INF").mkdir(parents=True)
-        (template / "OEBPS/Styles/style.css").write_text("p{text-indent:2em}\n", encoding="utf-8")
+        from docx2epub import _CSS
+        (template / "OEBPS/Styles/style.css").write_text(_CSS, encoding="utf-8")
         (template / "META-INF/container.xml").write_text("<container/>\n", encoding="utf-8")
         (template / "OEBPS/content.opf").write_text(
             '<meta property="calibre:user_metadata">{}</meta>\n', encoding="utf-8")
@@ -307,9 +325,12 @@ class WrappersTests(unittest.TestCase):
         staged = root / "out" / "【S4_04】某暗部的少女共栖 4X"
         (staged / "OEBPS/Text").mkdir(parents=True)
         (staged / "OEBPS/Text/S4_04-01_Before_the_Prologue.xhtml").write_text(
-            "<html><body>\n<p>一。</p>\n</body></html>\n", encoding="utf-8")
+            '<html><head><link rel="stylesheet" href="../Styles/style.css"/></head><body>\n'
+            "<p>一。</p>\n</body></html>\n", encoding="utf-8")
         (staged / "OEBPS/Text/S4_04-02_Prologue.xhtml").write_text(
-            '<html><body>\n<h1>序　章</h1>\n<h2 id="toc_1">1</h2>\n<p>二。</p>\n'
+            '<html><head><link rel="stylesheet" href="../Styles/style.css"/></head><body>\n'
+            '<h1 class="heading-lines"><span class="heading-main">序　章</span>'
+            '<span class="heading-subtitle font08">起点</span></h1>\n<h2 id="toc_1">1</h2>\n<p>二。</p>\n'
             "</body></html>\n", encoding="utf-8")
         (staged / "OEBPS/Images").mkdir(parents=True)
         for name in ("S4_04-Cover.jpg", "S4_04-Contents.jpg"):
@@ -323,9 +344,9 @@ class WrappersTests(unittest.TestCase):
             info = materials / "info.txt"
             intro = materials / "intro.txt"
             materials.mkdir(parents=True, exist_ok=True)
-            info.write_text('<h1 class="x">制作信息</h1>\n\n<p>翻译：甲</p>\n'
+            info.write_text('<h1>制作信息</h1>\n\n<p>翻译：甲</p>\n'
                             "<p>校对：乙</p>\n<p>美工：丙</p>\n", encoding="utf-8")
-            intro.write_text('<h1 class="color1">简介</h1>\n\n<p><b>导语</b></p>\n'
+            intro.write_text('<h1>简介</h1>\n\n<p><b>导语</b></p>\n'
                              "<p>正文。</p>\n", encoding="utf-8")
             plan = sample_plan(jp)
             plan["images"].append(

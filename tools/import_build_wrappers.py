@@ -33,6 +33,7 @@ from docx_source import esc
 from edit_safety import EditSafetyError, add_edit_mode, require_edit_target
 from file_transaction import atomic_write_bytes, rollback_paths
 from import_plan import PlanError, load_plan
+from title_rules import audit_title_contract
 
 HEAD3 = ('<html xmlns="http://www.w3.org/1999/xhtml" '
          'xmlns:epub="http://www.idpf.org/2007/ops"><head>'
@@ -59,7 +60,7 @@ def render_cover(cover: str) -> str:
 def render_illustrations(names: list[str]) -> str:
     body = "\n".join(f'<p><img alt="图片" class="fit" src="../Images/{name}" /></p>'
                      for name in names)
-    return "\n".join(["<?xml version='1.0' encoding='utf-8'?>", "<!DOCTYPE html>", HEAD3,
+    return "\n".join(["<?xml version='1.0' encoding='utf-8'?>", "<!DOCTYPE html>", HEAD3 + "<h1>彩页</h1>",
                       body, "</body></html>"]) + "\n"
 
 
@@ -282,6 +283,15 @@ def main(argv: list[str] | None = None) -> int:
         "OEBPS/content.opf": render_opf(plan, text_order, uid, args.author, description,
                                         template_opf, cover, all_images, args.calibre_id),
     }
+    candidates = {p.relative_to(args.out).as_posix(): p.read_bytes() for p in text_dir.glob("*.xhtml")}
+    candidates.update({f"OEBPS/Text/{name}": content.encode("utf-8") for name, content in pages.items()})
+    candidates.update({name: content.encode("utf-8") for name, content in documents.items()})
+    candidates["OEBPS/Styles/style.css"] = (args.template / "OEBPS/Styles/style.css").read_bytes()
+    title_issues = audit_title_contract(candidates)
+    if title_issues:
+        for _check, name, line, message in title_issues:
+            print(f"[阻断] {name}:{line} {message}")
+        return 1
     print("\n".join(report))
     print(f"将写入包装页 {len(pages)} 个、容器文件 {len(documents)} 个、样式表与 container.xml 各 1 个")
 

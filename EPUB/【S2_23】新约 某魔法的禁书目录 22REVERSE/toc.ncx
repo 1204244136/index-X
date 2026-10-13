@@ -103,7 +103,7 @@
     </navPoint>
     <navPoint id="num_16" playOrder="16">
       <navLabel>
-        <text>第二章 小小的荣誉 Party_for_Winners.</text>
+        <text>第二章 小小的荣冠 Party_for_Winners.</text>
       </navLabel>
       <content src="OEBPS/Text/S2_23-04_Chapter2.xhtml"/>
       <navPoint id="num_17" playOrder="17">

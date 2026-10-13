@@ -58,7 +58,7 @@
 | C4 门禁与体检 | 只读阻断与诊断；不修内容 | 10 | strict 非零即阻断 |
 | C5 内容质量 | 字符级与语义级的内容改动；不决定译名取舍（走 skill） | 4 | 字符级规范化 0 命中 |
 | C6 检索与统计 | 只读检索与字数／页数换算；不作语义裁定 | 4 | 无（只读诊断） |
-| C0 共享内核 | 无 CLI 的共享规则与原子写入能力；不另建工作流入口 | 15 | 由调用方承担 |
+| C0 共享内核 | 无 CLI 的共享规则与原子写入能力；不另建工作流入口 | 16 | 由调用方承担 |
 
 ## C1 同步与发布
 
@@ -399,6 +399,8 @@ python tools/check_epub_health.py --only css-layout --tsv 显式报告.tsv
 
 成品构成项（规范见 [EPUB 成品构成规范](../docs/epub-artifact-spec.md)）：`dir-name`（书目录名的 `【作品号】` 前缀）、`metadata-title`（`dc:title` 逐字节等于书目录名）、`packaging-required`（`content.opf`／`nav.xhtml`／`toc.ncx` 与封面、制作信息页存在，且两张包装页已被 manifest 声明、已在 spine 中）、`nav-structure`（`nav.xhtml` 的 `<html>` 只含 `head`／`body`、`<head>` 只含元数据类元素且 `<title>` 非空）、`ncx-doctitle`（`docTitle` 等于 `dc:title`）、`toc-entry`（首条目为制作信息、封面不入目录）、`ncx-uid`（`toc.ncx` 的 `dtb:uid` 等于包文档 `unique-identifier`）、`identifier-unique`（跨书 `unique-identifier` 唯一）为 **error 级，接入发布预检**。`identifier-unique` 需跨书汇总：`check_epub_health` 在 `main()` 层计算，`publish_preflight` 在库级复核同一实现；豁免按「作品 + 检查项」登记在 `alignment_rules.HEALTH_EXEMPT_WORK_IDS`（当前仅 `S0_00` 的 `toc-entry` 一项）。
 
+`title-style` 检查中文默认标题样式、分层角色／字号与引用 CSS、序终章间距、彩页及特典集合标题；`title-catalog` 检查 nav/NCX 的纯文本标签与 h1/h2/h3 投影及两套目录的目标／标签／顺序一致性。未知结构／样式与目录差异为 error，并通过共享 `audit_book` 进入本地发布和 CI 预检；不自动修复、不推断层数，非标题目标只由资源／锚点检查验证跳转。规范正文见 [结构规范](../docs/epub-structure-spec.md) 三和 [成品构成规范](../docs/epub-artifact-spec.md) 四。
+
 `note-structure` 只对 `*-Note.xhtml` 判定，覆盖外壳（XML 声明引号、`<head>` 与 `<link>` 间距、空 `<title>`）、L4 固定 h1、L5 容器必须是 `<ul>`、`<li>` 属性顺序与完整性、缩进、行内标签白名单，规范见 [EPUB 结构规范](../docs/epub-structure-spec.md)「译注页（Note）结构规约」。**编号连续性不在本项**——`noteN` 从 1 起、无空号、与正文首引顺序一致由 `check_note_order.py` 唯一负责。`S0_00-Note.xhtml` 第 7 行的说明型条目是登记在案的唯一豁免。
 
 ### 图片对应核对
@@ -438,7 +440,7 @@ python tools/check_translation_table.py --table 显式译名表.xlsx --audit-rul
 
 `--rulings` 指定《译名裁定总表》（默认仓库内路径）；`--no-rulings` 是诊断绕过，不可据此要求回改已登记裁定。`--include-suspect` 展示短串候选、`--limit` 是局部调试，不能称全表验收。`alignment_rules.TRANSLATION_HOST` 和 `SETTLED_ANCHORS` 是已确认跨书归属／同形词事实源。`SETTLED_ANCHORS` 每条含 `note`／`scope`／`status`：**抑制只在该锚点被判定过的那本书内生效**；`status=settled`（已判定同形不同义）始终抑制，`status=待裁定`（两案都成立、尚未定）在裁定表登记该锚点后失效、改按裁定判定。
 
-落地未命中只产生待判项，不等于误译；回原文判断普通词／专名、单复数与语境，执行 [术语统一 skill](../.agents/skills/translation-term-unification/SKILL.md)。strict 存在待判未落地项非零。`--audit-rulings` 只核裁定表与译名表：锚点全角英数字母、裁定列解析不出写法（散文格式漏标 `人读`）、锚点 `<rt>` 与 `Ruby_Ori` 不一致（一格多锚点时**逐块**核对，逐字分解的碎片按基文长度跳过）、译名表同锚点多译法未在裁定表登记、同一锚点多行匹配轴混用、声明了匹配轴但锚点不是单段 ruby，出问题非零；改裁定表后重跑。
+正文与 h1/h2/h3 分开收集：标题命中不为正文补足译名落地，也不计入 `--strict`；另写同一报告目录下的 `translation-title-check.tsv`，主 JSON 的 `title_records` 和 Markdown 的标题人工核对节同时展示。标题中的状态仅供人工结合原文判断，不直接产生替换要求。落地未命中只产生待判项，不等于误译；回原文判断普通词／专名、单复数与语境，执行 [术语统一 skill](../.agents/skills/translation-term-unification/SKILL.md)。strict 存在待判未落地项非零。`--audit-rulings` 只核裁定表与译名表：锚点全角英数字母、裁定列解析不出写法（散文格式漏标 `人读`）、锚点 `<rt>` 与 `Ruby_Ori` 不一致（一格多锚点时**逐块**核对，逐字分解的碎片按基文长度跳过）、译名表同锚点多译法未在裁定表登记、同一锚点多行匹配轴混用、声明了匹配轴但锚点不是单段 ruby，出问题非零；改裁定表后重跑。
 
 ### calibre 补充合法性检查
 
@@ -620,6 +622,7 @@ python -m unittest discover -s tools/tests -p "test_*.py" -v
 | `xhtml_structure.py` | 无 CLI（共享模块） | 物理行类型、保守配对与页边界修复前提 | 【无】 | `test_xhtml_structure.py` |
 | `xhtml_template.py` | 无 CLI（共享模块） | 固定模板纯重建 | 【无】 | `test_xhtml_and_merge.py` |
 | `xhtml_text.py` | 无 CLI（共享模块） | XHTML → 纯文本的唯一口径（保留注音／去注音／可见文本三种） | 【无】 | `test_xhtml_text.py`；另有调用方测试 |
+| `title_rules.py` | 无 CLI（共享模块） | 中文标题样式／层级／目录投影的只读合同与正文／标题文本分流 | 未覆盖结构、标题投影差异由调用方阻断【无】 | `test_title_rules.py`、`test_publish_preflight.py` |
 
 ### 负责与不负责
 
@@ -640,6 +643,7 @@ python -m unittest discover -s tools/tests -p "test_*.py" -v
 | `epub_structure.py` | 共用的容器、OPF spine、XML 与资源引用检查；`opf_relations` 返回有序 manifest/spine 事实，`xml_references`／`css_references` 返回有序原始引用，`resolve_reference` 解析书内路径 | 工具编排与成品模板选择；事实采集入口不负责文件选择、XML 解析与异常处理、重复 ID／缺项／媒体类型判定、锚点采集及体检的存在性／越界／fragment 策略 |
 | `xhtml_text.py` | XHTML → 纯文本的三种口径（保留注音／去注音／可见文本）；`<rt>`、`<rp>` 剥除规则的唯一实现 | 扫描与报告；该用哪种口径由调用方决定 |
 | `file_transaction.py` | 异常安全的文件系统写入（临时文件／目录 + 回滚） | 发布策略与冲突取舍 |
+| `title_rules.py` | 中文标题样式／层级／目录投影的只读合同；正文与标题文本分流 | 译法裁定、分层推断、自动修复及逐标题预期清单 |
 
 `tools/README.md` 自身的说明覆盖、簇归属与单一来源合同由 C4 的 `check_project_docs.py` 检查；改本文件的结构后先跑它。
 

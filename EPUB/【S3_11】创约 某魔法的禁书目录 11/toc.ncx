@@ -187,7 +187,7 @@
     </navPoint>
     <navPoint id="num_30" playOrder="30">
       <navLabel>
-        <text>终　章 仪式的结局 Flat_Line…</text>
+        <text>终　章 仪式的结局 Flat_Line...</text>
       </navLabel>
       <content src="OEBPS/Text/S3_11-06_Epilogue.xhtml"/>
     </navPoint>

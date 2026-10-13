@@ -25,7 +25,7 @@
     </navPoint>
     <navPoint id="num_3" playOrder="3">
       <navLabel>
-        <text>某自动贩卖机的存在证明FANFARE</text>
+        <text>某自动贩卖机的存在证明</text>
       </navLabel>
       <content src="OEBPS/Text/S6_10.06.26-Chapter.xhtml"/>
     </navPoint>

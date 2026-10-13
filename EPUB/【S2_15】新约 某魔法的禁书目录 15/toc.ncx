@@ -319,7 +319,7 @@
     </navPoint>
     <navPoint id="num_52" playOrder="52">
       <navLabel>
-        <text>终　章 硬币正面的正面Lock_on_Light_Girl.</text>
+        <text>终　章 硬币正面的正面 Lock_on_Light_Girl.</text>
       </navLabel>
       <content src="OEBPS/Text/S2_15-11_Epilogue.xhtml"/>
     </navPoint>

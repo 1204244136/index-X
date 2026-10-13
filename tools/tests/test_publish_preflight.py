@@ -73,6 +73,31 @@ class PreflightTests(unittest.TestCase):
                 self.assertEqual((fx.cache / "manifest.json").read_bytes(), manifest)
                 self.assertFalse((fx.cache / "packed-epubs").exists())
 
+    def test_title_gate_blocks_both_publication_directions_before_mirror(self):
+        for direction in ("cache", "epub"):
+            for change in ("style", "catalog"):
+                with self.subTest(direction=direction, change=change):
+                    fx = Fixture(self.root / (direction + change))
+                    source = fx.cache / "chinese-text" / BOOK_CN if direction == "cache" else fx.epub / BOOK_CN
+                    mirror = fx.epub / BOOK_CN if direction == "cache" else fx.cache / "chinese-text" / BOOK_CN
+                    if change == "style":
+                        target = source / "OEBPS/Text/S1_01-01_Chapter.xhtml"
+                        before = target.read_text(encoding="utf-8")
+                        changed = before.replace("<body>\n\n", '<body>\n<h1 class="color1">章节</h1>\n', 1)
+                        self.assertNotEqual(before, changed)
+                        target.write_text(changed, encoding="utf-8")
+                    else:
+                        target = source / "nav.xhtml"
+                        target.write_text(target.read_text(encoding="utf-8").replace(
+                            "制作信息</a>", "错误标签</a>"), encoding="utf-8")
+                    baseline = (fx.cache / "manifest.json").read_bytes()
+                    previous = {p.relative_to(mirror): p.read_bytes() for p in mirror.rglob("*") if p.is_file()}
+                    with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                        self.assertEqual(publish_auto.main(fx.argv("--side", "chinese", "--no-upload")), 1)
+                    self.assertEqual((fx.cache / "manifest.json").read_bytes(), baseline)
+                    self.assertEqual({p.relative_to(mirror): p.read_bytes() for p in mirror.rglob("*") if p.is_file()}, previous)
+                    self.assertFalse((fx.cache / "packed-epubs").exists())
+
     def test_calibre_failure_is_propagated(self):
         make_book(self.root / "【S1_01】中文X", layout=True)
         with patch("publish_preflight.subprocess.run") as run:

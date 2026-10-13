@@ -96,6 +96,7 @@ from check_alignment import check_file as check_template
 from epub_ids import book_id, content_sequence, header_of, is_list_packaging_header, work_id
 from text_norm import split_bold_punct
 from xhtml_slots import NOTE_H1
+from title_rules import audit_title_contract
 from epub_structure import css_references, opf_relations, resolve_reference, xml_references
 from urllib.parse import unquote, urlsplit
 
@@ -114,7 +115,7 @@ RUBY_BLOCK_RE = re.compile(r"<ruby\b[^>]*>(.*?)</ruby\s*>", re.S | re.I)
 CHECK_ORDER = (
     "XML", "template", "bold-punct", "bold-empty", "bold-pair",
     "ruby", "seq-00", "dup-header", "seq-gap", "img-prefix", "dangling",
-    "css-layout", "note-structure",
+    "css-layout", "note-structure", "title-style", "title-catalog",
     "dir-name", "metadata-title", "packaging-required", "nav-structure",
     "toc-entry", "ncx-doctitle", "ncx-uid", "identifier-unique",
 )
@@ -132,6 +133,8 @@ CHECK_DESC = {
     "dangling": "悬空资源/锚点引用",
     "css-layout": "样式表缺盒模型/分页类或含破坏性边距",
     "note-structure": "译注页外壳/槽位/容器/属性/行内标签不合规",
+    "title-style": "标题默认样式/分层角色与字号/彩页及特典标题/序终章间距",
+    "title-catalog": "目录纯文本与实际标题投影/nav 与 NCX 一致性",
     "dir-name": "书目录名的 `【作品号】` 前缀",
     "metadata-title": "`dc:title` 逐字节等于书目录名",
     "packaging-required": "必备部件存在且被 manifest/spine 引用",
@@ -149,6 +152,7 @@ SEVERITY = {
     # 译注页结构：零误报的硬规则，与 template/XML/ruby 同级。
     # 存量违规由 E1 一次性修正（见 docs/maintenance-records/）。
     "note-structure": "error",
+    "title-style": "error", "title-catalog": "error",
     # 成品构成（`docs/epub-artifact-spec.md`）：六项存量均已清零，全部是硬规则——
     # 目录名、`dc:title` 对齐、必备部件 2026-10-12 实测 81/81；`docTitle` 对齐同日清理 68 本；
     # 目录条目口径同日补齐 【S6_24.01.10】；跨书 `unique-identifier` 同日把 6 本的模板串值改回
@@ -572,7 +576,7 @@ def exempt(bid: str | None, check: str) -> bool:
     return health_exempt(check, bid)
 
 
-# 译注页（Note）行内标签白名单。实测全库 73 个 `*-Note.xhtml` 只用到这 13 种标签；
+# 译注页（Note）行内标签白名单；
 # 白名单用于防回流——`h2`／`p`／`div`／`br`／`table`／`dl`／`a`／`img` 全库为 0。
 NOTE_TAG_WHITELIST = frozenset({
     "html", "head", "title", "body", "link", "h1", "ul", "li", "ruby", "rt", "span", "i",
@@ -660,6 +664,12 @@ def audit_book(book_dir: Path, only: set[str] | None) -> tuple[list[tuple], Coun
         findings.append((check, bid or book_dir.name, rel, line, SEVERITY[check], msg))
 
     xhtmls = collect_xhtml(book_dir)
+    if want("title-style") or want("title-catalog"):
+        entries = {p.relative_to(book_dir).as_posix(): p.read_bytes()
+                   for p in book_dir.rglob("*") if p.is_file() and p.suffix in {".xhtml", ".ncx", ".css"}}
+        for check, rel, line, msg in audit_title_contract(entries):
+            if want(check):
+                add(check, rel, line, msg)
 
     if want("seq-00") or want("dup-header") or want("seq-gap"):
         for check, msg in find_sequence_problems(xhtmls):

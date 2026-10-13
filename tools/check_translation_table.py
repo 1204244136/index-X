@@ -64,6 +64,7 @@ from collections import Counter
 from pathlib import Path
 
 from xhtml_text import strip_ruby_annotations
+from title_rules import split_heading_markup
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_EPUB = REPO_ROOT / "EPUB"
@@ -207,7 +208,7 @@ def book_id(dir_name: str) -> str:
 
 
 def collect_books(root: Path, text_subdir: str, only: set[str],
-                  ruby: bool = False) -> dict[str, str]:
+                  ruby: bool = False, *, titles: bool = False) -> dict[str, str]:
     """收集 {作品号: 全书纯文本}。目录名形如 `【S3_06】…`。
 
     `ruby=True` 时输出**带注音的复合串文本**（`基文（注文）`），供注音判定使用。
@@ -227,7 +228,10 @@ def collect_books(root: Path, text_subdir: str, only: set[str],
         chunks: list[str] = []
         for f in sorted(text_dir.iterdir()):
             if f.suffix.lower() == ".xhtml":
-                chunks.append(load_ruby_plain(f) if ruby else load_plain(f))
+                raw = f.read_text(encoding="utf-8-sig")
+                body, heading = split_heading_markup(raw)
+                selected = heading if titles else body
+                chunks.append(to_ruby_text(selected) if ruby else strip_markup(selected))
         if chunks:
             books[bid] = "\n".join(chunks)
     return books
@@ -830,6 +834,16 @@ def main(argv: list[str] | None = None) -> int:
                                                    jp_ruby, cn_ruby)
     del jp_books
 
+    # 标题只形成独立人工核对报告；不能为正文补足译名命中，也不影响 strict。
+    jp_titles = collect_books(Path(args.jp_dir), "item/xhtml", only, titles=True)
+    cn_titles = collect_books(Path(args.epub), "OEBPS/Text", only, titles=True)
+    jp_title_ruby = collect_books(Path(args.jp_dir), "item/xhtml", only, ruby=True, titles=True) if need_ruby else None
+    cn_title_ruby = collect_books(Path(args.epub), "OEBPS/Text", only, ruby=True, titles=True) if need_ruby else None
+    title_records, _, _ = compare(entries, jp_titles, cn_titles, rulings, {}, SETTLED_ANCHORS,
+                                  jp_title_ruby, cn_title_ruby)
+    for record in title_records:
+        record["scope"] = "title"
+
     missing = [r for r in records if r["status"] == STATUS_MISSING]
     missing_real = [r for r in missing if not r["suspect"]]
     missing_suspect = [r for r in missing if r["suspect"]]
@@ -848,6 +862,11 @@ def main(argv: list[str] | None = None) -> int:
         w = csv.DictWriter(fh, fieldnames=fields, delimiter="\t", extrasaction="ignore")
         w.writeheader()
         w.writerows(records)
+    title_path = out_dir / "translation-title-check.tsv"
+    with title_path.open("w", encoding="utf-8", newline="\n") as fh:
+        writer = csv.DictWriter(fh, fieldnames=["scope", *fields], delimiter="\t", extrasaction="ignore")
+        writer.writeheader()
+        writer.writerows(title_records)
 
     x_hits = [r for r in records if r["rulings"]]
     form_kind_x = [r for r in x_hits if r["form_kind"] == "x"]
@@ -874,9 +893,12 @@ def main(argv: list[str] | None = None) -> int:
         "cn_host_hits": len(host_hits),
         "settled_anchors": len(SETTLED_ANCHORS),
         "settled_hits": len(settled_hits),
+        "title_hits": len(title_records),
+        "title_advisory_only": True,
     }
     json_path.write_text(
-        json.dumps({"summary": summary, "records": records}, ensure_ascii=False, indent=2),
+        json.dumps({"summary": summary, "records": records, "title_records": title_records},
+                   ensure_ascii=False, indent=2),
         encoding="utf-8")
 
     lines = [
@@ -972,6 +994,17 @@ def main(argv: list[str] | None = None) -> int:
         "也可能是**同形不同义**（表内条目是某作品的能力或组织名，本书里是普通词，无需处理）。",
         "",
     ]
+    lines += [
+        "## 标题译名人工核对（不参与正文门禁）", "",
+        "标题命中仅供人工结合原文与题名语境核对；不能单凭表定译名要求改写标题。", "",
+        "| 作品 | 日文锚点 | 表定译名 | 比对状态 | 日文标题上下文 |",
+        "| --- | --- | --- | --- | --- |",
+    ]
+    for record in title_records:
+        lines.append(f"| {record['book']} | {record['ori']} | {record['trans']} | "
+                     f"{record['status']} | {record['jp_context']} |")
+    if not title_records:
+        lines.append("| — | — | — | — | 无 |")
     md_path.write_text("\n".join(lines), encoding="utf-8")
 
     print(f"  日文侧命中 {len(records)} 条；已落地 {summary['landed']}；"
@@ -984,6 +1017,7 @@ def main(argv: list[str] | None = None) -> int:
     if settled_hits:
         print(f"  已判定锚点命中 {len(settled_hits)} 条（同形不同义／暂缓，不计待判）")
     print(f"  报告：{tsv_path.name} / {json_path.name} / {md_path.name}（{out_dir}）")
+    print(f"  标题人工核对：{len(title_records)} 条（不参与 strict）；{title_path.name}")
     if missing_real:
         print("\n待判未落地项（前 20）：")
         for r in missing_real[:20]:

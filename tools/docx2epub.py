@@ -56,6 +56,7 @@ from epub_structure import artifact_contract_issues, container_contract_issues
 from package_cache_epubs import package_book, validate_book
 from path_safety import archive_member_destination
 from xhtml_slots import NOTE_H1
+from title_rules import audit_title_contract, heading_label, normalize_chapter_main
 
 EPUB_MIMETYPE = b"application/epub+zip"
 
@@ -216,6 +217,9 @@ svg {
 .font14 { font-size: 1.4em; }
 .font15 { font-size: 1.5em; }
 .font16 { font-size: 1.6em; }
+.heading-lines > .heading-main,
+.heading-lines > .heading-subtitle,
+.heading-lines > .heading-code { display: block; }
 """
 
 
@@ -575,7 +579,7 @@ def render_content(ch: dict, names: dict, body_illus: dict | None = None) -> str
         "<?xml version='1.0' encoding='utf-8'?>",
         "<!DOCTYPE html>",
         HEAD3,
-        f"<h1>{esc_ruby(title)}</h1>" if title else "",
+        f"<h1>{esc_ruby(normalize_chapter_main(title))}</h1>" if title else "",
     ]
     h2_idx = 0
     first_is_h2 = bool(blocks) and blocks[0][0] == "h2"
@@ -676,11 +680,11 @@ def render_nav(entries: list[tuple[str, str, list[str]]]) -> str:
     ]
     for fname, title, h2s in entries:
         href = f"OEBPS/Text/{fname}"
-        lines.append(f'<li><a href="{href}">{title}</a>')
+        lines.append(f'<li><a href="{href}">{esc(title)}</a>')
         if h2s:
             lines.append("<ol>")
             for i, h2 in enumerate(h2s, 1):
-                lines.append(f'<li><a href="{href}#toc_{i}">{h2}</a></li>')
+                lines.append(f'<li><a href="{href}#toc_{i}">{esc(h2)}</a></li>')
             lines.append("</ol>")
         lines.append("</li>")
     lines += ["</ol>", "</nav>", "</body></html>", ""]
@@ -812,6 +816,7 @@ def validate_generated_book(book: dict) -> None:
     entries = {name: content if isinstance(content, bytes) else content.encode("utf-8")
                for name, content in book["files"].items()}
     issues = container_contract_issues(entries) + artifact_contract_issues(entries, book["header"])
+    issues.extend((name, message) for _check, name, _line, message in audit_title_contract(entries))
     for name, content in book["text_files"].items():
         issues.extend((name, issue) for issue in check_file(content.splitlines(), name.endswith("-Note.xhtml")))
     if issues:
@@ -981,9 +986,12 @@ def _process_one(docx_path: Path, args: argparse.Namespace) -> int:
         elif suffix is None:
             suffix = f"Section{content_seq}"
         fname = f"{header}-{content_seq:02d}_{suffix}.xhtml"
-        h2s = [p[1] for p in ch["blocks"] if p[0] == "h2"]
-        entries.append((fname, ch.get("nav_title", ch["title"]), h2s))
         rendered = render_content(ch, names, body_illus)
+        tree = ET.fromstring(rendered)
+        titles = [e for e in tree.iter() if e.tag.rsplit("}", 1)[-1] == "h1"]
+        h2s = [heading_label(e) for e in tree.iter() if e.tag.rsplit("}", 1)[-1] == "h2"]
+        label = heading_label(titles[0]) if titles else ch["title"]
+        entries.append((fname, ch.get("nav_title", label), h2s))
         text_files[fname] = extract_notes(rendered, notes, header)
 
     # 封面/彩页（docx 内嵌 + 源/用户提供）

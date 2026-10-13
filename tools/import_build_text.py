@@ -24,6 +24,7 @@ from edit_safety import EditSafetyError, add_edit_mode, require_edit_target
 from file_transaction import atomic_write_bytes, rollback_paths
 from import_plan import PlanError, apply_ops, body_images, load_plan
 from xhtml_slots import NOTE_H1
+from title_rules import normalize_chapter_main
 
 HEAD3 = ('<html xmlns="http://www.w3.org/1999/xhtml" '
          'xmlns:epub="http://www.idpf.org/2007/ops"><head>'
@@ -38,6 +39,8 @@ def render_file(chapter: dict, rows: list[dict], notes: list[str], work_id: str,
     """渲染一个正文文件，返回 (内容, 小节数, 用掉的正文图片数)。"""
     lines = ["<?xml version='1.0' encoding='utf-8'?>", "<!DOCTYPE html>", HEAD3]
     main, sub = chapter.get("h1_main"), chapter.get("h1_sub")
+    if main:
+        main = normalize_chapter_main(main)
     if main and sub:
         lines.append(f'<h1 class="heading-lines"><span class="heading-main">{esc(main)}</span>'
                      f'<span class="heading-subtitle font08">{esc(sub)}</span></h1>')

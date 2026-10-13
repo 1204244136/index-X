@@ -241,7 +241,7 @@
     </navPoint>
     <navPoint id="num_39" playOrder="39">
       <navLabel>
-        <text>第四章 超能力者Level 5在咆哮</text>
+        <text>第四章 超能力者在咆哮</text>
       </navLabel>
       <content src="OEBPS/Text/S4_01-09_Chapter4.xhtml"/>
       <navPoint id="num_40" playOrder="40">

@@ -28,7 +28,7 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Validate tools and publication source
+      - name: Validate tools, titles and publication source
         run: |
           set -euo pipefail
           python -m unittest discover -s tools/tests -p "test_*.py"

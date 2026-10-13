@@ -80,7 +80,8 @@ jobs:
             python tools/wrap_cn_image_lines.py --root EPUB --wrap-only --apply 2>&1 | tee /tmp/step-wrap-img.log
           fi
 
-      - name: 修改后发布预检
+      # 标题合同只读阻断；不加入标题自动修复，异常留待本地确认。
+      - name: 修改后发布预检（含只读标题门禁）
         run: python tools/publish_preflight.py --source EPUB
 
       - name: 写入 job summary

@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import html
 import re
+import xml.etree.ElementTree as ET
 
 # 注音元素：`<rt>` 是读音，`<rp>` 是给不支持 ruby 的阅读器用的括号，二者都要移除
 RUBY_ELEMENT = re.compile(r"<(?:rt|rp)\b[^>]*>.*?</(?:rt|rp)>", re.I | re.S)
@@ -26,6 +27,16 @@ TAG = re.compile(r"<[^>]+>")
 def strip_ruby_annotations(html_text: str) -> str:
     """移除 `<rt>`/`<rp>` 及其内容；其余标记原样保留，供调用方继续剥标签。"""
     return RUBY_ELEMENT.sub("", html_text)
+
+
+def element_text_without_ruby(element: ET.Element) -> str:
+    """XML 元素底字文本：支持命名空间，保留层内空白，不包含元素自己的 tail。"""
+    parts = [element.text or ""]
+    for child in element:
+        if child.tag.rsplit("}", 1)[-1] not in {"rt", "rp"}:
+            parts.append(element_text_without_ruby(child))
+        parts.append(child.tail or "")
+    return "".join(parts)
 
 
 def visible_text_of(html_text: str) -> str:

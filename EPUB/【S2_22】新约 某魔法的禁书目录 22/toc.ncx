@@ -31,13 +31,13 @@
     </navPoint>
     <navPoint id="num_4" playOrder="4">
       <navLabel>
-        <text>序　章（无题） ARCHENEMY_with_the_ABYSS.</text>
+        <text>序　章 （无题） ARCHENEMY_with_the_ABYSS.</text>
       </navLabel>
       <content src="OEBPS/Text/S2_22-02_Prologue.xhtml"/>
     </navPoint>
     <navPoint id="num_5" playOrder="5">
       <navLabel>
-        <text>第一章（无题）Break_a_Right_and_Hope.</text>
+        <text>第一章 （无题） Break_a_Right_and_Hope.</text>
       </navLabel>
       <content src="OEBPS/Text/S2_22-03_Chapter1.xhtml"/>
       <navPoint id="num_6" playOrder="6">
@@ -85,7 +85,7 @@
     </navPoint>
     <navPoint id="num_13" playOrder="13">
       <navLabel>
-        <text>第二章（无题）Over_the_Checkmate.</text>
+        <text>第二章 （无题） Over_the_Checkmate.</text>
       </navLabel>
       <content src="OEBPS/Text/S2_22-05_Chapter2.xhtml"/>
       <navPoint id="num_14" playOrder="14">
@@ -169,7 +169,7 @@
     </navPoint>
     <navPoint id="num_27" playOrder="27">
       <navLabel>
-        <text>第三章（无题）World_Decomposer.</text>
+        <text>第三章 （无题） World_Decomposer.</text>
       </navLabel>
       <content src="OEBPS/Text/S2_22-07_Chapter3.xhtml"/>
       <navPoint id="num_28" playOrder="28">
@@ -277,7 +277,7 @@
     </navPoint>
     <navPoint id="num_45" playOrder="45">
       <navLabel>
-        <text>第四章（无题）MAGICK_Warfare.</text>
+        <text>第四章 （无题） MAGICK_Warfare.</text>
       </navLabel>
       <content src="OEBPS/Text/S2_22-09_Chapter4.xhtml"/>
       <navPoint id="num_46" playOrder="46">

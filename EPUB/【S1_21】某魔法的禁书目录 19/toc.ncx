@@ -31,7 +31,7 @@
     </navPoint>
     <navPoint id="num_4" playOrder="4">
       <navLabel>
-        <text>序　章 恶徒们之间的无聊交易 Key_Shop.</text>
+        <text>序　章 恶人们之间的无聊交易 Key_Shop.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_21-01_Prologue.xhtml"/>
     </navPoint>
