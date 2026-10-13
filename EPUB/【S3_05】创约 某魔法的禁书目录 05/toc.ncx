@@ -31,7 +31,7 @@
     </navPoint>
     <navPoint id="num_4" playOrder="4">
       <navLabel>
-        <text>序 章 来自绘本之国 Girl_Name_is_“ALICE”.</text>
+        <text>序　章 来自绘本之国 Girl_Name_is_“ALICE”.</text>
       </navLabel>
       <content src="OEBPS/Text/S3_05-01_Prologue.xhtml"/>
     </navPoint>
@@ -427,7 +427,7 @@
     </navPoint>
     <navPoint id="num_70" playOrder="70">
       <navLabel>
-        <text>终 章 就算松开那双手 Not_Enemy.</text>
+        <text>终　章 就算松开那双手 Not_Enemy.</text>
       </navLabel>
       <content src="OEBPS/Text/S3_05-10_Epilogue.xhtml"/>
     </navPoint>

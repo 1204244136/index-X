@@ -31,7 +31,7 @@
     </navPoint>
     <navPoint id="num_4" playOrder="4">
       <navLabel>
-        <text>序 章 身为指导者的立场上 Stage_in_Roma.</text>
+        <text>序　章 身为指导者的立场上 Stage_in_Roma.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_17-01_Prologue.xhtml"/>
     </navPoint>
@@ -265,7 +265,7 @@
     </navPoint>
     <navPoint id="num_43" playOrder="43">
       <navLabel>
-        <text>终 章 将混乱更加扩大的人 True_Target_is……</text>
+        <text>终　章 将混乱更加扩大的人 True_Target_is……</text>
       </navLabel>
       <content src="OEBPS/Text/S1_17-10_Epilogue.xhtml"/>
     </navPoint>

@@ -43,7 +43,7 @@
     </navPoint>
     <navPoint id="num_6" playOrder="6">
       <navLabel>
-        <text>第一章 幻想杀手与<ruby>理想放逐<rt>World Rejecter</rt></ruby> One_Night_Encount.</text>
+        <text>第一章 幻想杀手与理想放逐 One_Night_Encount.</text>
       </navLabel>
       <content src="OEBPS/Text/S2_14-03_Chapter1.xhtml"/>
       <navPoint id="num_7" playOrder="7">

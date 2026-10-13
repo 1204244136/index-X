@@ -31,7 +31,7 @@
     </navPoint>
     <navPoint id="num_4" playOrder="4">
       <navLabel>
-        <text>序 章 北意大利的旅行 Un_Viaggio_in_Italia.</text>
+        <text>序　章 北意大利的旅行 Un_Viaggio_in_Italia.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_11-01_Prologue.xhtml"/>
     </navPoint>
@@ -259,7 +259,7 @@
     </navPoint>
     <navPoint id="num_42" playOrder="42">
       <navLabel>
-        <text>终 章 学园都市的返程 L’inizio_Nuovo……</text>
+        <text>终　章 学园都市的返程 L’inizio_Nuovo……</text>
       </navLabel>
       <content src="OEBPS/Text/S1_11-11_Epilogue.xhtml"/>
     </navPoint>

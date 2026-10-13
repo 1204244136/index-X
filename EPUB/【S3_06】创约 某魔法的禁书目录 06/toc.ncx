@@ -31,7 +31,7 @@
     </navPoint>
     <navPoint id="num_4" playOrder="4">
       <navLabel>
-        <text>序 章 体重意外地不会下降 Dying_Hungry.</text>
+        <text>序　章 体重意外地不会下降 Dying_Hungry.</text>
       </navLabel>
       <content src="OEBPS/Text/S3_06-02_Prologue.xhtml"/>
     </navPoint>
@@ -193,7 +193,7 @@
     </navPoint>
     <navPoint id="num_31" playOrder="31">
       <navLabel>
-        <text>终 章 唱片发生了跳针 Irregular_Counter.</text>
+        <text>终　章 唱片发生了跳针 Irregular_Counter.</text>
       </navLabel>
       <content src="OEBPS/Text/S3_06-09_Epilogue.xhtml"/>
     </navPoint>

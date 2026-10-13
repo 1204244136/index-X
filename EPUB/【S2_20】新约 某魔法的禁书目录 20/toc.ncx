@@ -31,7 +31,7 @@
     </navPoint>
     <navPoint id="num_4" playOrder="4">
       <navLabel>
-        <text>序 章 科学与魔法彻底翻转 Become_to_War.</text>
+        <text>序　章 科学与魔法彻底翻转 Become_to_War.</text>
       </navLabel>
       <content src="OEBPS/Text/S2_20-01_Prologue.xhtml"/>
     </navPoint>
@@ -313,7 +313,7 @@
     </navPoint>
     <navPoint id="num_51" playOrder="51">
       <navLabel>
-        <text>终 章 黄金自地平彼方逼近 Dawn_to_the_……</text>
+        <text>终　章 黄金自地平彼方逼近 Dawn_to_the_……</text>
       </navLabel>
       <content src="OEBPS/Text/S2_20-10_Epilogue.xhtml"/>
     </navPoint>

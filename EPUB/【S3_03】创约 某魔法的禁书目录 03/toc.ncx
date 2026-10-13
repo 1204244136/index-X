@@ -31,7 +31,7 @@
     </navPoint>
     <navPoint id="num_4" playOrder="4">
       <navLabel>
-        <text>序 章 掀开巨石所看见的 OP.「Hand_Cuffs」</text>
+        <text>序　章 掀开巨石所看见的 OP.「Hand_Cuffs」</text>
       </navLabel>
       <content src="OEBPS/Text/S3_03-01_Prologue.xhtml"/>
     </navPoint>
@@ -433,7 +433,7 @@
     </navPoint>
     <navPoint id="num_71" playOrder="71">
       <navLabel>
-        <text>终 章 暗之初啼响彻云霄 Over_the_C.Point,Now.</text>
+        <text>终　章 暗之初啼响彻云霄 Over_the_C.Point,Now.</text>
       </navLabel>
       <content src="OEBPS/Text/S3_03-10_Epilogue.xhtml"/>
     </navPoint>

@@ -31,7 +31,7 @@
     </navPoint>
     <navPoint id="num_4" playOrder="4">
       <navLabel>
-        <text>序 章 圣守护天使托付神谕 the_Angel_「A」</text>
+        <text>序　章 圣守护天使托付神谕 the_Angel_「A」</text>
       </navLabel>
       <content src="OEBPS/Text/S2_19-02_Prologue.xhtml"/>
     </navPoint>
@@ -325,7 +325,7 @@
     </navPoint>
     <navPoint id="num_53" playOrder="53">
       <navLabel>
-        <text>终 章 无冕恶魔在地狱咆哮 the_Devil_「C」.</text>
+        <text>终　章 无冕恶魔在地狱咆哮 the_Devil_「C」.</text>
       </navLabel>
       <content src="OEBPS/Text/S2_19-11_Epilogue.xhtml"/>
     </navPoint>

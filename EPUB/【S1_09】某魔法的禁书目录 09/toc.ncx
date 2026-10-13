@@ -31,7 +31,7 @@
     </navPoint>
     <navPoint id="num_4" playOrder="4">
       <navLabel>
-        <text>序 章 第三者眼中的准备时间 Parent’s_View_Point.</text>
+        <text>序　章 第三者眼中的准备时间 Parent’s_View_Point.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_09-01_Prologue.xhtml"/>
     </navPoint>

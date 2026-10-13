@@ -43,7 +43,7 @@
     </navPoint>
     <navPoint id="num_6" playOrder="6">
       <navLabel>
-        <text>第一章 某科学的<ruby>一方通行<rt>Accelerator</rt></ruby> Last_Order.</text>
+        <text>第一章 某科学的一方通行 Last_Order.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_05-02_Chapter1.xhtml"/>
       <navPoint id="num_7" playOrder="7">

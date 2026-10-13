@@ -31,7 +31,7 @@
     </navPoint>
     <navPoint id="num_4" playOrder="4">
       <navLabel>
-        <text>序 章 战前安稳祥和的一日 Breakfast.</text>
+        <text>序　章 战前安稳祥和的一日 Breakfast.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_14-01_Prologue.xhtml"/>
     </navPoint>
@@ -217,7 +217,7 @@
     </navPoint>
     <navPoint id="num_35" playOrder="35">
       <navLabel>
-        <text>终 章 某个意志与微小钥匙 The_Present_Target.</text>
+        <text>终　章 某个意志与微小钥匙 The_Present_Target.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_14-06_Epilogue.xhtml"/>
     </navPoint>

@@ -31,7 +31,7 @@
     </navPoint>
     <navPoint id="num_4" playOrder="4">
       <navLabel>
-        <text>序 章 爱丽丝·异典 Back_to_Memory.</text>
+        <text>序　章 爱丽丝·异典 Back_to_Memory.</text>
       </navLabel>
       <content src="OEBPS/Text/S3_10-01_Prologue.xhtml"/>
     </navPoint>
@@ -289,7 +289,7 @@
     </navPoint>
     <navPoint id="num_47" playOrder="47">
       <navLabel>
-        <text>终 章 上条当麻 Notice_of_the_Death.</text>
+        <text>终　章 上条当麻 Notice_of_the_Death.</text>
       </navLabel>
       <content src="OEBPS/Text/S3_10-06_Epilogue.xhtml"/>
     </navPoint>

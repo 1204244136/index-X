@@ -25,7 +25,7 @@
     </navPoint>
     <navPoint id="num_3" playOrder="3">
       <navLabel>
-        <text>序 章 科学之城没有神明</text>
+        <text>序　章 科学之城没有神明</text>
       </navLabel>
       <content src="OEBPS/Text/S4_03-02_Prologue.xhtml"/>
     </navPoint>
@@ -337,7 +337,7 @@
     </navPoint>
     <navPoint id="num_55" playOrder="55">
       <navLabel>
-        <text>终 章 真正之恶的呐喊</text>
+        <text>终　章 真正之恶的呐喊</text>
       </navLabel>
       <content src="OEBPS/Text/S4_03-10_Epilogue.xhtml"/>
     </navPoint>

@@ -391,7 +391,7 @@
     </navPoint>
     <navPoint id="num_64" playOrder="64">
       <navLabel>
-        <text>终 章 前往正负的应走之路 The_Branch_Road.</text>
+        <text>终　章 前往正负的应走之路 The_Branch_Road.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_13-09_Epilogue.xhtml"/>
     </navPoint>

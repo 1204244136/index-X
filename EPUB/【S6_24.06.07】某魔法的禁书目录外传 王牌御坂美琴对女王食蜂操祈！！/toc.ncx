@@ -31,7 +31,7 @@
     </navPoint>
     <navPoint id="num_4" playOrder="4">
       <navLabel>
-        <text>序 章 特报！！</text>
+        <text>序　章 特报！！</text>
       </navLabel>
       <content src="OEBPS/Text/S6_24.06.07-01_Prologue.xhtml"/>
     </navPoint>
@@ -727,7 +727,7 @@
     </navPoint>
     <navPoint id="num_120" playOrder="120">
       <navLabel>
-        <text>终 章 职员名单</text>
+        <text>终　章 职员名单</text>
       </navLabel>
       <content src="OEBPS/Text/S6_24.06.07-11_Epilogue.xhtml"/>
     </navPoint>

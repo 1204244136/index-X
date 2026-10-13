@@ -277,7 +277,7 @@
     </navPoint>
     <navPoint id="num_45" playOrder="45">
       <navLabel>
-        <text>终 章 事情结束后等待的人们 Those_Who_Hold_Out_a_Hand.</text>
+        <text>终　章 事情结束后等待的人们 Those_Who_Hold_Out_a_Hand.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_10-08_Epilogue.xhtml"/>
     </navPoint>

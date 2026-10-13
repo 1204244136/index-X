@@ -25,7 +25,7 @@
     </navPoint>
     <navPoint id="num_3" playOrder="3">
       <navLabel>
-        <text>序 章 少女们像解谜一样解决事件</text>
+        <text>序　章 少女们像解谜一样解决事件</text>
       </navLabel>
       <content src="OEBPS/Text/S4_02-02_Prologue.xhtml"/>
     </navPoint>
@@ -289,7 +289,7 @@
     </navPoint>
     <navPoint id="num_47" playOrder="47">
       <navLabel>
-        <text>终 章 倘若有些许变化</text>
+        <text>终　章 倘若有些许变化</text>
       </navLabel>
       <content src="OEBPS/Text/S4_02-11_Epilogue.xhtml"/>
     </navPoint>
