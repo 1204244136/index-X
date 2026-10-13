@@ -11,7 +11,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from publish_preflight import main, validate_publication
 from test_package_cache_epubs import make_book
-from test_publish_auto import Fixture, BOOK_CN, BOOK_JP
+from test_publish_auto import Fixture, BOOK_CN
 import publish_auto
 
 

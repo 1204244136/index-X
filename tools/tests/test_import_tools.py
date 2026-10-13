@@ -220,7 +220,7 @@ class AlignPlanTests(unittest.TestCase):
     def test_check_fails_while_mismatched(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            jp = self._fixture(root)
+            self._fixture(root)
             docx = write_docx(root / "稿.docx", [
                 {"style": "Heading1", "runs": ["引子"]},
                 {"runs": ["这座城市被一道「墙壁」完全围住。"]},

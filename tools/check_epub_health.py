@@ -353,7 +353,9 @@ def find_css_layout_problems(book_dir: Path) -> list[tuple[str, str]]:
     # and colour sheets may omit them, but may never override html/body margins.
     if not main_paths:
         out.append(("css-layout", "缺少主样式表 style.css；未将任意辅助 CSS 当作主样式表"))
-    zero = lambda value: bool(re.fullmatch(r"[-+]?0+(?:\.0+)?(?:%|px|em|rem|pt)?", value))
+    def zero(value):
+        return bool(re.fullmatch(r"[-+]?0+(?:\.0+)?(?:%|px|em|rem|pt)?", value))
+
     required = {
         "*": {"box-sizing": "border-box"},
         "*::before": {"box-sizing": "border-box"},
@@ -837,8 +839,8 @@ def main() -> int:
             "exempted": dict(exempted),
             "template_exempt_works": sorted(TEMPLATE_EXEMPT_WORK_IDS),
             "findings": [
-                {"check": c, "book": b, "file": r, "line": l, "severity": s, "message": m}
-                for c, b, r, l, s, m in findings
+                {"check": c, "book": b, "file": r, "line": lineno, "severity": s, "message": m}
+                for c, b, r, lineno, s, m in findings
             ],
         }
         args.json.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
