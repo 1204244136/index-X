@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -107,8 +108,66 @@ class LoadPairsTests(unittest.TestCase):
             target = jp_root / "【S1_01】テスト本" / "item" / "xhtml" / "S1_01-01.xhtml"
             target.write_text(JP_PROLOGUE + "<p>多余行。</p>\n", encoding="utf-8")
             rows, notes = load_pairs("S1_01", cn_root, jp_root)
-            self.assertEqual(len(rows), 6)
+            self.assertEqual(rows, [])
             self.assertTrue(any("行数不等" in n for n in notes))
+
+    def test_skips_non_pair_work_even_with_matching_line_counts(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cn_root, jp_root = build_fixture(Path(tmp), "S5_02_03")
+            rows, notes = load_pairs("S5_02_03", cn_root, jp_root)
+            self.assertEqual(rows, [])
+            self.assertTrue(any("非同一形态" in n for n in notes))
+
+    def test_skips_registered_pair_exceptions_and_packaging(self):
+        cases = [
+            ("S2_14", "02", "文本化图片"),
+            ("S5_01_03", "06", "afterword-moved"),
+            ("S5_01_02", "09", "section-order"),
+            ("S1_25", "Stiyl_Magnus", "人工对齐"),
+        ]
+        for work, suffix, reason in cases:
+            with self.subTest(work=work, suffix=suffix), tempfile.TemporaryDirectory() as tmp:
+                cn_root, jp_root = build_fixture(Path(tmp), work)
+                cn_dir = cn_root / f"【{work}】测试书" / "OEBPS" / "Text"
+                jp_dir = jp_root / f"【{work}】テスト本" / "item" / "xhtml"
+                (cn_dir / f"{work}-01_Prologue.xhtml").rename(cn_dir / f"{work}-88_Chapter.xhtml")
+                (jp_dir / f"{work}-01.xhtml").rename(jp_dir / f"{work}-88.xhtml")
+                for name in (f"{work}-{suffix}.xhtml", f"{work}-Cover.xhtml"):
+                    (cn_dir / name).write_text(CN_PROLOGUE, encoding="utf-8")
+                    (jp_dir / name).write_text(JP_PROLOGUE, encoding="utf-8")
+                rows, notes = load_pairs(work, cn_root, jp_root)
+                self.assertEqual({row["seq"] for row in rows}, {f"{work}-88"})
+                self.assertTrue(any(reason in n for n in notes), notes)
+
+    def test_pairs_named_headers_case_insensitively(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            work = "S1_25"
+            cn_root, jp_root = build_fixture(Path(tmp), work)
+            cn_dir = cn_root / f"【{work}】测试书" / "OEBPS" / "Text"
+            jp_dir = jp_root / f"【{work}】テスト本" / "item" / "xhtml"
+            (cn_dir / f"{work}-uiharu_kazari.xhtml").write_text(CN_PROLOGUE, encoding="utf-8")
+            (jp_dir / f"{work}-Uiharu_Kazari.xhtml").write_text(JP_PROLOGUE, encoding="utf-8")
+            rows, notes = load_pairs(work, cn_root, jp_root)
+            self.assertEqual(notes, [])
+            self.assertEqual({row["seq"] for row in rows}, {f"{work}-01", f"{work}-UIHARU_KAZARI"})
+
+    def test_rejects_duplicate_headers_instead_of_selecting_one(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cn_root, jp_root = build_fixture(Path(tmp))
+            cn_dir = cn_root / "【S1_01】测试书" / "OEBPS" / "Text"
+            (cn_dir / "S1_01-01_Duplicate.xhtml").write_text(CN_PROLOGUE, encoding="utf-8")
+            rows, notes = load_pairs("S1_01", cn_root, jp_root)
+            self.assertEqual(rows, [])
+            self.assertTrue(any("重复表头" in n for n in notes))
+
+    def test_rejects_equal_length_with_different_line_structure(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cn_root, jp_root = build_fixture(Path(tmp))
+            target = jp_root / "【S1_01】テスト本" / "item" / "xhtml" / "S1_01-01.xhtml"
+            target.write_text(JP_PROLOGUE.replace("<p>どうでもいい行。</p>", "<br/>", 1), encoding="utf-8")
+            rows, notes = load_pairs("S1_01", cn_root, jp_root)
+            self.assertEqual(rows, [])
+            self.assertTrue(any("行类型错位" in n for n in notes))
 
     def test_skips_metadata_lines(self):
         # head 区的 title／meta／link 与 XML 声明不参与配对：各文件这些行往往同号，
@@ -174,6 +233,35 @@ class FragGroupTests(unittest.TestCase):
 
 
 class SimPairTests(unittest.TestCase):
+    def test_preserves_sparse_sampled_pair_when_full_gram_is_frequent(self):
+        source = "明日は図書館へ行って新しい本を探す予定ですが君も一緒に来ませんか"
+        rows = [
+            {"file": "a.xhtml", "line": 1, "jp": source, "cn": "去图书馆找书。"},
+            {"file": "b.xhtml", "line": 1, "jp": source, "cn": "去书店买书。"},
+        ]
+        rows += [
+            {"file": f"noise-{i}.xhtml", "line": 1, "jp": "ね" + source, "cn": "重复句。"}
+            for i in range(41)
+        ]
+        pairs = sim_pairs(rows, n=8, threshold=0.9)
+        self.assertEqual(len(pairs), 1)
+        self.assertEqual({pairs[0][0]["file"], pairs[0][1]["file"]}, {"a.xhtml", "b.xhtml"})
+
+    def test_recalls_insertions_and_deletions_across_ngram_offsets(self):
+        source = "明日は図書館へ行って新しい本を探す予定ですが君も一緒に来ませんか"
+        for offset in (0, 2, 9):
+            for inserted in ("ね", "ねえ", "ねえね"):
+                shifted = source[:offset] + inserted + source[offset:]
+                for left, right in ((source, shifted), (shifted, source)):
+                    with self.subTest(offset=offset, inserted=inserted, left=left):
+                        rows = [
+                            {"file": "a.xhtml", "line": 1, "jp": left, "cn": "去图书馆找书。"},
+                            {"file": "b.xhtml", "line": 1, "jp": right, "cn": "去书店买书。"},
+                        ]
+                        pairs = sim_pairs(rows, n=8, threshold=0.9)
+                        self.assertEqual(len(pairs), 1)
+                        self.assertGreater(pairs[0][2], 0.9)
+
     def test_finds_near_identical_jp(self):
         rows = [
             {"file": "a.xhtml", "line": 1,
@@ -304,6 +392,97 @@ class IterWorksTests(unittest.TestCase):
 
 
 class ConventionStatsTests(unittest.TestCase):
+    def test_cli_persists_coverage_and_pairing_warnings(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            cn_root, jp_root = self._fixture(
+                root, "<p>她叹气。</p>\n", "<p>前置き。</p>\n<p>彼女は息を吐く。</p>\n",
+            )
+            out = root / "report"
+            result = subprocess.run(
+                [sys.executable, str(TOOLS / "check_echo.py"),
+                 "--root", str(cn_root), "--jp-root", str(jp_root), "--out", str(out),
+                 "--convention", "息を吐", "--convention-words", "叹气"],
+                capture_output=True, text=True, encoding="utf-8", check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            for rendered in (result.stdout, (out / "convention.md").read_text(encoding="utf-8")):
+                self.assertIn("请求 1 本", rendered)
+                self.assertIn("可靠配对 0 本", rendered)
+                self.assertIn("零覆盖：S1_01", rendered)
+                self.assertIn("cn=1 jp=2", rendered)
+
+    def test_repeated_work_arguments_do_not_double_count(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cn_root, jp_root = self._fixture(
+                Path(tmp), "<p>她叹气。</p>\n", "<p>彼女は息を吐く。</p>\n",
+            )
+            stats = convention_stats(["息を吐"], ["叹气"], cn_root, jp_root, ["S1_01", "s1_01"])
+            self.assertEqual(stats["requested_works"], 1)
+            self.assertEqual(stats["groups"][0]["hits"], 1)
+
+    def test_reports_skipped_partial_and_matched_coverage(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cn_root, jp_root = self._fixture(
+                Path(tmp), "<p>她叹气。</p>\n", "<p>彼女は息を吐く。</p>\n",
+            )
+            cn_dir = cn_root / "【S1_01】测试书" / "OEBPS" / "Text"
+            (cn_dir / "S1_01-02_Chapter.xhtml").write_text("<p>缺少对照。</p>\n", encoding="utf-8")
+            stats = convention_stats(
+                ["息を吐"], ["叹气"], cn_root, jp_root, ["S1_01", "S1_02"],
+            )
+            self.assertEqual(stats["requested_works"], 2)
+            self.assertEqual(stats["works"], 1)
+            self.assertEqual(stats["paired_rows"], 1)
+            self.assertEqual(stats["matched_works"], ["S1_01"])
+            self.assertEqual(stats["partial_works"], ["S1_01"])
+            self.assertEqual(stats["skipped_works"], ["S1_02"])
+            self.assertTrue(any("缺日文对照" in n for n in stats["notes"]))
+            text, summary = render_convention(stats)
+            for rendered in (text, summary):
+                self.assertIn("请求 2 本", rendered)
+                self.assertIn("可靠配对 1 本", rendered)
+                self.assertIn("可靠配对行 1", rendered)
+                self.assertIn("部分覆盖：S1_01", rendered)
+                self.assertIn("零覆盖：S1_02", rendered)
+                self.assertIn("缺日文对照", rendered)
+
+    def test_mismatched_file_does_not_become_unclassified_match(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cn_root, jp_root = self._fixture(
+                Path(tmp), "<p>她叹气。</p>\n", "<p>前置き。</p>\n<p>彼女は息を吐く。</p>\n",
+            )
+            stats = convention_stats(["息を吐"], ["叹气"], cn_root, jp_root)
+            self.assertEqual(stats["works"], 0)
+            self.assertEqual(stats["groups"][0]["hits"], 0)
+            self.assertEqual(stats["groups"][0]["other"], 0)
+            self.assertTrue(any("cn=1 jp=2" in n for n in stats["notes"]))
+
+    def test_paired_work_with_no_pattern_match_is_not_skipped(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cn_root, jp_root = build_fixture(Path(tmp))
+            stats = convention_stats(["存在しない語"], [], cn_root, jp_root)
+            self.assertEqual(stats["works"], 1)
+            self.assertEqual(stats["paired_rows"], 5)
+            self.assertEqual(stats["matched_works"], [])
+            self.assertEqual(stats["skipped_works"], [])
+
+    def test_empty_roots_and_zero_pair_work_are_explicit(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cn_root, jp_root = build_fixture(Path(tmp))
+            for path in jp_root.rglob("*.xhtml"):
+                path.unlink()
+            stats = convention_stats(["息を吐"], [], cn_root, jp_root)
+            self.assertEqual(stats["works"], 0)
+            self.assertEqual(stats["skipped_works"], ["S1_01"])
+            self.assertTrue(stats["notes"])
+            stats = convention_stats(["息を吐"], [], Path(tmp) / "missing-cn", Path(tmp) / "missing-jp")
+            self.assertEqual(stats["works"], 0)
+            text, summary = render_convention(stats)
+            for rendered in (text, summary):
+                self.assertIn("中文根目录不存在", rendered)
+                self.assertIn("日文根目录不存在", rendered)
+
     def _fixture(self, root: Path, cn_lines: str, jp_lines: str) -> tuple[Path, Path]:
         cn_root, jp_root = build_fixture(root)
         (cn_root / "【S1_01】测试书" / "OEBPS" / "Text" / "S1_01-01_Prologue.xhtml").write_text(

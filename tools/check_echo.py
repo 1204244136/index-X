@@ -59,6 +59,13 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "tools"))
 from xhtml_text import text_of_without_ruby  # noqa: E402  注音剥除规则的唯一实现
+from alignment_rules import (  # noqa: E402
+    MANUAL_ALIGNMENT_HEADERS,
+    NON_PAIR_WORK_IDS,
+    PAIR_RULES,
+    TEXTUAL_IMAGE_HEADERS,
+)
+from xhtml_structure import header_index, pair_structure_problems  # noqa: E402
 
 KANA = r"\u3040-\u30ff"
 HAN = r"\u4e00-\u9fff"
@@ -122,7 +129,10 @@ def iter_works(cn_root: Path, jp_root: Path) -> list[str]:
 
 
 def load_pairs(work: str, cn_root: Path, jp_root: Path) -> tuple[list[dict], list[str]]:
-    """按内容序配对中日文件并逐行取纯文本；返回 (行记录, 告警)。"""
+    """按共享表头与结构规则保守配对；返回 (可靠行记录, 跳过原因/告警)。"""
+    work = work.upper()
+    if work in NON_PAIR_WORK_IDS:
+        return [], [f"{work}: 非同一形态，跳过按行配对"]
     notes: list[str] = []
     cn_dir_entry = find_book_dir(cn_root, work)
     jp_dir_entry = find_book_dir(jp_root, work)
@@ -131,35 +141,40 @@ def load_pairs(work: str, cn_root: Path, jp_root: Path) -> tuple[list[dict], lis
     if jp_dir_entry is None:
         return [], [f"{work}: 日文参考目录未找到（{jp_root}）"]
 
-    cn_text = cn_dir_entry / "OEBPS" / "Text"
-    if not cn_text.is_dir():
-        cn_text = cn_dir_entry
-    jp_xhtml = jp_dir_entry / "item" / "xhtml"
-    if not jp_xhtml.is_dir():
-        jp_xhtml = jp_dir_entry
+    try:
+        cn_by = header_index(cn_dir_entry)
+        jp_by = header_index(jp_dir_entry)
+    except ValueError as exc:
+        return [], [f"{work}: {exc}；跳过该作品配对"]
 
     rows: list[dict] = []
-    for cn_file in sorted(cn_text.glob(f"{work}-*.xhtml")):
-        match = re.match(rf"({work}-\d+)", cn_file.name)
-        if match:
-            seq = match.group(1)
-            jp_file = jp_xhtml / f"{seq}.xhtml"
-        else:
-            # 无内容序的单文件卷（如 S6_24.12.10-Main.xhtml）：按同名配对
-            jp_file = jp_xhtml / cn_file.name
-            if not jp_file.is_file():
-                continue
-            seq = cn_file.stem
-        if not jp_file.is_file():
-            notes.append(f"{work}: 缺日文对照 {jp_file.name}")
+    for seq in sorted(cn_by.keys() | jp_by.keys()):
+        if seq in MANUAL_ALIGNMENT_HEADERS:
+            notes.append(f"{work}: {seq} 人工对齐例外，跳过按行配对")
             continue
+        if seq in TEXTUAL_IMAGE_HEADERS:
+            notes.append(f"{work}: {seq} 文本化图片例外，跳过按行配对")
+            continue
+        if seq in PAIR_RULES:
+            notes.append(f"{work}: {seq} 配对例外 {PAIR_RULES[seq]}，跳过按行配对")
+            continue
+        if seq not in cn_by:
+            notes.append(f"{work}: 缺中文对照 {seq}（日文 {jp_by[seq].name}）")
+            continue
+        if seq not in jp_by:
+            notes.append(f"{work}: 缺日文对照 {seq}（中文 {cn_by[seq].name}）")
+            continue
+        cn_file, jp_file = cn_by[seq], jp_by[seq]
         cn_lines = cn_file.read_text(encoding="utf-8").splitlines()
         jp_lines = jp_file.read_text(encoding="utf-8").splitlines()
         if len(cn_lines) != len(jp_lines):
-            notes.append(f"{work}: {seq} 行数不等（cn={len(cn_lines)} jp={len(jp_lines)}）")
-        for i in range(max(len(cn_lines), len(jp_lines))):
-            cn_raw = cn_lines[i] if i < len(cn_lines) else ""
-            jp_raw = jp_lines[i] if i < len(jp_lines) else ""
+            notes.append(f"{work}: {seq} 行数不等（cn={len(cn_lines)} jp={len(jp_lines)}），跳过配对")
+            continue
+        problems = pair_structure_problems(jp_lines, cn_lines)
+        if problems:
+            notes.extend(f"{work}: {seq} {problem}，跳过配对" for problem in problems)
+            continue
+        for i, (cn_raw, jp_raw) in enumerate(zip(cn_lines, jp_lines)):
             # 排除元数据行：各文件的 <title>／<meta>／<link> 与 XML 声明会在同一行号
             # 反复出现，制造大量假「同源复现」（实测 S6_24.06.07 因此报出 256 对，
             # 其中 68 对是各文件同一行的书名）。
@@ -270,14 +285,19 @@ def sim_pairs(rows: list[dict], n: int, threshold: float) -> list[tuple[dict, di
     """
     docs = [r for r in rows
             if len(norm_jp(r["jp"])) >= 20 and not LONG_VOWEL.search(r["jp"])]
-    inverted: dict[str, set[int]] = defaultdict(set)
+    inverted: dict[str, tuple[set[int], set[int]]] = defaultdict(lambda: (set(), set()))
     for idx, row in enumerate(docs):
         key = norm_jp(row["jp"])
-        for k in range(0, len(key) - n + 1, 2):
-            inverted[key[k:k + n]].add(idx)
+        # 覆盖所有起点，避免单字插入/删除翻转奇偶性后丢失全部公共键。
+        for k in range(len(key) - n + 1):
+            inverted[key[k:k + n]][k % 2].add(idx)
     seen: set[tuple[int, int]] = set()
     out: list[tuple[dict, dict, float]] = []
-    for idxs in inverted.values():
+    for even, odd in inverted.values():
+        idxs = even | odd
+        if len(idxs) > 40:
+            # 全位置索引可能把旧稀疏桶推过高频上限，回退旧偶数桶以保留既有召回。
+            idxs = even
         if not 2 <= len(idxs) <= 40:
             continue
         ordered = sorted(idxs)
@@ -581,9 +601,32 @@ def convention_stats(patterns: list[str], words: list[str], cn_root: Path, jp_ro
          "other_samples": [], "by_work": defaultdict(lambda: defaultdict(int)), "rows": []}
         for p, _ in group_res
     ]
-    works = books if books else iter_works(cn_root, jp_root)
+    works = list(dict.fromkeys(w.upper() for w in (books if books else iter_works(cn_root, jp_root))))
+    notes: list[str] = []
+    skipped_works: list[str] = []
+    partial_works: list[str] = []
+    matched_works: list[str] = []
+    paired_works = paired_rows = 0
+    if not works:
+        if not cn_root.is_dir():
+            notes.append(f"中文根目录不存在：{cn_root}")
+        if not jp_root.is_dir():
+            notes.append(f"日文根目录不存在：{jp_root}")
+        if not notes:
+            notes.append("中日作品目录无交集，未取到可靠配对行")
     for work in works:
-        rows, _ = load_pairs(work, cn_root, jp_root)
+        rows, work_notes = load_pairs(work, cn_root, jp_root)
+        notes.extend(work_notes)
+        if not rows:
+            skipped_works.append(work)
+            if not work_notes:
+                notes.append(f"{work}: 未取到可靠配对行")
+            continue
+        paired_works += 1
+        paired_rows += len(rows)
+        if work_notes:
+            partial_works.append(work)
+        matched = False
         for row in rows:
             # 注音剥除会在 `<ruby>` 边界留下空白（日文行里写成 `呆 れ たように`），
             # 否则用户得自己写 `呆\s*れ`；匹配一律按连续文本，正则里不必带 \s。
@@ -591,6 +634,7 @@ def convention_stats(patterns: list[str], words: list[str], cn_root: Path, jp_ro
             idx = next((i for i, (_, rx) in enumerate(group_res) if rx.search(probe)), None)
             if idx is None:
                 continue
+            matched = True
             group = groups[idx]
             group["hits"] += 1
             group["by_work"][work]["合计"] += 1
@@ -609,7 +653,13 @@ def convention_stats(patterns: list[str], words: list[str], cn_root: Path, jp_ro
                 f"    - JP {row['jp'][:80]}\n"
                 f"    - CN {row['cn'][:80]}"
             )
-    return {"works": len(works), "words": words, "groups": groups}
+        if matched:
+            matched_works.append(work)
+    return {
+        "works": paired_works, "requested_works": len(works), "paired_rows": paired_rows,
+        "matched_works": matched_works, "partial_works": partial_works, "skipped_works": skipped_works,
+        "notes": notes, "words": words, "groups": groups,
+    }
 
 
 def render_convention(stats: dict, min_book: int = 5) -> tuple[str, str]:
@@ -619,6 +669,19 @@ def render_convention(stats: dict, min_book: int = 5) -> tuple[str, str]:
     head = [f"# 全库惯例统计（作品 {stats['works']} 本）", "",
             f"词表：{'、'.join(words)}；下表的数字序为 {order}。", ""]
     summary = [f"=== 全库惯例统计（作品 {stats['works']} 本）===", f"词表：{'、'.join(words)}", ""]
+    coverage = (
+        f"覆盖：请求 {stats['requested_works']} 本；可靠配对 {stats['works']} 本；"
+        f"模式命中 {len(stats['matched_works'])} 本；可靠配对行 {stats['paired_rows']}"
+    )
+    coverage_lines = [coverage]
+    for label, key in (("部分覆盖", "partial_works"), ("零覆盖", "skipped_works")):
+        if stats[key]:
+            coverage_lines.append(f"{label}：{'、'.join(stats[key])}")
+    if stats["notes"]:
+        coverage_lines += ["", "配对告警与跳过原因："]
+        coverage_lines += [f"- {note}" for note in stats["notes"]]
+    head += coverage_lines + [""]
+    summary += coverage_lines + [""]
     for group in stats["groups"]:
         total = group["hits"]
         head += [f"## {group['pattern']}　匹配 {total} 行", ""]
