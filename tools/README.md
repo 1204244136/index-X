@@ -26,6 +26,7 @@
 | 日文 BW 源做成工作源 | C2 | `python tools/bw_preprocess.py …`，合并见 `merge_bw_pages.py`；流程见 [bw-source-import skill](../.agents/skills/bw-source-import/SKILL.md) |
 | 中日结构／行数对不上 | C4 查 → C3 修 | 查：`python tools/check_alignment.py`，漂移定位加 `python tools/diff_paired_lines.py`；修：`fix_legacy_pagebreak_br.py`／`restore_cn_scene_breaks.py`／`sync_pb_tags.py`（页边界）→ `normalize_paired.py` → `wrap_cn_image_lines.py`／`reorder_notes.py`；预案 P4 |
 | 只想检查、不写盘 | C4 | `python tools/check_alignment.py --strict`、`python tools/check_epub_health.py --strict` |
+| 查前后呼应有没有被改动改断 | C4 查 → C5 判 | `python tools/check_echo.py --book S1_01`，候选逐条回原文核对（见 [校对复核 skill](../.agents/skills/proofread-review/SKILL.md) 的呼应检查） |
 | 核对译名有没有落地 | C4 | `python tools/check_translation_table.py --table 译名表.xlsx --strict` |
 | 复核一批校对改动 | C5 | `python tools/proofread_review.py --worktree` |
 | 做字符级规范化 | C5 | `python tools/text_norm.py --root EPUB --apply`（默认预览） |
@@ -55,7 +56,7 @@
 | C1 同步与发布 | 三副本数据流、基线清单、打包与发布前检查；不管内容对错 | 7 | 预检、基线完整性、冲突方向 |
 | C2 导入与交稿往返 | 源 ↔ 成品的构建（交稿 → 成品、成品 → 交稿、BW 分页源 → 章节）；不管成品的后续结构与规范 | 13 | 材料七项、逐章物理行数 |
 | C3 成品结构与配对修复 | 写盘型结构修复；不负责判定通过与否（判定在 C4） | 10 | 逐边界数量、行数与块对应 |
-| C4 门禁与体检 | 只读阻断与诊断；不修内容 | 10 | strict 非零即阻断 |
+| C4 门禁与体检 | 只读阻断与诊断；不修内容 | 11 | strict 非零即阻断 |
 | C5 内容质量 | 字符级与语义级的内容改动；不决定译名取舍（走 skill） | 4 | 字符级规范化 0 命中 |
 | C6 检索与统计 | 只读检索与字数／页数换算；不作语义裁定 | 4 | 无（只读诊断） |
 | C0 共享内核 | 无 CLI 的共享规则与原子写入能力；不另建工作流入口 | 16 | 由调用方承担 |
@@ -344,8 +345,38 @@ python tools/reorder_notes.py --root EPUB --apply --no-backup
 | `compare_epub_images.py` | `python tools/compare_epub_images.py --pattern "*S3_*" --output 显式报告目录` | 只读；写图片核对报告 | 字节／像素相同与感知候选分开；候选需视觉确认【无】 | `test_compare_epub_images.py` |
 | `check_epub_validity.py` | `python tools/check_epub_validity.py EPUB --structural --strict` | 只读；写显式报告；系统临时解包 | calibre 补充检查；strict 过滤后仍有问题为 1，环境／输入前提错误为 2【无】 | `test_calibre_validity.py` |
 | `check_project_docs.py` | `python tools/check_project_docs.py` | 只读；终端报告 | 本地链接／锚点、索引登记与回指、工具簇归属与单一来源；缺项非零【无】 | `test_check_project_docs.py` |
+| `check_echo.py` | `python tools/check_echo.py --book S1_01 --book S1_02`／`--convention "<日文正则>" --convention-words "<中文正则表>"` | 只读；写 `--out` 候选清单或惯例报告 | 只定位呼应候选（片段多译／同源复现／引述回指）与全库用词分布，不判定、不阻断【无】 | `test_check_echo.py` |
 
 - **依赖**：`compare_epub_images.py` 需要 `Pillow`（`python -m pip install Pillow`），与 `image_signature.py` 同一口径：属**可选依赖**，CI 只用官方 Python 环境、不预装第三方包。因此 `test_compare_epub_images.py` 在无 Pillow 环境下整组跳过，而不是让测试采集失败；采集阶段失败会中断整个 `unittest discover`，使发布流水线在「Validate tools and publication source」一步整条中止。
+
+### 呼应检查
+
+```powershell
+python tools/check_echo.py --book S1_01 --book S1_02
+python tools/check_echo.py --book S1_01 --out .cache/epub-work/echo-check
+python tools/check_echo.py --book S1_01 --include-marker-quotes   # 实验分支，候选量大
+```
+
+定位作品内「应当一致」的呼应点候选：**同一日文片段在作品内出现多次而中文译法不一致**（并按 `实词／语体／虚词` 标注差异性质、据此排序）、**日文相似行对**（原句及其引述／复现形态）、**日语侧引文回全文找出的疑似出处**（`『…』` 引用符，或 `って／とか` 引述助词——后者默认关闭）。默认读 `EPUB/` 与 `.cache/epub-work/japanese-text/`，按内容序配平行号；输出 `--out` 目录下每作品一份 `*-呼应候选.md` 与 `summary.md`。
+
+引述候选带两级证据：`relation` = `exact`（日语逐字同形）／`wraps`（**引述升级**：引述比被引处更完整更逐字，被引处必须就是引述的版本）／`within`／`fuzzy`；`cn_class` = 中文两侧差异性质。`--include-marker-quotes` 额外扫 `って／とか` 形态的改写式引述（日文措辞与全文不同、中文仍保留引号与回指词），**候选量约为默认的 3 倍且需人工筛**，只在通校收尾专查时开。
+
+**降噪规则**（每条都有实测依据，见分片报告）：元数据行（`<title>`／`<meta>`／`<link>`／XML 声明）不参与——各文件这些行同号，会造出假同源对；含长音／重复假名串的行（惨叫、拟声）不进类 2——S6_24.06.07 的 190 对里 79 对属此类；类 3 要求**出处必须在引述处之前**（引述是回指前文，方向相反的配对多是误配）；`fuzzy`（仅 n-gram 相似、互不包含）要求覆盖率 ≥ 0.8；引文不含平假名（纯专名／名词短语，如 `『ブラフマーアストラ』`）不列为候选。实测降噪幅度：类 3 在 S5_04_01 由 31→2、S5_03_02 由 7→1、S5_01_03 由 86→27；类 2 在 S6_24.06.07 由 190→101。
+
+只读、不判定、不设阈值：输出是**候选**，构成呼应与否、哪一侧该改，必须逐条回日文原文核对（流程与判定纪律见 [校对复核 skill](../.agents/skills/proofread-review/SKILL.md)）。差异性质只是提示——`实词` 不必然是异译（同义改写同样命中），`虚词` 也不必然能并存；中文两侧字形不同不等于必须统一，判断依据是日语侧的语气层。它补的是既有门禁查不到的一维——同一句日文被译成多种说法时，行数、模板、XML、加粗、术语裁定全部照常通过。
+
+### 全库惯例统计
+
+候选只说明「应当一致」，不说明往哪边一致。涉及**高频叙述定型**（同一表达在全库出现数十次以上，如 `息を吐く`、`微笑む`、`顔を上げる`）时，只看本卷会得出反向结论——实测 S5_03_02 卷内 `そっと息を吐く` 以「吐气」居多（26 行中吐气 14、叹气 10），据这个局部多数把一处「轻叹一口气」改成「吐气」；而全库该说法是「叹气」占优（226 行中叹气 135、吐气 41），改动方向与全书相反，随后回退（`cbee10ca`）。
+
+```powershell
+python tools/check_echo.py --convention "呆れたように息を吐" --convention "そっと息を吐" --convention-words "叹[气了息]|叹息|无奈,吐[出了气]|呼[出了]|呼气"
+python tools/check_echo.py --convention "そっと息を吐" --convention-books "S5_03_02,S3_04" --convention-min-book 5
+```
+
+多个 `--convention` 各成一组、按给出顺序取首个命中（互斥分组）；日文正则按**连续文本**写即可，注音剥除留下的空格（`呆 れ たように`）会自动忽略。`--convention-words` 是中文侧词表，**词条按正则解释**——中文说法在句中被助词隔开（「叹气」常写作「叹了口气」），按字面比对会大面积漏判（实测 92.5% 的行落进「未分类」）。`--convention-books` 限定作品，`--convention-min-book` 控制分卷分布只列达到该行数的作品。
+
+输出含匹配总数、各词占比、**分卷分布**（用于识别例外卷——同一说法在各卷的倾向可能相反）与未分类样例（据此补词表）。未分类占比高说明词表覆盖不全，不代表该行没有译法；`0` 命中的词条同理。只统计、不判定，取形方向仍须回原文并结合裁定。
 
 ### 对齐检查
 
