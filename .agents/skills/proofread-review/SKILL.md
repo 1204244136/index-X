@@ -1,6 +1,6 @@
 ---
 name: proofread-review
-description: index-X 校对复核工作流。用于复核校对工具（BetweenLines「AI 辅助校对」的确认结果导出）产出、已落到 EPUB/ 的批量译文改动：把改动片段化分级、规范级批量放行、语义级回日文原文逐条核对（一律先略读、一次性划定切片，强制多开子智能体并行核对）、找出误改并回改，否决也留理由。触发词：校对复核、复核误改、误修改、重新校对复核、proofread review、批量改动复核、回原文核对、BetweenLines 校对结果。
+description: index-X 校对复核工作流。用于复核校对工具（外部 AI 辅助校对工具的确认结果导出）产出、已落到 EPUB/ 的批量译文改动：把改动片段化分级、规范级批量放行、语义级回日文原文逐条核对（一律先略读、一次性划定切片，强制多开子智能体并行核对）、找出误改并回改，否决也留理由。触发词：校对复核、复核误改、误修改、重新校对复核、proofread review、批量改动复核、回原文核对、BetweenLines 校对结果。
 ---
 
 # 校对复核工作流（index-X）
@@ -9,7 +9,7 @@ description: index-X 校对复核工作流。用于复核校对工具（BetweenL
 
 处理「校对工具改完，要判断改得对不对」这一类任务。仓库级规约以 `AGENTS.md` 为准，译文规范以 `docs/translation-spec.md` 为准，本文件写「怎么复核、怎么下判定」。
 
-典型触发：BetweenLines 的 AI 辅助校对产出确认结果、应用到 `EPUB/` 之后，需要找出其中**误修改**并回改。
+典型触发：外部 AI 辅助校对工具产出确认结果、应用到 `EPUB/` 之后，需要找出其中**误修改**并回改。
 
 ## 一、先分清任务类型
 
@@ -43,7 +43,7 @@ description: index-X 校对复核工作流。用于复核校对工具（BetweenL
 
 ## 三、输入形态与命令
 
-改动来源：BetweenLines「AI 辅助校对」的确认结果导出（`out/projects/<id>/snapshots/<ts>/translation-compare.csv`，列含 `jp` / `cn`）经应用后落到 `EPUB/`。**复核入口是 git 改动**，与应用方式无关。
+改动来源：外部 AI 辅助校对工具的确认结果导出（`out/projects/<id>/snapshots/<ts>/translation-compare.csv`，列含 `jp` / `cn`）经应用后落到 `EPUB/`。**复核入口是 git 改动**，与应用方式无关。
 
 ```powershell
 # 工作区未提交的改动（校对结果刚应用、还没提交）

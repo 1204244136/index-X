@@ -72,7 +72,7 @@ python tools/import_align_plan.py 交稿.docx --work S4_04 --book-dir "【S4_04�
 ```
 
 把交稿按 Heading 1 切章，与日文工作源内容文件一一对应，再按**日文物理行**逐行比对，
-输出缺口窗口与建议改动。对齐口径与 BetweenLines 的跨语言对齐同形：日文一行＝一个行单元，
+输出缺口窗口与建议改动。对齐口径与外部对齐工具的跨语言对齐同形：日文一行＝一个行单元，
 中文侧允许 1:2，绝不允许多段日文并成一行；关系词表就是计划里该填的改动：
 
 | 关系 | 含义 | 建议 op | 判据 |
@@ -170,5 +170,5 @@ git add EPUB && git commit -F 提交信息.txt
 6. **引号与注脚**：注脚引用必须是 `<a class="nodeco" epub:type="noteref" href="S4_04-Note.xhtml#noteN">`，
    且 Note 页条目 id 与正文首次出现顺序一致，`check_note_order.py` 会核对。
 7. **全角空格**：段内的 `U+3000` 可能是对齐或分字效果，不要「顺手清理」。
-8. **对齐工具不是语义判据**：`import_align_plan.py` 用「汉字重叠＋长度比」替代 BetweenLines 的
+8. **对齐工具不是语义判据**：`import_align_plan.py` 用「汉字重叠＋长度比」替代外部对齐工具的
    多语言向量打分，只为离线可用；语义级复核仍走 `check_semantic_alignment.py --betweenlines-dir`。
