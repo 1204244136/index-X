@@ -456,3 +456,31 @@ span.frame1 {
 .heading-lines > .heading-code {
   display: block;
 }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  word-wrap: break-word;
+  font-size: 0.85em;
+}
+th,
+td {
+  padding: 4px 3px;
+  text-align: left;
+  vertical-align: top;
+}
+th {
+  text-align: center;
+}
+.code {
+  font-family: "Courier New", Courier, monospace;
+  font-size: 0.8em;
+  text-indent: 0;
+  text-align: left;
+  word-break: break-all;
+  margin: 0.6em 0;
+  padding: 0.4em 0.5em;
+  border-style: solid;
+  border-width: 1px;
+  border-color: #9d9b9c;
+}
