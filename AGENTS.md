@@ -83,7 +83,7 @@
 ## 版本控制边界
 
 - 应提交：可重复使用的维护脚本、工具说明、项目规约，以及确认过的档案内容修改。
-- commit 信息应使用中文并遵守 Conventional Commits 风格。
+- 编写、检查或重写 commit 信息前必读 [提交规范](docs/commit-spec.md)；标题、正文与提交核验以该文件为唯一来源，各 skill 只保留业务前提和入口。
 - 不应提交：`.cache/`、临时 `scan_*` 脚本、一次性术语修复工具及其映射表、一次性诊断输出、机器本地路径和中间报告。
 - `docs/translation-name-rulings.md` 的裁定登记**不单独提交**：与触发该裁定的 `EPUB/` 成品改动**同批提交**，使「结论 ↔ 落地」在同一提交内可对照；只有新建本表或对全表整体整理（判据重订、结构重排）时才单独提交。
 - `docs/changelog.md` 已冻结并归档为 `docs/archive/legacy-changelog.md`；两者均禁止继续编辑。

@@ -148,13 +148,10 @@ python tools/check_epub_validity.py "EPUB/【S4_04】某暗部的少女共栖 4"
 
 ```powershell
 python tools/publish_auto.py            # 流程 C：EPUB/ → OneDrive ＋ 缓存镜像，并更新清单
-git add EPUB && git commit -F 提交信息.txt
 ```
 
 * 单本修改以提交承载，不留档；一次落在两本及以上作品才在 `docs/maintenance-records/` 留档。
-* 提交信息写清：成品构成（正文／包装页／图片）、来源（交稿、素材、日文卷）、
-  结构改动条数（如「补 `<br/>` 4 处、还原被并段 9 处」）、门禁结果与发布方式。
-* 只暂存本任务文件，不 push、不建 release。
+* 同步成功后，按 [提交规范](../../../docs/commit-spec.md) 的成品导入分支完成本地提交。
 * 图片素材、交稿、计划文件等外部输入不进仓库。
 
 ## 四、实测坑位（都踩过）

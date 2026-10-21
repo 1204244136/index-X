@@ -130,8 +130,8 @@ python tools/publish_auto.py            # 打包上传 OneDrive + 回流缓存 +
 - 无论跨本与否，**只要在多个都成立的候选间作出了新选择，先向维护者提出候选与依据，经确认后再登记进 `docs/translation-name-rulings.md`**；未经确认不得自行写入裁定。明显错误直接订正，不算裁定、不登记（判据见该表 §一）。
 - 单作品 → 不留档。
 - 提交与登记的同批关系按 `AGENTS.md`「版本控制边界」执行。
-- 提交：中文 + Conventional Commits（如 `fix(S4_03): 统一白鸟炽媚口癖「当方」译为「本人」`）。**只暂存本任务涉及的文件**，不纳入用户其它未提交改动；不 push。
-- 若工作区有其他任务的未提交改动，与该改动同处一批文件时：按口径改完但只提交本任务部分，并在留档里写明工作区状态与未纳入原因（范例：`benizome-zerifish-catchphrase-translation-consistency-2026-09-16.md` §「工作区状态说明」）。
+- 提交按 [提交规范](../../../docs/commit-spec.md) 的术语统一分支执行。
+- 工作区夹杂其他任务的未提交改动时，跨作品留档写明工作区状态与未纳入原因（范例：`benizome-zerifish-catchphrase-translation-consistency-2026-09-16.md` §「工作区状态说明」）。
 
 ## 五、常用命令
 

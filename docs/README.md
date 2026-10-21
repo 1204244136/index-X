@@ -8,6 +8,7 @@
 | --- | --- | --- |
 | [`README.md`](../README.md) | 面向读者：项目介绍、下载、反馈、版本对比 | 了解 X 系列是什么、怎么获取 |
 | [`AGENTS.md`](../AGENTS.md) | 仓库级规约与入口：项目定位、目录约定、系列编号、版式规范指针、维护流程、数据流与编辑边界、版本控制边界 | 任何维护动作前；流程与落点／边界的**唯一规范来源** |
+| [提交规范](commit-spec.md) | 提交单元、标题、正文字段、业务提交分支、执行核验与对话收尾格式 | 编写、检查或重写提交信息；各 skill 的提交格式只引用本规范 |
 | [`tools/README.md`](../tools/README.md) | 工具入口、参数、数据流、判定口径与可验证行为 | 运行任何 `tools/` 命令前 |
 | [`translation-term-unification/SKILL.md`](../.agents/skills/translation-term-unification/SKILL.md) | 流程：译名／术语统一**怎么做** | 收敛异译、统一角色口癖与专名、裁定敬称与术语分层 |
 | [`proofread-review/SKILL.md`](../.agents/skills/proofread-review/SKILL.md) | 流程：批量译文改动**怎么复核** | 复核校对产出、判定误改并回改 |
