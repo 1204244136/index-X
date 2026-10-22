@@ -14,6 +14,7 @@
 | [`proofread-review/SKILL.md`](../.agents/skills/proofread-review/SKILL.md) | 流程：批量译文改动**怎么复核** | 复核校对产出、判定误改并回改 |
 | [`bw-source-import/SKILL.md`](../.agents/skills/bw-source-import/SKILL.md) | 流程：**日文 BW 源怎么导入** | 把某卷日文源做成工作源、BW 预处理与分页合并、交接给成品生成 |
 | [`volume-import/SKILL.md`](../.agents/skills/volume-import/SKILL.md) | 流程：**新书成品怎么生成** | 交稿转成品、新书入库；材料核对与六步原子工具链 |
+| [插图文字映射表](illustration-text-mapping.md) | **彩色插图上的文字 → 日文正文行号**的对照表（S1–S6，565 条），含口径、列义与逐卷覆盖统计 | 查某张彩页上的字在正文哪一行；核对插图页与正文是否对得上 |
 
 ## 二、版式规范的分工
 

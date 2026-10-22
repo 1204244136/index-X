@@ -28,6 +28,7 @@
 | 只想检查、不写盘 | C4 | `python tools/check_alignment.py --strict`、`python tools/check_epub_health.py --strict` |
 | 查前后呼应有没有被改动改断 | C4 查 → C5 判 | `python tools/check_echo.py --book S1_01`，候选逐条回原文核对（见 [校对复核 skill](../.agents/skills/proofread-review/SKILL.md) 的呼应检查） |
 | 核对译名有没有落地 | C4 | `python tools/check_translation_table.py --table 译名表.xlsx --strict` |
+| 查彩页上的字在正文哪一行／映射表行号有没有漂 | C4 | `python tools/check_illustration_mapping.py` |
 | 复核一批校对改动 | C5 | `python tools/proofread_review.py --worktree` |
 | 做字符级规范化 | C5 | `python tools/text_norm.py --root EPUB --apply`（默认预览） |
 | 查某个词／某句话在哪 | C6 | `python tools/search_text.py "…" --side both` |
@@ -56,7 +57,7 @@
 | C1 同步与发布 | 三副本数据流、基线清单、打包与发布前检查；不管内容对错 | 7 | 预检、基线完整性、冲突方向 |
 | C2 导入与交稿往返 | 源 ↔ 成品的构建（交稿 → 成品、成品 → 交稿、BW 分页源 → 章节）；不管成品的后续结构与规范 | 13 | 材料七项、逐章物理行数 |
 | C3 成品结构与配对修复 | 写盘型结构修复；不负责判定通过与否（判定在 C4） | 10 | 逐边界数量、行数与块对应 |
-| C4 门禁与体检 | 只读阻断与诊断；不修内容 | 11 | strict 非零即阻断 |
+| C4 门禁与体检 | 只读阻断与诊断；不修内容 | 12 | strict 非零即阻断 |
 | C5 内容质量 | 字符级与语义级的内容改动；不决定译名取舍（走 skill） | 4 | 字符级规范化 0 命中 |
 | C6 检索与统计 | 只读检索与字数／页数换算；不作语义裁定 | 4 | 无（只读诊断） |
 | C0 共享内核 | 无 CLI 的共享规则与原子写入能力；不另建工作流入口 | 16 | 由调用方承担 |
@@ -346,6 +347,7 @@ python tools/reorder_notes.py --root EPUB --apply --no-backup
 | `check_epub_validity.py` | `python tools/check_epub_validity.py EPUB --structural --strict` | 只读；写显式报告；系统临时解包 | calibre 补充检查；strict 过滤后仍有问题为 1，环境／输入前提错误为 2【无】 | `test_calibre_validity.py` |
 | `check_project_docs.py` | `python tools/check_project_docs.py` | 只读；终端报告 | 本地链接／锚点、索引登记与回指、工具簇归属与单一来源；缺项非零【无】 | `test_check_project_docs.py` |
 | `check_echo.py` | `python tools/check_echo.py --book S1_01 --book S1_02`／`--convention "<日文正则>" --convention-words "<中文正则表>"` | 只读；写 `--out` 候选清单或惯例报告 | 只定位呼应候选（片段多译／同源复现／引述回指）与全库用词分布，不判定、不阻断【无】 | `test_check_echo.py` |
+| `check_illustration_mapping.py` | `python tools/check_illustration_mapping.py [--doc …] [--jp-root …] [--json …]` | 只读 `docs/illustration-text-mapping.md` 与日文缓存；写 `--json` 显式报告 | 逐行回查物理行号；不符时按「正文原句」重定位并给建议行号，未解析非零；缓存缺失为 2【无】 | `test_check_illustration_mapping.py` |
 
 - **依赖**：`compare_epub_images.py` 需要 `Pillow`（`python -m pip install Pillow`），与 `image_signature.py` 同一口径：属**可选依赖**，CI 只用官方 Python 环境、不预装第三方包。因此 `test_compare_epub_images.py` 在无 Pillow 环境下整组跳过，而不是让测试采集失败；采集阶段失败会中断整个 `unittest discover`，使发布流水线在「Validate tools and publication source」一步整条中止。
 
@@ -445,6 +447,16 @@ python tools/compare_epub_images.py --pattern "*S3_*" --output 显式报告目�
 ```
 
 读两侧图片和 XHTML 引用，区分字节相同、解码像素相同、稳定命名对应与感知候选。双页范围可对应连续单页；旧命名依表头／槽位条件，不把页码猜为内容序。感知相似可能有修嵌或替换，必须视觉确认。`--cache` 指定参考根。
+
+### 插图映射表核对
+
+```powershell
+python tools/check_illustration_mapping.py
+```
+
+核对 [插图文字映射表](../docs/illustration-text-mapping.md) 的每一行：`行号` 是否还指着 `正文原句`。表里的行号是日文缓存的**物理行号**，而缓存由 `pull.ps1` 重建——日文源一重导、一规范化就可能整体位移，所以每次拉取后跑一次。
+
+行号不符时按 `正文原句` 在该卷正文里重新定位，给出建议行号；重新定位也找不到才计入未解析并非零退出。`--jp-root` 换参考根，`--json` 写报告，`--limit` 只控制样例条数。**缓存缺失返回 2（前提不成立）**，与「有漂移」的 1 区分开，避免在没拉取的环境里误报。
 
 ### 翻译规范检查
 
