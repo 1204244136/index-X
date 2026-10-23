@@ -272,7 +272,7 @@ python tools/docx2epub.py 交稿.docx --out 显式构建输出 --unpacked 显式
 | 工具 | 入口命令 | 读写范围 | 门禁与失败边界 | 测试 |
 | --- | --- | --- | --- | --- |
 | `normalize_single.py` | `python tools/normalize_single.py --dir EPUB/某书/OEBPS/Text [--apply]` | 预览默认；写 `EPUB/`；`--staging` 写显式暂存 | 共用模板规则；未知暂存路径按路径识别，不保证双侧对齐【无】 | CLI：`test_edit_safety.py`；模板规则：`test_xhtml_and_merge.py` |
-| `normalize_paired.py` | `python tools/normalize_paired.py --root EPUB --jp-root .cache/epub-work/japanese-text [--apply]` | 预览默认；归档模式只写中文，日文只读；双侧暂存模式才可改两侧 | 配对写入验证行数，不靠重排凑齐【无】 | CLI：`test_edit_safety.py`；模板规则：`test_xhtml_and_merge.py` |
+| `normalize_paired.py` | `python tools/normalize_paired.py --root EPUB --jp-root .cache/epub-work/japanese-text --book S1_01 [--apply]` | 预览默认；归档模式只写中文，日文只读；双侧暂存模式才可改两侧 | 配对写入验证行数，不靠重排凑齐【无】 | CLI：`test_normalize_paired_scope.py`、`test_edit_safety.py`；模板规则：`test_xhtml_and_merge.py` |
 | `migrate_heading_breaks.py` | `python tools/migrate_heading_breaks.py --cache EPUB [--apply]` | 预览默认；写同一书 XHTML 与被引用 CSS | 全书预检未知结构、路径越界、样式缺失与按层文字不变，任一失败不开始写入【无】 | `test_heading_breaks.py` |
 | `shift_content_sequences.py` | `python tools/shift_content_sequences.py EPUB/某书 --work-id S4_05 --offset 1 [--apply]` | 预览默认；改序号、文件名与 XHTML／OPF／NCX／nav／CSS／SVG 引用 | 重命名碰撞、不合法序号；歧义旧裸页引用保持不动并报告【无】 | `test_shift_content_sequences.py`、`test_sync_and_rename.py` |
 | `fix_empty_placeholders.py` | `python tools/fix_empty_placeholders.py --cache 显式书籍根 [--apply]` | 预览默认；删除编号空页、前移后续序号与引用 | 空页资格（无文本、无图/SVG）与前后邻居条件；OPF／NCX／nav 条目连带删除【无】 | `test_sync_and_rename.py`、`test_edit_safety.py`（动态） |
@@ -282,17 +282,20 @@ python tools/docx2epub.py 交稿.docx --out 显式构建输出 --unpacked 显式
 | `wrap_cn_image_lines.py` | `python tools/wrap_cn_image_lines.py --root EPUB [--wrap-only] [--apply]` | 预览默认；写中文归档／显式暂存中文 | 图片专用容器、配平与行数不变量；`--wrap-only` 仅包装裸 img、不删结构行【无】 | `test_wrap_cn_image_lines.py`、`test_edit_safety.py`（动态） |
 | `reorder_notes.py` | `python tools/reorder_notes.py --root EPUB [--apply] [--no-backup]` | 预览默认；写 Note 与正文引用；备份默认 `.cache/reorder-backup/` | 完整引用映射预检（条目、编号、正文引用），不通过不写；**容器非 `<ul>…</ul>` 时显式拒绝并报告**（规范要求 `<ul>`，`<ol>` 不再抛异常）【无】 | CLI：`test_edit_safety.py`；共享规则：`test_docx_and_notes.py` |
 
+局部任务的范围入口：single 选显式文件／`--dir`／文件 pattern；paired 选重复 `--book`／`--file` 或单书根；heading 选重复 `--book` glob；shift 与 empty 指定单书根；legacy／restore／pb／wrap 用 `--book`；notes 用书名 `--pattern`。省略筛选时可能处理整个根目录，`--apply` 仅切换写入模式，不缩小范围。
+
 ### 固定模板规范化
 
 ```powershell
 python tools/normalize_single.py --dir EPUB/某书/OEBPS/Text
 python tools/normalize_single.py --dir EPUB/某书/OEBPS/Text --apply
-python tools/normalize_paired.py --root EPUB --jp-root .cache/epub-work/japanese-text
-python tools/normalize_paired.py --root EPUB --jp-root .cache/epub-work/japanese-text --apply
+python tools/normalize_paired.py --root EPUB --jp-root .cache/epub-work/japanese-text --book S1_01
+python tools/normalize_paired.py --root EPUB --jp-root .cache/epub-work/japanese-text --book S1_01 --apply
+python tools/normalize_paired.py --root EPUB --jp-root .cache/epub-work/japanese-text --file "EPUB/某书/OEBPS/Text/S1_01-01_Prologue.xhtml"
 python tools/normalize_paired.py --cache 暂存根 --staging --apply
 ```
 
-single 只处理命令行指定文件或 `--dir`／`--pattern`，可用 `--side cn|jp` 明确重建侧；归档默认中文，未知暂存路径按路径识别，不保证双侧对齐。paired 负责作品／文件选择和配对约束，归档模式仅读日文，双侧暂存模式才可修改两侧。两者调用 `xhtml_template.py`，不承担历史多层标题语义迁移。行模板规则与豁免事实分别在 [EPUB 结构规范](../docs/epub-structure-spec.md) 和 `alignment_rules.py`。
+single 只处理命令行指定文件或 `--dir`／`--pattern`，可用 `--side cn|jp` 明确重建侧；归档默认中文，未知暂存路径按路径识别，不保证双侧对齐。paired 的 `--root`／`--jp-root` 接受库根或单书目录；`--book <完整作品号>` 与 `--file <中文 XHTML 路径>` 均可重复，文件路径相对当前目录，二者求交后才索引和预检。未知作品、无效／越界文件及空交集非零退出；选中表头有重复仍阻断，无关作品或表头不参与检查。不加筛选参数处理所给根目录全部内容。无日文书与已裁定结构特例仍按原合同跳过；缺单个日文文件时仅规范化中文。归档模式仅读日文，双侧暂存模式只修改选中的中日文件。两者调用 `xhtml_template.py`，不承担历史多层标题语义迁移。行模板规则与豁免事实分别在 [EPUB 结构规范](../docs/epub-structure-spec.md) 和 `alignment_rules.py`。
 
 ### 多层标题迁移
 
