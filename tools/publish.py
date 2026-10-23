@@ -29,7 +29,6 @@ from __future__ import annotations
 import argparse
 import fnmatch
 import shutil
-import subprocess
 import sys
 from pathlib import Path
 if __package__:
@@ -43,6 +42,7 @@ sys.path.insert(0, str(TOOLS_DIR))
 from file_transaction import rollback_paths  # noqa: E402
 from manifest import scan_cache, load_manifest, save_manifest  # noqa: E402
 from package_cache_epubs import package_book, PackageError  # noqa: E402
+from sync_lock import SyncLockBusy, cache_lock  # noqa: E402
 from sync_core import (  # noqa: E402
     ONEDRIVE_DEFAULTS,
     SIDE_DIRECTORIES,
@@ -261,6 +261,17 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     configure_output()
     args = parse_args()
+    if args.dry_run or not args.cache.is_dir():
+        return _publish(args)
+    try:
+        with cache_lock(args.cache):
+            return _publish(args)
+    except SyncLockBusy as exc:
+        print(f"[阻断] {exc}", file=sys.stderr)
+        return 1
+
+
+def _publish(args: argparse.Namespace) -> int:
     cache = args.cache.resolve()
     epub_root = args.epub.resolve()
 
@@ -278,6 +289,9 @@ def main() -> int:
 
     # Load manifest (baseline for change detection)
     baseline = load_manifest(cache)
+    # --force changes detection, not the already-published records of books
+    # outside this invocation's scope.
+    manifest_files = dict(baseline or {})
     if baseline is None:
         if args.force:
             print("警告: 未找到清单，--force 模式将处理所有文件。", file=sys.stderr)
@@ -404,8 +418,8 @@ def main() -> int:
     if successful:
         print("\n== 更新清单 ==")
         for book_key in successful:
-            update_manifest_for_book(baseline, book_key, current)
-        save_manifest(cache, baseline)
+            update_manifest_for_book(manifest_files, book_key, current)
+        save_manifest(cache, manifest_files)
         print(f"  已更新 {len(successful)} 本书的清单记录。")
 
     # Summary

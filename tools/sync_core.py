@@ -11,6 +11,7 @@ from pathlib import Path
 
 from file_transaction import atomic_write_bytes, rollback_paths
 from path_safety import is_extract_artifact
+from sync_lock import cache_lock
 
 
 STATUS_LABELS = {"added": "新增", "modified": "修改", "deleted": "删除"}
@@ -40,6 +41,13 @@ def read_pull_state(cache_root: Path) -> dict[str, tuple[str, str]]:
 def update_pull_state_record(
     cache_root: Path, book_key: str, mtime_ticks: int, size: int
 ) -> None:
+    with cache_lock(cache_root):
+        _update_pull_state_record(cache_root, book_key, mtime_ticks, size)
+
+
+def _update_pull_state_record(
+    cache_root: Path, book_key: str, mtime_ticks: int, size: int
+) -> None:
     state_path = cache_root / PULL_STATE_FILENAME
     records = read_pull_state(cache_root)
     records[book_key] = (str(mtime_ticks), str(size))
@@ -56,6 +64,11 @@ def upload_book(packed_epub: Path, destination: Path, cache_root: Path, book_key
     The caller owns direction, preflight checks and logging. Failed copies must
     never advance pull-state; errors propagate so the manifest is not advanced.
     """
+    with cache_lock(cache_root):
+        _upload_book(packed_epub, destination, cache_root, book_key)
+
+
+def _upload_book(packed_epub: Path, destination: Path, cache_root: Path, book_key: str) -> None:
     destination.parent.mkdir(parents=True, exist_ok=True)
     state_path = cache_root / PULL_STATE_FILENAME
     fd, name = tempfile.mkstemp(
@@ -85,6 +98,13 @@ def remove_pull_state_record(cache_root: Path, book_key: str) -> bool:
     用于书籍已从缓存整体删除（如外典合订卷拆分、目录改名）后，
     同步清理拉取状态记录。
     """
+    if not cache_root.is_dir():
+        return False
+    with cache_lock(cache_root):
+        return _remove_pull_state_record(cache_root, book_key)
+
+
+def _remove_pull_state_record(cache_root: Path, book_key: str) -> bool:
     state_path = cache_root / PULL_STATE_FILENAME
     if not state_path.is_file():
         return False

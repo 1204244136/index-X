@@ -42,6 +42,7 @@ if __package__:
 else:
     from cli_output import configure_output
 from manifest import load_manifest, scan_cache, scan_epub  # noqa: E402
+from sync_lock import SyncLockBusy, cache_lock, lock_environment  # noqa: E402
 from sync_core import (  # noqa: E402
     ONEDRIVE_DEFAULTS,
     SIDE_DIRECTORIES,
@@ -294,6 +295,8 @@ def build_pull_command(
         cmd += ["-Side", args.side]
     if args.pattern != "*":
         cmd += ["-Pattern", args.pattern]
+    if args.only_books:
+        cmd += ["-OnlyBooks", args.only_books]
     if args.force:
         cmd.append("-Force")
     if dry_run:
@@ -357,7 +360,7 @@ def build_reverse_command(
 
 def run_command(cmd: list[str]) -> int:
     print(f"\n$ {display_command(cmd)}")
-    return subprocess.run(cmd, check=False).returncode
+    return subprocess.run(cmd, check=False, env=lock_environment()).returncode
 
 
 # ---------------------------------------------------------------------- 主流程
@@ -412,13 +415,6 @@ def prepare_plan(args: argparse.Namespace) -> PublicationPlan:
             error=True,
         )
         return builder.finish('blocked')
-    if args.force and args.source == "onedrive" and args.only_books:
-        builder.emit(
-            "错误: --force --from onedrive 不能与 --only-books 合用；"
-            "pull.ps1 不支持精确书籍列表，请改用 --side / --pattern 指定范围。",
-            error=True,
-        )
-        return builder.finish("blocked")
     if not cache.is_dir():
         builder.emit(f"错误: 缓存目录不存在: {cache}", error=True)
         return builder.finish('blocked')
@@ -600,13 +596,6 @@ def prepare_plan(args: argparse.Namespace) -> PublicationPlan:
     # 流程 A 只在 auto / --from onedrive 下执行：显式指定本地方向时不做隐式的反向拉取。
     commands: list[tuple[str, list[str]]] = []
     run_pull = bool(drifted) and args.source in ("auto", "onedrive")
-    if run_pull and args.only_books:
-        # pull.ps1 以整本书为单位解压，没有单本参数；用 --only-books 时宁可不拉，也不越界写入。
-        run_pull = False
-        builder.emit(
-            "\n  提示: --only-books 无法约束流程 A（pull.ps1 按整本书解压），已跳过 OneDrive 拉取；"
-            "如需拉回，请用 ./tools/pull.ps1 -SyncToEpub -Pattern 指定范围。"
-        )
 
     if completed_pull:
         if run_pull:
@@ -725,7 +714,15 @@ def run_plan(plan: PublicationPlan) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     configure_output()
-    return run_plan(prepare_plan(parse_args(argv)))
+    args = parse_args(argv)
+    if args.dry_run or not args.cache.is_dir():
+        return run_plan(prepare_plan(args))
+    try:
+        with cache_lock(args.cache):
+            return run_plan(prepare_plan(args))
+    except SyncLockBusy as exc:
+        print(f"[阻断] {exc}", file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":

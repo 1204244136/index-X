@@ -351,13 +351,13 @@ class OnedriveDriftTests(ToolTestCase):
         self.assertEqual(code, 0)
         self.assertEqual([self.tool_name(cmd) for cmd in calls], ["publish.py"])
 
-    def test_only_books_skips_flow_a_instead_of_widening_scope(self):
-        """--only-books 不能约束 pull.ps1 的整本解压，此时宁可不拉也不越界写入。"""
+    def test_only_books_limits_flow_a_to_the_same_explicit_books(self):
         self.seed_onedrive(self.fx.onedrive_jp, BOOK_JP)
-        code, calls, output = self.run_tool("--only-books", f"japanese-text/{BOOK_JP}")
+        code, calls, _ = self.run_tool("--only-books", f"japanese-text/{BOOK_JP}")
         self.assertEqual(code, 0)
-        self.assertEqual(calls, [])
-        self.assertIn("已跳过 OneDrive 拉取", output)
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(self.run_script(calls[0]), "pull.ps1")
+        self.assertEqual(calls[0][calls[0].index("-OnlyBooks") + 1], f"japanese-text/{BOOK_JP}")
 
 
 class IntegrationTests(unittest.TestCase):
@@ -467,20 +467,21 @@ class PublicationPlanTests(ToolTestCase):
                         self.assertNotIn("--japanese-onedrive", step.argv)
                         self.assertIn("--overwrite-cache", step.argv)
 
-    def test_force_a_only_books_is_blocked_for_preview_and_execution(self):
+    def test_force_a_preserves_only_books_for_preview_and_execution(self):
         for preview in (False, True):
             options = ["--from", "onedrive", "--force", "--only-books", f"chinese-text/{BOOK_CN}"]
             if preview:
                 options.append("--dry-run")
             plan = self.prepare(*options)
-            self.assertEqual(plan.status, "blocked")
-            self.assertEqual(plan.steps, ())
+            self.assertEqual(plan.status, "ready")
+            self.assertEqual([step.direction for step in plan.steps], ["A"])
+            self.assertEqual(self.option(plan.steps[0].argv, "-OnlyBooks"), f"chinese-text/{BOOK_CN}")
             output = io.StringIO()
             with patch.object(publish_auto, "run_command") as run, \
                     contextlib.redirect_stdout(output), contextlib.redirect_stderr(output):
-                self.assertEqual(publish_auto.run_plan(plan), 1)
-            run.assert_not_called()
-            self.assertIn("--only-books", output.getvalue())
+                run.return_value = 0
+                self.assertEqual(publish_auto.run_plan(plan), 0)
+            self.assertEqual(run.call_count, 0 if preview else 1)
 
     def test_force_a_preview_keeps_side_pattern_sources_and_whatif(self):
         plan = self.prepare("--from", "onedrive", "--force", "--side", "chinese",
@@ -560,8 +561,8 @@ class PublicationPlanTests(ToolTestCase):
         self.assertEqual([step.direction for step in plan.steps], ["A"])
         self.assertTrue(any("已完成的拉取" in message.text for message in plan.diagnostics))
         scoped = self.prepare("--side", "chinese", "--only-books", f"chinese-text/{BOOK_CN}")
-        self.assertEqual([step.direction for step in scoped.steps], ["B"])
-        self.assertTrue(any("本次方向不会执行流程 A" in message.text for message in scoped.diagnostics))
+        self.assertEqual([step.direction for step in scoped.steps], ["A"])
+        self.assertEqual(self.option(scoped.steps[0].argv, "-OnlyBooks"), f"chinese-text/{BOOK_CN}")
 
     def test_powershell_is_required_only_for_a(self):
         self.fx.write_cache_book("chinese-text", BOOK_CN, "<p>中文B</p>")

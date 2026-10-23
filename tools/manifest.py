@@ -22,6 +22,8 @@ if __package__:
 else:
     from cli_output import configure_output
 from path_safety import is_extract_artifact
+from file_transaction import atomic_write_bytes
+from sync_lock import SyncLockBusy, cache_lock
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_CACHE = REPO_ROOT / ".cache" / "epub-work"
@@ -83,10 +85,8 @@ def save_manifest(cache_root: Path, files: dict[str, str] | None = None) -> tupl
         "files": files,
     }
     manifest_path = cache_root / MANIFEST_FILENAME
-    manifest_path.write_text(
-        json.dumps(manifest, ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
+    atomic_write_bytes(manifest_path, json.dumps(
+        manifest, ensure_ascii=False, indent=2).encode("utf-8"))
     return len(files), manifest_path
 
 
@@ -131,7 +131,7 @@ def main() -> int:
     parser.add_argument("--cache", type=Path, default=DEFAULT_CACHE)
     parser.add_argument(
         "--update-books",
-        nargs="*",
+        nargs="+",
         metavar="SIDE/BOOK",
         help="仅更新指定书籍目录的哈希（如 chinese-text/【S1_01】…），保留其他清单记录",
     )
@@ -141,20 +141,21 @@ def main() -> int:
         print(f"[错误] 缓存目录不存在：{cache}", file=sys.stderr)
         return 1
 
-    if args.update_books:
-        files = load_manifest(cache)
-        if files is None:
-            print(
-                "[警告] 未找到清单，将生成完整清单。",
-                file=sys.stderr,
-            )
-            files = scan_cache(cache)
-        else:
-            update_manifest_books(cache, args.update_books, files)
-            print(f"已更新既有清单中的 {len(args.update_books)} 本书")
-        count, path = save_manifest(cache, files)
-    else:
-        count, path = save_manifest(cache)
+    try:
+        with cache_lock(cache):
+            if args.update_books:
+                files = load_manifest(cache)
+                if files is None:
+                    print("[警告] 未找到清单，仅为指定书籍建立基线。", file=sys.stderr)
+                    files = {}
+                update_manifest_books(cache, args.update_books, files)
+                print(f"已更新清单中的 {len(args.update_books)} 本书")
+                count, path = save_manifest(cache, files)
+            else:
+                count, path = save_manifest(cache)
+    except SyncLockBusy as exc:
+        print(f"[阻断] {exc}", file=sys.stderr)
+        return 1
     print(f"清单：{path}（{count} 个文件）")
     return 0
 

@@ -29,8 +29,8 @@
 
 | 你要做什么 | 簇 | 入口 |
 | --- | --- | --- |
-| 把本地改动发布到 OneDrive 与缓存 | C1 | `python tools/publish_auto.py --dry-run`，确认后去掉 `--dry-run` |
-| 拉 OneDrive 新源进本地参考副本 `.cache/` | C1 | `./tools/pull.ps1`（预览 `-WhatIf`） |
+| 把本地改动发布到 OneDrive 与缓存 | C1 | `python tools/publish_auto.py --only-books "<side/书目录,...>" --dry-run`，确认后以相同范围执行 |
+| 拉 OneDrive 新源进本地参考副本 `.cache/` | C1 | `./tools/pull.ps1 -OnlyBooks "<side/书目录,...>"`（预览 `-WhatIf`） |
 | 打发布包／出 release 产物 | C1 | `python tools/package_cache_epubs.py --source EPUB --output output/epubs` |
 | 新书交稿做成成品 | C2 | `python tools/import_materials.py …`（材料门禁先行，缺项即停） |
 | 日文 BW 源做成工作源 | C2 | `python tools/bw_preprocess.py …`，合并见 `merge_bw_pages.py`；流程见 [bw-source-import skill](../.agents/skills/bw-source-import/SKILL.md) |
@@ -41,7 +41,7 @@
 | 查彩页上的字在正文哪一行／映射表行号有没有漂 | C4 | `python tools/check_illustration_mapping.py` |
 | 复核一批校对改动 | C5 | `python tools/proofread_review.py --worktree` |
 | 准备复核取证包、分页阅读或验收子报告 | C5 | `python tools/proofread_session.py --help` |
-| 做字符级规范化 | C5 | `python tools/text_norm.py --root EPUB --apply`（默认预览） |
+| 做字符级规范化 | C5 | `python tools/text_norm.py --root EPUB --pattern "*S1_01*" --apply`（默认预览） |
 | 查某个词／某句话在哪 | C6 | `python tools/search_text.py "…" --side both` |
 | 估算篇幅／换算页数 | C6 | 要「占比」列：`python tools/epub_char_count.py <epub 或目录>`；要「印刷页区间」推算：`python tools/epub_composition_metrics.py <目录或epub>` |
 
@@ -57,7 +57,7 @@
 | P4 | `check_alignment.py --strict` 或 `check_epub_health.py --strict` 非零 | 对齐用 `--root EPUB --jp-root .cache/epub-work/japanese-text --strict`；漂移定位用 `python tools/diff_paired_lines.py` | 按 C3 的对应工具处理：`fix_legacy_pagebreak_br.py`／`restore_cn_scene_breaks.py`／`sync_pb_tags.py`（页边界）、`wrap_cn_image_lines.py`（图片行）、`normalize_single.py`／`normalize_paired.py`（模板）、`migrate_heading_breaks.py`（标题）、`shift_content_sequences.py`／`fix_empty_placeholders.py`（序号与空页）、`reorder_notes.py`（Note） | 不得临时放宽门禁；不得为凑行数增删结构标签；语义未确认先人工确认 | C4 查→C3 修 | — |
 | P5 | `--jp-root` 缺目录或缺书；CI 结构上看不到日文侧 | `./tools/pull.ps1 -WhatIf`、`-Side japanese` | 先拉取建立缓存；确无日文源时只做单侧检查 | 不得据未配对书宣布「双侧通过」 | C1→C4 | — |
 | P6 | 上传成功但状态写入失败（`OSError`：外部副本已更新、清单未推进） | 比对 OneDrive 实际内容与 `manifest.json`／`pull-state.tsv` | 按 P1 的冲突流程处理（外部副本当作待合并的一方），必要时重跑发布 | 不得假定「上传失败」直接重传覆盖；不得直接编辑 OneDrive 里的 `.epub` | C1 | [tool-responsibility-cleanup-2026-09-19.md](../docs/maintenance-records/tool-responsibility-cleanup-2026-09-19.md) |
-| P7 | CI `normalize-epub-text.yml` 产生了提交（自动规范化／译注自愈／裸图包裹）——非阻塞，属必做后续 | `git log`／`git pull`，比对 CI 提交与本地未发布改动 | 工作站拉取该提交后运行 `python tools/publish_auto.py` 回流 | 不得把 CI 提交当作「三副本已同步」；CI 不连 OneDrive | C1 | [AGENTS.md](../AGENTS.md)「CI 例外」 |
+| P7 | CI `normalize-epub-text.yml` 产生了提交（自动规范化／译注自愈／裸图包裹）——非阻塞，属必做后续 | `git log`／`git pull`，比对 CI 提交与本地未发布改动 | 工作站拉取该提交后按 CI 实际作品范围运行 `python tools/publish_auto.py --only-books "<side/书目录,...>"` 回流 | 不得把 CI 提交当作「三副本已同步」；CI 不连 OneDrive | C1 | [AGENTS.md](../AGENTS.md)「CI 例外」 |
 
 ## 簇索引
 
@@ -65,7 +65,7 @@
 
 | 簇 | 定位（管什么／不管什么） | 入口数 | 主要门禁 |
 | --- | --- | --- | --- |
-| C1 同步与发布 | 三副本数据流、基线清单、打包与发布前检查；不管内容对错 | 7 | 预检、基线完整性、冲突方向 |
+| C1 同步与发布 | 三副本数据流、基线清单、打包与发布前检查；不管内容对错 | 8 | 预检、基线完整性、冲突方向 |
 | C2 导入与交稿往返 | 源 ↔ 成品的构建（交稿 → 成品、成品 → 交稿、BW 分页源 → 章节）；不管成品的后续结构与规范 | 13 | 材料七项、逐章物理行数 |
 | C3 成品结构与配对修复 | 写盘型结构修复；不负责判定通过与否（判定在 C4） | 10 | 逐边界数量、行数与块对应 |
 | C4 门禁与体检 | 只读阻断与诊断；不修内容 | 12 | strict 非零即阻断 |
@@ -80,41 +80,46 @@
 | 工具 | 入口命令 | 读写范围 | 门禁与失败边界 | 测试 |
 | --- | --- | --- | --- | --- |
 | `publish_auto.py` | `python tools/publish_auto.py [--dry-run]` | `--dry-run` 只预览；执行时调用 A／B／C 同步器写缓存、归档与 OneDrive | 完整计划、冲突与范围保护；失败非零，预览不发布【P1】 | `test_publish_auto.py` |
-| `pull.ps1` | `./tools/pull.ps1 [-WhatIf] [-Side …] [-SyncToEpub]` | 写缓存；`-SyncToEpub` 时写归档 | 解包路径安全、保全未发布变化；增量更新基线【P5】 | 共享能力：`test_sync_and_rename.py`／`test_path_safety.py`；PowerShell 入口无专用测试 |
+| `pull.ps1` | `./tools/pull.ps1 [-WhatIf] [-Side …] [-OnlyBooks …] [-SyncToEpub]` | 仅处理筛选书；写缓存，`-SyncToEpub` 时写归档 | 写前整批检测选中书的未发布缓存／归档变化，冲突非零且不解包；增量更新基线【P1】 | `test_pull.py`、`test_sync_lock.py`；共享能力：`test_sync_and_rename.py`／`test_path_safety.py` |
 | `publish.py` | `python tools/publish.py [--dry-run] [--sync-only]` | 流程 B：缓存 → 归档中文＋打包上传 | 共享发布前检查、基线缺失与冲突阻断【P2】 | `test_sync_and_rename.py`、`test_publish_preflight.py` |
 | `publish_epub.py` | `python tools/publish_epub.py [--dry-run]` | 流程 C：归档中文 → 打包上传＋缓存增量镜像；日文只读 | 共享发布前检查、容器／XML／资源【P3】 | `test_sync_and_rename.py`、`test_publish_auto.py` |
 | `package_cache_epubs.py` | `python tools/package_cache_epubs.py --source … --output …` | 只读输入；写显式构建目录 | 容器、XML、资源引用；`mimetype` 首项不压缩【无】 | `test_package_cache_epubs.py` |
-| `manifest.py` | `python tools/manifest.py --update-books chinese-text/某书目录` | 写 `manifest.json` 基线 | 只按已确认状态更新，不得掩盖未发布变化【P2】 | `test_publish_auto.py`、`test_sync_and_rename.py` |
+| `manifest.py` | `python tools/manifest.py --update-books chinese-text/某书目录` | 写 `manifest.json` 基线；与同步入口共用缓存锁 | 只按已确认状态更新，不得掩盖未发布变化【P2】 | `test_publish_auto.py`、`test_sync_and_rename.py`、`test_sync_lock.py` |
+| `sync_lock.py` | `python tools/sync_lock.py --cache <缓存根> -- <命令及参数...>` | 缓存级互斥；包装子命令，受控继承同一锁 | 锁忙时退出 1；退出后自动释放；不判断内容取舍【无】 | `test_sync_lock.py` |
 | `publish_preflight.py` | `python tools/publish_preflight.py --source EPUB [--jp-root …]` | 只读；写显式报告 | 任一硬错误非零，不推进该书发布与基线；**含 `check_translation_spec.audit_book` 的 error 级**（P1–P25）与 `check_epub_health` 的 `note-structure`【P3】 | `test_publish_preflight.py` |
 
 ### 统一入口
 
 ```powershell
-python tools/publish_auto.py --dry-run
-python tools/publish_auto.py
+python tools/publish_auto.py --only-books "chinese-text/【S1_01】某魔法的禁书目录 01" --dry-run
+python tools/publish_auto.py --only-books "chinese-text/【S1_01】某魔法的禁书目录 01"
 ```
 
-读取三处副本与 `manifest.json`／`pull-state.tsv` 的差异，输出逐书方向计划；只处理变更书和文件。同一本地书的缓存修改已包含在归档时选择 C，否则报告冲突；OneDrive 外部更新与本地未发布修改冲突时停止。**例外**：OneDrive 的 `.epub` 与缓存同一本书逐字节相同（解压已完成、清单基线与 `pull-state` 未推进，典型是 `-SyncToEpub` 的下游门禁失败）时不算分叉，报「已完成的拉取」并按流程 A 补跑一次，不要求人工选边。冲突合并的操作边界在 AGENTS，`--from` 不代表可以丢弃另一边有效内容。
+读取三处副本与 `manifest.json`／`pull-state.tsv` 的差异，输出逐书方向计划；在所选范围内同步变化文件，打包读取选中书的全部当前内容。省略范围参数会处理全部候选书；共享工作区按 [AGENTS.md](../AGENTS.md)「共享工作区协调」选定本任务范围。同一本地书的缓存修改已包含在归档时选择 C，否则报告冲突；OneDrive 外部更新与本地未发布修改冲突时停止。**例外**：OneDrive 的 `.epub` 与缓存同一本书逐字节相同（解压已完成、清单基线与 `pull-state` 未推进，典型是 `-SyncToEpub` 的下游门禁失败）时不算分叉，报「已完成的拉取」并按流程 A 补跑一次，不要求人工选边。冲突合并的操作边界在 AGENTS，`--from` 不代表可以丢弃另一边有效内容。
 
 参数：`--cache`／`--epub`、`--from auto|cache|epub|onedrive`、`--side`、`--pattern`、`--only-books`、`--dry-run`、`--no-upload`、`--force`（配合显式方向）、`--overwrite-cache`、`--chinese-onedrive`／`--japanese-onedrive`。退出码 1 表示被阻塞或失败；dry-run 只预览，不执行发布门禁与同步。
 
 `prepare_plan(args)` 只读观察本地副本与基线，不输出、不写盘、不调用子命令，返回不可变 `PublicationPlan`：`ready` 包含完整命令，`blocked`／`noop` 的命令为空；预览模式和诊断同时固定。`run_plan(plan)` 只呈现和消费该计划，不重新扫描、选择方向或拼参数。预览零执行，A 预览命令保留 `-WhatIf`；真实执行按 A／B／C 顺序，首个子命令非零后停止。业务阻塞返回 1，空操作与成功返回 0；扫描、解析与进程启动异常不新增吞没处理。
 
-普通和 `--force` 共用命令装配与执行：B 传递所选 `--side` 及两侧 OneDrive 目标，C 只传中文目标，不传它不支持的 side／日文参数；目标目录在计划中解析为绝对路径。`--only-books` 无法约束 A：普通模式保持跳过 A 并提示，`--force --from onedrive --only-books` 阻断且不生成命令（退出 1），必须改用 `--side`／`--pattern` 明确拉取范围。发布预检仍由实际执行的下游入口承担，准备计划不代表磁盘状态已锁定或完成同步。
+普通和 `--force` 共用命令装配与执行：B 传递所选 `--side` 及两侧 OneDrive 目标，C 只传中文目标，不传它不支持的 side／日文参数；目标目录在计划中解析为绝对路径。`--only-books` 为逗号分隔的精确 `side/书目录` 键，A 传给 `pull.ps1 -OnlyBooks`，B/C 传给对应发布器；与 side、pattern 求交。发布预检仍由实际执行的下游入口承担；单独调用 `prepare_plan` 不锁定磁盘，真实 CLI 在持有缓存锁期间重新准备并执行计划。
+
+### 同步互斥
+
+真实写入入口（统一发布、底层 B/C、拉取及清单 CLI）通过同一缓存根的 `.sync.lock` 协调登记，每个 Python／PowerShell 参与者分别持有自己的系统锁，覆盖扫描、差异判断、镜像／上传和清单／拉取状态更新。其它事务占用时非零退出，全部参与者结束后可重试；父进程中途退出时，存活子进程仍保持保护。明确启动的下游进程继承同一事务标识并持有自己的成员锁，避免 A/B/C 内部调用互相阻塞。异常或进程退出由操作系统释放对应锁，失活成员由下次登记清理，保留的锁文件无需手动删除。`--dry-run`／`-WhatIf` 不创建锁文件，也不执行写入；预览结果不是后续写入的状态保证。锁不隔离同书未完成编辑，任务交接仍按 AGENTS 执行。
 
 ### 底层 A／B／C
 
 | 方向 | 命令 | 实际输入／输出 |
 | --- | --- | --- |
-| A：外部源变化 | `./tools/pull.ps1 -SyncToEpub` | OneDrive → 缓存；中文变化增量回归档；不打包上传 |
-| B：已确认缓存来源 | `python tools/publish.py` | 缓存 → 归档中文＋分别打包上传两侧；同步清单与状态 |
-| C：归档内容变化 | `python tools/publish_epub.py` | 归档中文 → 打包上传＋缓存增量镜像；日文参考只读 |
+| A：外部源变化 | `./tools/pull.ps1 -SyncToEpub -OnlyBooks "<side/书目录,...>"` | OneDrive → 缓存；中文变化增量回归档；不打包上传 |
+| B：已确认缓存来源 | `python tools/publish.py --only-books "<side/书目录,...>"` | 缓存 → 归档中文＋分别打包上传两侧；同步清单与状态 |
+| C：归档内容变化 | `python tools/publish_epub.py --only-books "<chinese-text/书目录,...>"` | 归档中文 → 打包上传＋缓存增量镜像；日文参考只读 |
 
 B 不是 agent 的常规编辑入口，只用于同步器／导入流程已生成并确认的缓存来源；成品修改走 C。三个方向都有 `--dry-run`／`-WhatIf`。B/C 用共享发布前检查读取本次候选：模板与对齐、单侧项目规约、合法容器、全部 XML 及书内资源引用。C 验证归档中文与缓存日文，不临时覆盖缓存来做检查。预检失败不推进该书发布与清单基线。发布先在临时副本完成打包和单书镜像；上传或状态更新失败时回滚本书本地镜像，清单只为完整成功的书更新。
 
 两者支持 `--cache`、`--epub`、`--pattern`、`--only-books`、`--no-upload`、`--force` 和外部目标路径；B 有 `--side`、`--sync-only`，C 有 `--overwrite-cache`。删除随增量镜像传播；`--no-upload` 只省外部上传，不应被描述为完成分发。`--sync-only` 不打包上传，不创建新的已上传事实。
 
-`--force` 不表示跳过成品结构门禁。清单中某处理侧全无基线记录时，发布停止并给出重建提示；仅确认缓存即已发布状态后用 `python tools/manifest.py --update-books chinese-text/某书目录` 重建，不用清单更新掩盖未发布变化。
+`--force` 不表示跳过成品结构门禁；限定书籍时只重做所选书，保留其它书的已发布清单记录。清单中某处理侧全无基线记录时，发布停止并给出重建提示；仅确认缓存即已发布状态后用 `python tools/manifest.py --update-books chinese-text/某书目录` 重建，不用清单更新掩盖未发布变化。
 
 ### 共享发布前检查
 
@@ -132,11 +137,11 @@ python tools/publish_preflight.py --source EPUB --calibre
 ```powershell
 ./tools/pull.ps1
 ./tools/pull.ps1 -WhatIf
-./tools/pull.ps1 -Side japanese
-./tools/pull.ps1 -Force
+./tools/pull.ps1 -Side japanese -OnlyBooks "japanese-text/【S4_04】とある暗部の少女共棲(4)"
+./tools/pull.ps1 -OnlyBooks "<side/书目录,...>" -Force
 ```
 
-默认外部源由用户 OneDrive 目录推导；可显式传入 `-ChineseSourceDirectory`、`-JapaneseSourceDirectory`、`-CacheDirectory`、`-EpubDirectory`。按书籍修改时间与大小增量解包，首次建立拉取状态。只更新本次解包书的清单，不把未变化书的新缓存修改当新基线。源码读取与包内路径解析由 path safety 共用规则控制。
+默认外部源由用户 OneDrive 目录推导；可显式传入 `-ChineseSourceDirectory`、`-JapaneseSourceDirectory`、`-CacheDirectory`、`-EpubDirectory`。`-Side`、`-Pattern` 与 `-OnlyBooks` 求交筛书；按修改时间与大小增量解包，首次建立拉取状态。解包前检查全部待拉取书的缓存差异；`-SyncToEpub` 还检查对应归档差异。本地相对基线的变化若未包含在外部包中，整批停止，不替换缓存、不推进清单或拉取状态；已完成解包而状态未推进的相同内容可继续。`-Force` 只强制重解包，不跳过未发布保护。只更新本次成功书的清单，不把未变化书的新缓存修改当新基线，也不清理范围外书目录。源码读取与包内路径解析由 path safety 共用规则控制。
 
 ### 哈希清单与初始重建
 
@@ -146,7 +151,7 @@ python tools/manifest.py --help
 python tools/publish.py --force --no-upload
 ```
 
-`manifest.py` 支持缓存扫描与按书／侧更新；清单是已确认同步状态的基线。全量初始重建按以上流程进行，不直接把外部 `.epub` 解包到归档。
+`manifest.py` 支持缓存扫描与按书／侧更新；`--update-books` 至少给一个键，空选择非零且不写入，首次无清单时也只为指定书建立基线。省略该参数才全量扫描；清单是已确认同步状态的基线。全量初始重建按以上流程进行，不直接把外部 `.epub` 解包到归档。
 
 ### 打包工具（CI 和手动使用）
 
@@ -273,14 +278,14 @@ python tools/docx2epub.py 交稿.docx --out 显式构建输出 --unpacked 显式
 | --- | --- | --- | --- | --- |
 | `normalize_single.py` | `python tools/normalize_single.py --dir EPUB/某书/OEBPS/Text [--apply]` | 预览默认；写 `EPUB/`；`--staging` 写显式暂存 | 共用模板规则；未知暂存路径按路径识别，不保证双侧对齐【无】 | CLI：`test_edit_safety.py`；模板规则：`test_xhtml_and_merge.py` |
 | `normalize_paired.py` | `python tools/normalize_paired.py --root EPUB --jp-root .cache/epub-work/japanese-text --book S1_01 [--apply]` | 预览默认；归档模式只写中文，日文只读；双侧暂存模式才可改两侧 | 配对写入验证行数，不靠重排凑齐【无】 | CLI：`test_normalize_paired_scope.py`、`test_edit_safety.py`；模板规则：`test_xhtml_and_merge.py` |
-| `migrate_heading_breaks.py` | `python tools/migrate_heading_breaks.py --cache EPUB [--apply]` | 预览默认；写同一书 XHTML 与被引用 CSS | 全书预检未知结构、路径越界、样式缺失与按层文字不变，任一失败不开始写入【无】 | `test_heading_breaks.py` |
+| `migrate_heading_breaks.py` | `python tools/migrate_heading_breaks.py --cache EPUB --book "*S1_01*" [--apply]` | 预览默认；写同一书 XHTML 与被引用 CSS | 全书预检未知结构、路径越界、样式缺失与按层文字不变，任一失败不开始写入【无】 | `test_heading_breaks.py` |
 | `shift_content_sequences.py` | `python tools/shift_content_sequences.py EPUB/某书 --work-id S4_05 --offset 1 [--apply]` | 预览默认；改序号、文件名与 XHTML／OPF／NCX／nav／CSS／SVG 引用 | 重命名碰撞、不合法序号；歧义旧裸页引用保持不动并报告【无】 | `test_shift_content_sequences.py`、`test_sync_and_rename.py` |
 | `fix_empty_placeholders.py` | `python tools/fix_empty_placeholders.py --cache 显式书籍根 [--apply]` | 预览默认；删除编号空页、前移后续序号与引用 | 空页资格（无文本、无图/SVG）与前后邻居条件；OPF／NCX／nav 条目连带删除【无】 | `test_sync_and_rename.py`、`test_edit_safety.py`（动态） |
-| `fix_legacy_pagebreak_br.py` | `python tools/fix_legacy_pagebreak_br.py --root EPUB --jp-root .cache/epub-work/japanese-text [--apply]` | 预览默认；只写中文，日文只读 | 逐边界比较两侧 `<br/>` 连段数量；数量一致不得删，超差拒删交人工【P4】 | `test_fix_legacy_pagebreak_br.py`、`test_edit_safety.py`、`test_xhtml_structure.py` |
+| `fix_legacy_pagebreak_br.py` | `python tools/fix_legacy_pagebreak_br.py --root EPUB --jp-root .cache/epub-work/japanese-text --book S1_01 [--apply]` | 预览默认；只写中文，日文只读 | 逐边界比较两侧 `<br/>` 连段数量；数量一致不得删，超差拒删交人工【P4】 | `test_fix_legacy_pagebreak_br.py`、`test_edit_safety.py`、`test_xhtml_structure.py` |
 | `restore_cn_scene_breaks.py` | `python tools/restore_cn_scene_breaks.py --root EPUB --jp-root … --book S6_22.06.10 [--apply]` | 预览默认；只写中文 | 只补有源证据且总差额一致的场景分隔；条件不足拒绝【P4】 | `test_restore_cn_scene_breaks.py`、`test_edit_safety.py` |
-| `sync_pb_tags.py` | `python tools/sync_pb_tags.py --root EPUB --jp-root .cache/epub-work/japanese-text [--apply]` | 预览默认；只写中文 | 段落一一对应时补 class，不增删行；不一一对应即拒绝【P4】 | `test_xhtml_structure.py`、`test_edit_safety.py` |
-| `wrap_cn_image_lines.py` | `python tools/wrap_cn_image_lines.py --root EPUB [--wrap-only] [--apply]` | 预览默认；写中文归档／显式暂存中文 | 图片专用容器、配平与行数不变量；`--wrap-only` 仅包装裸 img、不删结构行【无】 | `test_wrap_cn_image_lines.py`、`test_edit_safety.py`（动态） |
-| `reorder_notes.py` | `python tools/reorder_notes.py --root EPUB [--apply] [--no-backup]` | 预览默认；写 Note 与正文引用；备份默认 `.cache/reorder-backup/` | 完整引用映射预检（条目、编号、正文引用），不通过不写；**容器非 `<ul>…</ul>` 时显式拒绝并报告**（规范要求 `<ul>`，`<ol>` 不再抛异常）【无】 | CLI：`test_edit_safety.py`；共享规则：`test_docx_and_notes.py` |
+| `sync_pb_tags.py` | `python tools/sync_pb_tags.py --root EPUB --jp-root .cache/epub-work/japanese-text --book S1_01 [--apply]` | 预览默认；只写中文 | 段落一一对应时补 class，不增删行；不一一对应即拒绝【P4】 | `test_xhtml_structure.py`、`test_edit_safety.py` |
+| `wrap_cn_image_lines.py` | `python tools/wrap_cn_image_lines.py --root EPUB --book S1_01 [--wrap-only] [--apply]` | 预览默认；写中文归档／显式暂存中文 | 图片专用容器、配平与行数不变量；`--wrap-only` 仅包装裸 img、不删结构行【无】 | `test_wrap_cn_image_lines.py`、`test_edit_safety.py`（动态） |
+| `reorder_notes.py` | `python tools/reorder_notes.py --root EPUB --pattern "*S1_01*" [--apply] [--no-backup]` | 预览默认；写 Note 与正文引用；备份默认 `.cache/reorder-backup/` | 完整引用映射预检（条目、编号、正文引用），不通过不写；**容器非 `<ul>…</ul>` 时显式拒绝并报告**（规范要求 `<ul>`，`<ol>` 不再抛异常）【无】 | CLI：`test_edit_safety.py`；共享规则：`test_docx_and_notes.py` |
 
 局部任务的范围入口：single 选显式文件／`--dir`／文件 pattern；paired 选重复 `--book`／`--file` 或单书根；heading 选重复 `--book` glob；shift 与 empty 指定单书根；legacy／restore／pb／wrap 用 `--book`；notes 用书名 `--pattern`。省略筛选时可能处理整个根目录，`--apply` 仅切换写入模式，不缩小范围。
 
@@ -300,8 +305,8 @@ single 只处理命令行指定文件或 `--dir`／`--pattern`，可用 `--side 
 ### 多层标题迁移
 
 ```powershell
-python tools/migrate_heading_breaks.py --cache EPUB
-python tools/migrate_heading_breaks.py --cache EPUB --apply
+python tools/migrate_heading_breaks.py --cache EPUB --book "*S1_01*"
+python tools/migrate_heading_breaks.py --cache EPUB --book "*S1_01*" --apply
 ```
 
 `--book GLOB` 可重复，`--verbose` 逐书列计划。按整书计划同时改变 XHTML／被引用 CSS，预检未知结构、路径越界、样式缺失和分层文字变化，任一失败不开始写入；写入失败回滚该书已写文件。它负责迁移合同，标题正文规范在 [EPUB 结构规范](../docs/epub-structure-spec.md)。
@@ -319,9 +324,9 @@ shift 用单次映射改文件与 XHTML/OPF/NCX/nav/CSS/SVG/XML 引用，防止�
 ### 配对页边界修复
 
 ```powershell
-python tools/fix_legacy_pagebreak_br.py --root EPUB --jp-root .cache/epub-work/japanese-text
+python tools/fix_legacy_pagebreak_br.py --root EPUB --jp-root .cache/epub-work/japanese-text --book S1_01
 python tools/restore_cn_scene_breaks.py --root EPUB --jp-root .cache/epub-work/japanese-text --book S6_22.06.10
-python tools/sync_pb_tags.py --root EPUB --jp-root .cache/epub-work/japanese-text
+python tools/sync_pb_tags.py --root EPUB --jp-root .cache/epub-work/japanese-text --book S1_01
 ```
 
 这些入口默认预览，确认后加 `--apply`；只写中文，日文仅读。legacy 删除逐边界确认的多余旧换页行；restore 只补有源证据且总差额一致的场景分隔；pb 在一一对应段落添加缺失 class，不增删行。行数、块类型或差额条件不足时拒绝；真实一段对多段关系先人工确认语义，不由这些工具拆合。
@@ -329,8 +334,8 @@ python tools/sync_pb_tags.py --root EPUB --jp-root .cache/epub-work/japanese-tex
 ### 中文图片行包装
 
 ```powershell
-python tools/wrap_cn_image_lines.py --root EPUB --wrap-only
-python tools/wrap_cn_image_lines.py --root EPUB --jp-root .cache/epub-work/japanese-text --apply
+python tools/wrap_cn_image_lines.py --root EPUB --book S1_01 --wrap-only
+python tools/wrap_cn_image_lines.py --root EPUB --jp-root .cache/epub-work/japanese-text --book S1_01 --apply
 ```
 
 `--wrap-only` 仅包装裸 img、不删结构行；完整模式只接受配平的图片专用 div 区段，改写删除结构行前需指定日文参考并验证配对行数。普通带语义 div 不处理。输出修改计划与拒绝原因，默认预览。
@@ -338,8 +343,8 @@ python tools/wrap_cn_image_lines.py --root EPUB --jp-root .cache/epub-work/japan
 ### Note 顺序重排
 
 ```powershell
-python tools/reorder_notes.py --root EPUB
-python tools/reorder_notes.py --root EPUB --apply --no-backup
+python tools/reorder_notes.py --root EPUB --pattern "*S1_01*"
+python tools/reorder_notes.py --root EPUB --pattern "*S1_01*" --apply --no-backup
 ```
 
 写入前先计划 Note 条目、编号和正文引用的完整映射，再写入；默认预览，备份默认 `.cache/reorder-backup/`，它是工作产物而非正文编辑目标；可用 `--backup` 指定，`--no-backup` 用于已由 Git 保存的归档或 CI。`--pattern` 限定书籍。参数中的 `--cache` 是读源兼容入口，不能用于写缓存。顺序判定本身在 C4 的 `check_note_order.py`。
@@ -531,7 +536,7 @@ python tools/check_project_docs.py
 
 | 工具 | 入口命令 | 读写范围 | 门禁与失败边界 | 测试 |
 | --- | --- | --- | --- | --- |
-| `text_norm.py` | `python tools/text_norm.py --root EPUB [--apply] [--report 显式报告.md]` | 预览默认；字符级改写成品行内文字，不增删物理行 | 确定性规则、XML 与行数不变；规则实现唯一在本文件【无】 | `test_text_norm.py`、`test_edit_safety.py` |
+| `text_norm.py` | `python tools/text_norm.py --root EPUB --pattern "*S1_01*" [--apply] [--report 显式报告.md]` | 预览默认；字符级改写成品行内文字，不增删物理行 | 确定性规则、XML 与行数不变；规则实现唯一在本文件【无】 | `test_text_norm.py`、`test_edit_safety.py` |
 | `proofread_review.py` | `python tools/proofread_review.py --worktree` | 只读 Git 改动与日文参考；写分级 TSV／聚类 | 精确行级配对；分级和风险提示不等于裁定【无】 | `test_proofread_review.py` |
 | `proofread_session.py` | `python tools/proofread_session.py --help` | 只读清单、中日源与判定；默认预览，`--apply` 只写独立复核报告目录 | ID 对账、冻结来源、引句及报告结构；机械通过不等于语义验收【无】 | `test_proofread_session.py`、`test_proofread_packets.py`、`test_proofread_results.py` |
 | `japanese_lookup.py` | `python tools/japanese_lookup.py S3_03 04 55 --mode markup` | 只读日文缓存 | 只定位原文，不作语义判定【无】 | `test_japanese_lookup.py` |
@@ -541,7 +546,7 @@ python tools/check_project_docs.py
 
 ```powershell
 python tools/text_norm.py --root EPUB
-python tools/text_norm.py --root EPUB --apply --report 显式报告.md
+python tools/text_norm.py --root EPUB --pattern "*S1_01*" --apply --report 显式报告.md
 ```
 
 只执行规范可确定的字符替换，XML、行数、标签、文件名与引用保持有效。规则实现唯一在 `text_norm.py`，不另写批量替换器。`--pattern` 限定书籍，`--summary` 供 CI 提交信息正文的「字符级规范化」一行（提交主语取实际 diff，见 `.github/workflows/normalize-epub-text.yml`），`--top` 控制报告样例。遇到不支持的结构而拒绝处理文件时，终端／Markdown／summary 都明确检查不完整，警告走 stderr 并返回 1；完整检查且零命中仍返回 0。选词需原文的事项走术语或复核 skill。任何改写行内文字的改动写盘后必须重跑本工具并确认 0 命中。
