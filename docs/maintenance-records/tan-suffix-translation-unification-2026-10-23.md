@@ -53,4 +53,24 @@
 - `python tools/check_epub_health.py --strict`（全库）：81 本书、1249 个 XHTML、error 0／warning 0。
 - `python tools/check_translation_spec.py`：命中 20 条均为既有项，不在本次改动行。
 - `python tools/publish_auto.py`：8 本已上传 OneDrive 并回流缓存。
+
+## 译注补充（同批追加）
+
+8 本书在「炭」首次出现处各加 1 条译注，正文加 ㊟，Note 页新增条目：
+
+> 「炭」是日文「たん」的音译，「たん」为「ちゃん」的戏谑变体，多用于调侃或卖萌的称呼。
+
+| 作品 | 正文位置 | Note 编号 |
+| --- | --- | --- |
+| S1_01 | `S1_01-02:555` | note7 |
+| S1_04 | `S1_04-03:417` | note6 |
+| S1_05 | `S1_05-03:248` | note9 |
+| S2_14 | `S2_14-09:57` | note6 |
+| S2_19 | `S2_19-02:83` | note8 |
+| S2_20 | `S2_20-02:412` | note4 |
+| S2_21 | `S2_21-03:394` | note4 |
+| S3_11 | `S3_11-05:165` | note19 |
+
+注号插入后由 `tools/reorder_notes.py --apply` 按正文首次引用顺序重排，相关注号顺延；`check_note_order.py` 复核 75 本一致。S1_05 该行原已有「拟人化」注，现为两个 ㊟ 并列。
+
 - 回退：`git revert <本提交>`。
