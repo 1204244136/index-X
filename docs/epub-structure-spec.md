@@ -58,15 +58,17 @@
 
 译注页是中文独有的作品级包装页，命名为 `S<作品号>-Note.xhtml`。**注释正文的写法见 [翻译规范](translation-spec.md) 三.2**，本节只写文件结构。
 
-结构层已事实收敛（属性完整性 855/856、编号连续性 73/73 全部通过），因此本节**只列有实测偏离的项**，其余交给 `tools/` 实现，不复制常量与正则。
+译注标识、列表顺序与外壳遵守以下规则；解析与判定由 `tools/` 实现，本节不复制常量与正则。
 
 - **外壳**：XML 声明用单引号 `<?xml version='1.0' encoding='utf-8'?>`；`<head>`、`<link>`、`<title>` 三者之间不留空格；`<title></title>` 为空。全库 73:1，唯一偏离在 `S3_11`。
 - **`<h1>` 固定为 `<h1>译注</h1>`**，独占 L4。默认 h1 已居中；取值由 `tools/xhtml_slots.py` 的 `NOTE_H1` 常量供生成器与检查器共用。
-- **容器必须是 `<ul>`，不得用 `<ol>`**（`<ul>` 72 : `<ol>` 1）。`tools/reorder_notes.py` 依赖 `<ul>` 定位条目范围，遇 `<ol>` 会抛未捕获异常，而 `normalize-epub-text.yml` 每日会跑到该路径。
+- **容器必须是 `<ul>`，不得用 `<ol>`**（`<ul>` 72 : `<ol>` 1）。`tools/reorder_notes.py` 依赖 `<ul>` 定位条目范围；非 `<ul>` 容器须显式拒绝并报告，`normalize-epub-text.yml` 每日使用同一入口。
 - **条目标签固定为 `<li epub:type="footnote" id="noteN">`**：`epub:type` 在前、`id` 在后，两个属性都不得省略；`<li>` 一律顶格，不缩进。全库属性顺序 713 : 142 且 6 个文件内部混排。
 - **行内标签只允许 `ruby`、`i`、`span`（含 `lang`）**；禁止 `table`、`dl`、`br`、`p`、`div`（这五类全库为 0，规则用于防回流）。
-- **编号**：`id` 为 `noteN`，从 1 连续、不留空号，且顺序与正文 `noteref` 首次引用顺序一致。判定实现唯一来源是 `tools/notes_core.py` 与 `tools/check_note_order.py`，本节不复制正则。
-- **说明型条目**：`S0_00-Note.xhtml` 第 7 行「阅读器不支持弹注」提示是**唯一合法**的无 `id`、无 `epub:type` 条目，不参与 `noteN` 编号序列与 `reorder_notes.py` 重排。该登记不构成对其他文件放宽属性要求或编号连续性的依据。
+- **稳定标识**：`id` 保留 `noteN` 格式（`N` 为正整数），只承担条目身份与链接目标，不表示阅读次序。已有 ID 不因增删、移动或重排而改变；允许缺号、允许数字顺序与阅读次序不同。存量书无需迁移，新书首次生成时可按阅读次序连续分配。
+- **新增与删除**：新增条目取同一作品当前 Note 条目中的最大 `N` 加 1，空集合从 `note1` 开始；只保证与当前集合不冲突，不维护删除历史或承诺历史号码永不复用。删除时同时移除对应引用与条目，不压缩其余 ID。
+- **列表顺序与完整性**：Note 页条目的物理顺序仍须与正文 `noteref` 首次引用顺序一致，不检查数字连续性或数值排序。ID 格式与属性由 `check_epub_health.py` 的 `note-structure` 检查；首引顺序、重复定义、悬空引用与未引用条目由 `tools/notes_core.py` 与 `tools/check_note_order.py` 检查。`reorder_notes.py` 只移动已有 `<li>`，保持条目内容、`id`、`href` 与正文不变。
+- **说明型条目**：`S0_00-Note.xhtml` 第 7 行「阅读器不支持弹注」提示是**唯一合法**的无 `id`、无 `epub:type` 条目，不属于注释标识集合、不参与 `reorder_notes.py` 重排。该登记不构成对其他文件放宽属性要求或 ID 唯一性的依据。
 - **列表包装页集合**：`check_alignment` 与模板重建必须共用同一集合（`information`／`introduction`／`note`／`special` 四类）。不得为纯图片页（`cover`／`back_cover`／`illustrations`）开放 L5 列表槽位。
 - **工具契约**：`reorder_notes.py` 遇非 `<ul>` 必须**显式拒绝并报告**，不得抛异常、也不得静默改写容器标签；`check_epub_health.py` 覆盖本节的外壳、容器、属性顺序、缩进与行内标签五项。
 

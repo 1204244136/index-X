@@ -33,7 +33,7 @@
   dangling   XHTML/OPF/CSS 引用的资源或锚点不存在
   css-layout 样式表缺盒模型/分页类或含破坏性边距
   note-structure 译注页外壳/槽位/容器/属性/行内标签不合规（只对 `*-Note.xhtml`；
-             规范见 `docs/epub-structure-spec.md`「译注页（Note）结构规约」，编号连续性不在此判定）
+             规范见 `docs/epub-structure-spec.md`「译注页（Note）结构规约」，首引顺序与 ID 完整性另查）
   dir-name   书目录名的 `【作品号】` 前缀（error；规范见 `docs/epub-artifact-spec.md` 第三节）
   metadata-title `dc:title` 逐字节等于书目录名（error）
   packaging-required `content.opf`／`nav.xhtml`／`toc.ncx` 与封面、制作信息页齐备，
@@ -591,9 +591,9 @@ NOTE_TAG_WHITELIST = frozenset({
 def find_note_structure_problems(lines: list[str], name: str) -> list[tuple[int, str]]:
     """译注页（Note）结构检查；只对 `*-Note.xhtml` 调用。
 
-    规范见 `docs/epub-structure-spec.md`「译注页（Note）结构规约」。**编号连续性不在这里判定**——
-    `noteN` 从 1 起、无空号、与正文首引顺序一致由 `check_note_order.py` 与
-    `notes_core.py` 唯一负责；本函数只查外壳、槽位、容器、属性与行内标签。
+    规范见 `docs/epub-structure-spec.md`「译注页（Note）结构规约」。稳定 `noteN` 可缺号、
+    不按数值排序；列表首引顺序与 ID 引用完整性由 `check_note_order.py` 与
+    `notes_core.py` 负责；本函数只查外壳、槽位、容器、属性与行内标签。
     """
     problems: list[tuple[int, str]] = []
     if len(lines) < 6:
@@ -616,7 +616,7 @@ def find_note_structure_problems(lines: list[str], name: str) -> list[tuple[int,
         problems.append((5, "L5 不是 `<ul>` 列表容器：`%s`" % lines[4][:60]))
 
     # 说明型条目：`docs/epub-structure-spec.md` 登记的唯一合法实例——S0_00-Note.xhtml 第 7 行
-    # 「阅读器不支持弹注」提示，无 id、无 epub:type、不参与编号序列与重排。
+    # 「阅读器不支持弹注」提示，无 id、无 epub:type、不参与注释引用与重排。
     bare_ok = name == "S0_00-Note.xhtml"
     for i, line in enumerate(lines[5:], start=6):
         m = re.match(r"^(\s*)<li\b([^>]*)>", line)

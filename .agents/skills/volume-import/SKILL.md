@@ -165,7 +165,7 @@ python tools/publish_auto.py --only-books "chinese-text/【S4_04】某暗部的�
 5. **OPF 的 id 冲突**：manifest 的 item id 不要用 `id-1`／`id-2`（metadata 已占用），
    否则 calibre 报 `DuplicateId`。包装页工具统一用 `id-t{n}`。
 6. **引号与注脚**：注脚引用必须是 `<a class="nodeco" epub:type="noteref" href="S4_04-Note.xhtml#noteN">`，
-   且 Note 页条目 id 与正文首次出现顺序一致，`check_note_order.py` 会核对。
+   Note 页条目按正文首次引用顺序排列，已有 id 保持不变；具体规则见 [EPUB 结构规范](../../../docs/epub-structure-spec.md)，`check_note_order.py` 会核对。
 7. **全角空格**：段内的 `U+3000` 可能是对齐或分字效果，不要「顺手清理」。
 8. **对齐工具不是语义判据**：`import_align_plan.py` 用「汉字重叠＋长度比」替代外部对齐工具的
    多语言向量打分，只为离线可用；语义级复核仍走 `check_semantic_alignment.py --betweenlines-dir`。

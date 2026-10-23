@@ -5,7 +5,7 @@ name: Normalize EPUB Text
 # 设计口径（「宁愿不改，也不乱改」）：
 #   - 字符替换：只做替换值唯一、1:1、全量核对无例外的字符替换；规则表见 tools/text_norm.py。
 #   - 标签清理：安全移除空 <b> 标签，加粗内标点外移。
-#   - 译注自愈：在定义与引用完全一致的前提下，按正文首次引用顺序自愈 Note 编号与正文引用（tools/reorder_notes.py）。
+#   - 译注排序自愈：在定义与引用完全一致的前提下，按正文首次引用顺序重排 Note 条目，保留 ID 与正文引用（tools/reorder_notes.py）。
 #   - 裸图包裹：单行独占裸 <img> 包裹 <p>，严格禁止删除任何结构行（tools/wrap_cn_image_lines.py --wrap-only）。
 #   - 不改变物理行数、不改模板、不改文件名、不动未引用的结构，因此不影响中日行数对齐。
 #   - 提交信息主语取实际 diff（改动文件数／行数），正文逐条列出三步各自的结论。三步都会
@@ -62,7 +62,7 @@ jobs:
             --report /tmp/text-norm-report.md \
             --summary /tmp/text-norm-summary.txt
 
-      - name: 译注顺序与编号自愈
+      - name: 译注排序自愈
         run: |
           set -o pipefail   # 默认 shell 无 pipefail，tee 会吞掉工具退出码
           if [ "${{ inputs.dry_run }}" = "true" ]; then
@@ -128,7 +128,7 @@ jobs:
             fi
             reorder=$(grep -m1 -E '^(已写盘|预览)' /tmp/step-reorder-notes.log 2>/dev/null | sed 's/：$//' || true)
             if [ -n "$reorder" ]; then
-              details="${details}- 译注编号自愈：${reorder}"$'\n'
+              details="${details}- 译注排序自愈：${reorder}"$'\n'
             fi
             wrap=$(grep -m1 -E '^(已写盘|预览)' /tmp/step-wrap-img.log 2>/dev/null | sed 's/：$//' || true)
             if [ -n "$wrap" ]; then

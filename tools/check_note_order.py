@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""检查中文缓存 Note 文件：注释列表顺序/编号是否与书中首次出现顺序一致。只读。
+"""检查 Note 文件的阅读顺序和稳定 ID 引用完整性。只读。
 
 判定标准：
 - Note 文件（如 S1_01-Note.xhtml）中的 <li epub:type="footnote" id="noteN"> 条目
-  应按正文中 noteref 首次引用顺序排列，编号应与之对应；
+  应按正文中 noteref 首次引用顺序排列，已有 ID 保持不变；
 - 报告以下问题：列表顺序 != 正文首次出现顺序、被引用但未定义、
-  已定义但正文未引用（孤儿注释）、id 数值顺序乱序。
+  已定义但正文未引用（孤儿注释）、ID 重复定义。
+  ID 不要求连续或按数值递增。
 
 正文文件按表头内容序（如 S1_01-02 < S1_01-03）排序后逐行扫描，
 取每个注释 id 的首次引用位置作为“书中出现顺序”。只读，不修改缓存。
@@ -17,6 +18,7 @@ import sys
 import json
 import argparse
 import csv
+from collections import Counter
 
 if __package__:
     from .cli_output import configure_output
@@ -42,14 +44,6 @@ def parse_note_file(path):
     return parse_note_ids(read(path))
 
 
-def parse_order_index(note_id):
-    """把 note2.1 / note10 这类 id 解析成可排序数值。"""
-    m = re.match(r"^note(\d+)(?:\.(\d+))?$", note_id)
-    if not m:
-        return None
-    return (int(m.group(1)), int(m.group(2) or 0))
-
-
 def check_book(book, text_dir, nf):
     """检查单本 Note 文件，返回 (per_book_entry, issues)。"""
     note_basename = os.path.basename(nf)
@@ -64,24 +58,17 @@ def check_book(book, text_dir, nf):
     orphan_defs = [i for i in def_order if i not in referenced]
     order_mismatch = def_order != appear_order
 
-    def_numeric = [parse_order_index(i) for i in def_order]
-    id_unsorted = any(a is not None and b is not None and a > b
-                      for a, b in zip(def_numeric, def_numeric[1:]))
-    ref_numeric = [parse_order_index(i) for i in appear_order]
-    ref_id_unsorted = any(a is not None and b is not None and a > b
-                          for a, b in zip(ref_numeric, ref_numeric[1:]))
+    duplicate_defs = [note_id for note_id, count in Counter(def_order).items() if count > 1]
 
     issues = []
+    if duplicate_defs:
+        issues.append("Note 文件重复定义 ID: " + ", ".join(duplicate_defs))
     if order_mismatch:
         issues.append("note 文件列表顺序 != 书中首次出现顺序")
     if missing_defs:
         issues.append("被引用但 Note 文件未定义: " + ", ".join(missing_defs))
     if orphan_defs:
         issues.append("Note 文件已定义但正文未引用: " + ", ".join(orphan_defs))
-    if id_unsorted:
-        issues.append("Note 文件内 id 数值顺序乱序")
-    if ref_id_unsorted:
-        issues.append("正文首次出现顺序与 id 数值顺序不一致")
 
     entry = {
         "note_file": nf,
@@ -95,7 +82,7 @@ def check_book(book, text_dir, nf):
 
 def main():
     configure_output()
-    ap = argparse.ArgumentParser(description="检查中文缓存 Note 注释顺序/编号是否与正文首次出现顺序一致（只读）")
+    ap = argparse.ArgumentParser(description="检查 Note 条目首引顺序与稳定 ID 引用完整性（只读）")
     ap.add_argument("--root", default=None,
                     help="EPUB 根目录或中文缓存根目录（若指定则优先使用）")
     ap.add_argument("--cache", default=DEFAULT_CACHE,
@@ -145,7 +132,7 @@ def main():
             for k, v in data["first_appearance"].items():
                 print("    %s -> %s:%s" % (k, v["file"], v["line"]))
     else:
-        print("所有 Note 文件的顺序与 ID 均与正文首次出现顺序一致。")
+        print("所有 Note 条目均按正文首次引用顺序排列，ID 引用完整且无重复定义。")
     print("\n共检查 %d 本书。" % len(per_book))
 
     # 报告写入
@@ -188,7 +175,7 @@ def main():
                         lines.append("- %s → `%s:%s`" % (k, v["file"], v["line"]))
                     lines.append("")
             else:
-                lines.append("所有 Note 文件的顺序与 ID 均与正文首次出现顺序一致。\n")
+                lines.append("所有 Note 条目均按正文首次引用顺序排列，ID 引用完整且无重复定义。\n")
             lines.append("\n共检查 %d 本书。\n" % len(per_book))
             with open(md_path, "w", encoding="utf-8") as f:
                 f.write("\n".join(lines))

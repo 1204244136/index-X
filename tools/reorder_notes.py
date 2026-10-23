@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""按正文首次出现顺序重排 Note 文件并重编号，同步更新正文引用。
+"""按正文首次引用顺序重排 Note 条目，保留已有 ID 和正文引用。
 
 - 对每本 *-Note.xhtml：计算正文 noteref 首次出现顺序；
-- 按该顺序重排 <li> 条目并重编号为 note1..noteN；
-- 单遍映射更新正文引用。
+- 只按该顺序移动完整 <li> 条目；
+- 不改写注释 ID、条目内容或正文文件。
 默认预览，--apply 才写盘；写前可备份，--no-backup 禁用备份。
 规范来源是 `docs/epub-structure-spec.md` 与 docs/translation-spec.md；CLI 合同见 tools/README.md。
 """
@@ -24,7 +24,6 @@ from edit_safety import (EditSafetyError, add_content_roots, add_edit_mode,
 
 from notes_core import (
     LI_FULL_RE,
-    LI_ID_RE,
     NOTEFILE_RE,
     gather_refs,
     parse_note_entries,
@@ -74,6 +73,8 @@ def process_book(book, text_dir, nf, dry_run, backup_dir):
     if total_li != len(entries):
         return None, "Note 文件含非注释 <li> 条目（%d 个 li，%d 个带 id），跳过" % (total_li, len(entries))
     by_id = {old: li for old, li in entries}
+    if len(by_id) != len(entries):
+        return None, "Note 文件重复定义注释 ID，跳过"
     appearance, _ = gather_refs(text_dir, os.path.basename(nf))
     appear_order = list(appearance.keys())
 
@@ -81,18 +82,6 @@ def process_book(book, text_dir, nf, dry_run, backup_dir):
         # 有孤儿或悬空引用时不自动处理，交给人工
         return None, "定义集合与引用集合不一致（含孤儿/悬空），跳过"
 
-    if list(by_id.keys()) == appear_order:
-        # 已经有序
-        return None, None
-
-    mapping = {old: "note%d" % (i + 1) for i, old in enumerate(appear_order)}
-
-    # 重排 Note 文件
-    new_lis = []
-    for old in appear_order:
-        li = by_id[old]
-        new_li = LI_ID_RE.sub(lambda m: m.group(1) + mapping[old] + m.group(3), li, count=1)
-        new_lis.append(new_li)
     # 容器必须是 <ul>…</ul>（见 `docs/epub-structure-spec.md`「译注页（Note）结构规约」）。
     # 用 find 而非 index：`<ol>` 或结构异常时给出可读的拒绝理由，不抛未捕获异常
     # ——CI 的 normalize-epub-text.yml 每日会跑到本函数。
@@ -101,31 +90,14 @@ def process_book(book, text_dir, nf, dry_run, backup_dir):
     if ul_start == -1 or ul_end == -1:
         return None, "Note 文件容器不是 <ul>…</ul>（规范要求容器必须是 <ul>，不得用 <ol>），跳过"
     ul_end += len("</ul>")
+
+    if list(by_id) == appear_order:
+        return None, None
+
+    new_lis = [by_id[note_id] for note_id in appear_order]
     new_note = note_text[:ul_start] + "<ul>\n" + "\n".join(new_lis) + "\n</ul>" + note_text[ul_end:]
 
-    # 更新正文引用（单遍）
-    ref_pat = re.compile(r"(%s#)(note[\d.]+)" % re.escape(os.path.basename(nf)))
-    ref_total = 0
-    touched = [nf]
-
     writes = {note_path: new_note}
-    for fn in sorted(os.listdir(text_dir)):
-        if fn == nf or not fn.endswith(".xhtml"):
-            continue
-        p = os.path.join(text_dir, fn)
-        c = read(p)
-        def repl(m):
-            nonlocal ref_total
-            old = m.group(2)
-            new = mapping.get(old)
-            if new and new != old:
-                ref_total += 1
-                return m.group(1) + new
-            return m.group(0)
-        nc = ref_pat.sub(repl, c)
-        if nc != c:
-            touched.append(fn)
-            writes[p] = nc
 
     if not dry_run:
         with rollback_paths(writes):
@@ -140,15 +112,16 @@ def process_book(book, text_dir, nf, dry_run, backup_dir):
         "n_notes": len(entries),
         "old_order": list(by_id.keys()),
         "new_order": appear_order,
-        "mapping": mapping,
-        "ref_rewrites": ref_total,
-        "files_touched": touched,
+        # 保留旧报告字段；重排只改变物理顺序，映射恒等、正文改写恒为零。
+        "mapping": {note_id: note_id for note_id in appear_order},
+        "ref_rewrites": 0,
+        "files_touched": [nf],
     }, None
 
 
 def main():
     configure_output()
-    ap = argparse.ArgumentParser(description="按正文出现顺序重排 Note 文件并重编号（可 --dry-run）")
+    ap = argparse.ArgumentParser(description="按正文首次引用顺序重排 Note 条目，保留 ID 与正文引用（可 --dry-run）")
     add_content_roots(ap)
     ap.add_argument("--backup", default=DEFAULT_BACKUP, help="备份目录")
     ap.add_argument("--no-backup", action="store_true", help="不生成备份文件（CI 或自动化环境推荐）")
@@ -195,12 +168,7 @@ def main():
         print("%s（%s） 共 %d 条注释" % (r["book"], r["note_file"], r["n_notes"]))
         print("  旧顺序: %s" % ", ".join(r["old_order"]))
         print("  新顺序: %s" % ", ".join(r["new_order"]))
-        print("  正文引用改写 %d 处，涉及文件 %d 个" % (r["ref_rewrites"], len(r["files_touched"])))
-        changed = [old for old, new in r["mapping"].items() if old != new]
-        if changed:
-            print("  映射（旧 -> 新）：")
-            for old in changed:
-                print("    %s -> %s" % (old, r["mapping"][old]))
+        print("  仅重排译注页，保留 ID 与正文引用；涉及文件 %d 个" % len(r["files_touched"]))
     if skipped:
         print("\n跳过 %d 本（需人工）：" % len(skipped), file=sys.stderr)
         for book, nf, msg in skipped:

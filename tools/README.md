@@ -285,7 +285,7 @@ python tools/docx2epub.py 交稿.docx --out 显式构建输出 --unpacked 显式
 | `restore_cn_scene_breaks.py` | `python tools/restore_cn_scene_breaks.py --root EPUB --jp-root … --book S6_22.06.10 [--apply]` | 预览默认；只写中文 | 只补有源证据且总差额一致的场景分隔；条件不足拒绝【P4】 | `test_restore_cn_scene_breaks.py`、`test_edit_safety.py` |
 | `sync_pb_tags.py` | `python tools/sync_pb_tags.py --root EPUB --jp-root .cache/epub-work/japanese-text --book S1_01 [--apply]` | 预览默认；只写中文 | 段落一一对应时补 class，不增删行；不一一对应即拒绝【P4】 | `test_xhtml_structure.py`、`test_edit_safety.py` |
 | `wrap_cn_image_lines.py` | `python tools/wrap_cn_image_lines.py --root EPUB --book S1_01 [--wrap-only] [--apply]` | 预览默认；写中文归档／显式暂存中文 | 图片专用容器、配平与行数不变量；`--wrap-only` 仅包装裸 img、不删结构行【无】 | `test_wrap_cn_image_lines.py`、`test_edit_safety.py`（动态） |
-| `reorder_notes.py` | `python tools/reorder_notes.py --root EPUB --pattern "*S1_01*" [--apply] [--no-backup]` | 预览默认；写 Note 与正文引用；备份默认 `.cache/reorder-backup/` | 完整引用映射预检（条目、编号、正文引用），不通过不写；**容器非 `<ul>…</ul>` 时显式拒绝并报告**（规范要求 `<ul>`，`<ol>` 不再抛异常）【无】 | CLI：`test_edit_safety.py`；共享规则：`test_docx_and_notes.py` |
+| `reorder_notes.py` | `python tools/reorder_notes.py --root EPUB --pattern "*S1_01*" [--apply] [--no-backup]` | 预览默认；只重排 Note 条目，保留 ID 与正文引用；备份默认 `.cache/reorder-backup/` | 完整引用预检（条目、ID、正文引用），不通过不写；**容器非 `<ul>…</ul>` 时显式拒绝并报告**（规范要求 `<ul>`，`<ol>` 不抛异常）【无】 | CLI：`test_edit_safety.py`；共享规则：`test_docx_and_notes.py` |
 
 局部任务的范围入口：single 选显式文件／`--dir`／文件 pattern；paired 选重复 `--book`／`--file` 或单书根；heading 选重复 `--book` glob；shift 与 empty 指定单书根；legacy／restore／pb／wrap 用 `--book`；notes 用书名 `--pattern`。省略筛选时可能处理整个根目录，`--apply` 仅切换写入模式，不缩小范围。
 
@@ -347,7 +347,7 @@ python tools/reorder_notes.py --root EPUB --pattern "*S1_01*"
 python tools/reorder_notes.py --root EPUB --pattern "*S1_01*" --apply --no-backup
 ```
 
-写入前先计划 Note 条目、编号和正文引用的完整映射，再写入；默认预览，备份默认 `.cache/reorder-backup/`，它是工作产物而非正文编辑目标；可用 `--backup` 指定，`--no-backup` 用于已由 Git 保存的归档或 CI。`--pattern` 限定书籍。参数中的 `--cache` 是读源兼容入口，不能用于写缓存。顺序判定本身在 C4 的 `check_note_order.py`。
+写入前先检查条目可解析、ID 无重复且条目与正文引用完整对应，再按正文首次引用顺序计划 Note 列表的物理排列；只移动已有 `<li>`，不重写条目内容、`id`、`href` 或正文。缺号或数字顺序不同不触发修改；稳定标识与新增 ID 分配规则见 [EPUB 结构规范](../docs/epub-structure-spec.md) 四。报告保留兼容字段：`mapping` 中每个旧 ID 映射到自身，`ref_rewrites` 恒为 0，`files_touched` 只列实际改动的 Note 文件。默认预览，备份默认 `.cache/reorder-backup/`，它是工作产物而非正文编辑目标；可用 `--backup` 指定，`--no-backup` 用于已由 Git 保存的归档或 CI。`--pattern` 限定书籍。参数中的 `--cache` 是读源兼容入口，不能用于写缓存。顺序判定本身在 C4 的 `check_note_order.py`。
 
 ## C4 门禁与体检
 
@@ -442,7 +442,7 @@ L2 运行时由 `--vector-python`／`--betweenlines-dir`、`BETWEENLINES_PYTHON`
 python tools/check_note_order.py --root EPUB
 ```
 
-只读检查 Note 条目顺序、编号是否等于正文首次引用顺序，在输出目录生成 `note-order-check.tsv`／JSON／Markdown。TSV 每本 Note 一行，列为 `book`、`note_file`、`defined_order`、`appearance_order`、`first_appearance`、`issues`，复杂值用 JSON 单元格保全。输入根目录无效或报告写入失败时 stderr 诊断并返回 2；检查发现的问题仍按既有 strict 语义阻断。重排写入在 C3 的 `reorder_notes.py`，两者共享 `notes_core.py` 的阅读顺序。
+只读检查 Note 条目的物理顺序是否等于正文首次引用顺序，并报告重复 ID、悬空引用与未引用条目；允许缺号与数字顺序不同，不检查数值连续性或数值排序。ID 格式与属性由 `check_epub_health.py` 的 `note-structure` 检查。在输出目录生成 `note-order-check.tsv`／JSON／Markdown。TSV 每本 Note 一行，列为 `book`、`note_file`、`defined_order`、`appearance_order`、`first_appearance`、`issues`，复杂值用 JSON 单元格保全。输入根目录无效或报告写入失败时 stderr 诊断并返回 2；检查发现的问题仍按既有 strict 语义阻断。重排写入在 C3 的 `reorder_notes.py`，两者共享 `notes_core.py` 的阅读顺序。
 
 ### 单侧成品体检
 
@@ -457,7 +457,7 @@ python tools/check_epub_health.py --only css-layout --tsv 显式报告.tsv
 
 `title-style` 检查中文默认标题样式、分层角色／字号与引用 CSS、序终章间距、彩页及特典集合标题；`title-catalog` 检查 nav/NCX 的纯文本标签与 h1/h2/h3 投影及两套目录的目标／标签／顺序一致性。未知结构／样式与目录差异为 error，并通过共享 `audit_book` 进入本地发布和 CI 预检；不自动修复、不推断层数，非标题目标只由资源／锚点检查验证跳转。规范正文见 [结构规范](../docs/epub-structure-spec.md) 三和 [成品构成规范](../docs/epub-artifact-spec.md) 四。
 
-`note-structure` 只对 `*-Note.xhtml` 判定，覆盖外壳（XML 声明引号、`<head>` 与 `<link>` 间距、空 `<title>`）、L4 固定 h1、L5 容器必须是 `<ul>`、`<li>` 属性顺序与完整性、缩进、行内标签白名单，规范见 [EPUB 结构规范](../docs/epub-structure-spec.md)「译注页（Note）结构规约」。**编号连续性不在本项**——`noteN` 从 1 起、无空号、与正文首引顺序一致由 `check_note_order.py` 唯一负责。`S0_00-Note.xhtml` 第 7 行的说明型条目是登记在案的唯一豁免。
+`note-structure` 只对 `*-Note.xhtml` 判定，覆盖外壳（XML 声明引号、`<head>` 与 `<link>` 间距、空 `<title>`）、L4 固定 h1、L5 容器必须是 `<ul>`、`<li>` 属性顺序与完整性（含 `noteN` ID 格式）、缩进、行内标签白名单，规范见 [EPUB 结构规范](../docs/epub-structure-spec.md)「译注页（Note）结构规约」。ID 唯一性、引用完整性及条目物理顺序由 `check_note_order.py` 检查；数字连续性和数值排序均不要求。`S0_00-Note.xhtml` 第 7 行的说明型条目是登记在案的唯一豁免。
 
 ### 图片对应核对
 

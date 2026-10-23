@@ -210,8 +210,9 @@ def esc_ruby(text: str) -> str:
 def extract_notes(text: str, notes: list[str], header: str) -> str:
     """把行内译注提取为 Note 脚注页引用，返回替换后的文本。
 
-    `notes` 按阅读顺序收集译注正文（顺序即 note 编号）；引用形如
+    新书首次生成时，`notes` 按阅读顺序收集译注正文并分配初始 ID；引用形如
     `<a class="nodeco" epub:type="noteref" href="{header}-Note.xhtml#noteN"><sup>㊟</sup></a>`。
+    后续维护保留已分配的 ID，不因增删或重排重新编号。
     """
     note_header = header if header.endswith("-Note") else f"{header}-Note"
 

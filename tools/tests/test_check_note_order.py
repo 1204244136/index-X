@@ -35,6 +35,23 @@ class NoteOrderTests(unittest.TestCase):
         _, issues = check_note_order.check_book("书", str(self.text), self.notes.name)
         self.assertEqual(issues, [])
 
+    def test_stable_ids_need_not_follow_numeric_order_or_be_contiguous(self):
+        for definitions in (["note7", "note2"], ["note1", "note9"]):
+            with self.subTest(definitions=definitions):
+                self.write(definitions, [*definitions, definitions[0]])
+                entry, issues = check_note_order.check_book("书", str(self.text), self.notes.name)
+                self.assertEqual(issues, [])
+                self.assertEqual(entry["defined_order"], definitions)
+                self.assertEqual(entry["appearance_order"], definitions)
+
+    def test_duplicate_definitions_are_reported_explicitly(self):
+        for definitions, refs in ((["note2", "note2"], ["note2"]),
+                                  (["note7", "note2", "note7"], ["note7", "note2"])):
+            with self.subTest(definitions=definitions):
+                self.write(definitions, refs)
+                _, issues = check_note_order.check_book("书", str(self.text), self.notes.name)
+                self.assertTrue(any("重复" in issue for issue in issues), issues)
+
     def test_missing_or_orphan_definitions_and_wrong_order(self):
         cases = [(["note1"], ["note1", "note2"], "未定义"),
                  (["note1", "note2"], ["note1"], "未引用"),

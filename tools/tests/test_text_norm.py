@@ -158,7 +158,30 @@ class BoldRulesTests(unittest.TestCase):
 
 
 class ReorderNotesTests(unittest.TestCase):
-    def test_reorder_notes_and_rewrites_refs(self):
+    def make_book(self, definitions, refs, *, container="ul"):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        book_dir = Path(temporary.name) / "S1_01"
+        text_dir = book_dir / "OEBPS" / "Text"
+        text_dir.mkdir(parents=True)
+        note = text_dir / "S1_01-Note.xhtml"
+        note.write_text(
+            '<html><body>\n<h1>注释</h1>\n' + f'<{container}>\n' +
+            "\n".join(definitions) + f'\n</{container}>\n</body></html>\n',
+            encoding="utf-8",
+        )
+        chapter = text_dir / "S1_01-01_Chapter.xhtml"
+        chapter.write_text(
+            '<html><body>\n' + "\n".join(
+                f"<p>正文<a id='ref{index}' epub:type='noteref' "
+                f"href='S1_01-Note.xhtml#{note_id}'><sup>㊟</sup></a></p>"
+                for index, note_id in enumerate(refs, 1)
+            ) + '\n</body></html>\n',
+            encoding="utf-8",
+        )
+        return book_dir, note, chapter
+
+    def test_reorder_notes_preserves_refs(self):
         with tempfile.TemporaryDirectory() as td:
             book_dir = Path(td) / "S1_01"
             text_dir = book_dir / "OEBPS" / "Text"
@@ -199,12 +222,134 @@ class ReorderNotesTests(unittest.TestCase):
             self.assertIsNotNone(res)
             self.assertEqual(res["new_order"], ["note1", "note2"])
             self.assertEqual(res["old_order"], ["note2", "note1"])
+            self.assertEqual(res["ref_rewrites"], 0)
+            self.assertEqual(res["files_touched"], [note_file.name])
 
             # 验证重排后的 Note 文件顺序为 note1, note2
             new_note_content = note_file.read_text(encoding="utf-8")
             idx_1 = new_note_content.index('id="note1">注释一')
             idx_2 = new_note_content.index('id="note2">注释二')
             self.assertLess(idx_1, idx_2)
+
+    def test_reorders_stable_ids_preserving_entries_and_body_bytes(self):
+        first = "<li epub:type='footnote' id='note7'><span>新增注释</span>：甲。</li>"
+        second = '<li class="note" id="note2" epub:type="footnote">原注释二 &amp; 补充。</li>'
+        _, note, chapter = self.make_book([second, first], ["note7", "note2", "note7"])
+        original_note = note.read_text(encoding="utf-8")
+        original_body = chapter.read_bytes()
+
+        result, message = process_book("S1_01", str(note.parent), note.name,
+                                       dry_run=False, backup_dir=None)
+
+        self.assertIsNone(message)
+        self.assertEqual(result["old_order"], ["note2", "note7"])
+        self.assertEqual(result["new_order"], ["note7", "note2"])
+        self.assertEqual(result["mapping"], {"note7": "note7", "note2": "note2"})
+        self.assertEqual(result["ref_rewrites"], 0)
+        self.assertEqual(result["files_touched"], [note.name])
+        self.assertEqual(note.read_text(encoding="utf-8"),
+                         original_note.replace(second + "\n" + first, first + "\n" + second))
+        self.assertEqual(chapter.read_bytes(), original_body)
+        self.assertEqual(note.read_text(encoding="utf-8").count("<li "), 2)
+        self.assertEqual(process_book("S1_01", str(note.parent), note.name,
+                                      dry_run=False, backup_dir=None), (None, None))
+
+    def test_inserting_note_only_moves_new_entry_without_renumbering(self):
+        first = '<li id="note1">原注释一</li>'
+        second = '<li id="note2">原注释二</li>'
+        inserted = '<li id="note7">中途新增</li>'
+        _, note, chapter = self.make_book([first, second, inserted], ["note1", "note7", "note2"])
+        original_body = chapter.read_bytes()
+
+        result, message = process_book("S1_01", str(note.parent), note.name,
+                                       dry_run=False, backup_dir=None)
+
+        self.assertIsNone(message)
+        self.assertEqual(result["new_order"], ["note1", "note7", "note2"])
+        self.assertEqual(result["ref_rewrites"], 0)
+        self.assertIn(first + "\n" + inserted + "\n" + second, note.read_text(encoding="utf-8"))
+        self.assertEqual(chapter.read_bytes(), original_body)
+
+    def test_deleting_note_keeps_remaining_ids_and_files_unchanged(self):
+        first = '<li id="note1">待删除</li>'
+        inserted = '<li id="note7">新增注释</li>'
+        second = '<li id="note2">原注释二</li>'
+        _, note, chapter = self.make_book([first, inserted, second], ["note1", "note7", "note2"])
+        note.write_text(note.read_text(encoding="utf-8").replace(first + "\n", ""), encoding="utf-8")
+        chapter.write_text("\n".join(line for line in chapter.read_text(encoding="utf-8").splitlines()
+                                     if "#note1'" not in line) + "\n", encoding="utf-8")
+        originals = {path: path.read_bytes() for path in (note, chapter)}
+
+        result, message = process_book("S1_01", str(note.parent), note.name,
+                                       dry_run=False, backup_dir=None)
+
+        self.assertEqual((result, message), (None, None))
+        self.assertEqual({path: path.read_bytes() for path in (note, chapter)}, originals)
+
+    def test_dry_run_leaves_files_and_backup_directory_untouched(self):
+        book_dir, note, chapter = self.make_book(
+            ['<li id="note2">二</li>', '<li id="note7">七</li>'], ["note7", "note2"])
+        originals = {path: path.read_bytes() for path in (note, chapter)}
+        backup_dir = book_dir.parent / "backup"
+
+        result, message = process_book("S1_01", str(note.parent), note.name,
+                                       dry_run=True, backup_dir=str(backup_dir))
+
+        self.assertIsNone(message)
+        self.assertEqual(result["files_touched"], [note.name])
+        self.assertEqual({path: path.read_bytes() for path in (note, chapter)}, originals)
+        self.assertFalse(backup_dir.exists())
+
+    def test_backup_contains_original_note_only(self):
+        book_dir, note, chapter = self.make_book(
+            ['<li id="note2">二</li>', '<li id="note7">七</li>'], ["note7", "note2"])
+        original_note = note.read_bytes()
+        original_body = chapter.read_bytes()
+        backup_dir = book_dir.parent / "backup"
+
+        _, message = process_book("S1_01", str(note.parent), note.name,
+                                  dry_run=False, backup_dir=str(backup_dir))
+
+        self.assertIsNone(message)
+        self.assertEqual((backup_dir / "S1_01" / note.name).read_bytes(), original_note)
+        self.assertFalse((backup_dir / "S1_01" / chapter.name).exists())
+        self.assertEqual(chapter.read_bytes(), original_body)
+
+    def test_duplicate_definitions_are_rejected_without_data_loss(self):
+        for definitions, refs in (
+            (['<li id="note2">二甲</li>', '<li id="note2">二乙</li>'], ["note2"]),
+            (['<li id="note2">二甲</li>', '<li id="note7">七</li>', '<li id="note2">二乙</li>'],
+             ["note7", "note2"]),
+        ):
+            with self.subTest(definitions=definitions):
+                _, note, chapter = self.make_book(definitions, refs)
+                originals = {path: path.read_bytes() for path in (note, chapter)}
+
+                result, message = process_book("S1_01", str(note.parent), note.name,
+                                               dry_run=False, backup_dir=None)
+
+                self.assertIsNone(result)
+                self.assertIn("重复", message)
+                self.assertEqual({path: path.read_bytes() for path in (note, chapter)}, originals)
+
+    def test_invalid_definitions_and_containers_are_rejected_without_edits(self):
+        cases = (
+            (["<li id='note2'>二</li>"], ["note7"], "ul", "集合"),
+            (["<li id='note2'>二</li>", "<li id='note7'>七</li>"], ["note2"], "ul", "集合"),
+            (["<li id='note2'>二</li>", "<li>无标识</li>"], ["note2"], "ul", "非注释"),
+            (["<li id='note2'>二</li>", "<li id='note7'>七</li>"], ["note7", "note2"], "ol", "容器"),
+        )
+        for definitions, refs, container, expected in cases:
+            with self.subTest(expected=expected, container=container):
+                _, note, chapter = self.make_book(definitions, refs, container=container)
+                originals = {path: path.read_bytes() for path in (note, chapter)}
+
+                result, message = process_book("S1_01", str(note.parent), note.name,
+                                               dry_run=False, backup_dir=None)
+
+                self.assertIsNone(result)
+                self.assertIn(expected, message)
+                self.assertEqual({path: path.read_bytes() for path in (note, chapter)}, originals)
 
     def test_write_failure_restores_note_and_references(self):
         with tempfile.TemporaryDirectory() as td:
@@ -228,14 +373,9 @@ class ReorderNotesTests(unittest.TestCase):
             )
             originals = {path: path.read_bytes() for path in (note, chapter)}
             real_write = reorder_notes.write
-            calls = 0
-
             def failing_write(path, content):
-                nonlocal calls
-                calls += 1
-                if calls == 2:
-                    raise OSError("模拟写入失败")
                 real_write(path, content)
+                raise OSError("模拟写入后失败")
 
             with patch.object(reorder_notes, "write", side_effect=failing_write):
                 with self.assertRaises(OSError):
