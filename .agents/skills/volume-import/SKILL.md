@@ -40,7 +40,7 @@ python tools/import_materials.py --docx 交稿.docx --images 图片素材目录 
 日文原文缺失时：源还没加工过（只有 BW 分页源）就先走 [日文源导入 skill](../bw-source-import/SKILL.md)；
 源已在 OneDrive 日文目录则按 [工具说明](../../../tools/README.md) 的 C1「拉取」同步进缓存，再重跑核对。
 
-另需人工确认（工具不代查）：`python tools/publish_auto.py --dry-run` 显示三副本无待发布改动。
+另需人工确认（工具不代查）：`python tools/publish_auto.py --only-books "<本次导入的 side/书目录,...>" --dry-run` 显示本次范围的三副本无待发布改动；同书交接按 `AGENTS.md`「共享工作区协调」执行，范围外任务不作为本次输入。
 
 ## 二、六步流程（每步一个原子入口）
 
@@ -137,7 +137,7 @@ python tools/check_alignment.py --root EPUB --jp-root .cache/epub-work/japanese-
 python tools/check_epub_health.py --root EPUB --pattern "*S4_04*" --strict
 python tools/check_note_order.py --root EPUB --pattern "*S4_04*"
 python tools/check_translation_spec.py --cache EPUB --pattern "*S4_04*"
-python tools/publish_preflight.py --source EPUB --jp-root .cache/epub-work/japanese-text
+python tools/publish_preflight.py --source EPUB --jp-root .cache/epub-work/japanese-text --only-books "chinese-text/【S4_04】某暗部的少女共栖 4"
 python tools/check_epub_validity.py "EPUB/【S4_04】某暗部的少女共栖 4" --structural --strict
 ```
 
@@ -147,7 +147,7 @@ python tools/check_epub_validity.py "EPUB/【S4_04】某暗部的少女共栖 4"
 ## 三、发布与提交
 
 ```powershell
-python tools/publish_auto.py            # 流程 C：EPUB/ → OneDrive ＋ 缓存镜像，并更新清单
+python tools/publish_auto.py --only-books "chinese-text/【S4_04】某暗部的少女共栖 4"  # 仅发布本次导入书
 ```
 
 * 单本修改以提交承载，不留档；一次落在两本及以上作品才在 `docs/maintenance-records/` 留档。

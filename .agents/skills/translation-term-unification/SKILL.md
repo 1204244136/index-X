@@ -64,10 +64,11 @@ description: index-X（某系列 EPUB 档案）译名／术语统一工作流。
 ### S1 写前同步
 
 ```powershell
-python tools/publish_auto.py            # 预览可加 --dry-run
+python tools/publish_auto.py --only-books "<本任务 side/书目录,...>" --dry-run
+python tools/publish_auto.py --only-books "<同一范围>"
 ```
 
-确认三副本（`EPUB/`、`.cache/`、OneDrive）在最新状态。**有冲突先按 `AGENTS.md` 合并，不得选边覆盖。**
+确认本任务范围的三副本（`EPUB/`、`.cache/`、OneDrive）在最新状态；范围与同书交接按 `AGENTS.md`「共享工作区协调」执行。**有冲突先按 `AGENTS.md` 合并，不得选边覆盖。**
 
 ### S2 锚点检索（只读）
 
@@ -112,7 +113,7 @@ python .agents/skills/translation-term-unification/references/test_unify_terms_t
 ### S6 门禁
 
 ```powershell
-python tools/text_norm.py --dry-run             # 字符级规范化：必须 0 命中，有命中先 --apply 再复跑
+python tools/text_norm.py --pattern "<本任务书名匹配式>" --dry-run  # 必须 0 命中；需要 --apply 时保留同一范围
 python tools/check_alignment.py --strict        # 中日行数 / 模板 / h2 / 图片行
 python tools/check_epub_health.py --strict      # 单侧结构（XML、ruby、加粗、悬空引用等）
 python tools/check_translation_spec.py          # 涉及标点／注音／单位时跑；报告在 .cache/epub-work/
@@ -123,7 +124,7 @@ python tools/check_translation_spec.py          # 涉及标点／注音／单位
 ### S7 写后同步、留档、提交
 
 ```powershell
-python tools/publish_auto.py            # 打包上传 OneDrive + 回流缓存 + 更新清单
+python tools/publish_auto.py --only-books "<写前核定的同一范围>"  # 打包上传并回流缓存
 ```
 
 - 跨作品 → 新建 `docs/maintenance-records/<锚点 slug>-<YYYY-MM-DD>.md`（模板见 §七），只写本次修改内容。
@@ -202,7 +203,7 @@ python tools/proofread_review.py <commit>       # 产物 .cache/epub-work/proofr
 - 修订前 / 修订后：<译法分布与残留数>
 - 全部为行内替换，不增删物理行：<各文件 行数/行数 中日一致>
 - `python tools/check_alignment.py --strict`：<本次范围、文件数、问题数、未配对项>
-- `python tools/publish_auto.py`：<哪些书已上传并回流缓存>
+- `python tools/publish_auto.py --only-books "<实际 side/书目录,...>"`：<哪些书已上传并回流缓存；范围外改动与受阻事实>
 - 回退：`git revert <commit>`
 ```
 

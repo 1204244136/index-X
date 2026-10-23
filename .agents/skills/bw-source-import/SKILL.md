@@ -66,8 +66,8 @@ python tools/merge_bw_pages.py 分页目录 --book S4_05 --out 显式章节输�
 产物先留在显式暂存目录，验证通过后进 OneDrive 日文源，再由拉取同步器进缓存：
 
 ```powershell
-./tools/pull.ps1 -WhatIf -Side japanese
-./tools/pull.ps1 -Side japanese
+./tools/pull.ps1 -WhatIf -Side japanese -OnlyBooks "<本任务 japanese-text/书目录,...>"
+./tools/pull.ps1 -Side japanese -OnlyBooks "<同一范围>"
 ```
 
 缓存是同步器的作用域，本流程**不直接写** `.cache/`。

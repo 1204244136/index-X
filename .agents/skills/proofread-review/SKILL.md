@@ -137,7 +137,7 @@ python tools/proofread_review.py b7515335 2d44cb26 821c46b9 7a218119
 回改前按 [复核契约](references/review-contract.md#失败格式修订与有效选择) 保存已验收覆盖快照；原轮与回改验收轮分别留证，避免 R8 误用已经变化的活动源重验旧轮。
 
 ```powershell
-python tools/text_norm.py --dry-run             # 字符级规范化：必须 0 命中，有命中先 --apply 再复跑
+python tools/text_norm.py --pattern "<本轮书名匹配式>" --dry-run  # 必须 0 命中；需要 --apply 时保留同一范围
 python tools/check_alignment.py --strict        # 行模板 / 中日行数 / h2 / 图片行
 python tools/check_epub_health.py --strict      # 单侧结构（XML / ruby / 加粗 / 悬空引用）
 ```
@@ -147,7 +147,7 @@ python tools/check_epub_health.py --strict      # 单侧结构（XML / ruby / �
 **R8 同步、留档、提交**：
 
 ```powershell
-python tools/publish_auto.py            # 打包上传 OneDrive + 回流缓存
+python tools/publish_auto.py --only-books "<本轮 side/书目录,...>"  # 范围与同书交接按 AGENTS.md
 ```
 
 - 复核产物与报告写本轮 `<report-root>`（不提交；`.cache/` 可随时删除重建，所以报告是工作产物而不是档案）。
