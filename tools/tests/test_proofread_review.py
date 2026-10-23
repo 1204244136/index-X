@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import sys
+import csv
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -18,6 +20,7 @@ from proofread_review import (  # noqa: E402
     spec_kind,
     to_text,
     unquote_git_path,
+    write_tsv,
 )
 
 # 两个文件交错的 diff：用于验证片段不会串到别的文件上
@@ -269,6 +272,19 @@ class EnrichRowsTests(unittest.TestCase):
         enrich_rows(rows, enable_jp=False, enable_audit=False)
         self.assertEqual(rows[0]["jp"], "")
         self.assertEqual(rows[0]["flags"], "")
+
+
+class TsvRoundTripTests(unittest.TestCase):
+    def test_quotes_tabs_and_multiline_evidence_survive_export(self):
+        row = dict(commit="worktree", work="S1_01", file="S1_01-01.xhtml", line="4",
+                   grade="local", kind="", flags="", old='"旧译"',
+                   new='"新译"\t附言', jp='「原句」\n次の行')
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "changes.tsv"
+            write_tsv(str(output), [row])
+            with output.open(encoding="utf-8", newline="") as stream:
+                recovered = list(csv.DictReader(stream, delimiter="\t"))
+        self.assertEqual(recovered, [row])
 
 
 if __name__ == "__main__":

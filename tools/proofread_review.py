@@ -39,6 +39,7 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import os
 import re
 import subprocess
@@ -380,11 +381,11 @@ def enrich_rows(
 
 def write_tsv(path: str, rows: list[dict]) -> None:
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
-    with open(path, "w", encoding="utf-8") as f:
-        f.write("\t".join(COLUMNS) + "\n")
-        for r in rows:
-            cells = [str(r.get(k, "")).replace("\t", " ").replace("\n", " ") for k in COLUMNS]
-            f.write("\t".join(cells) + "\n")
+    with open(path, "w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, COLUMNS, delimiter="\t", lineterminator="\n",
+                                extrasaction="ignore")
+        writer.writeheader()
+        writer.writerows(rows)
 
 
 def summarize(rows: list[dict], out_dir: str) -> None:

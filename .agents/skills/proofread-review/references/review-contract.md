@@ -6,7 +6,7 @@
 
 每轮使用独立 `<report-root>`，Lead 在 `baseline.md` 记录 `run_id`、输入提交／工作区范围、HEAD SHA、中文 diff 快照、日文参考目录及实际用到文件的 SHA-256、原文行号口径、工具命令和任务边界。保留本轮原始 TSV，不在派发后重跑覆盖；复核中如输入或参考内容改变，保留旧轮并另建新轮。
 
-首轮 Lead 从 `changes.tsv` 按数据行顺序（不含表头）分配 `C000001` 起的 ID，在 `manifest.tsv` 保存固定列：
+首轮 Lead 用 `proofread_session.py init` 从 `changes.tsv` 按数据行顺序（不含表头）分配 `C000001` 起的 ID，在 `manifest.tsv` 保存固定列：
 
 ```text
 item_id  commit  work  file  line  old  new  source_grade  effective_grade  parent_id
@@ -16,7 +16,48 @@ item_id  commit  work  file  line  old  new  source_grade  effective_grade  pare
 
 回改验收轮以 Lead 回改前快照与写后内容的差异为输入，或从工具结果按回改清单筛选精确位置，再按同一列定义建立该轮清单；不得把相对 HEAD 的整批 `--worktree` 输出直接当作追加回改分母。若规范化产生额外改写，验收清单也须包括这些位置。输入／日文版本变化导致的重核，须另列证据受影响的原 ID、失效范围及有效替代轮次，不能只验回改位置；各轮计数保持独立。
 
-`slices/plan.md` 按 skill §6.2 列出精确 ID 分配，计划验收须确认 `slice_id` 全轮唯一、每片输出路径唯一。R4 的呼应候选另建清单、使用 `E000001` 起的 ID，每条保存候选两侧位置与原始依据，派发前冻结；语义片段与呼应候选分开核算，不能混加分母。
+`slices/plan.md` 由 Lead 按 skill §6.2 列出精确 ID 分配，计划验收须确认 `slice_id` 全轮唯一、每片输出路径唯一。共用 `prepare` 读取定稿归属，冻结 `session.json` 和逐片取证包，不代写 `baseline.md` 或 `plan.md`。计划 JSON 形态如下；`diff_lines` 应填写本片原始 diff 的实际行数，省略时工具只有估算，Lead 须另行核实 ≤400 行后才可派发。
+
+```json
+{
+  "slices": [
+    {"slice_id": "risk-01", "item_ids": ["C000001", "C000002"], "diff_lines": 4}
+  ]
+}
+```
+
+也可不传 `--plan`，使用 `slices/ids/<slice-id>.txt` 的逐行 ID 清单；此入口同样需要 Lead 核实原 diff 行数。条目、文件、diff 与取证输入量上限按 skill §6.3 执行，超限由 Lead 沿语义单元边界重切，工具不自动装箱。初始上下文默认 N−1／N／N+1。
+
+### 共用产物与职责
+
+以下路径均相对 `<report-root>`；工具创建的冻结文件与正式结果不覆盖已有产物。
+
+| 产物 | 写者与用途 |
+| --- | --- |
+| `baseline.md`、`slices/plan.md`、计划 JSON 或 `slices/ids/*.txt` | Lead 记录输入基线、语义边界、预算及调度 |
+| `manifest.tsv` | `init` 生成；R2 的有效级别在 `prepare` 前定稿 |
+| `session.json`、`session.sha256`、`slices/packets/<slice-id>.json` | `prepare` 冻结输入摘要、来源与本片证据 |
+| `slices/context/<slice-id>/<item-id>.c<N>.json` 及对应 `.sha256` | Lead 用 `context` 为具体依赖补包；不改原 ID、归属与来源版本 |
+| `slices/decisions/<slice-id>.a<attempt>[.r<N>].json` | 子智能体直接写逐条决策草稿，保留旧稿 |
+| `slices/<slice-id>.a<attempt>[.r<N>].json` | 子智能体用 `assemble` 生成正式七字段结果 |
+| `selection.json` | Lead 显式选择已经验收的结果路径 |
+| `coverage.json`、`review-summary.md` | Lead 生成覆盖对账与主报告 |
+
+典型调用如下，路径和 ID 用本轮实际值替换。写命令先省略 `--apply` 预览，通过后原参数加 `--apply`；`read`、`validate` 本身只读。完整参数以命令的 `--help` 和工具合同为准。
+
+```powershell
+python tools/proofread_session.py init --report-root <report-root>
+python tools/proofread_session.py prepare --report-root <report-root> --jp-base <日文参考根目录> --cn-base <中文参考根目录> --plan <计划JSON>
+python tools/proofread_session.py read --report-root <report-root> --slice <slice-id> --page 1 --page-size 10
+python tools/proofread_session.py context --report-root <report-root> --slice <slice-id> --item-id C000001 --radius 2 --revision 1
+python tools/proofread_session.py assemble --report-root <report-root> --slice <slice-id> --decisions <决策草稿路径> --attempt 1
+python tools/proofread_session.py validate --report-root <report-root> --result <正式结果路径> --json
+python tools/proofread_session.py coverage --report-root <report-root> --selection <report-root>/selection.json --output <report-root>/coverage.json
+```
+
+`read` 同屏给出旧／新译、带注音原文、连续底字和最小中日邻接窗口，支持按 ID、风险标签或页码取证。分页只是读取方式，不改变全片分母或输入预算。`context` 由 Lead 执行，当前只支持本条同一配对文件内半径 1–10 行的窗口；补包只授权该 ID 引用，不能借用另一条目的窗口。更远或跨文件依赖由 Lead 明确安排输入及轮次，不把未封存材料冒称为共用校验器已验过的证据。
+
+R4 的呼应候选仍另建清单、使用 `E000001` 起的 ID，每条保存候选两侧位置与原始依据，派发前冻结。当前 `proofread_session.py` 只处理来自 `changes.tsv` 的 `C` 清单，**不支持 `E` 清单的自动封包、装配或覆盖统计**；呼应沿用原有人工冻结、逐项报告及 Lead 对账流程。语义片段与呼应候选分开核算，不能混加分母。
 
 呼应候选的判定对象是当前两侧是否存在须修正的呼应问题：`保留新译` 包含「不构成呼应／语气差异合法」，`确认误改` 须说明偏离原文的一侧及精确修正位置；不据候选命中推断错误由本轮引入。
 
@@ -36,26 +77,49 @@ Lead 将下列模板填实后派发，每个任务携带相同版本的判据与
 ```text
 任务：只复核本片校对后的新译是否有误，不执行回改。
 标识：run_id=<值>；slice_id=<值>；attempt=<1或2>。
-输入：<baseline.md、manifest.tsv、plan.md 的显式路径>。
+输入：<report-root、baseline.md、manifest.tsv、plan.md、冻结取证包的显式路径>。
 所属 ID：<完整列表；较长时给不可变 ID 清单文件及条数>。
 边界：<作品号、文件、内容序/行号区间、只读共享上下文>。
 基准：<HEAD/输入提交、日文参考目录与版本、行号基准>。
 判据：阅读 <SKILL.md绝对路径> §二、R6、§七及本契约；先查裁定表、译名选取规范与翻译规范。
-取证：逐 ID 用 lookup_source.py 实际读取日文；先剥 rt，不据旧译反推，不补刻意留白。
+取证：逐 ID 用 proofread_session.py read 实际阅读旧/新译、日文及 N±1 上下文；带注音与连续底字均可见，不据旧译反推，不补刻意留白。
 判断：正确新译保留，即使旧译也成立；错误只提最小修正；证据不足写缺什么，不猜。
 原校对成果：只在本片逐 ID 的既有取证中记录，初始批次保留项若由日文证实旧译有重大错误且原校对新译已改对，填写 original_fix；仅措辞偏好或需 Lead 再修正的条目不填，不扩片或另做旧译通审。
 范围：只读所属条目与给定最小上下文；不通读整章/整本，不自行扩片。
-依赖：给定窗口不足则列出所缺位置；可据实记待人工/未覆盖，等 Lead 调整计划。
-输出：仅写 <report-root>/slices/<slice-id>.a<attempt>.json，严格按契约字段返回所有所属 ID。
-权限：只可写上述结果文件；不写成品、缓存书籍、裁定表或公共报告，不发布、不规范化写盘、不 Git 暂存/提交/推送。
+依赖：给定窗口不足则列出具体 ID、所缺位置及必要性；等 Lead 用 context 补包或安排新输入，不自行扩片。未取得证据据实记待人工/未覆盖。
+输出：直接写 <report-root>/slices/decisions/<slice-id>.a<attempt>.json，再用共用 assemble 生成 <report-root>/slices/<slice-id>.a<attempt>.json；按契约顺序返回全部所属 ID。
+权限：仅写本片决策草稿、正式结果及获准的格式修订；读取/装配/验收使用共用入口，能力缺口交 Lead。不自建同类脚本，不写成品、缓存书籍、裁定表或公共报告，不发布、不规范化写盘、不 Git 暂存/提交/推送。
 发现范围外问题：只放 discoveries，不生成所属范围外的条目判定，不计本片覆盖。
-自检：核对 ID 无遗漏/重复/越界，至少回打一次已引用原文；逐条有依据，模式不能代替取证。
+自检：用共用 validate 校验正式结果，引用不符时报告失败；逐条有依据，模式不能代替取证。机械通过不代表语义已由 Lead 接受。
 结束回复：仅报 slice_id、attempt、结果路径和阻断依赖，不输出整批结论。
 ```
 
 ## 三、子报告格式与验收
 
-输出 UTF-8 JSON，顶层固定为 `run_id / slice_id / attempt / items / discoveries`。`items` 按分配 ID 顺序，每个 ID 恰一个对象；每对象固定为以下七个字段，不另创判定枚举：
+### 决策草稿
+
+子智能体先直接填写 UTF-8 JSON 数据，不创建装配脚本。顶层恰为 `items / discoveries`，`items` 按冻结包的分配顺序、每 ID 恰一项，每项固定有五个必填字段：`item_id / decision / reason / proposed_cn / original_fix`。判定和理由必须逐条显式填写；后两字段无值时显式写 `null`，缺项阻断，不自动补成「保留新译」。字段含义与正式结果相同。
+
+```json
+{
+  "items": [
+    {
+      "item_id": "C000001",
+      "decision": "保留新译",
+      "reason": "<实际日文如何支持该条判定>",
+      "proposed_cn": null,
+      "original_fix": null
+    }
+  ],
+  "discoveries": []
+}
+```
+
+可另成对填写 `jp_location / jp_quote`：实际证据是邻行或 Lead 补包、需要精确短引句时，显式保留取到的引用。两个字段都省略时，`assemble` 仅从本条冻结证据附入实际位置与原文；`未覆盖` 不自动附证据。显式提供的引用原样核验，工具不会改成另一个能通过的引句；仅提供一个字段属于格式错误。附入证据只是搬运，子智能体仍须实际阅读才可填写覆盖判定。
+
+### 正式结果
+
+由 `assemble` 输出 UTF-8 JSON，顶层固定为 `run_id / slice_id / attempt / items / discoveries`。`items` 按分配 ID 顺序，每个 ID 恰一个对象；每对象固定为以下七个字段，不另创判定枚举：
 
 ```json
 {
@@ -66,8 +130,8 @@ Lead 将下列模板填实后派发，每个任务携带相同版本的判据与
     {
       "item_id": "C000001",
       "decision": "保留新译",
-      "jp_location": "<实际日文文件/内容序:行号；多处用分号列全>",
-      "jp_quote": "<脚本实际输出的必要原句>",
+      "jp_location": "<冻结包中的实际日文文件:行号；多处用分号列全>",
+      "jp_quote": "<实际输出的必要原句；多处按位置顺序用换行分隔>",
       "reason": "<原文如何支持判定；否决回改建议须写其理由>",
       "proposed_cn": null,
       "original_fix": null
@@ -78,11 +142,35 @@ Lead 将下列模板填实后派发，每个任务携带相同版本的判据与
 ```
 
 - `decision` 只取 `保留新译 / 确认误改 / 待人工 / 未覆盖`。前两种须有实际 `jp_location`、`jp_quote` 与具体理由；`确认误改` 的 `proposed_cn` 为可落地的最小中文替换，其余为 `null`。原文是空行、标签或结构缺失时，引用可核查的原始行／相邻行并在理由说明，不能编造日文。
+- 多处证据的位置与引句须一一对应；位置用分号、引句用换行分隔。引句可用必要的连续底字或带注音原文（原始 ruby 或 `|底字[注音]`），必须与指定实际行吻合；带注音引用也核读音，不能把错误注音剥掉后当作通过。不能将多个位置的原句拼在同一引句里，也不能引用本条冻结／补包窗口之外的行。
 - `待人工` 给出已取到的证据与仍缺的事实；`未覆盖` 的原文位置与引用可为 `null`，理由必须写未读／故障／输入不匹配等具体原因，不能写成「无问题」。
 - `original_fix` 默认为 `null`。仅初始批次的 `C` 条目、`decision=保留新译` 且旧错／新对均已由实际日文与上下文证实时，填写固定对象 `{"category": "<类型>", "old_error": "<旧译的具体错误及证据>", "new_fix": "<原校对新译如何纠正>", "impact": "<对事实、逻辑或情节理解的影响>"}`；四项均为非空字符串，其他情况必须为 `null`。`old_error/new_fix` 须引用初始冻结清单的 `old/new`，不能改写成 Lead 后续修正的版本；该新译若最终仍须语义修正，不得将修正后的第三版归为原校对已改对。
 - `category` 只取 `否定与逻辑方向 / 数字与单位 / 主体与动作时序 / 关键漏译与专名 / 其他重大语义问题`，同一 ID 选一个主要类型。重大指影响事实、逻辑、主体关系或关键情节理解；一般润色、标点、字形及新旧均成立的译法不列入。证据不足时留 `null`，不能为展示成果给旧译强贴错误标签。
 - `discoveries` 每项固定为 `location / issue / needed_context` 三个非空字符串；Lead 记录范围外发现并判定是否另开轮次，不把它们混入当前分母。
-- Lead 按 skill §6.5 依次做字段／ID 集合检查和原文验收；对拟展示的每个 `original_fix` 另逐条核对初始 `old/new` 与实际日文，确认旧错、新对、重大性及成果归属，不能仅凭「保留新译」或否决回改建议生成案例。附注不成立则不纳入展示、记明原因，不改变原有可靠的主判定或制造待人工项；若发现主判定或原文引用也有问题，按 §6.1 整片重发一次。有效 attempt 写回计划，旧 attempt 保留为失效证据，不参与汇总。子报告中没有重复的统计数字，主报告统一从 `items` 派生。
+- Lead 按 skill §6.5 依次做共用 `validate` 的机械检查和独立原文验收；对拟展示的每个 `original_fix` 另逐条核对初始 `old/new` 与实际日文，确认旧错、新对、重大性及成果归属，不能仅凭「保留新译」或否决回改建议生成案例。附注不成立则不纳入展示、记明原因，不改变原有可靠的主判定或制造待人工项；若发现主判定或原文引用也有问题，按 §6.1 整片重发一次。子报告不重复维护统计数字，主报告统一从选中的 `items` 派生。
+
+### 失败、格式修订与有效选择
+
+`validate --json` 将问题标为 `input / structure / evidence`。分类是定位入口，Lead 仍须判断是否涉及证据或语义，不能把缺少实质判定仅当格式问题。
+
+- **纯格式错误**：只修 JSON 序列化、字段排列、已知无值字段的 `null` 等，不改变 `decision / reason / proposed_cn / original_fix`、实际引用或范围外发现。保留同一 `attempt`，另写 `.r1`、`.r2` 等连续递增修订，旧文件保留；`assemble --revision 1` 与该 attempt 的基础结果比较，后续修订与前一个 `.r<N−1>` 比较，工具无法证明上述内容不变时阻断交 Lead。草稿尚未装配成功时保留旧草稿，修正其格式后重试装配，不能假称已有正式修订结果。
+- **证据或语义失败**：引用不符、理由站不住、需要改判或补作取证，以及失败／中断／空结果，按相同冻结输入和边界整片 `attempt=2`。第二次仍失败则整片记 `U`。新增证据使判定改变也属于这一类，不得借 `.rN` 偷换理由或判定。
+- **输入漂移**：中文输入、日文版本、冻结清单／归属或其他事实输入失效时保留旧轮，按 skill §6.2 重定计划或建立新轮；不能修改冻结文件使旧结果重新通过。
+
+同一冻结来源内依具体依赖补上下文，本身不导致整片重发；补包后继续尚未完成的实际取证。若已有正式结果据此需改变证据或语义，仍按上一条重审规则处理。
+
+Lead 仅在机械检查和语义验收后写 `selection.json`，结构为 `slice_id` 到 `<report-root>` 内结果相对路径的映射：
+
+```json
+{
+  "risk-01": "slices/risk-01.a1.r1.json",
+  "S1_21-03-s01": "slices/S1_21-03-s01.a2.json"
+}
+```
+
+每片只选一个有效路径，格式须为 `slices/<slice-id>.a<1或2>[.r<N>].json`，路径标识与报告内的切片及 attempt 相符；按计划顺序对账，不依据文件时间、最高 attempt 或最后返回者自动选取。计划外切片、绝对路径和越界路径阻断；未选片或所选报告不合格则全片记 `U`，不能沿用旧报告的部分结论。`coverage` 给出逐 ID 的 `T/S/M/K/R/H/U` 与未解决项，`ready_for_lead_acceptance` 只表示机械汇总条件满足，不证明语义、R4、门禁或完整工作流已完成。Lead 将所选路径和语义验收状态同步到计划与主报告；旧 attempt／revision 保留，未被选择者不计数。
+
+**R7 写盘前保存覆盖快照**：完成 Lead 验收后，用 `coverage --selection … --output <report-root>/coverage.json --apply` 保存本轮对账，再执行已确认的回改。回改会使中文源偏离本轮 SHA-256，这是建立回改验收新轮的输入；原轮清单、取证包、结果与写盘前快照保留，R8 汇报沿用这些已验收记录并另列验收轮结果。不要对已经回改的活动源重跑原轮 `coverage`，也不修改旧哈希或关闭来源核验来重新通过。该快照只证明写盘前状态，计划外的输入变化仍按漂移规则重新核对；不能凭旧快照放行新增改动。
 
 ## 四、主报告模板
 

@@ -40,6 +40,7 @@
 | 核对译名有没有落地 | C4 | `python tools/check_translation_table.py --table 译名表.xlsx --strict` |
 | 查彩页上的字在正文哪一行／映射表行号有没有漂 | C4 | `python tools/check_illustration_mapping.py` |
 | 复核一批校对改动 | C5 | `python tools/proofread_review.py --worktree` |
+| 准备复核取证包、分页阅读或验收子报告 | C5 | `python tools/proofread_session.py --help` |
 | 做字符级规范化 | C5 | `python tools/text_norm.py --root EPUB --apply`（默认预览） |
 | 查某个词／某句话在哪 | C6 | `python tools/search_text.py "…" --side both` |
 | 估算篇幅／换算页数 | C6 | 要「占比」列：`python tools/epub_char_count.py <epub 或目录>`；要「印刷页区间」推算：`python tools/epub_composition_metrics.py <目录或epub>` |
@@ -68,9 +69,9 @@
 | C2 导入与交稿往返 | 源 ↔ 成品的构建（交稿 → 成品、成品 → 交稿、BW 分页源 → 章节）；不管成品的后续结构与规范 | 13 | 材料七项、逐章物理行数 |
 | C3 成品结构与配对修复 | 写盘型结构修复；不负责判定通过与否（判定在 C4） | 10 | 逐边界数量、行数与块对应 |
 | C4 门禁与体检 | 只读阻断与诊断；不修内容 | 12 | strict 非零即阻断 |
-| C5 内容质量 | 字符级与语义级的内容改动；不决定译名取舍（走 skill） | 4 | 字符级规范化 0 命中 |
+| C5 内容质量 | 字符级与语义级的内容改动；不决定译名取舍（走 skill） | 5 | 字符级规范化 0 命中 |
 | C6 检索与统计 | 只读检索与字数／页数换算；不作语义裁定 | 4 | 无（只读诊断） |
-| C0 共享内核 | 无 CLI 的共享规则与原子写入能力；不另建工作流入口 | 17 | 由调用方承担 |
+| C0 共享内核 | 无 CLI 的共享规则与原子写入能力；不另建工作流入口 | 19 | 由调用方承担 |
 
 ## C1 同步与发布
 
@@ -529,6 +530,7 @@ python tools/check_project_docs.py
 | --- | --- | --- | --- | --- |
 | `text_norm.py` | `python tools/text_norm.py --root EPUB [--apply] [--report 显式报告.md]` | 预览默认；字符级改写成品行内文字，不增删物理行 | 确定性规则、XML 与行数不变；规则实现唯一在本文件【无】 | `test_text_norm.py`、`test_edit_safety.py` |
 | `proofread_review.py` | `python tools/proofread_review.py --worktree` | 只读 Git 改动与日文参考；写分级 TSV／聚类 | 精确行级配对；分级和风险提示不等于裁定【无】 | `test_proofread_review.py` |
+| `proofread_session.py` | `python tools/proofread_session.py --help` | 只读清单、中日源与判定；默认预览，`--apply` 只写独立复核报告目录 | ID 对账、冻结来源、引句及报告结构；机械通过不等于语义验收【无】 | `test_proofread_session.py`、`test_proofread_packets.py`、`test_proofread_results.py` |
 | `japanese_lookup.py` | `python tools/japanese_lookup.py S3_03 04 55 --mode markup` | 只读日文缓存 | 只定位原文，不作语义判定【无】 | `test_japanese_lookup.py` |
 | `audit_risk.py` | `python tools/audit_risk.py --old "旧句" --new "新句" --jp "日文"` | 只读；终端／JSON | 仅启发式风险提示，不是裁定【无】 | `test_audit_risk.py` |
 
@@ -560,9 +562,37 @@ python tools/audit_risk.py --old "旧句" --new "新句" --jp "日文"
 
 `proofread_review.py` 编排 Git 行级配对、`japanese_lookup.py` 原文提取、`audit_risk.py` 风险提示；不修改正文。支持 `--repo`、`--jp-base`、`--no-jp`、`--no-audit`；未提取／未诊断的侧明确未核验。原文 lookup 的 `--raw` 保留标签，`--jp-base` 指定参考；risk 的 `--json` 输出结构。
 
-产物为 `changes.tsv`、`semantic.tsv`、`spec.tsv`、`groups.txt`。一物理行合一条记录，用最小差异分级：spec 为确定规范形状，tiny 为 ≤2 字且全属虚词，local 为 ≤12 字局部变化，rewrite 为更大变化或整段增删；spec 仅在整段最小差异都能由规范解释时放行。数字／字母不当标点剥除。
+产物为 `changes.tsv`、`semantic.tsv`、`spec.tsv`、`groups.txt`。TSV 使用标准 tab 分隔和 CSV 字段引用，保留字段里的双引号、制表符及换行，读取用 `csv.DictReader`。一物理行合一条记录，用最小差异分级：spec 为确定规范形状，tiny 为 ≤2 字且全属虚词，local 为 ≤12 字局部变化，rewrite 为更大变化或整段增删；spec 仅在整段最小差异都能由规范解释时放行。数字／字母不当标点剥除。
 
 `line` 使用 Git 行级配对的新侧行号，纯删除回旧侧行号；不可用 word-diff 物理行推算。`jp` 是当前参考的同行，不证明历史提交对应关系；行数变动时人工检索上下文。risk 标记包括否定、数字、疑问、字形、加粗标点、嵌套引号、受控术语和明显增删；它们只提示复核优先级。人工处置和抽样范围以 [校对复核 skill](../.agents/skills/proofread-review/SKILL.md) 为准。
+
+### 校对复核会话
+
+`proofread_session.py` 接续 `proofread_review.py` 的分级产物，供主控和子智能体共用。它只处理 `C` 片段清单，不自动决定语义单元或切片归属，也不替代 R4 的 `E` 呼应候选复核。流程、取舍和固定数据格式见 [复核契约](../.agents/skills/proofread-review/references/review-contract.md)。
+
+```powershell
+python tools/proofread_review.py --worktree --out .cache/epub-work/proofread-review/<run-id>
+python tools/proofread_session.py init --report-root <report-root>
+python tools/proofread_session.py init --report-root <report-root> --apply
+# Lead 核完 spec／重分类、写好 slices/ids/*.txt 或显式 plan.json 后：
+python tools/proofread_session.py prepare --report-root <report-root> --plan <plan.json>
+python tools/proofread_session.py prepare --report-root <report-root> --plan <plan.json> --apply
+python tools/proofread_session.py read --report-root <report-root> --slice <slice-id> --page 1
+python tools/proofread_session.py read --report-root <report-root> --slice <slice-id> --ids C000001 --json
+python tools/proofread_session.py assemble --report-root <report-root> --slice <slice-id> --decisions <decisions.json> --apply
+python tools/proofread_session.py validate --report-root <report-root> --result <result.json> --json
+python tools/proofread_session.py coverage --report-root <report-root> --selection <selection.json>
+```
+
+- **初始化与冻结**：`init` 按 `changes.tsv` 数据顺序建 `manifest.tsv`；已有清单只核对并复用，不覆盖重分类或 `parent_id`。`prepare` 接受 `slices/ids/*.txt` 或 `--plan` 的 JSON，核对语义 ID 恰归一片，解析完整作品号与内容序，读取 `--jp-base`／`--cn-base`（默认日文缓存／中文归档）。配对缺失、行数不同、输入不匹配或预算超限阻断，不自动重切。HEAD、输入提交／diff 快照、任务授权边界和 R2 放行依据仍由 Lead 记入 `baseline.md`。
+- **产物**：`session.json` 保存清单／初始 TSV／源文件及每片取证包的 SHA-256，以 `session.sha256` 封存；`slices/packets/<slice-id>.json` 保存原始行、连续底字、注音记号和默认 N−1/N/N+1 中日上下文。新产物拒绝覆盖；日文缓存、归档和 OneDrive 全程只读。报告放现有 `.cache/epub-work/proofread-review/<run-id>/` 或显式仓库外目录；禁止写书籍目录、其它缓存目录或 OneDrive。跨物理行的 ruby／rt／rp 及无法与单行清单匹配的增删目前阻断，需提供行号稳定且匹配的工作源。
+- **预算**：每片至多 150 条、3 文件、400 行 diff，实际输入字符预算默认 60000，可用 `--max-input-chars` 显式调整并在计划说明依据。工具不凭估计宣布实际 diff 门禁通过；未提供实测值时明确列为 Lead 待核。字节数、输入字符数和 token 数不等价。
+- **阅读**：`read` 支持 `--ids`、单个 `--flag`、`--page`／`--page-size`、`--context 0|1` 和 `--json`。分页和过滤只改变展示，不减少分配分母；越界 ID 直接失败。每次读取核对冻结输入与来源，漂移须另建轮次。
+- **补充上下文**：Lead 用 `context --report-root … --slice … --item-id … --radius 2 --revision 1 [--apply]` 按具体依赖输出该条补包到 `slices/context/<slice-id>/<item-id>.c1.json`；窗口限制 1–10 行，来自同一冻结源，不改变原包和所属 ID。更远或跨文件依赖由 Lead 明确取证并按契约处理，不把整章作为默认窗口。
+- **装配**：子智能体逐条填写决策 JSON，再用 `assemble` 添加身份与冻结原文引用；已有显式引用必须成对提供，工具保留并验证。缺判定、缺理由、漏项、重复或越界都失败，不自动补成保留。`--attempt 1|2` 对应语义取证轮次；`--revision N` 只保存同 attempt 的格式修订 `.rN.json`，不能改已记录的语义判定与证据。
+- **独立验收与覆盖**：`validate` 返回 `structure / evidence / input` 问题及具体 ID，实际对照所引日文位置，允许原始行、连续底字和注音记号的等价表示；位置有效不等于引句通过。`coverage` 按显式 selection 的结果路径、在计划顺序中统计 `T/S/M/K/R/H/U`，失效或缺失结果整片归 U；H/U 阻断完成。`ready_for_lead_acceptance` 只说明可以交 Lead 语义验收，不授权回改、同步或提交，也不自动生成通过结论。回改前的覆盖快照与新验收轮生命周期见复核契约。
+
+`init / prepare / context / assemble / coverage` 默认只预览；显式 `--apply` 才写新报告产物。`coverage --apply` 还须给本轮目录内的 `--output`。`read / validate` 只输出；`validate` 或 `coverage` 有阻断返回 1，成功返回 0。格式修复和语义重审的分支以复核契约为准。
 
 ## C6 检索与统计
 
@@ -675,6 +705,8 @@ python -m unittest discover -s tools/tests -p "test_*.py" -v
 | `import_plan.py` | 无 CLI（共享模块） | 导入计划的结构校验与逐条改动装配 | 【无】 | `test_import_tools.py` |
 | `notes_core.py` | 无 CLI（共享模块） | Note 解析和阅读顺序 | 【无】 | `test_docx_and_notes.py` |
 | `path_safety.py` | 无 CLI（共享模块） | ZIP 路径安全、解包残留识别与显式报告目标冲突检查 | 【无】 | `test_path_safety.py` |
+| `proofread_packets.py` | 无 CLI（共享模块） | 复核清单、冻结来源与逐片读取，写入仅由显式 apply 入口触发 | 【无】 | `test_proofread_packets.py` |
+| `proofread_results.py` | 无 CLI（共享模块） | 显式判定装配、日文引句核验和有效报告对账 | 【无】 | `test_proofread_results.py` |
 | `sync_core.py` | 无 CLI（共享模块） | 差异、镜像、上传状态与拉取状态 | 【无】 | `test_publish_auto.py`、`test_sync_and_rename.py` |
 | `xhtml_slots.py` | 无 CLI（共享模块） | 固定行模板 L1–L6 的槽位行号与名称常量；译注页固定 h1 常量 `NOTE_H1` | 【无】 | 由调用方测试覆盖：`test_alignment.py`、`test_bw_preprocess.py`、`test_heading_breaks.py` |
 | `xhtml_structure.py` | 无 CLI（共享模块） | 物理行类型、保守配对与页边界修复前提 | 【无】 | `test_xhtml_structure.py` |
