@@ -16,7 +16,12 @@ import re
 import sys
 import json
 import argparse
+import csv
 
+if __package__:
+    from .cli_output import configure_output
+else:
+    from cli_output import configure_output
 from notes_core import (
     NOTEFILE_RE,
     gather_refs,
@@ -89,6 +94,7 @@ def check_book(book, text_dir, nf):
 
 
 def main():
+    configure_output()
     ap = argparse.ArgumentParser(description="检查中文缓存 Note 注释顺序/编号是否与正文首次出现顺序一致（只读）")
     ap.add_argument("--root", default=None,
                     help="EPUB 根目录或中文缓存根目录（若指定则优先使用）")
@@ -101,6 +107,9 @@ def main():
     args = ap.parse_args()
 
     root = args.root or args.cache
+    if not os.path.isdir(root):
+        print(f"[错误] 中文输入根目录不存在或不是目录：{root}", file=sys.stderr)
+        return 2
     problems = []
     per_book = {}
     books = sorted(d for d in os.listdir(root) if os.path.isdir(os.path.join(root, d)))
@@ -149,6 +158,19 @@ def main():
                 json.dump(per_book, f, ensure_ascii=False, indent=2)
             print("详细结果已写入: %s" % json_path)
 
+            tsv_path = os.path.join(args.output, "note-order-check.tsv")
+            with open(tsv_path, "w", encoding="utf-8", newline="") as f:
+                fields = ["book", "note_file", "defined_order", "appearance_order", "first_appearance", "issues"]
+                writer = csv.DictWriter(f, fieldnames=fields, delimiter="\t")
+                writer.writeheader()
+                for book, entry in per_book.items():
+                    writer.writerow({
+                        "book": book,
+                        "note_file": entry["note_file"],
+                        **{key: json.dumps(entry[key], ensure_ascii=False) for key in fields[2:]},
+                    })
+            print("TSV 报告已写入: %s" % tsv_path)
+
             # Markdown 文本报告
             md_path = os.path.join(args.output, "note-order-check.md")
             lines = ["# 中文 Note 注释顺序/ID 检查报告\n"]
@@ -172,7 +194,8 @@ def main():
                 f.write("\n".join(lines))
             print("文本报告已写入: %s" % md_path)
         except OSError as e:
-            print("跳过写入报告文件（%s）" % e)
+            print("[错误] 无法写入报告文件：%s" % e, file=sys.stderr)
+            return 2
 
     return 1 if problems else 0
 

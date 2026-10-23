@@ -7,9 +7,14 @@ This CLI selects files only. All transformations are implemented in
 from __future__ import annotations
 
 import argparse
+import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
+if __package__:
+    from .cli_output import configure_output
+else:
+    from cli_output import configure_output
 from file_transaction import rollback_paths
 from xhtml_template import has_body, read_lines, rebuild, write_lines
 from edit_safety import DEFAULT_EPUB, EditSafetyError, add_edit_mode, require_edit_target
@@ -17,7 +22,7 @@ from edit_safety import DEFAULT_EPUB, EditSafetyError, add_edit_mode, require_ed
 
 def normalize_single(path: Path, dry_run: bool = False, side: str | None = None) -> bool:
     if not path.exists():
-        print(f"[错误] 文件不存在：{path}")
+        print(f"[错误] 文件不存在：{path}", file=sys.stderr)
         return False
     try:
         if not has_body(path):
@@ -25,7 +30,7 @@ def normalize_single(path: Path, dry_run: bool = False, side: str | None = None)
             return True
         new, message = rebuild(path, None, side)
         if new is None:
-            print(f"[失败] {path}: {message}")
+            print(f"[失败] {path}: {message}", file=sys.stderr)
             return False
         ET.fromstring("\n".join(new))
         old, bom, crlf = read_lines(path)
@@ -39,7 +44,7 @@ def normalize_single(path: Path, dry_run: bool = False, side: str | None = None)
         print(f"[完成] {path}: {message}")
         return True
     except (OSError, UnicodeError, ET.ParseError) as exc:
-        print(f"[异常] {path}: {exc}")
+        print(f"[异常] {path}: {exc}", file=sys.stderr)
         return False
 
 
@@ -68,6 +73,7 @@ def apply_plans(plans: list[tuple[Path, list[str], bytes, bool, bool, str]]) -> 
 
 
 def main() -> int:
+    configure_output()
     parser = argparse.ArgumentParser(description="单文件/目录固定行模板规范化工具")
     parser.add_argument("paths", nargs="*", type=Path, help="要处理的文件")
     parser.add_argument("--dir", type=Path, help="批量处理目录")
@@ -78,14 +84,14 @@ def main() -> int:
 
     if args.dir:
         if not args.dir.exists():
-            print(f"[错误] 目录不存在：{args.dir}")
+            print(f"[错误] 目录不存在：{args.dir}", file=sys.stderr)
             return 1
         files = sorted(args.dir.rglob(args.pattern))
     else:
         files = args.paths
     files = [path for path in files if path.name.casefold() != "nav.xhtml"]
     if not files:
-        print("[错误] 没有找到要处理的文件")
+        print("[错误] 没有找到要处理的文件", file=sys.stderr)
         return 1
 
     if args.apply:
@@ -104,7 +110,7 @@ def main() -> int:
             if plan is not None:
                 plans.append(plan)
     except (OSError, UnicodeError, ET.ParseError, ValueError) as exc:
-        print(f"[阻断] 规范化预检失败；没有写入任何文件：{exc}")
+        print(f"[阻断] 规范化预检失败；没有写入任何文件：{exc}", file=sys.stderr)
         return 1
 
     if not args.apply:
@@ -116,7 +122,7 @@ def main() -> int:
     try:
         apply_plans(plans)
     except (OSError, UnicodeError) as exc:
-        print(f"[阻断] 写入失败，已回滚本次文件：{exc}")
+        print(f"[阻断] 写入失败，已回滚本次文件：{exc}", file=sys.stderr)
         return 1
     for path, _, _, _, _, message in plans:
         print(f"[完成] {path}: {message}")

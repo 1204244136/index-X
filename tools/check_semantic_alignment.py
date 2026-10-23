@@ -39,14 +39,6 @@ import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 from pathlib import Path
 
-# 解决 Windows 控制台与管道 UTF-8 编码问题
-for stream in (sys.stdout, sys.stderr):
-    if hasattr(stream, "reconfigure"):
-        try:
-            stream.reconfigure(encoding="utf-8", errors="replace")
-        except OSError:
-            pass
-
 ROOT_DIR = Path(__file__).resolve().parent.parent
 TOOLS_DIR = Path(__file__).resolve().parent
 CACHE_DEFAULT = ROOT_DIR / ".cache" / "epub-work"
@@ -74,6 +66,10 @@ except ImportError:
     from epub_ids import (book_id, is_list_packaging_header, is_packaging_header,
                           japanese_book_id, work_id as header_work_id)
 
+if __package__:
+    from .cli_output import configure_output
+else:
+    from cli_output import configure_output
 from check_alignment import (
     afterword_offset, allowed_pair_differences, check_file, order_swap_offset,
     pair_problems,
@@ -610,7 +606,7 @@ def _run_pipeline(
         units = [u for u in units if u[1].upper() == target_header.upper()]
 
     if not units:
-        print(f"未找到匹配的配对单元（works={works}, header={target_header}）")
+        print(f"未找到匹配的配对单元（works={works}, header={target_header}）", file=sys.stderr)
         return 2
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -684,7 +680,7 @@ def _run_pipeline(
     print(f"\n>>> [阶段 2/2] 载入 SentenceTransformer 对 {len(vector_targets)} 个{'所选' if strict else '候选'}单元执行语义矢量精检...")
     model = get_embedding_model()
     if model is None:
-        print("错误: 无法载入 SentenceTransformer 矢量模型。请确认 PyTorch/SentenceTransformers 环境可用。")
+        print("错误: 无法载入 SentenceTransformer 矢量模型。请确认 PyTorch/SentenceTransformers 环境可用。", file=sys.stderr)
         return 2
 
     all_windows: list[dict] = []
@@ -846,6 +842,7 @@ def ensure_vector_environment(args: argparse.Namespace, argv: list[str]) -> int 
 
 
 def main(argv: list[str] | None = None) -> int:
+    configure_output()
     arguments = list(sys.argv[1:] if argv is None else argv)
     parser = argparse.ArgumentParser(description="中日 XHTML 语义逐行对齐检验与漂移诊断")
     parser.add_argument("target", nargs="?", help="指定单个表头（如 S5_01_02-06）")

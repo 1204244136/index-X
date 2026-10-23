@@ -45,6 +45,10 @@ import subprocess
 import sys
 from collections import Counter, defaultdict
 
+if __package__:
+    from .cli_output import configure_output
+else:
+    from cli_output import configure_output
 from xhtml_text import text_of
 from epub_ids import work_id
 from japanese_lookup import JapaneseSourceLookup, DEFAULT_JP_BASE, strip_ruby_markup
@@ -417,6 +421,7 @@ def summarize(rows: list[dict], out_dir: str) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
+    configure_output()
     p = argparse.ArgumentParser(
         description="把 git 提交里的译文改动片段化并按重要度分级（只读）")
     p.add_argument("commits", nargs="*", help="提交号；用 --worktree 时省略")

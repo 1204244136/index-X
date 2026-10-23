@@ -17,6 +17,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+if __package__:
+    from .cli_output import configure_output
+else:
+    from cli_output import configure_output
 from edit_safety import (EditSafetyError, add_content_roots, add_edit_mode,
                          content_roots, require_edit_target)
 from xhtml_slots import LINE_BODY_FIRST
@@ -93,6 +97,7 @@ def collect(cache: Path, only_book: str | None, jp_root: Path | None = None):
 
 
 def main() -> int:
+    configure_output()
     ap = argparse.ArgumentParser(description="删除中文侧旧合页遗留 <br/> 行")
     add_content_roots(ap, paired=True)
     ap.add_argument("--book", default=None, help="只处理指定作品号（如 S4_01）")
@@ -118,7 +123,8 @@ def main() -> int:
             refused += 1
             print(f"\n[{cn_id}] {header}  行数 JP {len(jl)} / CN {len(cl)}（差 {gap:+d}）"
                   f" → 候选 {len(doomed)} 行，**不删除**"
-                  f"（{'日文侧本来就更长' if gap >= 0 else '遗留数超过总差，别处尚缺行'}，需人工确认）")
+                  f"（{'日文侧本来就更长' if gap >= 0 else '遗留数超过总差，别处尚缺行'}，需人工确认）",
+                  file=sys.stderr)
             continue
         after = gap + len(doomed)
         mark = "对齐" if after == 0 else f"残差 {after:+d}"
@@ -139,7 +145,7 @@ def main() -> int:
         try:
             ET.fromstring("\n".join(kept))
         except ET.ParseError as exc:
-            print(f"[拒绝] {header}: XML 解析失败：{exc}")
+            print(f"[拒绝] {header}: XML 解析失败：{exc}", file=sys.stderr)
             refused += 1
             continue
         new_text = sep.join(kept)

@@ -42,21 +42,17 @@ import sys
 from pathlib import Path
 from typing import Any, Iterable, List, Optional, Tuple, Union
 
+if __package__:
+    from .cli_output import configure_output
+else:
+    from cli_output import configure_output
+
 try:
     import openpyxl
 except ImportError:
     openpyxl = None  # type: ignore
 
 
-def _ensure_utf8_stdout() -> None:
-    """确保在 Windows 终端中输出 UTF-8 文本而不发生编码报错。"""
-    try:
-        if sys.stdout and hasattr(sys.stdout, "reconfigure"):
-            sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-        if sys.stderr and hasattr(sys.stderr, "reconfigure"):
-            sys.stderr.reconfigure(encoding="utf-8", errors="replace")
-    except Exception:
-        pass
 
 
 def _format_cell_value(val: Any) -> str:
@@ -487,12 +483,12 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
-    _ensure_utf8_stdout()
+    configure_output()
     parser = build_parser()
     args = parser.parse_args(argv)
 
     if not args.file:
-        parser.print_help()
+        parser.print_help(file=sys.stderr)
         return 1
 
     file_path = Path(args.file)
@@ -559,7 +555,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"成功导出 {len(rows)} 行数据到: {out_path} (工作表: {actual_sheet})")
     else:
         if args.info:
-            print(info_header)
+            print(info_header, file=sys.stderr)
         print(content)
 
     return 0

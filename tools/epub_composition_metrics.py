@@ -42,6 +42,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+if __package__:
+    from .cli_output import configure_output
+else:
+    from cli_output import configure_output
 from epub_char_count import (  # noqa: E402
     CJK_RE,
     EpubSource,
@@ -456,6 +460,7 @@ def collect_sources(paths: list[Path]) -> list[EpubSource]:
 
 
 def main() -> int:
+    configure_output()
     ap = argparse.ArgumentParser(description="EPUB 成分与页数分析（含实际印刷页区间）")
     ap.add_argument("paths", nargs="+", type=Path, help="已解包书籍目录或 .epub 文件")
     ap.add_argument("--pages-per", type=int, default=400,
@@ -470,11 +475,6 @@ def main() -> int:
                     help="CSV 只按成分输出（正文不展开子成分），用于总览")
     args = ap.parse_args()
 
-    if sys.stdout and hasattr(sys.stdout, "reconfigure"):
-        try:
-            sys.stdout.reconfigure(encoding="utf-8")
-        except Exception:
-            pass
 
     reports = [scan_book(s, args.pages_per, args.all) for s in collect_sources(args.paths)]
 
@@ -493,7 +493,7 @@ def main() -> int:
         out.parent.mkdir(parents=True, exist_ok=True)
         data = "\ufeff" + render_csv(reports, granular=not args.chars_only)
         out.write_text(data, encoding="utf-8", newline="\r\n")
-        print(f"CSV 已写入：{out}")
+        print(f"CSV 已写入：{out}", file=sys.stderr)
     return 0
 
 

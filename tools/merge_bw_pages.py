@@ -31,10 +31,15 @@ import argparse
 import html
 import os
 import re
+import sys
 import tempfile
 from pathlib import Path
 import xml.etree.ElementTree as ET
 
+if __package__:
+    from .cli_output import configure_output
+else:
+    from cli_output import configure_output
 from check_alignment import check_file
 from edit_safety import add_edit_mode, require_edit_target
 
@@ -558,6 +563,7 @@ def write_output(out_path: Path, lines: list[str], bom: bool, crlf: bool) -> Non
 
 
 def main(argv: list[str] | None = None) -> int:
+    configure_output()
     ap = argparse.ArgumentParser(
         description="按换页衔接处理规则合并 bw_preprocess 处理后的分页为章节文件")
     ap.add_argument("dir", type=Path, help="分页目录（bw_preprocess 处理后）")
@@ -576,12 +582,12 @@ def main(argv: list[str] | None = None) -> int:
 
     pages = collect_pages(args.dir)
     if not pages:
-        print(f"[跳过] 目录中没有 p-NNN.xhtml 分页：{args.dir}")
+        print(f"[跳过] 目录中没有 p-NNN.xhtml 分页：{args.dir}", file=sys.stderr)
         return 1
     notes: list[str] = []
     page_books = {pg["book_id"].upper() if pg["book_id"] else None for pg in pages}
     if len(page_books) > 1:
-        print("[错误] 分页同时包含有表头与无表头文件，或包含多个作品号；拒绝猜测合并")
+        print("[错误] 分页同时包含有表头与无表头文件，或包含多个作品号；拒绝猜测合并", file=sys.stderr)
         return 1
     detected_book = next(iter(page_books))
     invalid_zero_pages = [
@@ -590,7 +596,7 @@ def main(argv: list[str] | None = None) -> int:
     if invalid_zero_pages:
         print(
             "[错误] 分页含非法内容序 -00；数字内容序必须从 -01 开始："
-            + "、".join(invalid_zero_pages)
+            + "、".join(invalid_zero_pages), file=sys.stderr
         )
         return 1
     output_book = args.book
@@ -598,21 +604,21 @@ def main(argv: list[str] | None = None) -> int:
         if args.book == "BOOK":
             output_book = detected_book
         elif args.book.upper() != detected_book:
-            print(f"[错误] --book {args.book} 与分页表头作品号 {detected_book} 不一致")
+            print(f"[错误] --book {args.book} 与分页表头作品号 {detected_book} 不一致", file=sys.stderr)
             return 1
         output_book = detected_book
     try:
         units = group_units(pages, notes)
     except ValueError as exc:
-        print(f"[错误] {exc}")
+        print(f"[错误] {exc}", file=sys.stderr)
         return 1
     header_sequences = [unit["sequence"] for unit in units
                         if unit["sequence"] is not None]
     if len(header_sequences) != len(set(header_sequences)):
-        print("[错误] 多个合并单元使用了相同内容序；拒绝覆盖输出")
+        print("[错误] 多个合并单元使用了相同内容序；拒绝覆盖输出", file=sys.stderr)
         return 1
     if header_sequences and set(header_sequences) != set(range(1, max(header_sequences) + 1)):
-        print("[错误] 输入表头内容序必须从 01 连续；拒绝写入缺页/缺号的章节集")
+        print("[错误] 输入表头内容序必须从 01 连续；拒绝写入缺页/缺号的章节集", file=sys.stderr)
         return 1
     nav_text = None
     for cand in sorted(args.dir.rglob("*.xhtml")):
@@ -626,7 +632,7 @@ def main(argv: list[str] | None = None) -> int:
     for idx, unit in enumerate(units, 1):
         lines = merge_unit(unit, notes)
         if lines is None:
-            print(f"[错误] 单元 {idx} 无法合并；没有写入任何输出")
+            print(f"[错误] 单元 {idx} 无法合并；没有写入任何输出", file=sys.stderr)
             return 1
         sequence = unit["sequence"] if unit["sequence"] is not None else idx
         name = f"{output_book}-{sequence:02d}.xhtml"
@@ -636,7 +642,7 @@ def main(argv: list[str] | None = None) -> int:
         except ET.ParseError as exc:
             problems.append(f"XML 解析失败：{exc}")
         if problems:
-            print(f"[错误] {name} 合并产物不满足模板/XML 契约：{problems}")
+            print(f"[错误] {name} 合并产物不满足模板/XML 契约：{problems}", file=sys.stderr)
             return 1
         outputs.append((name, lines, unit["pages"][0]["bom"], unit["pages"][0]["crlf"]))
         body_paras = sum(1 for line in lines if re.match(r"^\s*<p\b", line))

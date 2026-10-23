@@ -26,8 +26,13 @@ from __future__ import annotations
 
 import csv
 import re
+import sys
 from pathlib import Path
 
+if __package__:
+    from .cli_output import configure_output
+else:
+    from cli_output import configure_output
 from alignment_rules import (
     JP_WRAPPER_RE,
     MANUAL_ALIGNMENT_HEADERS,
@@ -503,6 +508,7 @@ def audit_roots(cn_root: Path, jp_root: Path, work_ids: set[str] | None = None):
 
 
 def main() -> int:
+    configure_output()
     import argparse
     ap = argparse.ArgumentParser(description="检查中日统一固定行模板与对齐（只读）")
     ap.add_argument("--cache", type=Path, default=Path(".cache/epub-work"))
@@ -515,16 +521,16 @@ def main() -> int:
     cn_root = args.root or args.cache / "chinese-text"
     jp_root = args.jp_root or args.cache / "japanese-text"
     if not cn_root.is_dir() and not jp_root.is_dir():
-        print("中文/日文输入根目录均不存在")
+        print("中文/日文输入根目录均不存在", file=sys.stderr)
         return 2
     try:
         rows, bad, checked = audit_roots(cn_root, jp_root,
                                        {w.upper() for w in args.book} if args.book else None)
     except (OSError, UnicodeError, ValueError) as exc:
-        print(f"[阻断] 对齐检查未完成：{exc}")
+        print(f"[阻断] 对齐检查未完成：{exc}", file=sys.stderr)
         return 2
     if not rows:
-        print("没有匹配的书籍/内容文件")
+        print("没有匹配的书籍/内容文件", file=sys.stderr)
         return 2
     tsv = args.output or args.cache / "alignment-check.tsv"
     tsv.parent.mkdir(parents=True, exist_ok=True)

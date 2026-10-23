@@ -10,6 +10,10 @@ import sys
 import zipfile
 from pathlib import Path
 
+if __package__:
+    from .cli_output import configure_output
+else:
+    from cli_output import configure_output
 from epub_ids import book_id
 from epub_structure import artifact_contract_issues, container_contract_issues
 from path_safety import is_extract_artifact
@@ -85,40 +89,41 @@ def package_book(book: Path, destination: Path) -> int:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Package extracted EPUB book directories.",
+        description="将解包书籍目录打包为 EPUB。",
     )
-    parser.add_argument("--cache", type=Path, default=DEFAULT_CACHE, help="audit cache root")
+    parser.add_argument("--cache", type=Path, default=DEFAULT_CACHE, help="参考缓存根目录")
     parser.add_argument(
         "--source",
         type=Path,
-        help="direct root containing extracted EPUB book directories",
+        help="直接包含解包书籍目录的源根目录",
     )
     parser.add_argument(
         "--output",
         type=Path,
-        help="output root (default: <cache>/packed-epubs)",
+        help="输出根目录（默认 <cache>/packed-epubs）",
     )
     parser.add_argument(
         "--side",
         choices=("all", "japanese", "chinese"),
         default="all",
-        help="which cache side to package",
+        help="需要打包的语言侧",
     )
     parser.add_argument(
         "--pattern",
         default="*",
-        help="case-insensitive glob matched against each book directory name",
+        help="按书目录名筛选（不区分大小写的通配符）",
     )
-    parser.add_argument("--dry-run", action="store_true", help="list outputs without writing files")
+    parser.add_argument("--dry-run", action="store_true", help="只预览输出，不生成文件")
     args = parser.parse_args()
     if args.source is not None and args.output is None:
-        parser.error("--output is required when --source is used")
+        parser.error("使用 --source 时必须指定 --output")
     if args.source is not None and args.side != "all":
-        parser.error("--side cannot be combined with --source")
+        parser.error("--side 不能与 --source 合用")
     return args
 
 
 def main() -> int:
+    configure_output()
     args = parse_args()
     cache = args.cache.resolve()
     if args.source is not None:
@@ -135,7 +140,7 @@ def main() -> int:
 
     for _, source in selected:
         if is_within(output, source):
-            print(f"error: output directory cannot be inside {source}", file=sys.stderr)
+            print(f"[错误] 输出目录不能位于源目录内：{source}", file=sys.stderr)
             return 2
 
     packaged = 0
@@ -145,7 +150,7 @@ def main() -> int:
 
     for output_directory, source in selected:
         if not source.is_dir():
-            print(f"error: source not found: {source}", file=sys.stderr)
+            print(f"[错误] 源目录不存在：{source}", file=sys.stderr)
             failed += 1
             continue
 
@@ -161,27 +166,27 @@ def main() -> int:
         for book in books:
             destination = destination_root / f"{book.name}.epub"
             if args.dry_run:
-                print(f"[dry-run] {book} -> {destination}")
+                print(f"[预览] {book} -> {destination}")
                 packaged += 1
                 continue
             try:
                 size = package_book(book, destination)
             except (OSError, PackageError, zipfile.BadZipFile) as exc:
-                print(f"failed: {book.name}: {exc}", file=sys.stderr)
+                print(f"[失败] {book.name}：{exc}", file=sys.stderr)
                 failed += 1
                 continue
             packaged += 1
             total_bytes += size
-            print(f"packed: {destination} ({size:,} bytes)")
+            print(f"已打包：{destination}（{size:,} 字节）")
 
     if packaged == 0 and failed == 0:
-        print(f"no book directories matched pattern: {args.pattern}", file=sys.stderr)
+        print(f"[错误] 没有匹配的书籍目录：{args.pattern}", file=sys.stderr)
         return 1
 
     if args.dry_run:
-        print(f"dry run complete: {packaged} book(s), {failed} failure(s)")
+        print(f"预览完成：待打包 {packaged} 本，失败 {failed} 本；未生成 EPUB。")
     else:
-        print(f"complete: {packaged} EPUB(s), {failed} failure(s), {total_bytes:,} bytes")
+        print(f"完成：已打包 {packaged} 本，失败 {failed} 本，共 {total_bytes:,} 字节")
     return 1 if failed else 0
 
 

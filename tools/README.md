@@ -13,6 +13,16 @@
 
 同一规则只在一处写正文：规范在 AGENTS 与版式规范三份，命令在本文件，流程在 skill。本文的四个固定说法：**阻断** = 该工具或门禁直接非零退出；**只读** = 不修改输入书籍，允许写显式报告或系统临时产物；**预览** = 默认只报告、显式开关才写盘（写工具用 `--apply`，发布用 `--dry-run`，PowerShell 入口用 `-WhatIf`）；**成员表** = 各簇内「工具｜入口命令｜读写范围｜门禁与失败边界｜测试」五列表。
 
+## 公共输出约定
+
+- **编码**：Python 工具入口统一调用 `cli_output.configure_output()`，stdout／stderr 均为 UTF-8，包括重定向与 `--help`。导入工具模块不调整宿主流。`pull.ps1` 在执行期间匹配 Python 的 UTF-8 输出，结束或异常时恢复宿主编码；可复制到仓库外运行的术语模板就地初始化双流编码。
+- **输出流**：正常进度、业务发现、汇总与导出路径使用 stdout；输入／环境错误、无法执行的诊断及警告使用 stderr。业务检查发现的问题仍属于报告内容，不以 stderr 是否为空代替退出码判断。
+- **机器格式**：JSON／TSV／CSV 写到 stdout 时保持该格式完整，统计摘要与附加提示走 stderr；空 JSON 列表输出 `[]`，空 TSV 保留列头。显式导出到文件后，stdout 可以报告导出路径。各工具保留业务字段与报告参数，按所属簇合同读取。
+- **数量与覆盖**：汇总及机器报告取完整检查结果。仅用于限制样例的 `--top`／`--limit` 不改变总数或退出码；用于局部执行的同名参数须在工具合同中明确。零命中与未完整检查分别说明，不把拒绝处理的文件计作已通过。
+- **模式与失败**：预览明确未生成成品，写入成功后才报告已生成。退出码 0 表示完成该工具声明的工作；运行失败或门禁阻断非零，具体 1／2 语义见各入口。显式报告无法写出时非零退出；截断提示只引用实际生成的报告，否则给出导出参数。
+
+公共输出与 GBK 管道环境下的全入口帮助由 `test_cli_output.py` 验证；业务输出的完整性由各工具专用测试验证。
+
 ## 路由
 
 正常任务从这张表进；出问题时从下一节的 [阻塞与恢复](#阻塞与恢复) 进。
@@ -60,7 +70,7 @@
 | C4 门禁与体检 | 只读阻断与诊断；不修内容 | 12 | strict 非零即阻断 |
 | C5 内容质量 | 字符级与语义级的内容改动；不决定译名取舍（走 skill） | 4 | 字符级规范化 0 命中 |
 | C6 检索与统计 | 只读检索与字数／页数换算；不作语义裁定 | 4 | 无（只读诊断） |
-| C0 共享内核 | 无 CLI 的共享规则与原子写入能力；不另建工作流入口 | 16 | 由调用方承担 |
+| C0 共享内核 | 无 CLI 的共享规则与原子写入能力；不另建工作流入口 | 17 | 由调用方承担 |
 
 ## C1 同步与发布
 
@@ -163,7 +173,7 @@ python tools/package_cache_epubs.py --source EPUB --output output/epubs --patter
 | `import_build_text.py` | `python tools/import_build_text.py 计划.json --out "EPUB/…" --apply` | 写 `<书目录>/OEBPS/Text/*.xhtml` | 逐章物理行数必须等于日文，任何一章不齐整批不写【无】 | `test_import_tools.py`（含不写盘反例） |
 | `import_images.py` | `python tools/import_images.py suggest --src 素材目录 --jp-dir … --work S4_04` | 写 `<书目录>/OEBPS/Images/*` | 归档名必须带作品号前缀、源文件可解码；低置信指纹需人工确认。正文插图可为 0（数量是否与计划一致由 `import_build_text.py` 渲染时逐行断言）【无】 | `test_import_tools.py` |
 | `import_build_wrappers.py` | `python tools/import_build_wrappers.py 计划.json --template … --info … --intro … --out … --apply` | 写包装页、`nav.xhtml`／`toc.ncx`／`content.opf`／`mimetype`／`container.xml`／`style.css` | 正文／封面缺失即阻断；彩页为可选项；manifest 与 spine 互指、id 唯一【无】 | `test_import_tools.py` |
-| `docx2epub.py` | `python tools/docx2epub.py 交稿.docx --out … --apply --staging` | 预览默认；写显式成品构建输出 | 源不覆盖，资源／容器验证【无】 | `test_docx_and_notes.py`、`test_import_output_boundaries.py` |
+| `docx2epub.py` | `python tools/docx2epub.py 交稿.docx --out … --apply --staging` | 预览默认，明确未生成 EPUB；`--quiet` 只保留错误与汇总；写显式成品构建输出 | 源不覆盖，资源／容器验证【无】 | `test_docx_and_notes.py`、`test_import_output_boundaries.py` |
 | `epub2docx.py` | `python tools/epub2docx.py 源.epub --out … --apply --staging` | 预览默认；写显式交稿输出 | 源不覆盖，需 calibre【无】 | 输出边界：`test_import_output_boundaries.py`；转换依赖外部 calibre |
 | `bw_extract_preprocess.json` | 无 CLI（配置，供 `bw_preprocess.py` 读取） | 只读配置 | 未知页不得默认继承上一内容单元【无】 | `test_bw_preprocess.py` |
 | `bw_page_header_overrides.json` | 无 CLI（配置，供 `bw_preprocess.py` 读取） | 只读配置 | 映射必须覆盖实际分页，缺页／额外页／非法序号阻断【无】 | `test_bw_preprocess.py` |
@@ -191,7 +201,7 @@ python tools/import_build_wrappers.py .cache/epub-work/import/plan.json --templa
 - `import_docx_outline.py` 只读诊断，写显式 `--out`。阻断项：无 Heading 1、段内换行（`w:br`）、注音／译注记号未闭合；提示项：全角空格、段内制表符、独占成段的译注。
 - `import_align_plan.py` 按**日文物理行**逐行比对（日文一行＝一个行单元，中文侧允许 1:2），输出 `1:1`／`1:2`／`1:0`／`0:1` 关系与建议改动，并生成计划骨架。改动类型只有 `split`／`merge_prev`／`insert_br_after`／`drop`／`note_to_prev` 五种，`para` 用清单里的段落序号。章标题识别覆盖 `引子／序章／第N章／行间（可带副标题，`行　间` 的排版空格先折叠）／深度N（外典书库的专用后缀，写作 `DepthN`）／终章／后记／尾声`；识别不出的条目骨架留空 `fname`，由人工在计划里补。计划是任务工作产物，放 `.cache/epub-work/import/`，不提交。
 - `import_build_text.py` 渲染正文（固定行模板、`<ruby>`、Note 页与脚注引用）。**写盘前逐章断言物理行数与日文一致，任何一章不齐整批不写**；只清段落首尾的 ASCII 空格与不换行空格，段内全角空格（对齐／分字）原样保留。译注正文在正文渲染时已由 `esc_ruby` 转成可安全嵌入的行内 XML（含 `<ruby>`／`<b>`），写 Note 页时**原样写入**，不得二次转义（否则译注里的注音会退化成 `&lt;ruby&gt;` 字面文本）。
-- `import_images.py`：`suggest` 用 dHash 把素材对到日文原图给命名建议；`apply` 复制并校验作品号前缀、可解码性与指纹，低置信项必须人工看图。
+- `import_images.py`：`suggest` 用 dHash 把素材对到日文原图给命名建议；`apply` 复制并校验作品号前缀、可解码性与指纹，低置信项必须人工看图。`apply` 子命令与 `import_build_wrappers.py` 的显式 `--report` 在预览时也写计划报告，标明未产出；执行成功的报告标明已写入。两入口在任何写入前检查报告目标，拒绝覆盖计划／制作材料，或落入素材、模板、日文参考及成品目录，路径别名同样检查；报告原子写入，执行模式的报告与本批成品写入一并回滚。
 - `import_build_wrappers.py` 从模板书取样式表、container 与 calibre 元数据块，生成包装页（Cover／Information／Introduction，计划里有 `role=illustration` 彩页时再加 Illustrations）与 `nav.xhtml`／`toc.ncx`／`content.opf`／`mimetype`。`--info`／`--intro` 是页面 L4 起的内容行（第 1 行 h1、第 2 行空行占位），由用户素材决定；简介页文件名默认 `<作品号>-Introduction.xhtml`，计划里写 `intro_fname` 可让它占某个内容序（S5 外典书库用 `-01`，与日文侧整页作品扉页同序）；manifest 的 item id 用 `id-t{n}`，避免与 metadata 的 `id-1`／`id-2` 冲突（calibre 会报 `DuplicateId`）。
 - 六步之后按 C4 跑 `text_norm.py`、`check_alignment.py --strict`、`check_epub_health.py --strict`、`check_note_order.py`、`publish_preflight.py`、`check_epub_validity.py`，再走 C1 的发布。
 
@@ -423,7 +433,7 @@ L2 运行时由 `--vector-python`／`--betweenlines-dir`、`BETWEENLINES_PYTHON`
 python tools/check_note_order.py --root EPUB
 ```
 
-只读检查 Note 条目顺序、编号是否等于正文首次引用顺序，输出 TSV／JSON／Markdown。重排写入在 C3 的 `reorder_notes.py`，两者共享 `notes_core.py` 的阅读顺序。
+只读检查 Note 条目顺序、编号是否等于正文首次引用顺序，在输出目录生成 `note-order-check.tsv`／JSON／Markdown。TSV 每本 Note 一行，列为 `book`、`note_file`、`defined_order`、`appearance_order`、`first_appearance`、`issues`，复杂值用 JSON 单元格保全。输入根目录无效或报告写入失败时 stderr 诊断并返回 2；检查发现的问题仍按既有 strict 语义阻断。重排写入在 C3 的 `reorder_notes.py`，两者共享 `notes_core.py` 的阅读顺序。
 
 ### 单侧成品体检
 
@@ -456,7 +466,7 @@ python tools/check_illustration_mapping.py
 
 核对 [插图文字映射表](../docs/illustration-text-mapping.md) 的每一行：`行号` 是否还指着 `正文原句`。表里的行号是日文缓存的**物理行号**，而缓存由 `pull.ps1` 重建——日文源一重导、一规范化就可能整体位移，所以每次拉取后跑一次。
 
-行号不符时按 `正文原句` 在该卷正文里重新定位，给出建议行号；重新定位也找不到才计入未解析并非零退出。`--jp-root` 换参考根，`--json` 写报告，`--limit` 只控制样例条数。**缓存缺失返回 2（前提不成立）**，与「有漂移」的 1 区分开，避免在没拉取的环境里误报。
+行号不符时按 `正文原句` 在该卷正文里重新定位，给出建议行号；重新定位也找不到才计入未解析并非零退出。`--jp-root` 换参考根，`--json` 写完整报告，`--limit` 只控制终端样例条数（0 显示全部，负数返回 2），不改变问题总数、JSON 或退出码。**缓存缺失返回 2（前提不成立）**，与「有漂移」的 1 区分开，避免在没拉取的环境里误报。
 
 ### 翻译规范检查
 
@@ -529,7 +539,7 @@ python tools/text_norm.py --root EPUB
 python tools/text_norm.py --root EPUB --apply --report 显式报告.md
 ```
 
-只执行规范可确定的字符替换，XML、行数、标签、文件名与引用保持有效。规则实现唯一在 `text_norm.py`，不另写批量替换器。`--pattern` 限定书籍，`--summary` 供 CI 提交信息正文的「字符级规范化」一行（提交主语取实际 diff，见 `.github/workflows/normalize-epub-text.yml`），`--top` 控制报告样例。选词需原文的事项走术语或复核 skill。任何改写行内文字的改动写盘后必须重跑本工具并确认 0 命中。
+只执行规范可确定的字符替换，XML、行数、标签、文件名与引用保持有效。规则实现唯一在 `text_norm.py`，不另写批量替换器。`--pattern` 限定书籍，`--summary` 供 CI 提交信息正文的「字符级规范化」一行（提交主语取实际 diff，见 `.github/workflows/normalize-epub-text.yml`），`--top` 控制报告样例。遇到不支持的结构而拒绝处理文件时，终端／Markdown／summary 都明确检查不完整，警告走 stderr 并返回 1；完整检查且零命中仍返回 0。选词需原文的事项走术语或复核 skill。任何改写行内文字的改动写盘后必须重跑本工具并确认 0 命中。
 
 规则必须**幂等**：同一份文本反复运行结果必须稳定。跨多个标记的连段要整段重排，不能只换相邻一对——`！[？?]` → `？！` 对 `！！！？？？` 既不收敛、产出的交错形态也不满足「问号始终在感叹号左边」，问叹顺序按整段「？在前、！在后」重排（`test_text_norm.py` 有幂等性反例）。
 
@@ -605,7 +615,7 @@ python tools/read_xlsx.py <file.xlsx> [-q <KEYWORD>] [--head <N>] [--format <mar
 - **上下文截取与分页**：`--head N`（`-n N`）取前 N 行；`--tail N` 取后 N 行；`--offset N --limit M` 分页切片，防止大表格撑爆大模型上下文。
 - **列提取**：`--cols`（或 `-c`）仅提取指定列，支持逗号分隔的列名（如 `"Base_Ori,Base_Trans,Type"`）、列字母（如 `"A,B,D"`）或 1-based 数字（如 `"1,2,4"`）。
 - **行关键词搜索**：`-q` / `--search` 直接在选定列中全文匹配关键词，仅输出包含该关键词的行（默认不区分大小写，`--match-case` 区分大小写）。
-- **文件导出与摘要**：`-o` / `--out` 导出结果到文件；`--info` 打印当前工作表、总匹配行数、展示行数与列数摘要。
+- **文件导出与摘要**：`-o` / `--out` 导出结果到文件；`--info` 将当前工作表、总匹配行数、展示行数与列数摘要打印到 stderr，不混入 stdout 的 JSON／TSV／CSV。显式导出成功时 stdout 报告导出路径。
 
 ### 字数统计与页数换算（只读）
 
@@ -638,7 +648,7 @@ python tools/epub_composition_metrics.py <目录或epub> [--csv OUT.csv] [--page
 
 输出列：`成分 / 子成分 / 全字符 / 页数（换算）/ 印刷页区间 / 印刷页数`（合计行给出全书正文印刷页推算区间）。成分名规范化（序章/第N章/终章、行间、后记、引子/尾声位置规则）与 `epub_char_count` 完全一致；正文按 `<h2>` 展开子成分，`--chars-only` 只按成分输出。与 `epub_char_count` 的取舍：要「占比」列用前者，要「印刷页推算」用后者——两者的 CLI 面与输出列不互相包含。
 
-**估算边界**：锚点页本身是实测的，锚点之间按字数比例分配；书首（首个插图之前，通常 30~50 页）无锚点、只能靠密度外推，误差最大，单成分页数约 ±10%。页区间是推算值，不是书内页码标记。默认只读，不修改输入；CSV 默认写到 `.cache/epub-work/composition-metrics/<书目录名>.csv`，不落进书籍目录，避免被 `package_cache_epubs.py` 打进 EPUB。
+**估算边界**：锚点页本身是实测的，锚点之间按字数比例分配；书首（首个插图之前，通常 30~50 页）无锚点、只能靠密度外推，误差最大，单成分页数约 ±10%。页区间是推算值，不是书内页码标记。默认只读，不修改输入；CSV 默认写到 `.cache/epub-work/composition-metrics/<书目录名>.csv`，不落进书籍目录，避免被 `package_cache_epubs.py` 打进 EPUB。CSV 完成提示走 stderr，`--json` 的 stdout 保持纯 JSON；`--no-csv` 只打印、不生成 CSV。
 
 ## C0 共享内核
 
@@ -655,6 +665,7 @@ python -m unittest discover -s tools/tests -p "test_*.py" -v
 | 工具 | 入口命令 | 读写范围 | 门禁与失败边界 | 测试 |
 | --- | --- | --- | --- | --- |
 | `alignment_rules.py` | 无 CLI（共享模块） | 由调用方决定；只提供规则数据 | 【无】 | `test_alignment.py`、`test_check_epub_health.py`、`test_check_translation_table.py`、`test_epub_ids.py` |
+| `cli_output.py` | 无 CLI（共享模块） | 仅由 CLI 入口初始化 stdout／stderr 的 UTF-8 编码；兼容内存捕获流 | 【无】 | `test_cli_output.py` |
 | `docx_source.py` | 无 CLI（共享模块） | 交稿 docx 段落流与行内记号的单一解析 | 【无】 | `test_docx_and_notes.py`、`test_import_tools.py`（间接） |
 | `edit_safety.py` | 无 CLI（共享模块，含 argparse 辅助） | 写目标与显式暂存范围的限制 | 【无】 | `test_edit_safety.py` |
 | `epub_ids.py` | 无 CLI（共享模块） | 作品号、表头、内容序与文件角色解析；`is_packaging_header`（是否包装页，7 类）与 `is_list_packaging_header`（能否在 L5 写列表，4 类）**刻意分开** | 【无】 | `test_epub_ids.py` |
@@ -663,7 +674,7 @@ python -m unittest discover -s tools/tests -p "test_*.py" -v
 | `image_signature.py` | 无 CLI（共享模块） | 图片 dHash 指纹与尺寸（Pillow 可选） | 【无】 | 无专用测试；由调用方验证 |
 | `import_plan.py` | 无 CLI（共享模块） | 导入计划的结构校验与逐条改动装配 | 【无】 | `test_import_tools.py` |
 | `notes_core.py` | 无 CLI（共享模块） | Note 解析和阅读顺序 | 【无】 | `test_docx_and_notes.py` |
-| `path_safety.py` | 无 CLI（共享模块） | ZIP 路径安全和解包残留识别 | 【无】 | `test_path_safety.py` |
+| `path_safety.py` | 无 CLI（共享模块） | ZIP 路径安全、解包残留识别与显式报告目标冲突检查 | 【无】 | `test_path_safety.py` |
 | `sync_core.py` | 无 CLI（共享模块） | 差异、镜像、上传状态与拉取状态 | 【无】 | `test_publish_auto.py`、`test_sync_and_rename.py` |
 | `xhtml_slots.py` | 无 CLI（共享模块） | 固定行模板 L1–L6 的槽位行号与名称常量；译注页固定 h1 常量 `NOTE_H1` | 【无】 | 由调用方测试覆盖：`test_alignment.py`、`test_bw_preprocess.py`、`test_heading_breaks.py` |
 | `xhtml_structure.py` | 无 CLI（共享模块） | 物理行类型、保守配对与页边界修复前提 | 【无】 | `test_xhtml_structure.py` |
@@ -686,7 +697,7 @@ python -m unittest discover -s tools/tests -p "test_*.py" -v
 | `notes_core.py` | Note 解析和阅读顺序 | 同步、发布方向 |
 | `sync_core.py` | 差异、镜像、上传状态与拉取状态 | 冲突取舍和方向选择 |
 | `edit_safety.py` | 写目标与显式暂存范围的限制 | 决定修改语义是否正确 |
-| `path_safety.py` | ZIP 路径安全和解包残留识别 | 内容／语言规范 |
+| `path_safety.py` | ZIP 路径安全、解包残留识别及报告与受保护输入／输出路径的冲突检查 | 内容／语言规范 |
 | `epub_structure.py` | 共用的容器、OPF spine、XML 与资源引用检查；`opf_relations` 返回有序 manifest/spine 事实，`xml_references`／`css_references` 返回有序原始引用，`resolve_reference` 解析书内路径 | 工具编排与成品模板选择；事实采集入口不负责文件选择、XML 解析与异常处理、重复 ID／缺项／媒体类型判定、锚点采集及体检的存在性／越界／fragment 策略 |
 | `xhtml_text.py` | XHTML → 纯文本的三种口径（保留注音／去注音／可见文本）；`<rt>`、`<rp>` 剥除规则的唯一实现 | 扫描与报告；该用哪种口径由调用方决定 |
 | `file_transaction.py` | 异常安全的文件系统写入（临时文件／目录 + 回滚） | 发布策略与冲突取舍 |

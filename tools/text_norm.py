@@ -38,6 +38,10 @@ import re
 import sys
 from collections import Counter
 from pathlib import Path
+if __package__:
+    from .cli_output import configure_output
+else:
+    from cli_output import configure_output
 from edit_safety import EditSafetyError, add_edit_mode, require_edit_target
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -367,11 +371,8 @@ def collect_targets(root: Path, pattern: str | None):
 
 
 def main() -> int:
-    try:
-        sys.stdout.reconfigure(encoding="utf-8")
-    except Exception:
-        pass
 
+    configure_output()
     ap = argparse.ArgumentParser(
         description="EPUB/ 中文成品字符级规范化（translation-spec 可机械执行子集）")
     ap.add_argument("--root", type=Path, default=None, help="EPUB 根目录（默认 EPUB/）")
@@ -443,8 +444,11 @@ def main() -> int:
 
     print("字符级规范化（%s）：%d 行命中、%d 个字符替换，涉及 %d 个文件（扫描 %d 个 XHTML）"
           % (mode, spots, total, len(touched), scanned))
+    if skipped:
+        print("  检查不完整：完成 %d 个文件，拒绝 %d 个文件；命中数仅覆盖已完成检查的文件。"
+              % (scanned - len(skipped), len(skipped)))
     if not total:
-        print("  无命中。")
+        print("  已完成检查的文件中无命中。" if skipped else "  无命中。")
     for rid, disp, spec in report_rules:
         n = rule_counts.get(rid, 0)
         if n:
@@ -456,19 +460,24 @@ def main() -> int:
     if args.apply:
         print("  实际写入文件：%d" % written_files)
     if skipped:
-        print("  拒绝处理 %d 个文件（fail-safe）：" % len(skipped))
+        print("[警告] 检查不完整：拒绝处理 %d 个文件（fail-safe）：" % len(skipped), file=sys.stderr)
         for rel, reason in skipped[:10]:
-            print("    %s — %s" % (rel, reason))
+            print("    %s — %s" % (rel, reason), file=sys.stderr)
 
     if args.summary:
         args.summary.write_text(
-            "style(epub): 自动规范化 EPUB 文本 %d 处\n" % spots, encoding="utf-8")
+            ("style(epub): 自动规范化 EPUB 文本 %d 处" % spots)
+            + ("（检查不完整，拒绝 %d 个文件）" % len(skipped) if skipped else "")
+            + "\n", encoding="utf-8")
 
     if args.report:
         lines = ["# EPUB 文本字符级规范化报告", "",
                  "- 模式：%s" % mode,
                  "- 根目录：`%s`" % root.name,
                  "- 扫描 XHTML：%d" % scanned,
+                 "- 检查状态：%s" % (
+                     "检查不完整，完成 %d 个文件、拒绝 %d 个文件；以下命中数仅覆盖已完成检查的文件"
+                     % (scanned - len(skipped), len(skipped)) if skipped else "完整"),
                  "- 命中：**%d** 行 / %d 个字符替换，涉及 %d 个文件" % (spots, total, len(touched)),
                  "- 写盘文件：%d" % written_files, "",
                  "规则来源：`docs/translation-spec.md`（可机械执行子集）。", "",
@@ -489,10 +498,11 @@ def main() -> int:
             lines += ["- `%s` — %s" % (rel, reason) for rel, reason in skipped]
             lines.append("")
         if not total:
-            lines.append("无命中，未修改任何文件。")
+            lines.append("已完成检查的文件中无命中；检查不完整，不能据此确认全范围 0 命中。"
+                         if skipped else "无命中，未修改任何文件。")
         args.report.write_text("\n".join(lines), encoding="utf-8")
 
-    return 0
+    return 1 if skipped else 0
 
 
 if __name__ == "__main__":

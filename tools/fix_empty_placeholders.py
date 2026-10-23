@@ -6,6 +6,10 @@ import argparse
 import re
 from pathlib import Path
 
+if __package__:
+    from .cli_output import configure_output
+else:
+    from cli_output import configure_output
 from epub_ids import NUMBERED_BOOK, S6_DATE
 from epub_structure import METADATA_SUFFIXES
 from edit_safety import (EditSafetyError, add_content_roots, add_edit_mode,
@@ -156,6 +160,7 @@ def apply_candidate(path: Path) -> tuple[list[tuple[Path, Path]], int]:
 
 
 def main() -> int:
+    configure_output()
     parser = argparse.ArgumentParser()
     add_content_roots(parser)
     add_edit_mode(parser)

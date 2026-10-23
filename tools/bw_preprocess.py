@@ -54,15 +54,12 @@ import tempfile
 import zipfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
+if __package__:
+    from .cli_output import configure_output
+else:
+    from cli_output import configure_output
 from edit_safety import add_edit_mode, require_edit_target
 from urllib.parse import unquote, urlsplit
-
-# Windows 终端控制台编码自适应，防止 GBK 代码页打印日文与特殊字符乱码
-if sys.platform == "win32":
-    if hasattr(sys.stdout, "reconfigure"):
-        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-    if hasattr(sys.stderr, "reconfigure"):
-        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 import merge_bw_pages
 from alignment_rules import JP_WRAPPER_RE
@@ -1165,9 +1162,9 @@ def clean_book_title(raw_title: str, book_id: str | None = None) -> str:
 
 def _report_issues(stats: dict) -> None:
     for name, it in stats["issues"][:30]:
-        print(f"  ! {name}: {it}")
+        print(f"  ! {name}: {it}", file=sys.stderr)
     if len(stats["issues"]) > 30:
-        print(f"  …另有 {len(stats['issues']) - 30} 条问题未列出")
+        print(f"  …另有 {len(stats['issues']) - 30} 条问题未列出", file=sys.stderr)
 
 
 def report_stats(label: str, stats: dict, dry_run: bool, check: bool,
@@ -1207,12 +1204,13 @@ def report_stats(label: str, stats: dict, dry_run: bool, check: bool,
     if merge_notes:
         print(f"  合并待核对 {len(merge_notes)} 条：")
         for n in merge_notes[:20]:
-            print(f"    · {n}")
+            print(f"    · {n}", file=sys.stderr if n.startswith("[OPF更新警告]") else sys.stdout)
         if len(merge_notes) > 20:
             print(f"    …另有 {len(merge_notes) - 20} 条未列出")
 
 
 def main(argv: list[str] | None = None) -> int:
+    configure_output()
     ap = argparse.ArgumentParser(
         description="按 BookWalker 提取预处理规则改写 .epub / 目录中的 XHTML")
     ap.add_argument("paths", nargs="+", help="一个或多个 .epub 文件或含 .xhtml 的目录")
@@ -1282,7 +1280,7 @@ def main(argv: list[str] | None = None) -> int:
         stats = None
         p = Path(raw)
         if not p.exists():
-            print(f"[跳过] 不存在：{p}")
+            print(f"[跳过] 不存在：{p}", file=sys.stderr)
             has_issues = True
             continue
 
@@ -1354,7 +1352,7 @@ def main(argv: list[str] | None = None) -> int:
                 report_stats(f"epub {p}", stats, args.dry_run, False,
                              None if args.dry_run else out_label)
         else:
-            print(f"[跳过] 不是 .epub 或目录：{p}")
+            print(f"[跳过] 不是 .epub 或目录：{p}", file=sys.stderr)
             has_issues = True
         if stats is not None and stats.get("issues"):
             has_issues = True

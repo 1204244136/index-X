@@ -56,6 +56,10 @@ _WS = re.compile(r"\s+")
 _HERE = Path(__file__).resolve().parent
 if str(_HERE) not in sys.path:
     sys.path.insert(0, str(_HERE))
+if __package__:
+    from .cli_output import configure_output
+else:
+    from cli_output import configure_output
 from edit_safety import add_edit_mode, require_edit_target
 from epub_ids import historical_work_id
 from epub_structure import artifact_contract_issues, container_contract_issues, epub_zip_issues
@@ -216,13 +220,13 @@ def expand_inputs(paths: list[str], pattern: str) -> list[Path]:
     for raw in paths:
         p = Path(raw)
         if not p.exists():
-            print(f"[跳过] 不存在：{p}")
+            print(f"[跳过] 不存在：{p}", file=sys.stderr)
             continue
         if p.is_file():
             if p.suffix.lower() == ".epub":
                 out.append(p)
             else:
-                print(f"[跳过] 不是 .epub：{p}")
+                print(f"[跳过] 不是 .epub：{p}", file=sys.stderr)
             continue
         if (p / "mimetype").is_file() and (p / "META-INF" / "container.xml").is_file():
             out.append(p)  # 单个解包书目录
@@ -245,9 +249,9 @@ def report(label: str, stats: dict, out_docx: Path | None, dry_run: bool) -> Non
     else:
         print(f"[{label}] XHTML {stats['files']} 个{changed} -> {out_docx}")
     for it in stats["issues"][:20]:
-        print(f"  ! {it}")
+        print(f"  ! {it}", file=sys.stderr)
     if len(stats["issues"]) > 20:
-        print(f"  …另有 {len(stats['issues']) - 20} 条问题未列出")
+        print(f"  …另有 {len(stats['issues']) - 20} 条问题未列出", file=sys.stderr)
 
 
 def process_one(book: Path, args: argparse.Namespace, exe: str | None) -> int:
@@ -318,6 +322,7 @@ def process_one(book: Path, args: argparse.Namespace, exe: str | None) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
+    configure_output()
     ap = argparse.ArgumentParser(
         description="把 EPUB 转成 DOCX（交稿格式），<ruby>基文<rt>注音</rt></ruby> 还原为 |基文[注音]")
     ap.add_argument("paths", nargs="+", help="一个或多个 .epub 文件或解包书籍目录")

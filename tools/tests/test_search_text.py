@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -22,6 +24,42 @@ from search_text import (
 
 
 class SearchTextTests(unittest.TestCase):
+    def test_cli_missing_query_reports_usage_on_stderr(self):
+        result = subprocess.run(
+            [sys.executable, str(TOOLS / "search_text.py")],
+            capture_output=True, text=True, encoding="utf-8", check=False,
+        )
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(result.stdout, "")
+        self.assertIn("usage:", result.stderr)
+
+    def test_no_matches_preserves_output_format(self):
+        self.assertEqual(json.loads(format_search_results([], "json", "absent")), [])
+        self.assertEqual(
+            format_search_results([], "tsv", "absent"),
+            "Work\tSide\tFile\tLine\tTrack\tFormatted_Text\tPaired_Text",
+        )
+        for output_format in ("text", "markdown", "md"):
+            with self.subTest(output_format=output_format):
+                self.assertIn("未找到", format_search_results([], output_format, "absent"))
+
+    def test_cli_no_matches_emits_parseable_json_and_tsv_header(self):
+        for output_format in ("json", "tsv"):
+            with self.subTest(output_format=output_format):
+                result = subprocess.run(
+                    [sys.executable, str(TOOLS / "search_text.py"), "absent",
+                     "--work", "__CLI_OUTPUT_NO_MATCH__", "--format", output_format],
+                    capture_output=True, text=True, encoding="utf-8", check=False,
+                )
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(result.stderr, "")
+                if output_format == "json":
+                    self.assertEqual(json.loads(result.stdout), [])
+                else:
+                    self.assertEqual(result.stdout.strip().split("\t"),
+                                     ["Work", "Side", "File", "Line", "Track",
+                                      "Formatted_Text", "Paired_Text"])
+
     def test_fold_text(self):
         # 1. 小字假名折叠为大字假名
         self.assertEqual(fold_text("カリキュラム"), "カリキユラム")

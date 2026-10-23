@@ -34,6 +34,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[4]  # .agents/skills/proofread-review/references/ -> 仓库根
 sys.path.insert(0, str(REPO / "tools"))
+from cli_output import configure_output  # noqa: E402
 from xhtml_text import strip_ruby_annotations, text_of  # noqa: E402  复用既有剥离口径，不重复实现
 
 JP_ROOT = REPO / ".cache" / "epub-work" / "japanese-text"
@@ -114,6 +115,7 @@ def show_cn(args) -> int:
 
 
 def main() -> int:
+    configure_output()
     p = argparse.ArgumentParser(description="校对复核的原文查证（临时工具）")
     sub = p.add_subparsers(dest="mode", required=True)
 

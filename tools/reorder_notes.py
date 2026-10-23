@@ -14,6 +14,10 @@ import sys
 import shutil
 import argparse
 import tempfile
+if __package__:
+    from .cli_output import configure_output
+else:
+    from cli_output import configure_output
 from file_transaction import rollback_paths
 from edit_safety import (EditSafetyError, add_content_roots, add_edit_mode,
                          content_roots, require_edit_target)
@@ -143,6 +147,7 @@ def process_book(book, text_dir, nf, dry_run, backup_dir):
 
 
 def main():
+    configure_output()
     ap = argparse.ArgumentParser(description="按正文出现顺序重排 Note 文件并重编号（可 --dry-run）")
     add_content_roots(ap)
     ap.add_argument("--backup", default=DEFAULT_BACKUP, help="备份目录")
@@ -155,7 +160,7 @@ def main():
     results = []
     skipped = []
     if not os.path.exists(root):
-        print("目录不存在：%s" % root)
+        print("目录不存在：%s" % root, file=sys.stderr)
         return 0
     books = sorted(d for d in os.listdir(root) if os.path.isdir(os.path.join(root, d)))
     if args.pattern:
@@ -197,9 +202,9 @@ def main():
             for old in changed:
                 print("    %s -> %s" % (old, r["mapping"][old]))
     if skipped:
-        print("\n跳过 %d 本（需人工）：" % len(skipped))
+        print("\n跳过 %d 本（需人工）：" % len(skipped), file=sys.stderr)
         for book, nf, msg in skipped:
-            print("  %s（%s）: %s" % (book, nf, msg))
+            print("  %s（%s）: %s" % (book, nf, msg), file=sys.stderr)
     print("\n共扫描 %d 本书。" % len(books))
     return 0  # Non-note lists and unresolved references are reported, never guessed.
 

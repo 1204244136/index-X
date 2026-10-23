@@ -58,6 +58,10 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "tools"))
+if __package__:
+    from .cli_output import configure_output
+else:
+    from cli_output import configure_output
 from xhtml_text import text_of_without_ruby  # noqa: E402  注音剥除规则的唯一实现
 from alignment_rules import (  # noqa: E402
     MANUAL_ALIGNMENT_HEADERS,
@@ -721,8 +725,7 @@ def render_convention(stats: dict, min_book: int = 5) -> tuple[str, str]:
 
 
 def main(argv: list[str] | None = None) -> int:
-    if hasattr(sys.stdout, "reconfigure"):
-        sys.stdout.reconfigure(encoding="utf-8")
+    configure_output()
     parser = argparse.ArgumentParser(description="呼应一致性检查（只读，输出候选供回原文判定）")
     parser.add_argument("--book", action="append", default=[], help="作品号，如 S1_01；可重复")
     parser.add_argument("--root", type=Path, default=Path("EPUB"), help="中文成品根目录")

@@ -36,6 +36,10 @@ import argparse
 import html
 from collections import OrderedDict, Counter
 
+if __package__:
+    from .cli_output import configure_output
+else:
+    from cli_output import configure_output
 from epub_ids import content_sequence
 from xhtml_text import strip_ruby_annotations
 
@@ -581,6 +585,7 @@ def audit_book(text_dir) -> list[tuple[str, int, str, str, str, str]]:
 
 
 def main():
+    configure_output()
     ap = argparse.ArgumentParser(
         description="检查中文缓存正文的翻译与修嵌规范符合性（EPUB 正文层，只读）")
     ap.add_argument("--cache", default=DEFAULT_CACHE, help="中文缓存根目录")
@@ -590,6 +595,9 @@ def main():
     args = ap.parse_args()
 
     root = args.cache
+    if not os.path.isdir(root):
+        print(f"[错误] 中文输入根目录不存在或不是目录：{root}", file=sys.stderr)
+        return 2
     findings = []          # (book, file, line, category, severity, message, example)
     per_book = OrderedDict()
     category_counts = Counter()

@@ -13,9 +13,14 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import sys
 from datetime import datetime
 from pathlib import Path
 
+if __package__:
+    from .cli_output import configure_output
+else:
+    from cli_output import configure_output
 from path_safety import is_extract_artifact
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -121,36 +126,36 @@ def update_manifest_books(
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Generate EPUB cache manifest.")
+    configure_output()
+    parser = argparse.ArgumentParser(description="生成 EPUB 缓存清单（SHA-256 文件哈希）。")
     parser.add_argument("--cache", type=Path, default=DEFAULT_CACHE)
     parser.add_argument(
         "--update-books",
         nargs="*",
         metavar="SIDE/BOOK",
-        help="only re-hash these book directories (e.g. chinese-text/【S1_01】...), "
-        "preserving all other manifest entries",
+        help="仅更新指定书籍目录的哈希（如 chinese-text/【S1_01】…），保留其他清单记录",
     )
     args = parser.parse_args()
     cache = args.cache.resolve()
     if not cache.is_dir():
-        print(f"error: cache not found: {cache}", file=argparse.sys.stderr)
+        print(f"[错误] 缓存目录不存在：{cache}", file=sys.stderr)
         return 1
 
     if args.update_books:
         files = load_manifest(cache)
         if files is None:
             print(
-                "warning: manifest not found, generating a full manifest instead",
-                file=argparse.sys.stderr,
+                "[警告] 未找到清单，将生成完整清单。",
+                file=sys.stderr,
             )
             files = scan_cache(cache)
         else:
             update_manifest_books(cache, args.update_books, files)
-            print(f"updated {len(args.update_books)} book(s) in existing manifest")
+            print(f"已更新既有清单中的 {len(args.update_books)} 本书")
         count, path = save_manifest(cache, files)
     else:
         count, path = save_manifest(cache)
-    print(f"manifest: {path} ({count} files)")
+    print(f"清单：{path}（{count} 个文件）")
     return 0
 
 

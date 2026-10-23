@@ -159,8 +159,23 @@ class ImportOutputBoundaryTests(unittest.TestCase):
     def test_docx_default_preview_does_not_create_epub(self):
         with tempfile.TemporaryDirectory() as tmp:
             source = make_docx(Path(tmp) / "【S1_01】测试.docx")
-            self.assertEqual(docx2epub.main([str(source)]), 0)
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                self.assertEqual(docx2epub.main([str(source)]), 0)
+            self.assertIn("预览", output.getvalue())
+            self.assertIn("未生成 EPUB", output.getvalue())
             self.assertFalse(list(Path(tmp).glob("*.epub")))
+
+    def test_docx_quiet_preview_only_prints_summary(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            source = make_docx(Path(tmp) / "【S1_01】测试.docx")
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                self.assertEqual(docx2epub.main([str(source), "--dry-run", "--quiet"]), 0)
+            lines = output.getvalue().splitlines()
+            self.assertEqual(len(lines), 1)
+            self.assertIn("预览", lines[0])
+            self.assertIn("未生成 EPUB", lines[0])
 
     def test_docx_pack_and_no_pack_validate_complete_generated_books(self):
         with tempfile.TemporaryDirectory() as tmp:

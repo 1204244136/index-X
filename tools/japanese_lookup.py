@@ -29,6 +29,10 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_JP_BASE = os.path.join(REPO_ROOT, ".cache", "epub-work", "japanese-text")
 
 sys.path.insert(0, os.path.join(REPO_ROOT, "tools"))
+if __package__:
+    from .cli_output import configure_output
+else:
+    from cli_output import configure_output
 from xhtml_text import strip_ruby_annotations  # noqa: E402  注音剥除规则的唯一实现
 
 
@@ -196,8 +200,7 @@ class JapaneseSourceLookup:
 
 
 def main(argv: list[str] | None = None) -> int:
-    if hasattr(sys.stdout, "reconfigure"):
-        sys.stdout.reconfigure(encoding="utf-8")
+    configure_output()
     parser = argparse.ArgumentParser(description="查询日文缓存中对应行文本（支持汉化组 |基文[注音] 记号）")
     parser.add_argument("work", help="作品号，如 S3_03")
     parser.add_argument("file", help="中文文件名或内容序，如 S3_03-04_Chapter2.xhtml 或 04")

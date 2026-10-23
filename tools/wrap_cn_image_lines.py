@@ -11,6 +11,10 @@
 from __future__ import annotations
 
 import argparse
+if __package__:
+    from .cli_output import configure_output
+else:
+    from cli_output import configure_output
 from edit_safety import (EditSafetyError, add_content_roots, add_edit_mode,
                          content_roots, require_edit_target)
 import re
@@ -132,10 +136,11 @@ def jp_headers(cache: Path, *, direct: bool = False) -> set[str]:
 
 
 def main() -> int:
+    configure_output()
     ap = argparse.ArgumentParser(description="中文侧裸图片行包 <p>")
     add_content_roots(ap)
     ap.add_argument("--jp-root", type=Path, default=None, help="日文只读参考根；允许删除结构行时必须指定")
-    ap.add_argument("--wrap-only", action="store_true", help="仅包装裸 <img> 行，禁止删除任何结构行（保证物理行数 100% 不变）")
+    ap.add_argument("--wrap-only", action="store_true", help="仅包装裸 <img> 行，禁止删除任何结构行（保证物理行数 100%% 不变）")
     ap.add_argument("--book", default=None, help="只处理指定作品号（如 S1_25）")
     add_edit_mode(ap)
     args = ap.parse_args()
@@ -199,9 +204,9 @@ def main() -> int:
     print(f"\n{'已写盘' if args.apply else '预览'}：{total_files} 个文件，"
           f"包 <p> {total_wrapped} 行，删除结构行 {total_dropped} 行")
     if refused:
-        print(f"拒绝写入 {len(refused)} 个：")
+        print(f"拒绝写入 {len(refused)} 个：", file=sys.stderr)
         for bid, name, why in refused[:10]:
-            print(f"   {bid} {name}: {why}")
+            print(f"   {bid} {name}: {why}", file=sys.stderr)
     return 1 if refused else 0
 
 

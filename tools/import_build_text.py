@@ -17,8 +17,13 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 
+if __package__:
+    from .cli_output import configure_output
+else:
+    from cli_output import configure_output
 from docx_source import chapter_kind, esc, esc_ruby, extract_notes, read_docx, split_chapters
 from edit_safety import EditSafetyError, add_edit_mode, require_edit_target
 from file_transaction import atomic_write_bytes, rollback_paths
@@ -146,6 +151,7 @@ def build(plan: dict, docx: Path) -> tuple[dict[str, str], list[str], list[str]]
 
 
 def main(argv: list[str] | None = None) -> int:
+    configure_output()
     parser = argparse.ArgumentParser(description="计划文件 + 交稿 → 正文 XHTML（固定行模板，写盘前断言行数）")
     parser.add_argument("plan", type=Path, help="导入计划 plan.json")
     parser.add_argument("--docx", type=Path, default=None, help="交稿 .docx；缺省用计划里的 source_docx")
@@ -157,17 +163,17 @@ def main(argv: list[str] | None = None) -> int:
     try:
         plan = load_plan(args.plan)
     except PlanError as exc:
-        print(f"[阻断] {exc}")
+        print(f"[阻断] {exc}", file=sys.stderr)
         return 2
     docx = args.docx or Path(plan.get("source_docx", ""))
     if not docx.is_file():
-        print(f"[阻断] 交稿不存在：{docx}")
+        print(f"[阻断] 交稿不存在：{docx}", file=sys.stderr)
         return 2
 
     try:
         text_files, report, notes = build(plan, docx)
     except PlanError as exc:
-        print(f"[阻断] {exc}")
+        print(f"[阻断] {exc}", file=sys.stderr)
         return 1
 
     print("\n".join(report))
@@ -183,7 +189,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         target = require_edit_target(args.out, args.staging)
     except EditSafetyError as exc:
-        print(f"[阻断] {exc}")
+        print(f"[阻断] {exc}", file=sys.stderr)
         return 2
     text_dir = target / "OEBPS" / "Text"
     text_dir.mkdir(parents=True, exist_ok=True)

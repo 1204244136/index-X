@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -169,6 +170,42 @@ class ReadXlsxTests(unittest.TestCase):
 
         ret = main([str(self.test_file), "-q", "御坂美琴", "--format", "json"])
         self.assertEqual(ret, 0)
+
+    def test_cli_info_keeps_machine_output_clean(self):
+        for output_format in ("json", "tsv", "csv"):
+            with self.subTest(output_format=output_format):
+                result = subprocess.run(
+                    [sys.executable, str(TOOLS / "read_xlsx.py"), str(self.test_file),
+                     "--head", "1", "--format", output_format, "--info"],
+                    capture_output=True, text=True, encoding="utf-8", check=False,
+                )
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertIn("工作表: Terms", result.stderr)
+                if output_format == "json":
+                    self.assertEqual(json.loads(result.stdout)[0]["JP_Name"], "上条当麻")
+                else:
+                    self.assertTrue(result.stdout.startswith("ID\t" if output_format == "tsv" else "ID,"))
+                    self.assertNotIn("# 工作表", result.stdout)
+
+    def test_cli_missing_file_reports_usage_on_stderr(self):
+        result = subprocess.run(
+            [sys.executable, str(TOOLS / "read_xlsx.py")],
+            capture_output=True, text=True, encoding="utf-8", check=False,
+        )
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(result.stdout, "")
+        self.assertIn("usage:", result.stderr)
+
+    def test_cli_file_export_keeps_success_message(self):
+        output = Path(self.temp_dir.name) / "export.json"
+        result = subprocess.run(
+            [sys.executable, str(TOOLS / "read_xlsx.py"), str(self.test_file),
+             "--head", "1", "--format", "json", "--info", "--out", str(output)],
+            capture_output=True, text=True, encoding="utf-8", check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("成功导出", result.stdout)
+        self.assertEqual(json.loads(output.read_text(encoding="utf-8"))[0]["JP_Name"], "上条当麻")
 
 
 if __name__ == "__main__":

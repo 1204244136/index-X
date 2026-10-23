@@ -32,6 +32,10 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+if __package__:
+    from .cli_output import configure_output
+else:
+    from cli_output import configure_output
 from publish_preflight import validate_publication
 
 TOOLS_DIR = Path(__file__).resolve().parent
@@ -255,6 +259,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> int:
+    configure_output()
     args = parse_args()
     cache = args.cache.resolve()
     epub_root = args.epub.resolve()
@@ -275,7 +280,7 @@ def main() -> int:
     baseline = load_manifest(cache)
     if baseline is None:
         if args.force:
-            print("警告: 未找到清单，--force 模式将处理所有文件。")
+            print("警告: 未找到清单，--force 模式将处理所有文件。", file=sys.stderr)
             baseline = {}
         else:
             print(
@@ -284,7 +289,7 @@ def main() -> int:
             )
             return 1
     elif args.force:
-        print("警告: --force 模式，忽略已有清单，处理所有文件。")
+        print("警告: --force 模式，忽略已有清单，处理所有文件。", file=sys.stderr)
         baseline = {}
 
     # Pre-flight: 某一侧基线整侧缺失时，该侧所有文件都会被判成 added，发布会把

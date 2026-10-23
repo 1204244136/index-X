@@ -17,6 +17,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+if __package__:
+    from .cli_output import configure_output
+else:
+    from cli_output import configure_output
 from edit_safety import (EditSafetyError, add_content_roots, add_edit_mode,
                          content_roots, require_edit_target)
 from xhtml_structure import body_start, iter_content_pairs, line_kind
@@ -71,6 +75,7 @@ def collect(cache: Path, only_book: str | None, jp_root: Path | None = None):
 
 
 def main() -> int:
+    configure_output()
     ap = argparse.ArgumentParser(description="把日文侧场景分隔 <br/> 补回中文侧")
     add_content_roots(ap, paired=True)
     ap.add_argument("--book", default=None, help="只处理指定作品号（如 S6_22.06.10）")
@@ -93,13 +98,13 @@ def main() -> int:
             continue  # 行数已等长，交给别的检查
         out, reason = plan(jl, cl)
         if out is None:
-            print(f"[跳过] {cn_id} {header}: {reason}")
+            print(f"[跳过] {cn_id} {header}: {reason}", file=sys.stderr)
             skipped += 1
             continue
         try:
             ET.fromstring("\n".join(out))
         except ET.ParseError as exc:
-            print(f"[拒绝] {header}: XML 解析失败：{exc}")
+            print(f"[拒绝] {header}: XML 解析失败：{exc}", file=sys.stderr)
             skipped += 1
             continue
         gain = len(out) - len(cl)

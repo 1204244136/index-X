@@ -47,6 +47,10 @@ import zipfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
+if __package__:
+    from .cli_output import configure_output
+else:
+    from cli_output import configure_output
 from epub_ids import book_id, historical_work_id
 from check_alignment import check_file
 from docx_source import (RUBY_RE, esc, esc_ruby, extract_notes, is_body_style,
@@ -917,13 +921,14 @@ def _process_one(docx_path: Path, args: argparse.Namespace) -> int:
     ruby_count = sum(len(_RUBY.findall(blk["text"])) for blk in paragraphs)
 
     if args.dry_run:
-        print(f"[{label}] 段落 {len(paragraphs)}，章节 {len(chapters)}，"
-              f"前置图片 {len(front_images)}，引言 {len(front_text)} 段，"
-              f"ruby 记号 {ruby_count} 处，丢弃 {len(dropped)} 段")
-        for it in dropped[:10]:
-            print(f"  ! 丢弃：{it[:50]}")
-        if len(dropped) > 10:
-            print(f"  …另有 {len(dropped) - 10} 条丢弃未列出")
+        if not args.quiet:
+            print(f"[预览] {label}：段落 {len(paragraphs)}，章节 {len(chapters)}，"
+                  f"前置图片 {len(front_images)}，引言 {len(front_text)} 段，"
+                  f"ruby 记号 {ruby_count} 处，丢弃 {len(dropped)} 段（未生成 EPUB）")
+            for it in dropped[:10]:
+                print(f"  ! 丢弃：{it[:50]}", file=sys.stderr)
+            if len(dropped) > 10:
+                print(f"  …另有 {len(dropped) - 10} 条丢弃未列出", file=sys.stderr)
         return 0
 
     # docx 内嵌图片命名（封面/正文图）
@@ -1116,6 +1121,7 @@ def expand_inputs(paths: list[str], pattern: str) -> list[Path]:
 
 
 def main(argv: list[str] | None = None) -> int:
+    configure_output()
     ap = argparse.ArgumentParser(
         description="把交稿 .docx 转成 X 版特色 EPUB，|基文[注音] 还原为 <ruby>")
     ap.add_argument("paths", nargs="+", help="一个或多个 .docx 文件或目录")
@@ -1169,7 +1175,10 @@ def main(argv: list[str] | None = None) -> int:
             ok += 1
         else:
             failed += 1
-    print(f"完成：{ok} 本成功，{failed} 本失败")
+    if args.dry_run:
+        print(f"预览完成：{ok} 本通过，{failed} 本失败（未生成 EPUB）")
+    else:
+        print(f"完成：{ok} 本成功，{failed} 本失败")
     return 1 if failed else 0
 
 

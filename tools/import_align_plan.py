@@ -29,8 +29,13 @@ from __future__ import annotations
 import argparse
 import collections
 import re
+import sys
 from pathlib import Path
 
+if __package__:
+    from .cli_output import configure_output
+else:
+    from cli_output import configure_output
 from docx_source import chapter_kind, read_docx, split_chapters
 from epub_ids import content_sequence
 from import_plan import PlanError, apply_ops, load_plan, sha256_file, write_plan
@@ -551,6 +556,7 @@ def skeleton(docx: Path, work_id: str, book_dir: str, jp_root: Path, jp_dir: Pat
 
 
 def main(argv: list[str] | None = None) -> int:
+    configure_output()
     parser = argparse.ArgumentParser(description="交稿 × 日文工作源 → 缺口报告与导入计划骨架（只读预览）")
     parser.add_argument("docx", type=Path, help="交稿 .docx")
     parser.add_argument("--work", required=True, help="作品号，如 S4_04")
@@ -566,16 +572,16 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if not args.docx.is_file():
-        print(f"[阻断] 交稿不存在：{args.docx}")
+        print(f"[阻断] 交稿不存在：{args.docx}", file=sys.stderr)
         return 2
     jp_dir = args.jp_dir
     if jp_dir is None:
         if not args.jp_root.is_dir():
-            print(f"[阻断] 日文参考根目录不存在：{args.jp_root}")
+            print(f"[阻断] 日文参考根目录不存在：{args.jp_root}", file=sys.stderr)
             return 2
         jp_dir = locate_jp_dir(args.jp_root, args.work)
     if jp_dir is None or not jp_dir.is_dir():
-        print(f"[阻断] 找不到 {args.work} 的日文工作源目录：{args.jp_root}")
+        print(f"[阻断] 找不到 {args.work} 的日文工作源目录：{args.jp_root}", file=sys.stderr)
         return 2
 
     try:
@@ -585,7 +591,7 @@ def main(argv: list[str] | None = None) -> int:
             plan = skeleton(args.docx, args.work, args.book_dir, args.jp_root, jp_dir)
         report, odd, deltas = build(jp_dir, plan, args.docx, args.report)
     except PlanError as exc:
-        print(f"[阻断] {exc}")
+        print(f"[阻断] {exc}", file=sys.stderr)
         return 2
 
     if args.summary:

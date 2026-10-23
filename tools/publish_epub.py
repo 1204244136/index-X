@@ -30,6 +30,10 @@ import argparse
 import fnmatch
 import sys
 from pathlib import Path
+if __package__:
+    from .cli_output import configure_output
+else:
+    from cli_output import configure_output
 from publish_preflight import validate_publication
 
 TOOLS_DIR = Path(__file__).resolve().parent
@@ -154,6 +158,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> int:
+    configure_output()
     args = parse_args()
     cache = args.cache.resolve()
     epub_root = args.epub.resolve()
@@ -171,7 +176,7 @@ def main() -> int:
     baseline = load_manifest(cache)
     if baseline is None:
         if args.force:
-            print("警告: 未找到清单，--force 模式将把 EPUB/ 全部视为变更。")
+            print("警告: 未找到清单，--force 模式将把 EPUB/ 全部视为变更。", file=sys.stderr)
             baseline = {}
         else:
             print(
@@ -180,7 +185,7 @@ def main() -> int:
             )
             return 1
     elif args.force:
-        print("警告: --force 模式，忽略已有清单，按整本全量重建缓存。")
+        print("警告: --force 模式，忽略已有清单，按整本全量重建缓存。", file=sys.stderr)
         baseline = {}
 
     # Pre-flight: 中文基线整侧缺失时 EPUB/ 会被判成全部新增，反向发布会把整侧

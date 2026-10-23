@@ -104,6 +104,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Iterable, Sequence
 
+if __package__:
+    from .cli_output import configure_output
+else:
+    from cli_output import configure_output
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPT_PATH = Path(__file__).resolve()
 DEFAULT_ROOT = REPO_ROOT / "EPUB"
@@ -902,6 +907,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    configure_output()
     args = parse_args(argv)
 
     if args.list_categories:

@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import io
 import sys
 import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+from contextlib import redirect_stderr, redirect_stdout
 
 TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
@@ -365,6 +367,23 @@ class AlignmentTests(unittest.TestCase):
                 check_alignment.pair_problems(header, japanese, chinese), [])
         problems = check_alignment.pair_problems("S1_01-01", japanese, chinese)
         self.assertTrue(any(p.startswith("<br/> 位置") for p in problems))
+
+
+class AlignmentCliOutputTests(unittest.TestCase):
+    def test_missing_and_empty_scopes_report_setup_errors_on_stderr(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            for name, create in (("missing", False), ("empty", True)):
+                with self.subTest(name=name):
+                    source = Path(tmp) / name
+                    if create:
+                        source.mkdir()
+                    output, errors = io.StringIO(), io.StringIO()
+                    with patch.object(sys, "argv", ["check_alignment.py", "--root", str(source),
+                                                   "--jp-root", str(source)]):
+                        with redirect_stdout(output), redirect_stderr(errors):
+                            self.assertEqual(check_alignment.main(), 2)
+                    self.assertEqual(output.getvalue(), "")
+                    self.assertTrue(errors.getvalue())
 
 
 if __name__ == "__main__":

@@ -75,6 +75,14 @@ def context(line: str, old: str, new: str, width: int = 14) -> str:
 
 
 def main() -> int:
+    # 模板可复制到任意临时目录独立运行，不依赖仓库内工具的导入路径。
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if callable(reconfigure):
+            try:
+                reconfigure(encoding="utf-8", errors="backslashreplace")
+            except (OSError, ValueError):
+                pass
     parser = argparse.ArgumentParser(description="译名统一：显式映射 + 逐条预检")
     parser.add_argument("--apply", action="store_true", help="预检全过后写盘（默认只预览）")
     parser.add_argument("--epub", default="EPUB", help="EPUB 归档根目录（默认 EPUB/）")

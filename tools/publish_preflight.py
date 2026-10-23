@@ -6,6 +6,10 @@ import sys
 import subprocess
 from pathlib import Path
 
+if __package__:
+    from .cli_output import configure_output
+else:
+    from cli_output import configure_output
 from check_alignment import audit_roots
 from check_epub_health import audit_book, CHECK_ORDER, exempt, find_identifier_duplicates
 from check_note_order import check_book
@@ -89,9 +93,7 @@ def validate_publication(cn_root: Path, jp_root: Path | None = None,
 
 
 def main(argv: list[str] | None = None) -> int:
-    if hasattr(sys.stdout, "reconfigure"):
-        sys.stdout.reconfigure(encoding="utf-8")
-        sys.stderr.reconfigure(encoding="utf-8")
+    configure_output()
     parser = argparse.ArgumentParser(description="发布前只读预检，任一硬失败即阻断")
     parser.add_argument("--source", type=Path, default=Path(__file__).resolve().parents[1] / "EPUB")
     parser.add_argument("--jp-root", type=Path, help="可选日文参考；缺省仅检查中文成品")

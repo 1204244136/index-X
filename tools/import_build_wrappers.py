@@ -25,14 +25,20 @@ from __future__ import annotations
 
 import argparse
 import re
+import sys
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
+if __package__:
+    from .cli_output import configure_output
+else:
+    from cli_output import configure_output
 from docx_source import esc
 from edit_safety import EditSafetyError, add_edit_mode, require_edit_target
 from file_transaction import atomic_write_bytes, rollback_paths
 from import_plan import PlanError, load_plan
+from path_safety import require_report_target
 from title_rules import audit_title_contract
 
 HEAD3 = ('<html xmlns="http://www.w3.org/1999/xhtml" '
@@ -191,6 +197,7 @@ def render_opf(plan: dict, text_order: list[str], uid: str, author: str, descrip
 
 
 def main(argv: list[str] | None = None) -> int:
+    configure_output()
     parser = argparse.ArgumentParser(description="正文 + 计划 + 素材 → 包装页与容器文件")
     parser.add_argument("plan", type=Path, help="导入计划 plan.json")
     parser.add_argument("--template", type=Path, required=True, help="模板书目录（同系列已入库的一卷）")
@@ -206,19 +213,39 @@ def main(argv: list[str] | None = None) -> int:
     try:
         plan = load_plan(args.plan)
     except PlanError as exc:
-        print(f"[阻断] {exc}")
+        print(f"[阻断] {exc}", file=sys.stderr)
         return 2
     missing_template = [name for name in TEMPLATE_FILES if not (args.template / name).is_file()]
     if missing_template:
-        print(f"[阻断] 模板书缺少：{missing_template}")
+        print(f"[阻断] 模板书缺少：{missing_template}", file=sys.stderr)
         return 2
     for page, path in (("制作信息", args.info), ("简介", args.intro)):
         if not path.is_file():
-            print(f"[阻断] {page}正文块不存在：{path}")
+            print(f"[阻断] {page}正文块不存在：{path}", file=sys.stderr)
             return 2
 
     text_dir = args.out / "OEBPS" / "Text"
     image_dir = args.out / "OEBPS" / "Images"
+    report_target = None
+    if args.report:
+        protected_files = [args.plan, args.info, args.intro, *text_dir.glob("*.xhtml"),
+                           *(args.template / name for name in TEMPLATE_FILES),
+                           *(image_dir / entry["dst"] for entry in plan["images"])]
+        protected_dirs = [args.template, args.out]
+        if plan.get("source_docx"):
+            protected_files.append(Path(plan["source_docx"]))
+        if plan.get("images_source"):
+            source_root = Path(plan["images_source"])
+            protected_dirs.append(source_root)
+            protected_files.extend(source_root / entry["src"] for entry in plan["images"])
+        if plan.get("jp_root"):
+            protected_dirs.append(Path(plan["jp_root"]) / plan.get("jp_dir", ""))
+        try:
+            report_target = require_report_target(args.report, protected_files=protected_files,
+                                                  protected_dirs=protected_dirs)
+        except ValueError as exc:
+            print(f"[阻断] {exc}", file=sys.stderr)
+            return 2
     work_id = plan["work_id"]
     report: list[str] = []
     text_order: list[str] = []
@@ -258,9 +285,9 @@ def main(argv: list[str] | None = None) -> int:
         report.append(f"{note_file}：译注页（不进目录，排在 spine 末尾）")
 
     if problems:
-        print("包装页与容器文件未生成：")
+        print("[阻断] 包装页与容器文件未生成：", file=sys.stderr)
         for item in problems:
-            print(f"  - {item}")
+            print(f"  - {item}", file=sys.stderr)
         return 1
 
     pages = {
@@ -290,31 +317,44 @@ def main(argv: list[str] | None = None) -> int:
     title_issues = audit_title_contract(candidates)
     if title_issues:
         for _check, name, line, message in title_issues:
-            print(f"[阻断] {name}:{line} {message}")
+            print(f"[阻断] {name}:{line} {message}", file=sys.stderr)
         return 1
     print("\n".join(report))
     print(f"将写入包装页 {len(pages)} 个、容器文件 {len(documents)} 个、样式表与 container.xml 各 1 个")
+    mode = "已写入" if args.apply else "预览，未生成包装页与容器文件"
+    report_data = (f"模式：{mode}\n" + "\n".join(report) + "\n").encode("utf-8")
 
     if not args.apply:
         print("[预览] 加 --apply 写盘")
-        return 0
-    try:
-        target = require_edit_target(args.out, args.staging)
-    except EditSafetyError as exc:
-        print(f"[阻断] {exc}")
-        return 2
-    with rollback_paths([target]):
-        for name, content in pages.items():
-            atomic_write_bytes(target / "OEBPS" / "Text" / name, content.encode("utf-8"))
-        for name, content in documents.items():
-            atomic_write_bytes(target / name, content.encode("utf-8"))
-        atomic_write_bytes(target / "mimetype", b"application/epub+zip")
-        for name in ("OEBPS/Styles/style.css", "META-INF/container.xml"):
-            atomic_write_bytes(target / name, (args.template / name).read_bytes())
-    print(f"已写入：{target}")
-    if args.report:
-        args.report.parent.mkdir(parents=True, exist_ok=True)
-        args.report.write_text("\n".join(report) + "\n", encoding="utf-8", newline="\n")
+    else:
+        try:
+            target = require_edit_target(args.out, args.staging)
+        except EditSafetyError as exc:
+            print(f"[阻断] {exc}", file=sys.stderr)
+            return 2
+        try:
+            with rollback_paths([target, *([report_target] if report_target else [])]):
+                for name, content in pages.items():
+                    atomic_write_bytes(target / "OEBPS" / "Text" / name, content.encode("utf-8"))
+                for name, content in documents.items():
+                    atomic_write_bytes(target / name, content.encode("utf-8"))
+                atomic_write_bytes(target / "mimetype", b"application/epub+zip")
+                for name in ("OEBPS/Styles/style.css", "META-INF/container.xml"):
+                    atomic_write_bytes(target / name, (args.template / name).read_bytes())
+                if report_target:
+                    atomic_write_bytes(report_target, report_data)
+        except OSError as exc:
+            print(f"[阻断] 包装页或报告写入失败，已尝试回滚：{exc}", file=sys.stderr)
+            return 1
+        print(f"已写入：{target}")
+    if report_target:
+        if not args.apply:
+            try:
+                atomic_write_bytes(report_target, report_data)
+            except OSError as exc:
+                print(f"[阻断] 报告写入失败：{exc}", file=sys.stderr)
+                return 1
+        print(f"报告：{report_target}")
     return 0
 
 

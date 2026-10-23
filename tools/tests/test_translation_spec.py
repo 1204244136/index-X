@@ -6,6 +6,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
@@ -102,6 +103,20 @@ class P9EndToEndTests(unittest.TestCase):
     def test_clean_book_reports_no_p9(self):
         self.build_book(["这附近的路好像是十公里长跑的指定路线。"])
         self.assertEqual(self.run_checker(), [])
+
+    def test_invalid_input_root_returns_two_without_writing_reports(self):
+        for kind in ("missing", "file"):
+            with self.subTest(kind=kind):
+                if kind == "file":
+                    self.cache.write_text("not a directory", encoding="utf-8")
+                output, errors = io.StringIO(), io.StringIO()
+                with patch.object(sys, "argv", ["check_translation_spec.py", "--cache", str(self.cache),
+                                               "--output", str(self.out)]):
+                    with contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
+                        self.assertEqual(cts.main(), 2)
+                self.assertEqual(output.getvalue(), "")
+                self.assertIn(str(self.cache), errors.getvalue())
+                self.assertFalse(self.out.exists())
 
 
 class P16TraditionalChineseTests(unittest.TestCase):

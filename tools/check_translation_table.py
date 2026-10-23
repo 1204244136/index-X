@@ -63,6 +63,10 @@ import sys
 from collections import Counter
 from pathlib import Path
 
+if __package__:
+    from .cli_output import configure_output
+else:
+    from cli_output import configure_output
 from xhtml_text import strip_ruby_annotations
 from title_rules import split_heading_markup
 
@@ -733,6 +737,7 @@ def compare(entries: list[dict[str, str]], jp_books: dict[str, str],
 
 
 def main(argv: list[str] | None = None) -> int:
+    configure_output()
     ap = argparse.ArgumentParser(
         description="译名表 ↔ 成品落地核对（只读）",
         formatter_class=argparse.RawDescriptionHelpFormatter)

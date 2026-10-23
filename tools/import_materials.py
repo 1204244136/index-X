@@ -30,6 +30,10 @@ import argparse
 import re
 from pathlib import Path
 
+if __package__:
+    from .cli_output import configure_output
+else:
+    from cli_output import configure_output
 from docx_source import read_docx, split_chapters
 from epub_ids import book_id
 from image_signature import IMAGE_SUFFIXES, dimensions, pillow_available
@@ -128,6 +132,7 @@ def check_template(path: Path) -> tuple[bool, str]:
 
 
 def main(argv: list[str] | None = None) -> int:
+    configure_output()
     parser = argparse.ArgumentParser(description="新书导入的材料核对门禁（只读）：材料不齐就不开工")
     parser.add_argument("--docx", type=Path, default=None, help="交稿 .docx")
     parser.add_argument("--images", type=Path, default=None, help="图片素材目录")

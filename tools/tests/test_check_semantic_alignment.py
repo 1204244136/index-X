@@ -41,7 +41,11 @@ class SemanticPipelineTests(unittest.TestCase):
             cache = Path(tmp)
             (cache / "chinese-text").mkdir()
             (cache / "japanese-text").mkdir()
-            self.assertEqual(semantic.run_pipeline(cache, l1_only=True), 2)
+            output, errors = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
+                self.assertEqual(semantic.run_pipeline(cache, l1_only=True), 2)
+            self.assertEqual(output.getvalue(), "")
+            self.assertIn("未找到匹配", errors.getvalue())
 
     def test_missing_cache_and_read_failure_are_nonzero(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -80,7 +84,11 @@ class SemanticPipelineTests(unittest.TestCase):
             cache = Path(tmp)
             add_unit(cache, "S1_01", 1)
             with patch.object(semantic, "get_embedding_model", return_value=None):
-                self.assertEqual(semantic.run_pipeline(cache, strict=True), 2)
+                output, errors = io.StringIO(), io.StringIO()
+                with contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
+                    self.assertEqual(semantic.run_pipeline(cache, strict=True), 2)
+            self.assertNotIn("无法载入", output.getvalue())
+            self.assertIn("无法载入", errors.getvalue())
 
     def test_vector_runtime_failure_is_nonzero(self):
         with tempfile.TemporaryDirectory() as tmp:

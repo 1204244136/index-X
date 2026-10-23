@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -175,6 +177,25 @@ class PrintedPageAnalysisTests(unittest.TestCase):
             self.assertFalse((epub_book / "composition-metrics.csv").exists())
             with self.assertRaises(SystemExit):
                 default_csv_path([{"source": str(epub_book)}, {"source": str(cache_book)}])
+
+    def test_cli_json_remains_parseable_when_writing_single_or_multi_book_csv(self):
+        books = [make_book(self.root / name, {
+            "S1_01-01_Chapter1.xhtml": "<h1>第一章</h1><p>正文</p>",
+        }) for name in ("one", "two")]
+        for count in (1, 2):
+            with self.subTest(book_count=count):
+                output = self.root / f"report-{count}.csv"
+                result = subprocess.run(
+                    [sys.executable, str(Path(__file__).resolve().parents[1] / "epub_composition_metrics.py"),
+                     *(str(book) for book in books[:count]), "--json", "--csv", str(output)],
+                    capture_output=True, text=True, encoding="utf-8", check=False,
+                )
+                self.assertEqual(result.returncode, 0, result.stderr)
+                reports = json.loads(result.stdout)
+                self.assertEqual(len(reports), count)
+                self.assertTrue(output.is_file())
+                self.assertIn("CSV 已写入", result.stderr)
+                self.assertTrue(output.read_text(encoding="utf-8-sig").strip())
 
 
 if __name__ == "__main__":

@@ -4,9 +4,14 @@ from __future__ import annotations
 
 import argparse
 import re
+import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
+if __package__:
+    from .cli_output import configure_output
+else:
+    from cli_output import configure_output
 from alignment_rules import pairing_header_of
 from edit_safety import (EditSafetyError, add_content_roots, add_edit_mode,
                          content_roots, require_edit_target)
@@ -57,6 +62,7 @@ def plan_sync(japanese: list[str], chinese: list[str]) -> tuple[list[str] | None
 
 
 def main() -> int:
+    configure_output()
     parser = argparse.ArgumentParser(description="同步已对齐中日 XHTML 的 pb 标签（默认预览）")
     add_content_roots(parser, paired=True)
     add_edit_mode(parser)
@@ -90,8 +96,8 @@ def main() -> int:
         parser.error(str(exc))
     if refused:
         for issue in refused:
-            print(f"[拒绝] {issue}")
-        print("预检未通过；没有写入任何文件。")
+            print(f"[拒绝] {issue}", file=sys.stderr)
+        print("预检未通过；没有写入任何文件。", file=sys.stderr)
         return 1
     if args.apply:
         for path, raw, lines in plans:

@@ -20,6 +20,11 @@ import sys
 import unicodedata
 from pathlib import Path
 
+if __package__:
+    from .cli_output import configure_output
+else:
+    from cli_output import configure_output
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_DOC = REPO_ROOT / "docs" / "illustration-text-mapping.md"
 DEFAULT_JP_ROOT = REPO_ROOT / ".cache" / "epub-work" / "japanese-text"
@@ -143,7 +148,8 @@ def relocate(jp_root: Path, vol: str, expected: str) -> int | None:
     return best[1] if best else None
 
 
-def check(doc: Path, jp_root: Path, limit: int) -> tuple[int, list[dict[str, object]], list[str]]:
+def check(doc: Path, jp_root: Path, limit: int = 0) -> tuple[int, list[dict[str, object]], list[str]]:
+    """返回完整核对结果；兼容旧调用的 limit，样例限制仅在终端应用。"""
     rows, problems = read_rows(doc)
     cache: dict[tuple[str, str], dict[int, list[str]]] = {}
     unresolved: list[dict[str, object]] = []
@@ -187,28 +193,33 @@ def check(doc: Path, jp_root: Path, limit: int) -> tuple[int, list[dict[str, obj
     if problems:
         unresolved.extend({"vol": "-", "image": "-", "kind": "format", "detail": text}
                           for text in problems)
-    return checked, unresolved[:limit] if limit else unresolved, [f"跳过 {skipped}"]
+    return checked, unresolved, [f"跳过 {skipped}"]
 
 
 def main(argv: list[str] | None = None) -> int:
+    configure_output()
     parser = argparse.ArgumentParser(description="核对插图映射表的正文行号锚点（只读）")
     parser.add_argument("--doc", type=Path, default=DEFAULT_DOC, help="映射表 Markdown 路径")
     parser.add_argument("--jp-root", type=Path, default=DEFAULT_JP_ROOT, help="日文缓存根目录")
     parser.add_argument("--limit", type=int, default=0, help="只显示前 N 条问题（0 = 全部）")
     parser.add_argument("--json", type=Path, default=None, help="把结果写成 JSON 报告")
     args = parser.parse_args(argv)
+    if args.limit < 0:
+        parser.error("--limit 必须是非负整数")
 
     if not args.doc.is_file():
-        print(f"缺少映射表：{args.doc}")
+        print(f"缺少映射表：{args.doc}", file=sys.stderr)
         return 2
     if not args.jp_root.is_dir():
-        print(f"缺少日文缓存：{args.jp_root}（先运行 ./tools/pull.ps1 建立缓存）")
+        print(f"缺少日文缓存：{args.jp_root}（先运行 ./tools/pull.ps1 建立缓存）", file=sys.stderr)
         return 2
 
-    checked, unresolved, notes = check(args.doc, args.jp_root, args.limit)
+    checked, unresolved, notes = check(args.doc, args.jp_root)
     print(f"插图映射核对：有锚点 {checked} 行／问题 {len(unresolved)} 条（{'；'.join(notes)}）")
-    for item in unresolved:
+    for item in unresolved[:args.limit] if args.limit else unresolved:
         print(f"  {item['vol']} {item['image']}: {item['detail']}")
+    if args.limit and len(unresolved) > args.limit:
+        print(f"  …另有 {len(unresolved) - args.limit} 条；用 --limit 0 显示全部，或用 --json 路径导出完整报告")
     if args.json:
         args.json.parent.mkdir(parents=True, exist_ok=True)
         args.json.write_text(json.dumps(

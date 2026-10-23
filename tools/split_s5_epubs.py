@@ -38,13 +38,15 @@ import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
 
-if hasattr(sys.stdout, "reconfigure"):
-    sys.stdout.reconfigure(encoding="utf-8")
 
 TOOLS = Path(__file__).resolve().parent
 sys.path.insert(0, str(TOOLS))
 
 import bw_preprocess  # noqa: E402
+if __package__:
+    from .cli_output import configure_output
+else:
+    from cli_output import configure_output
 from edit_safety import require_edit_target  # noqa: E402
 from epub_structure import (  # noqa: E402
     CSS_URL_RE, artifact_contract_issues, container_contract_issues,
@@ -356,6 +358,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def main(argv: list[str] | None = None) -> int:
+    configure_output()
     args = parse_args(argv)
     return split_and_process_s5(args.src, args.packed_out, args.unpacked_out, apply=args.apply)
 

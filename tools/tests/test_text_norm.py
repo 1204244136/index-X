@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import contextlib
+import io
 import sys
 import tempfile
 import unittest
@@ -15,7 +17,44 @@ from text_norm import (  # noqa: E402
     transform_line,
 )
 import reorder_notes  # noqa: E402
+import text_norm  # noqa: E402
 from reorder_notes import process_book  # noqa: E402
+
+
+class TextNormOutputTests(unittest.TestCase):
+    def test_refused_file_reports_incomplete_check_and_nonzero(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            book = root / "book"
+            book.mkdir()
+            page = book / "S1_01-01.xhtml"
+            page.write_text("<html><body><![CDATA[！？]]></body></html>", encoding="utf-8")
+            report = root / "report.md"
+            output, errors = io.StringIO(), io.StringIO()
+            with patch.object(sys, "argv", ["text_norm.py", "--root", str(root),
+                                           "--dry-run", "--report", str(report)]), \
+                    contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
+                self.assertEqual(text_norm.main(), 1)
+            self.assertIn("检查不完整", output.getvalue())
+            self.assertNotIn("  无命中。", output.getvalue())
+            self.assertIn("拒绝处理", errors.getvalue())
+            markdown = report.read_text(encoding="utf-8")
+            self.assertIn("检查不完整", markdown)
+            self.assertNotIn("无命中，未修改任何文件。", markdown)
+            self.assertIn("CDATA", page.read_text(encoding="utf-8"))
+
+    def test_complete_zero_hit_check_remains_successful(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "book").mkdir()
+            (root / "book/S1_01-01.xhtml").write_text("<html><body>正文。</body></html>", encoding="utf-8")
+            output, errors = io.StringIO(), io.StringIO()
+            with patch.object(sys, "argv", ["text_norm.py", "--root", str(root), "--dry-run"]), \
+                    contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
+                self.assertEqual(text_norm.main(), 0)
+            self.assertIn("无命中", output.getvalue())
+            self.assertNotIn("检查不完整", output.getvalue())
+            self.assertEqual(errors.getvalue(), "")
 
 
 class TextNormTransformTests(unittest.TestCase):

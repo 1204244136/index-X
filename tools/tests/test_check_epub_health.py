@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import sys
+import io
+from contextlib import redirect_stdout
 import tempfile
 import unittest
 from pathlib import Path
@@ -268,6 +270,32 @@ class HealthCheckNegativeTests(unittest.TestCase):
             "OEBPS/Text/S1_01-01_Chapter1.xhtml": GOOD[:3] + ["<h1>未闭合"] + GOOD[4:],
         })
         self.assertIn("XML 解析失败", hit[5])
+
+    def test_truncation_without_report_explains_export_options(self):
+        self.build("S1_01", {
+            "OEBPS/Text/S1_01-01_Chapter1.xhtml": GOOD[:3] + ["<h1>未闭合"] + GOOD[4:],
+        })
+        output = io.StringIO()
+        with patch.object(sys, "argv", ["check_epub_health.py", "--root", str(self.tmp),
+                                       "--only", "XML", "--top", "0", "--strict"]):
+            with redirect_stdout(output):
+                self.assertEqual(check_epub_health.main(), 1)
+        self.assertNotIn("见报告文件", output.getvalue())
+        self.assertIn("--tsv", output.getvalue())
+        self.assertIn("--json", output.getvalue())
+
+    def test_truncation_with_report_points_to_the_report(self):
+        self.build("S1_01", {
+            "OEBPS/Text/S1_01-01_Chapter1.xhtml": GOOD[:3] + ["<h1>未闭合"] + GOOD[4:],
+        })
+        report = self.tmp / "health.json"
+        output = io.StringIO()
+        with patch.object(sys, "argv", ["check_epub_health.py", "--root", str(self.tmp),
+                                       "--only", "XML", "--top", "0", "--json", str(report)]):
+            with redirect_stdout(output):
+                self.assertEqual(check_epub_health.main(), 0)
+        self.assertIn("见报告文件", output.getvalue())
+        self.assertTrue(report.is_file())
 
     def test_img_without_src(self):
         hit = self.assert_detects("XML", "S1_01", {

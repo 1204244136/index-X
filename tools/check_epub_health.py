@@ -84,11 +84,14 @@ from __future__ import annotations
 import argparse
 import json
 import re
-import sys
 import xml.etree.ElementTree as ET
 from collections import Counter, defaultdict
 from pathlib import Path
 
+if __package__:
+    from .cli_output import configure_output
+else:
+    from cli_output import configure_output
 from alignment_rules import (  # noqa: F401
     HEALTH_EXEMPT_WORK_IDS, TEMPLATE_EXEMPT_WORK_IDS, health_exempt, template_exempt,
 )
@@ -742,11 +745,8 @@ def audit_book(book_dir: Path, only: set[str] | None) -> tuple[list[tuple], Coun
 
 
 def main() -> int:
-    try:
-        sys.stdout.reconfigure(encoding="utf-8")
-    except Exception:
-        pass
 
+    configure_output()
     ap = argparse.ArgumentParser(
         description="EPUB/ 单侧只读体检（固定行模板、加粗标点、结构引用完整性等）")
     ap.add_argument("--root", type=Path, default=DEFAULT_ROOT, help="EPUB 根目录")
@@ -816,7 +816,9 @@ def main() -> int:
                 loc = "%s %s%s" % (bid, rel, ":%d" % lineno if lineno else "")
                 print("    %s — %s" % (loc, msg))
             if len(items) > args.top:
-                print("    …另有 %d 条，见报告文件" % (len(items) - args.top))
+                hint = ("见报告文件" if args.tsv or args.json else
+                        "可用 --tsv 路径或 --json 路径导出完整报告")
+                print("    …另有 %d 条，%s" % (len(items) - args.top, hint))
             print()
 
     if args.tsv:

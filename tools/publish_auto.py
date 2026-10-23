@@ -37,6 +37,10 @@ from typing import Literal, NamedTuple
 TOOLS_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(TOOLS_DIR))
 
+if __package__:
+    from .cli_output import configure_output
+else:
+    from cli_output import configure_output
 from manifest import load_manifest, scan_cache, scan_epub  # noqa: E402
 from sync_core import (  # noqa: E402
     ONEDRIVE_DEFAULTS,
@@ -431,7 +435,7 @@ def prepare_plan(args: argparse.Namespace) -> PublicationPlan:
     baseline = load_manifest(cache)
     if baseline is None:
         if args.force:
-            builder.emit("警告: 未找到清单，--force 模式按方向全量重做。")
+            builder.emit("警告: 未找到清单，--force 模式按方向全量重做。", error=True)
             baseline = {}
         else:
             builder.emit(
@@ -440,7 +444,7 @@ def prepare_plan(args: argparse.Namespace) -> PublicationPlan:
             )
             return builder.finish('blocked')
     elif args.force:
-        builder.emit("警告: --force 模式，忽略已有清单。")
+        builder.emit("警告: --force 模式，忽略已有清单。", error=True)
         baseline = {}
 
     # 与 publish.py / publish_epub.py 同一项前置检查：某一侧基线整侧缺失时，
@@ -720,6 +724,7 @@ def run_plan(plan: PublicationPlan) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
+    configure_output()
     return run_plan(prepare_plan(parse_args(argv)))
 
 

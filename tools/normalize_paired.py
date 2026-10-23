@@ -14,9 +14,14 @@ writes. Use normalize_single.py for a selected file without a paired reference.
 from __future__ import annotations
 
 import argparse
+import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
+if __package__:
+    from .cli_output import configure_output
+else:
+    from cli_output import configure_output
 from file_transaction import rollback_paths
 from alignment_rules import (JP_H1_BY_HEADER, MANUAL_ALIGNMENT_HEADERS,
                              NON_PAIR_WORK_IDS, PAIR_RULES, TEXTUAL_IMAGE_HEADERS,
@@ -30,6 +35,7 @@ from xhtml_template import has_body, rebuild, write_lines
 
 
 def main() -> int:
+    configure_output()
     parser = argparse.ArgumentParser(description="配对 XHTML 固定模板规范化（默认预览）")
     add_content_roots(parser, paired=True)
     add_edit_mode(parser)
@@ -97,7 +103,7 @@ def main() -> int:
             for path, _, _, _, _ in plans:
                 require_edit_target(path, args.staging)
     except (EditSafetyError, ValueError, OSError, UnicodeError, ET.ParseError) as exc:
-        print(f"[阻断] 规范化预检失败；没有写入任何文件：{exc}")
+        print(f"[阻断] 规范化预检失败；没有写入任何文件：{exc}", file=sys.stderr)
         return 1
 
     print(f"待改写文件：{len(plans)}；结构特例跳过：{len(skipped)}")
@@ -111,7 +117,7 @@ def main() -> int:
             for path, new, _, bom, crlf in plans:
                 write_lines(path, new, bom, crlf)
     except OSError as exc:
-        print(f"[阻断] 写入失败，已回滚本次文件：{exc}")
+        print(f"[阻断] 写入失败，已回滚本次文件：{exc}", file=sys.stderr)
         return 1
     print(f"已改写：{len(plans)}")
     return 0

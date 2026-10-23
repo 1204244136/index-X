@@ -1,6 +1,14 @@
 from __future__ import annotations
 
+import io
+import sys
+import tempfile
 import unittest
+from contextlib import redirect_stderr, redirect_stdout
+from pathlib import Path
+from unittest.mock import patch
+
+from tools import diff_paired_lines
 from tools.diff_paired_lines import (
     align_lines,
     compute_similarity,
@@ -177,6 +185,35 @@ class TestDiffPairedLines(unittest.TestCase):
         jp = parse_line("<p>彼は走った。</p>")
         cn = parse_line("<p></p>")
         self.assertLess(compute_similarity(jp, cn), 0.15)
+
+
+class DiffCliInputTests(unittest.TestCase):
+    def test_missing_cache_is_a_setup_error_for_batch_and_header_modes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cache = Path(tmp) / "missing"
+            report = Path(tmp) / "report.tsv"
+            for target in ([], ["S1_01-01"]):
+                with self.subTest(target=target):
+                    output, errors = io.StringIO(), io.StringIO()
+                    argv = ["diff_paired_lines.py", *target, "--cache", str(cache),
+                            "--tsv", str(report), "--no-progress"]
+                    with patch.object(sys, "argv", argv):
+                        with redirect_stdout(output), redirect_stderr(errors):
+                            self.assertEqual(diff_paired_lines.main(), 2)
+                    self.assertEqual(output.getvalue(), "")
+                    self.assertIn(str(cache), errors.getvalue())
+                    self.assertFalse(report.exists())
+
+    def test_missing_explicit_file_is_a_setup_error(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            jp = Path(tmp) / "missing-jp.xhtml"
+            cn = Path(tmp) / "missing-cn.xhtml"
+            output, errors = io.StringIO(), io.StringIO()
+            with patch.object(sys, "argv", ["diff_paired_lines.py", str(jp), str(cn)]):
+                with redirect_stdout(output), redirect_stderr(errors):
+                    self.assertEqual(diff_paired_lines.main(), 2)
+            self.assertEqual(output.getvalue(), "")
+            self.assertIn(str(jp), errors.getvalue())
 
 
 if __name__ == "__main__":

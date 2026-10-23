@@ -9,6 +9,10 @@ from __future__ import annotations
 import argparse
 import re
 from pathlib import Path
+if __package__:
+    from .cli_output import configure_output
+else:
+    from cli_output import configure_output
 from edit_safety import DEFAULT_EPUB, EditSafetyError, add_edit_mode, require_edit_target
 from epub_structure import REFERENCE_SUFFIXES
 
@@ -137,6 +141,7 @@ def apply_shift(root: Path, renames: dict[Path, Path], rewrites: dict[Path, byte
 
 
 def main() -> int:
+    configure_output()
     parser = argparse.ArgumentParser(
         description="整体平移一个作品的 XHTML 内容序并同步改写 OPF/NCX/nav 等引用"
     )

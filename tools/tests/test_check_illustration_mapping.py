@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import io
+import json
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -97,6 +100,41 @@ class IllustrationMappingTests(unittest.TestCase):
             "「三行目の台詞」 | — |\n",
             encoding="utf-8")
         self.assertEqual(self.run_main(), 0)
+
+    def test_limit_only_truncates_terminal_examples(self):
+        self.write_doc([
+            f"| S1_01 | image-{number}.jpg | 台詞 | missing-{number}.xhtml | 4 | 台詞 | — |"
+            for number in range(3)
+        ])
+        report = self.root / "report.json"
+        output = io.StringIO()
+        with redirect_stdout(output):
+            self.assertEqual(self.run_main("--limit", "1", "--json", str(report)), 1)
+        payload = json.loads(report.read_text(encoding="utf-8"))
+        self.assertEqual(payload["checked"], 3)
+        self.assertEqual(len(payload["problems"]), 3)
+        self.assertIn("问题 3 条", output.getvalue())
+        self.assertIn("image-0.jpg:", output.getvalue())
+        self.assertNotIn("image-1.jpg:", output.getvalue())
+
+    def test_negative_limit_is_argument_error(self):
+        self.write_doc([
+            "| S1_01 | image.jpg | 台詞 | missing.xhtml | 4 | 台詞 | — |",
+        ])
+        output, errors = io.StringIO(), io.StringIO()
+        with redirect_stdout(output), redirect_stderr(errors):
+            with self.assertRaises(SystemExit) as raised:
+                self.run_main("--limit", "-1")
+        self.assertEqual(raised.exception.code, 2)
+        self.assertEqual(output.getvalue(), "")
+        self.assertIn("--limit", errors.getvalue())
+
+    def test_missing_input_error_uses_stderr(self):
+        output, errors = io.StringIO(), io.StringIO()
+        with redirect_stdout(output), redirect_stderr(errors):
+            self.assertEqual(self.run_main(), 2)
+        self.assertEqual(output.getvalue(), "")
+        self.assertIn("缺少映射表", errors.getvalue())
 
 
 if __name__ == "__main__":

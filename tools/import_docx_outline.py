@@ -20,8 +20,13 @@ import argparse
 import collections
 import json
 import re
+import sys
 from pathlib import Path
 
+if __package__:
+    from .cli_output import configure_output
+else:
+    from cli_output import configure_output
 from docx_source import (ILLUS_RE, NOTE_BRACKET_RE, NOTE_PAREN_RE, RUBY_RE,
                          SUSPECT_WHITESPACE, chapter_kind, read_docx)
 
@@ -144,6 +149,7 @@ def summary_text(rows: list[dict], chapters: list[tuple[str, int]], blocking: li
 
 
 def main(argv: list[str] | None = None) -> int:
+    configure_output()
     parser = argparse.ArgumentParser(description="交稿 docx → 导入清单与材料门禁（只读）")
     parser.add_argument("docx", type=Path, help="交稿 .docx")
     parser.add_argument("--out", type=Path, help="清单输出文件（.tsv 或 .json）")
@@ -155,12 +161,12 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if not args.docx.is_file():
-        print(f"[{BLOCKING}] 交稿不存在：{args.docx}")
+        print(f"[{BLOCKING}] 交稿不存在：{args.docx}", file=sys.stderr)
         return 2
     try:
         paragraphs, _, _, _ = read_docx(args.docx, collapse_whitespace=False)
     except (OSError, ValueError, KeyError) as exc:
-        print(f"[{BLOCKING}] 交稿无法解析：{exc}")
+        print(f"[{BLOCKING}] 交稿无法解析：{exc}", file=sys.stderr)
         return 2
 
     rows = collect(paragraphs)["rows"]

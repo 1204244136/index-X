@@ -16,12 +16,18 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import sys
 from pathlib import Path
 
+if __package__:
+    from .cli_output import configure_output
+else:
+    from cli_output import configure_output
 from edit_safety import EditSafetyError, add_edit_mode, require_edit_target
 from file_transaction import atomic_write_bytes, rollback_paths
 from image_signature import dimensions, dhash, hamming, image_files, pillow_available
 from import_plan import PlanError, load_plan
+from path_safety import require_report_target
 
 
 def sha256_bytes(data: bytes) -> str:
@@ -30,15 +36,15 @@ def sha256_bytes(data: bytes) -> str:
 
 def suggest(args) -> int:
     if not args.src.is_dir():
-        print(f"[阻断] 素材目录不存在：{args.src}")
+        print(f"[阻断] 素材目录不存在：{args.src}", file=sys.stderr)
         return 2
     if not args.jp_dir.is_dir():
-        print(f"[阻断] 日文图片目录不存在：{args.jp_dir}")
+        print(f"[阻断] 日文图片目录不存在：{args.jp_dir}", file=sys.stderr)
         return 2
     sources = image_files(args.src)
     targets = image_files(args.jp_dir)
     if not sources or not targets:
-        print("[阻断] 素材或日文图片目录为空")
+        print("[阻断] 素材或日文图片目录为空", file=sys.stderr)
         return 2
     lines = [f"素材 {len(sources)} 张 / 日文原图 {len(targets)} 张"
              + ("" if pillow_available() else "（未安装 Pillow，只能按尺寸与文件名给低置信建议）")]
@@ -69,13 +75,28 @@ def apply(args) -> int:
     try:
         plan = load_plan(args.plan)
     except PlanError as exc:
-        print(f"[阻断] {exc}")
+        print(f"[阻断] {exc}", file=sys.stderr)
         return 2
     work_id = plan["work_id"]
     source_root = Path(plan.get("images_source", ""))
     if not plan.get("images_source") or not source_root.is_dir():
-        print(f"[阻断] 计划里的 images_source 不可用：{plan.get('images_source')!r}")
+        print(f"[阻断] 计划里的 images_source 不可用：{plan.get('images_source')!r}", file=sys.stderr)
         return 2
+
+    report_target = None
+    if args.report:
+        protected_files = [args.plan, *(source_root / entry["src"] for entry in plan["images"])]
+        protected_dirs = [source_root, args.out]
+        if plan.get("source_docx"):
+            protected_files.append(Path(plan["source_docx"]))
+        if plan.get("jp_root"):
+            protected_dirs.append(Path(plan["jp_root"]) / plan.get("jp_dir", ""))
+        try:
+            report_target = require_report_target(args.report, protected_files=protected_files,
+                                                  protected_dirs=protected_dirs)
+        except ValueError as exc:
+            print(f"[阻断] {exc}", file=sys.stderr)
+            return 2
 
     problems: list[str] = []
     payloads: dict[str, bytes] = {}
@@ -102,9 +123,9 @@ def apply(args) -> int:
     # 计划里只有封面。正文插图数量与计划的对应关系由 `import_build_text.py` 在渲染
     # 时按行断言（用掉几张必须等于登记几张），这里不再另设「至少一张」的硬门槛。
     if problems:
-        print("图片未落位：")
+        print("[阻断] 图片未落位：", file=sys.stderr)
         for item in problems:
-            print(f"  - {item}")
+            print(f"  - {item}", file=sys.stderr)
         return 1
 
     report = []
@@ -114,27 +135,41 @@ def apply(args) -> int:
         shape = f"{size[0]}x{size[1]}" if size else "尺寸未知"
         report.append(f"{name}\t{shape}\tsha256 {sha256_bytes(data)[:16]}")
     print("\n".join(report))
+    mode = "已写入" if args.apply else "预览，未复制图片"
+    report_data = (f"模式：{mode}\n" + "\n".join(report) + "\n").encode("utf-8")
     if not args.apply:
         print(f"[预览] 将写入 {len(payloads)} 张图片到 {args.out}/OEBPS/Images/；加 --apply 写盘")
-        return 0
-    try:
-        target = require_edit_target(args.out, args.staging)
-    except EditSafetyError as exc:
-        print(f"[阻断] {exc}")
-        return 2
-    image_dir = target / "OEBPS" / "Images"
-    image_dir.mkdir(parents=True, exist_ok=True)
-    with rollback_paths([image_dir]):
-        for name, data in sorted(payloads.items()):
-            atomic_write_bytes(image_dir / name, data)
-    if args.report:
-        args.report.parent.mkdir(parents=True, exist_ok=True)
-        args.report.write_text("\n".join(report) + "\n", encoding="utf-8", newline="\n")
-    print(f"已写入 {len(payloads)} 张图片：{image_dir}")
+    else:
+        try:
+            target = require_edit_target(args.out, args.staging)
+        except EditSafetyError as exc:
+            print(f"[阻断] {exc}", file=sys.stderr)
+            return 2
+        image_dir = target / "OEBPS" / "Images"
+        try:
+            with rollback_paths([image_dir, *([report_target] if report_target else [])]):
+                image_dir.mkdir(parents=True, exist_ok=True)
+                for name, data in sorted(payloads.items()):
+                    atomic_write_bytes(image_dir / name, data)
+                if report_target:
+                    atomic_write_bytes(report_target, report_data)
+        except OSError as exc:
+            print(f"[阻断] 图片或报告写入失败，已尝试回滚：{exc}", file=sys.stderr)
+            return 1
+        print(f"已写入 {len(payloads)} 张图片：{image_dir}")
+    if report_target:
+        if not args.apply:
+            try:
+                atomic_write_bytes(report_target, report_data)
+            except OSError as exc:
+                print(f"[阻断] 报告写入失败：{exc}", file=sys.stderr)
+                return 1
+        print(f"报告：{report_target}")
     return 0
 
 
 def main(argv: list[str] | None = None) -> int:
+    configure_output()
     parser = argparse.ArgumentParser(description="图片素材 → 归档命名与落位")
     sub = parser.add_subparsers(dest="command", required=True)
 

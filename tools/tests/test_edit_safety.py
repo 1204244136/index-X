@@ -4,6 +4,7 @@ import contextlib
 import importlib
 import io
 import os
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -32,6 +33,89 @@ def xhtml(*body: str) -> str:
     return "\n".join(['<?xml version="1.0" encoding="utf-8"?>', '<!DOCTYPE html>',
                       '<html><head></head><body>', '<h1>章</h1>', '',
                       *body, '</body></html>', ''])
+
+
+class OutputStreamCliTests(unittest.TestCase):
+    def run_cli(self, module, *args):
+        return subprocess.run([sys.executable, "-B", str(TOOLS / f"{module}.py"), *map(str, args)],
+                              capture_output=True, text=True, encoding="utf-8", check=False)
+
+    def test_input_failures_use_stderr_without_polluting_results(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            missing = root / "不存在"
+            cases = (
+                ("normalize_single", ["--dir", missing], 1, "目录不存在"),
+                ("merge_bw_pages", [root], 1, "没有 p-NNN.xhtml"),
+                ("import_docx_outline", [missing.with_suffix(".docx")], 2, "交稿不存在"),
+                ("import_align_plan", [missing.with_suffix(".docx"), "--work", "S4_04"], 2, "交稿不存在"),
+                ("import_build_text", [missing.with_suffix(".json"), "--out", root / "out"], 2, "计划文件不存在"),
+                ("bw_preprocess", [missing], 1, "不存在"),
+                ("epub2docx", [missing], 1, "不存在"),
+            )
+            for module, args, status, message in cases:
+                with self.subTest(tool=module):
+                    result = self.run_cli(module, *args)
+                    self.assertEqual(result.returncode, status, result.stderr)
+                    self.assertIn(message, result.stderr)
+                    self.assertNotIn(message, result.stdout)
+                    self.assertNotIn("Traceback", result.stderr)
+
+    def test_unsafe_repairs_keep_summary_on_stdout_and_refusal_on_stderr(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root, jp_root = Path(tmp) / "cn", Path(tmp) / "jp"
+            cn = root / "【S1_01】书" / "S1_01-01_Chapter.xhtml"
+            jp = jp_root / "【S1_01】本" / "S1_01-01.xhtml"
+            cn.parent.mkdir(parents=True)
+            jp.parent.mkdir(parents=True)
+            cases = (
+                ("normalize_paired", xhtml("<p>甲</span>"), xhtml("<p>日文</p>"), 1, "[阻断]"),
+                ("sync_pb_tags", xhtml("<h2>甲</h2>"), xhtml('<p class="pb">日文</p>'), 1, "[拒绝]"),
+                ("restore_cn_scene_breaks", xhtml("<h2>甲</h2>"), xhtml("<p>日文</p>", "<br/>"), 0, "[跳过]"),
+            )
+            for module, chinese, japanese, status, diagnostic in cases:
+                with self.subTest(tool=module):
+                    cn.write_text(chinese, encoding="utf-8")
+                    jp.write_text(japanese, encoding="utf-8")
+                    result = self.run_cli(module, "--root", root, "--jp-root", jp_root)
+                    self.assertEqual(result.returncode, status, result.stderr)
+                    self.assertIn(diagnostic, result.stderr)
+                    self.assertNotIn(diagnostic, result.stdout)
+                    self.assertEqual(cn.read_text(encoding="utf-8"), chinese)
+
+    def test_note_and_image_refusals_keep_preview_summary_on_stdout(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            text_dir = root / "【S1_01】书" / "OEBPS/Text"
+            text_dir.mkdir(parents=True)
+            (text_dir / "S1_01-Note.xhtml").write_text(
+                '<html><body><ul><li id="note1">孤立译注</li></ul></body></html>', encoding="utf-8")
+            result = self.run_cli("reorder_notes", "--root", root)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("定义集合与引用集合不一致", result.stderr)
+            self.assertNotIn("定义集合与引用集合不一致", result.stdout)
+            self.assertIn("预览", result.stdout)
+
+            image_page = text_dir / "S1_01-01_Chapter.xhtml"
+            invalid = xhtml('<img src="../Images/a.jpg"/>', '</span>')
+            image_page.write_text(invalid, encoding="utf-8")
+            result = self.run_cli("wrap_cn_image_lines", "--root", root, "--wrap-only")
+            self.assertEqual(result.returncode, 1, result.stderr)
+            self.assertIn("拒绝写入", result.stderr)
+            self.assertNotIn("拒绝写入", result.stdout)
+            self.assertIn("预览", result.stdout)
+            self.assertEqual(image_page.read_text(encoding="utf-8"), invalid)
+
+    def test_bw_runtime_warning_is_separate_from_merge_findings(self):
+        module = importlib.import_module("bw_preprocess")
+        output, errors = io.StringIO(), io.StringIO()
+        stats = {"total": 0, "content": 0, "changed": 0, "issues": [],
+                 "merge_notes": ["[OPF更新警告] 更新失败", "[插图归属] 请核对"]}
+        with contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
+            module.report_stats("测试", stats, True, False)
+        self.assertIn("[OPF更新警告]", errors.getvalue())
+        self.assertNotIn("[OPF更新警告]", output.getvalue())
+        self.assertIn("[插图归属]", output.getvalue())
 
 
 class EditTargetTests(unittest.TestCase):

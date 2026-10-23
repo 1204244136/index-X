@@ -43,6 +43,11 @@ from pathlib import Path
 from typing import NamedTuple
 
 try:
+    from tools.cli_output import configure_output
+except ImportError:
+    from cli_output import configure_output
+
+try:
     from tools.alignment_rules import (
         MANUAL_ALIGNMENT_HEADERS,
         NON_PAIR_WORK_IDS,
@@ -688,11 +693,7 @@ def _print_conflicts(pairs: list[AlignedPair], conflicts: list[tuple[int, Aligne
 
 
 def main():
-    if sys.stdout and hasattr(sys.stdout, "reconfigure"):
-        try:
-            sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-        except Exception:
-            pass
+    configure_output()
     parser = argparse.ArgumentParser(description="中日 XHTML 逐行对比与对齐诊断工具")
     parser.add_argument("target", nargs="?", default=None,
                         help="表头编号（如 S1_01-02）或日文文件路径；省略则批量检查全部配对文件")
@@ -713,20 +714,32 @@ def main():
         if args.target is not None:
             parser.error("批量模式不接受表头参数")
         tsv = args.tsv or (Path(args.cache) / "diff-paired-lines.tsv")
-        return run_batch(Path(args.cache), args.only_diff, not args.no_progress, tsv,
-                         args.work)
+        try:
+            return run_batch(Path(args.cache), args.only_diff, not args.no_progress, tsv,
+                             args.work)
+        except OSError as exc:
+            print(f"[错误] 无法读取配对输入：{exc}", file=sys.stderr)
+            return 2
 
-    if args.cn_path:
-        jp_file = Path(args.target)
-        cn_file = Path(args.cn_path)
-        title = f"{jp_file.name} vs {cn_file.name}"
-    else:
-        cache_path = Path(args.cache)
-        jp_file, cn_file = locate_pair_by_header(args.target, cache_path)
-        title = args.target
+    try:
+        if args.cn_path:
+            jp_file = Path(args.target)
+            cn_file = Path(args.cn_path)
+            for side, path in (("日文", jp_file), ("中文", cn_file)):
+                if not path.is_file():
+                    print(f"[错误] {side}输入文件不存在或不是文件：{path}", file=sys.stderr)
+                    return 2
+            title = f"{jp_file.name} vs {cn_file.name}"
+        else:
+            cache_path = Path(args.cache)
+            jp_file, cn_file = locate_pair_by_header(args.target, cache_path)
+            title = args.target
 
-    jp_lines = [parse_line(line) for line in jp_file.read_text(encoding="utf-8", errors="ignore").splitlines()]
-    cn_lines = [parse_line(line) for line in cn_file.read_text(encoding="utf-8", errors="ignore").splitlines()]
+        jp_lines = [parse_line(line) for line in jp_file.read_text(encoding="utf-8", errors="ignore").splitlines()]
+        cn_lines = [parse_line(line) for line in cn_file.read_text(encoding="utf-8", errors="ignore").splitlines()]
+    except OSError as exc:
+        print(f"[错误] 无法读取配对输入：{exc}", file=sys.stderr)
+        return 2
 
     pairs = align_lines(jp_lines, cn_lines)
     max_disp = len(pairs) if args.all else 60

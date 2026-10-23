@@ -27,6 +27,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterable
 
+if __package__:
+    from .cli_output import configure_output
+else:
+    from cli_output import configure_output
 from alignment_rules import NON_PAIR_WORK_IDS, pairing_header_of
 from epub_ids import book_id, japanese_book_id
 from image_signature import dhash_image, hamming
@@ -842,6 +846,7 @@ def scan(cache: Path, pattern: str) -> dict:
 
 
 def main(argv: list[str] | None = None) -> int:
+    configure_output()
     parser = argparse.ArgumentParser(description="比较缓存中成对中文/日文 EPUB 的图片内容")
     parser.add_argument("--cache", type=Path, default=Path(".cache/epub-work"), help="EPUB 缓存根目录")
     parser.add_argument("--output", type=Path, default=None, help="报告目录；默认写入 <cache>/image-comparison")

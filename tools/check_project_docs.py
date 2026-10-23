@@ -6,6 +6,11 @@ import re
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
+if __package__:
+    from .cli_output import configure_output
+else:
+    from cli_output import configure_output
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 LINK = re.compile(r"\[[^\]\n]+\]\((<[^>]+>|[^)\n]+)\)")
 TOOL_FILE = re.compile(r"`([A-Za-z0-9_.-]+\.(?:py|ps1|json))`")
@@ -453,6 +458,7 @@ def single_source_issues(root: Path) -> list[str]:
 
 
 def main(argv: list[str] | None = None) -> int:
+    configure_output()
     parser = argparse.ArgumentParser(description="只读检查文档链接、索引登记、回指、工具簇归属与单一来源")
     parser.add_argument("--root", type=Path, default=REPO_ROOT)
     args = parser.parse_args(argv)

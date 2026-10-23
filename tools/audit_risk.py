@@ -21,6 +21,11 @@ import json
 import re
 import sys
 
+if __package__:
+    from .cli_output import configure_output
+else:
+    from cli_output import configure_output
+
 # 常见日文新字体 / 异体字（简体中文成书应转化为规范简化字）
 JP_SHINJITAI = {
     '浜': '滨', '沢': '泽', '黒': '黑', '広': '广', '単': '单', '気': '气',
@@ -179,8 +184,7 @@ def audit_risk_details(old: str, new: str, jp: str = "",
 
 
 def main(argv: list[str] | None = None) -> int:
-    if hasattr(sys.stdout, "reconfigure"):
-        sys.stdout.reconfigure(encoding="utf-8")
+    configure_output()
     parser = argparse.ArgumentParser(description="对单处译文改动进行语义与规范风险诊断")
     parser.add_argument("--old", required=True, help="旧译文（支持带 HTML）")
     parser.add_argument("--new", required=True, help="新译文（支持带 HTML）")

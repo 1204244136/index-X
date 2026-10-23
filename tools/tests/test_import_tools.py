@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import base64
+import contextlib
+import io
 import json
 import sys
 import tempfile
@@ -8,6 +10,7 @@ import unittest
 import xml.sax.saxutils
 import zipfile
 from pathlib import Path
+from unittest.mock import patch
 
 TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
@@ -290,6 +293,89 @@ class BuildTextTests(unittest.TestCase):
 
 
 class WrappersTests(unittest.TestCase):
+    def test_report_write_error_restores_wrappers_and_existing_report(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            jp, staged, template, materials = self._material(root)
+            materials.mkdir(parents=True)
+            info, intro = materials / "info.txt", materials / "intro.txt"
+            info.write_text('<h1>制作信息</h1>\n\n<p>翻译：甲</p>\n', encoding="utf-8")
+            intro.write_text('<h1>简介</h1>\n\n<p>简介正文。</p>\n', encoding="utf-8")
+            plan_path = import_plan.write_plan(root / "plan.json", sample_plan(jp))
+            report = root / "existing-report.txt"
+            report.write_bytes(b"old report")
+            before = {p.relative_to(root): p.read_bytes() for p in root.rglob("*") if p.is_file()}
+            real_write = import_build_wrappers.atomic_write_bytes
+
+            def fail_report(path, data):
+                if path == report:
+                    raise OSError("simulated report write failure")
+                return real_write(path, data)
+
+            errors = io.StringIO()
+            with patch.object(import_build_wrappers, "atomic_write_bytes", side_effect=fail_report), \
+                    contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(errors):
+                code = import_build_wrappers.main([str(plan_path), "--template", str(template),
+                                                   "--info", str(info), "--intro", str(intro),
+                                                   "--out", str(staged), "--report", str(report),
+                                                   "--apply", "--staging"])
+            self.assertEqual(code, 1)
+            self.assertIn("报告写入失败", errors.getvalue())
+            self.assertEqual({p.relative_to(root): p.read_bytes() for p in root.rglob("*") if p.is_file()}, before)
+
+    def test_report_collisions_are_rejected_before_any_wrapper_write(self):
+        for apply in (False, True):
+            for collision in ("body", "plan", "template", "info", "intro", "japanese", "source", "output"):
+                with self.subTest(apply=apply, collision=collision), tempfile.TemporaryDirectory() as tmp:
+                    root = Path(tmp)
+                    jp, staged, template, materials = self._material(root)
+                    materials.mkdir(parents=True)
+                    info, intro = materials / "info.txt", materials / "intro.txt"
+                    info.write_text('<h1>制作信息</h1>\n\n<p>翻译：甲</p>\n', encoding="utf-8")
+                    intro.write_text('<h1>简介</h1>\n\n<p>简介正文。</p>\n', encoding="utf-8")
+                    source = root / "source"
+                    source.mkdir()
+                    (source / "cover.jpg").write_bytes(PNG_1PX)
+                    plan = sample_plan(jp)
+                    plan["images_source"] = str(source)
+                    plan_path = import_plan.write_plan(root / "plan.json", plan)
+                    reports = {
+                        "body": staged / "OEBPS/Text/S4_04-01_Before_the_Prologue.xhtml",
+                        "plan": plan_path, "template": template / "OEBPS/Styles/style.css",
+                        "info": info, "intro": intro, "japanese": jp / "item/xhtml/S4_04-01.xhtml",
+                        "source": source / "cover.jpg", "output": staged / "new-report.txt",
+                    }
+                    before = {p.relative_to(root): p.read_bytes() for p in root.rglob("*") if p.is_file()}
+                    output, errors = io.StringIO(), io.StringIO()
+                    args = [str(plan_path), "--template", str(template), "--info", str(info),
+                            "--intro", str(intro), "--out", str(staged), "--report", str(reports[collision])]
+                    args += ["--apply", "--staging"] if apply else ["--dry-run"]
+                    with contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
+                        code = import_build_wrappers.main(args)
+                    self.assertEqual({p.relative_to(root): p.read_bytes() for p in root.rglob("*") if p.is_file()}, before)
+                    self.assertEqual(code, 2)
+                    self.assertIn("报告", errors.getvalue())
+                    self.assertNotIn("已写入", output.getvalue())
+
+    def test_preview_writes_explicit_report_without_writing_wrappers(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            jp, staged, template, materials = self._material(root)
+            materials.mkdir(parents=True)
+            info, intro = materials / "info.txt", materials / "intro.txt"
+            info.write_text('<h1>制作信息</h1>\n\n<p>翻译：甲</p>\n', encoding="utf-8")
+            intro.write_text('<h1>简介</h1>\n\n<p>简介正文。</p>\n', encoding="utf-8")
+            plan_path = import_plan.write_plan(root / "plan.json", sample_plan(jp))
+            before = {p.relative_to(staged): p.read_bytes() for p in staged.rglob("*") if p.is_file()}
+            report = root / "reports/wrappers.txt"
+            code = import_build_wrappers.main([str(plan_path), "--template", str(template),
+                                               "--info", str(info), "--intro", str(intro),
+                                               "--out", str(staged), "--dry-run", "--report", str(report)])
+            self.assertEqual(code, 0)
+            self.assertIn("预览", report.read_text(encoding="utf-8"))
+            self.assertIn("S4_04-02_Prologue.xhtml", report.read_text(encoding="utf-8"))
+            self.assertEqual({p.relative_to(staged): p.read_bytes() for p in staged.rglob("*") if p.is_file()}, before)
+
     def test_title_contract_failure_blocks_wrappers_before_writes(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -404,6 +490,101 @@ class WrappersTests(unittest.TestCase):
 
 
 class ImagesTests(unittest.TestCase):
+    def test_report_write_error_restores_images_and_existing_report(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / "source"
+            source.mkdir()
+            (source / "cover.jpg").write_bytes(PNG_1PX)
+            plan = sample_plan(jp_dir_for(root))
+            plan["images_source"] = str(source)
+            plan["images"] = [{"dst": "S4_04-Cover.jpg", "src": "cover.jpg", "role": "cover"}]
+            plan_path = import_plan.write_plan(root / "plan.json", plan)
+            out = root / "out"
+            report = root / "existing-report.txt"
+            report.write_bytes(b"old report")
+            before = {p.relative_to(root): p.read_bytes() for p in root.rglob("*") if p.is_file()}
+            real_write = import_images.atomic_write_bytes
+
+            def fail_report(path, data):
+                if path == report:
+                    raise OSError("simulated report write failure")
+                return real_write(path, data)
+
+            errors = io.StringIO()
+            with patch.object(import_images, "atomic_write_bytes", side_effect=fail_report), \
+                    contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(errors):
+                code = import_images.main(["apply", str(plan_path), "--out", str(out), "--report", str(report),
+                                           "--apply", "--staging"])
+            self.assertEqual(code, 1)
+            self.assertIn("报告写入失败", errors.getvalue())
+            self.assertEqual({p.relative_to(root): p.read_bytes() for p in root.rglob("*") if p.is_file()}, before)
+
+    def test_report_collisions_are_rejected_before_any_image_copy(self):
+        for apply in (False, True):
+            for collision in ("source", "plan", "japanese", "output"):
+                with self.subTest(apply=apply, collision=collision), tempfile.TemporaryDirectory() as tmp:
+                    root = Path(tmp)
+                    source = root / "source"
+                    source.mkdir()
+                    original = source / "cover.jpg"
+                    original.write_bytes(PNG_1PX)
+                    jp = jp_dir_for(root)
+                    plan = sample_plan(jp)
+                    plan["images_source"] = str(source)
+                    plan["images"] = [{"dst": "S4_04-Cover.jpg", "src": "cover.jpg", "role": "cover"}]
+                    plan_path = import_plan.write_plan(root / "plan.json", plan)
+                    out = root / "out"
+                    reports = {"source": original, "plan": plan_path, "japanese": jp / "new-report.txt",
+                               "output": out / "OEBPS/Images/S4_04-Cover.jpg"}
+                    before = {p.relative_to(root): p.read_bytes() for p in root.rglob("*") if p.is_file()}
+                    output, errors = io.StringIO(), io.StringIO()
+                    args = ["apply", str(plan_path), "--out", str(out), "--report", str(reports[collision])]
+                    args += ["--apply", "--staging"] if apply else ["--dry-run"]
+                    with contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
+                        code = import_images.main(args)
+                    self.assertEqual({p.relative_to(root): p.read_bytes() for p in root.rglob("*") if p.is_file()}, before)
+                    self.assertEqual(code, 2)
+                    self.assertIn("报告", errors.getvalue())
+                    self.assertFalse(out.exists())
+
+    def test_missing_plan_error_uses_stderr(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for command, args in (
+                (import_images.main, ["apply", str(root / "missing.json"), "--out", str(root / "out")]),
+                (import_build_wrappers.main, [str(root / "missing.json"), "--template", str(root / "template"),
+                                             "--info", str(root / "info.txt"), "--intro", str(root / "intro.txt"),
+                                             "--out", str(root / "out")]),
+            ):
+                with self.subTest(tool=command.__module__):
+                    output, errors = io.StringIO(), io.StringIO()
+                    with contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
+                        self.assertEqual(command(args), 2)
+                    self.assertEqual(output.getvalue(), "")
+                    self.assertIn("[阻断]", errors.getvalue())
+                    self.assertIn("计划文件不存在", errors.getvalue())
+
+    def test_preview_writes_explicit_fingerprint_report_without_copying_images(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / "source"
+            source.mkdir()
+            (source / "cover.jpg").write_bytes(PNG_1PX)
+            plan = sample_plan(jp_dir_for(root))
+            plan["images_source"] = str(source)
+            plan["images"] = [{"dst": "S4_04-Cover.jpg", "src": "cover.jpg", "role": "cover"}]
+            plan_path = import_plan.write_plan(root / "plan.json", plan)
+            out, report = root / "out", root / "reports/images.txt"
+            code = import_images.main(["apply", str(plan_path), "--out", str(out),
+                                       "--dry-run", "--report", str(report)])
+            self.assertEqual(code, 0)
+            self.assertFalse(out.exists())
+            text = report.read_text(encoding="utf-8")
+            self.assertIn("预览", text)
+            self.assertIn("S4_04-Cover.jpg", text)
+            self.assertIn("sha256", text)
+
     def test_apply_requires_work_prefix_and_existing_source(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

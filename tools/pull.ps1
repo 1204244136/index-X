@@ -14,6 +14,13 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+# Python CLI output is UTF-8; Windows PowerShell must decode native output the same way.
+$previousConsoleOutputEncoding = [Console]::OutputEncoding
+$previousPipelineOutputEncoding = $OutputEncoding
+try {
+[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
+$OutputEncoding = [Console]::OutputEncoding
+
 # Incremental pull records OneDrive epub state (mtime ticks + size) per book.
 # Books whose state did not change are skipped; -Force re-extracts everything.
 $StateFileName = 'pull-state.tsv'
@@ -258,4 +265,9 @@ else {
 
 if ($failed -gt 0) {
     exit 1
+}
+}
+finally {
+    [Console]::OutputEncoding = $previousConsoleOutputEncoding
+    $OutputEncoding = $previousPipelineOutputEncoding
 }

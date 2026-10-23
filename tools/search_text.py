@@ -57,6 +57,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable, List, Optional, Tuple
 
+if __package__:
+    from .cli_output import configure_output
+else:
+    from cli_output import configure_output
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CN_CACHE = REPO_ROOT / ".cache" / "epub-work" / "chinese-text"
 DEFAULT_JP_CACHE = REPO_ROOT / ".cache" / "epub-work" / "japanese-text"
@@ -72,15 +77,6 @@ KANA_SMALL_TO_LARGE = str.maketrans({
 })
 
 
-def _ensure_utf8_stdout() -> None:
-    """确保在 Windows 终端中输出 UTF-8 文本而不发生编码报错。"""
-    try:
-        if sys.stdout and hasattr(sys.stdout, "reconfigure"):
-            sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-        if sys.stderr and hasattr(sys.stderr, "reconfigure"):
-            sys.stderr.reconfigure(encoding="utf-8", errors="replace")
-    except Exception:
-        pass
 
 
 def fold_text(text: str) -> str:
@@ -529,9 +525,6 @@ def format_search_results(
     query: str = "",
 ) -> str:
     """将检索结果格式化为指定文本。"""
-    if not matches:
-        return f"未找到与 '{query}' 相关的匹配内容。"
-
     out_fmt = output_format.lower()
 
     # JSON 格式
@@ -571,6 +564,9 @@ def format_search_results(
                 f"{m.parsed_line.formatted}\t{paired_txt}"
             )
         return "\n".join(lines)
+
+    if not matches:
+        return f"未找到与 '{query}' 相关的匹配内容。"
 
     # Markdown 格式
     if out_fmt in ("markdown", "md"):
@@ -684,12 +680,12 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
-    _ensure_utf8_stdout()
+    configure_output()
     parser = build_parser()
     args = parser.parse_args(argv)
 
     if not args.query:
-        parser.print_help()
+        parser.print_help(file=sys.stderr)
         return 1
 
     corpus = BilingualCorpus()

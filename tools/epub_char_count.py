@@ -46,6 +46,11 @@ import zipfile
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
+if __package__:
+    from .cli_output import configure_output
+else:
+    from cli_output import configure_output
+
 # 包装页关键词（对文件名与标题做不区分大小写的子串匹配）
 WRAPPER_KEYWORDS = (
     "cover", "colophon", "奥付", "toc", "目次", "contents", "fmatter", "bmatter",
@@ -493,6 +498,7 @@ def render_csv(reports: list[dict]) -> str:
 
 
 def main() -> int:
+    configure_output()
     p = argparse.ArgumentParser(description="探测 EPUB 各正文成分字数并换算页数")
     p.add_argument("paths", nargs="+", type=Path, help="EPUB 文件或目录")
     p.add_argument("--pages-per", type=int, default=400,
@@ -510,11 +516,6 @@ def main() -> int:
                    help="可选的成分名映射 JSON，如 {\"S4_03-01-p-001\": \"引子\"}")
     args = p.parse_args()
 
-    if sys.stdout and hasattr(sys.stdout, "reconfigure"):
-        try:
-            sys.stdout.reconfigure(encoding="utf-8")
-        except Exception:
-            pass
 
     label_map: dict = {}
     if args.label_map:
