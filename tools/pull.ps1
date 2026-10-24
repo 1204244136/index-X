@@ -341,7 +341,7 @@ else {
                 '--cache', $cacheRoot,
                 '--epub', (Get-FullPath $EpubDirectory),
                 '--side', $Side,
-                '--pattern', $Pattern,
+                ('--pattern=' + $Pattern),
                 '--only-books', ($extractedBooks -join ',')
             )
             if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) {

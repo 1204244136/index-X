@@ -143,6 +143,8 @@ python tools/publish_preflight.py --source EPUB --calibre
 
 默认外部源由用户 OneDrive 目录推导；可显式传入 `-ChineseSourceDirectory`、`-JapaneseSourceDirectory`、`-CacheDirectory`、`-EpubDirectory`。`-Side`、`-Pattern` 与 `-OnlyBooks` 求交筛书；按修改时间与大小增量解包，首次建立拉取状态。解包前检查全部待拉取书的缓存差异；`-SyncToEpub` 还检查对应归档差异。本地相对基线的变化若未包含在外部包中，整批停止，不替换缓存、不推进清单或拉取状态；已完成解包而状态未推进的相同内容可继续。`-Force` 只强制重解包，不跳过未发布保护。只更新本次成功书的清单，不把未变化书的新缓存修改当新基线，也不清理范围外书目录。源码读取与包内路径解析由 path safety 共用规则控制。
 
+`-SyncToEpub` 转交发布器时保留 `-Pattern` 中的 `*`、`?` 和 `[]`，不按调用目录的文件展开；筛书结果不受调用目录影响。
+
 ### 哈希清单与初始重建
 
 ```powershell

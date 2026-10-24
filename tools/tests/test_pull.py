@@ -45,13 +45,13 @@ class PullTests(unittest.TestCase):
                     archive.write(path, path.relative_to(stage).as_posix())
         return destination
 
-    def run_pull(self, *extra, shell=None):
+    def run_pull(self, *extra, shell=None, cwd=None):
         return subprocess.run(
             [shell or POWERSHELL, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(TOOLS / "pull.ps1"),
              "-CacheDirectory", str(self.fx.cache), "-EpubDirectory", str(self.fx.epub),
              "-ChineseSourceDirectory", str(self.fx.onedrive_cn),
              "-JapaneseSourceDirectory", str(self.fx.onedrive_jp), *extra],
-            capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60,
+            capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60, cwd=cwd,
         )
 
     def snapshot(self):
@@ -151,6 +151,43 @@ class PullTests(unittest.TestCase):
         before = self.snapshot()
         self.assert_success(self.run_pull("-Side", "chinese", "-OnlyBooks", self.key, "-SyncToEpub"))
         self.assertEqual(self.snapshot(), before)
+
+    def assert_pattern_sync(self, pattern=None):
+        text = "<p>通配筛选后的新正文</p>"
+        self.external(text=text)
+        self.external(BOOK_CN2, text=text)
+        caller = self.fx.root / "caller"
+        caller.mkdir()
+        # Matching cwd entries must never become native command arguments.
+        for name in ("local-S1_01-a", "local-S1_01-b"):
+            (caller / name).touch()
+        other_chapter = Path("OEBPS/Text/S1_02-01_Chapter.xhtml")
+        other_cache = self.fx.cache / "chinese-text" / BOOK_CN2 / other_chapter
+        other_archive = self.fx.epub / BOOK_CN2 / other_chapter
+        other_before = (other_cache.read_bytes(), other_archive.read_bytes())
+        extra = () if pattern is None else ("-Pattern", pattern)
+        self.assert_success(self.run_pull(
+            "-Side", "chinese", "-SyncToEpub", "-OnlyBooks",
+            self.key + f",chinese-text/{BOOK_CN2}", *extra, cwd=caller,
+        ))
+        expected = (self.fx.root / "external" / BOOK_CN / self.chapter).read_bytes()
+        self.assertEqual((self.cache_book / self.chapter).read_bytes(), expected)
+        self.assertEqual((self.fx.epub / BOOK_CN / self.chapter).read_bytes(), expected)
+        other_after = (other_cache.read_bytes(), other_archive.read_bytes())
+        self.assertEqual(other_after, (expected, expected) if pattern is None else other_before)
+        self.assertEqual(load_manifest(self.fx.cache), scan_cache(self.fx.cache))
+        state = (self.fx.cache / "pull-state.tsv").read_text(encoding="utf-8-sig")
+        self.assertIn(BOOK_CN, state)
+        self.assertEqual(BOOK_CN2 in state, pattern is None)
+
+    def test_sync_to_epub_preserves_default_pattern(self):
+        self.assert_pattern_sync()
+
+    def test_sync_to_epub_preserves_star_pattern(self):
+        self.assert_pattern_sync("*S1_01*")
+
+    def test_sync_to_epub_preserves_character_wildcards(self):
+        self.assert_pattern_sync("*S1_0[1]?*")
 
     def test_completed_extraction_can_retry_after_downstream_gate_failure(self):
         self.external(text="<p>broken")
