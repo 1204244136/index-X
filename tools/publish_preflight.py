@@ -13,6 +13,7 @@ else:
 from check_alignment import audit_roots
 from check_epub_health import audit_book, CHECK_ORDER, exempt, find_identifier_duplicates
 from check_note_order import check_book
+from check_term_anchors import audit_roots as audit_term_anchors
 from check_translation_spec import audit_book as audit_translation_spec
 from epub_ids import book_id
 from notes_core import NOTEFILE_RE
@@ -85,7 +86,19 @@ def validate_publication(cn_root: Path, jp_root: Path | None = None,
                 problems.extend(f"{r[1]} {r[2]}: {r[5]}" for r in bad)
             except (OSError, UnicodeError, ValueError) as exc:
                 problems.append(f"中日对齐检查失败：{exc}")
-    scope = "容器/资源/单侧成品/译注/翻译规范 error 级" + ("/中日模板与对齐" if jp_root is not None else "（无日文参考）")
+            # 裁定表锚点门禁：`魔術`→魔法 一类术语回落没有其他自动检查能发现，
+            # 2026-10-05 的整卷重写曾把 98 处改回「魔术」而四道门禁全绿。
+            try:
+                term_rows, _term_checked, _term_skipped, _term_notes = audit_term_anchors(
+                    cn_root, jp_root, work_ids if selected is not None else None)
+                problems.extend(
+                    f"{r['book']} {r['file']}:{r['line']} 术语锚点 {r['anchor']} "
+                    f"应作「{r['expected']}」，现含「{r['found']}」"
+                    for r in term_rows)
+            except (OSError, UnicodeError, ValueError) as exc:
+                problems.append(f"术语锚点检查失败：{exc}")
+    scope = "容器/资源/单侧成品/译注/翻译规范 error 级/术语锚点" + (
+        "/中日模板与对齐" if jp_root is not None else "（无日文参考）")
     print(f"发布预检：{checked} 本；{scope}；问题 {len(problems)} 条")
     for problem in problems:
         print(f"  [阻断] {problem}", file=sys.stderr)

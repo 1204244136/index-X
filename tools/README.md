@@ -38,6 +38,7 @@
 | 只想检查、不写盘 | C4 | `python tools/check_alignment.py --strict`、`python tools/check_epub_health.py --strict` |
 | 查前后呼应有没有被改动改断 | C4 查 → C5 判 | `python tools/check_echo.py --book S1_01`，候选逐条回原文核对（见 [校对复核 skill](../.agents/skills/proofread-review/SKILL.md) 的呼应检查） |
 | 核对译名有没有落地 | C4 | `python tools/check_translation_table.py --table 译名表.xlsx --strict` |
+| 查术语有没有被改回裁定表登记的旧形 | C4 | `python tools/check_term_anchors.py --strict`（中日配对；命中即阻断） |
 | 查彩页上的字在正文哪一行／映射表行号有没有漂 | C4 | `python tools/check_illustration_mapping.py` |
 | 复核一批校对改动 | C5 | `python tools/proofread_review.py --worktree` |
 | 准备复核取证包、分页阅读或验收子报告 | C5 | `python tools/proofread_session.py --help` |
@@ -68,7 +69,7 @@
 | C1 同步与发布 | 三副本数据流、基线清单、打包与发布前检查；不管内容对错 | 8 | 预检、基线完整性、冲突方向 |
 | C2 导入与交稿往返 | 源 ↔ 成品的构建（交稿 → 成品、成品 → 交稿、BW 分页源 → 章节）；不管成品的后续结构与规范 | 13 | 材料七项、逐章物理行数 |
 | C3 成品结构与配对修复 | 写盘型结构修复；不负责判定通过与否（判定在 C4） | 10 | 逐边界数量、行数与块对应 |
-| C4 门禁与体检 | 只读阻断与诊断；不修内容 | 12 | strict 非零即阻断 |
+| C4 门禁与体检 | 只读阻断与诊断；不修内容 | 13 | strict 非零即阻断 |
 | C5 内容质量 | 字符级与语义级的内容改动；不决定译名取舍（走 skill） | 5 | 字符级规范化 0 命中 |
 | C6 检索与统计 | 只读检索与字数／页数换算；不作语义裁定 | 4 | 无（只读诊断） |
 | C0 共享内核 | 无 CLI 的共享规则与原子写入能力；不另建工作流入口 | 19 | 由调用方承担 |
@@ -364,6 +365,7 @@ python tools/reorder_notes.py --root EPUB --pattern "*S1_01*" --apply --no-backu
 | `check_epub_health.py` | `python tools/check_epub_health.py --root EPUB --strict` | 只读；写显式 TSV／JSON | 单侧项目规约；strict 遇 error 非零【P4】 | `test_check_epub_health.py`（每项含负例） |
 | `check_translation_spec.py` | `python tools/check_translation_spec.py --cache EPUB --output 显式报告目录` | 只读；写 TSV／JSON／Markdown | P1–P25 规则报告；**error 级由 `publish_preflight.py` 接入发布阻断**【P3】，warning／info 不自动当缺陷 | `test_translation_spec.py` |
 | `check_translation_table.py` | `python tools/check_translation_table.py --table 显式译名表.xlsx --strict` | 只读外部 xlsx＋日文缓存＋中文归档＋译名裁定总表；写本地核对报告 | 折叠 → 同形例外 → 裁定表（含注音判定）→ 译名表；strict 存在待判未落地项非零【无】 | `test_check_translation_table.py` |
+| `check_term_anchors.py` | `python tools/check_term_anchors.py --strict`／`--book S5_01_02` | 只读中文归档＋日文缓存＋译名裁定总表；写 `--out` TSV | 日文裁定锚点出现、中文却用裁定表登记的误形时命中；塔罗牌名等语境例外；strict 命中非零【P3】 | `test_check_term_anchors.py` |
 | `compare_epub_images.py` | `python tools/compare_epub_images.py --pattern "*S3_*" --output 显式报告目录` | 只读；写图片核对报告 | 字节／像素相同与感知候选分开；候选需视觉确认【无】 | `test_compare_epub_images.py` |
 | `check_epub_validity.py` | `python tools/check_epub_validity.py EPUB --structural --strict` | 只读；写显式报告；系统临时解包 | calibre 补充检查；strict 过滤后仍有问题为 1，环境／输入前提错误为 2【无】 | `test_calibre_validity.py` |
 | `check_project_docs.py` | `python tools/check_project_docs.py` | 只读；终端报告 | 本地链接／锚点、索引登记与回指、工具簇归属与单一来源；缺项非零【无】 | `test_check_project_docs.py` |
@@ -509,6 +511,19 @@ python tools/check_translation_table.py --table 显式译名表.xlsx --audit-rul
 `--rulings` 指定《译名裁定总表》（默认仓库内路径）；`--no-rulings` 是诊断绕过，不可据此要求回改已登记裁定。`--include-suspect` 展示短串候选、`--limit` 是局部调试，不能称全表验收。`alignment_rules.TRANSLATION_HOST` 和 `SETTLED_ANCHORS` 是已确认跨书归属／同形词事实源。`SETTLED_ANCHORS` 每条含 `note`／`scope`／`status`：**抑制只在该锚点被判定过的那本书内生效**；`status=settled`（已判定同形不同义）始终抑制，`status=待裁定`（两案都成立、尚未定）在裁定表登记该锚点后失效、改按裁定判定。
 
 正文与 h1/h2/h3 分开收集：标题命中不为正文补足译名落地，也不计入 `--strict`；另写同一报告目录下的 `translation-title-check.tsv`，主 JSON 的 `title_records` 和 Markdown 的标题人工核对节同时展示。标题中的状态仅供人工结合原文判断，不直接产生替换要求。落地未命中只产生待判项，不等于误译；回原文判断普通词／专名、单复数与语境，执行 [术语统一 skill](../.agents/skills/translation-term-unification/SKILL.md)。strict 存在待判未落地项非零。`--audit-rulings` 只核裁定表与译名表：锚点全角英数字母、裁定列解析不出写法（散文格式漏标 `人读`）、锚点 `<rt>` 与 `Ruby_Ori` 不一致（一格多锚点时**逐块**核对，逐字分解的碎片按基文长度跳过）、译名表同锚点多译法未在裁定表登记、同一锚点多行匹配轴混用、声明了匹配轴但锚点不是单段 ruby，出问题非零；改裁定表后重跑。
+
+### 术语锚点门禁
+
+```powershell
+python tools/check_term_anchors.py --strict
+python tools/check_term_anchors.py --book S5_01_02 --book S5_01_01 --strict
+```
+
+`check_translation_table.py` 用译名表的原始写法当锚：表里的 `【魔術】` 带括号，正文裸写 `魔術` 匹配不到（2026-10-27 实测：S5_01_02 有 441 处 `魔術`，只有书名一处带括号）。本工具补这一步：中日逐行配对，**日文出现裁定锚点、中文没有裁定写法却含裁定表登记的误形**时命中。规则只从《译名裁定总表》读——锚点取 `DEFAULT_ANCHORS`（默认 `魔術`、`魔術師`），应作取「裁定」列，误形取「被否决或并存的候选」列；新增锚点只改常量（或用 `--anchor`），不复制第二份映射。
+
+只报「误形」而不是「缺写法」是实测决定：日文含 `魔術` 而中文无「魔法」的行全库 728 行，多为书名、省略与改写；误形命中才可稳定判定。**塔罗牌名是语境例外**：`ANCHOR_CONTEXT_EXCEPTIONS` 对 `魔術師` 命中 `タロット`／`大アルカナ`／`カード` 的日文行跳过（中文通行牌名「魔术师」）。`人读` 条目、非配对作品、行数不等文件都在报告里单列，不计通过。`--strict` 命中非零（退出码 1），根目录或锚点缺失为 2；报告默认 `.cache/epub-work/term-anchor-check.tsv`。
+
+接入点：`publish_preflight.py`（带日文参考的发布预检按书阻断）、`proofread-review` R7、`translation-term-unification` S6。CI 只有中文侧，工作流里仅在日文缓存存在时执行，否则明确跳过。
 
 ### calibre 补充合法性检查
 

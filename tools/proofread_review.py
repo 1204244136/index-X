@@ -53,7 +53,7 @@ else:
 from xhtml_text import text_of
 from epub_ids import work_id
 from japanese_lookup import JapaneseSourceLookup, DEFAULT_JP_BASE, strip_ruby_markup
-from audit_risk import audit_risk_flags
+from audit_risk import audit_risk_flags, load_ruling_terms
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_OUT_DIR = os.path.join(REPO_ROOT, ".cache", "epub-work", "proofread-review")
@@ -356,6 +356,11 @@ def enrich_rows(
 ) -> None:
     """模块化增强：自动关联日文原文对应行，并执行启发式语义与规范风险诊断。"""
     lookup = JapaneseSourceLookup(repo_root, jp_base_dir) if enable_jp else None
+    # 裁定表登记的「成品旧译」纳入受控术语标记：此前只传日文与新旧译，
+    # 复核片段里出现已裁定回退（如把裁定写法改回旧译）时不会有风险标签。
+    ruling_terms = (load_ruling_terms(
+        os.path.join(repo_root, "docs", "translation-name-rulings.md"))
+        if enable_audit else [])
     for r in rows:
         # 1. 日文原文提取（保留汉化组标准 |基文[注音] 记号，兼顾基文与义训注音）
         jp_text = ""
@@ -373,7 +378,8 @@ def enrich_rows(
         if enable_audit:
             # 规范级（spec）通常由体例决定，但若有加粗标点或日文新字体残留依然可测；
             # 传给风险审计的日文使用 strip_ruby_markup 快速剥除注音，确保正则匹配不受假名粘连干扰
-            fl = audit_risk_flags(r.get("old", ""), r.get("new", ""), strip_ruby_markup(jp_text))
+            fl = audit_risk_flags(r.get("old", ""), r.get("new", ""), strip_ruby_markup(jp_text),
+                                  extra_terms=ruling_terms)
             if fl:
                 flags_str = ",".join(fl)
         r["flags"] = flags_str

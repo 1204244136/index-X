@@ -114,6 +114,7 @@ python .agents/skills/translation-term-unification/references/test_unify_terms_t
 
 ```powershell
 python tools/text_norm.py --pattern "<本任务书名匹配式>" --dry-run  # 必须 0 命中；需要 --apply 时保留同一范围
+python tools/check_term_anchors.py --book <作品号> --strict        # 裁定表锚点误形，0 命中；无日文参考的作品单列
 python tools/check_alignment.py --strict        # 中日行数 / 模板 / h2 / 图片行
 python tools/check_epub_health.py --strict      # 单侧结构（XML、ruby、加粗、悬空引用等）
 python tools/check_translation_spec.py          # 涉及标点／注音／单位时跑；报告在 .cache/epub-work/
@@ -214,6 +215,7 @@ python tools/proofread_review.py <commit>       # 产物 .cache/epub-work/proofr
 | 坑 | 规避 |
 | --- | --- |
 | 全局替换误伤真实义项 | 必须逐点显式映射；先测冲突率 |
+| 同一裁定行的复合锚点只改一半 | 裁定行内以 `／` 分隔的锚点**整组处理**：`魔術`／`魔術師` 必须同时扫，写盘后跑 `check_term_anchors.py` 确认两类旧形都不再出现。历史案例：2026-10-19 只统一 `魔術師`，漏掉裸 `魔術` 33 处，读者 10-27 才反馈 |
 | 剥标签忘剥 `<rt>` 导致漏检 | **先剥 `<rt>` 再** `xhtml_text.text_of`（`text_of` 不去注音）；或直接用 proofread-review skill 的 `lookup_source.py` |
 | 把风格化 ruby 行当错字 | 跳过（§3.2） |
 | 把口癖按单句语感各译各的 | 口癖优先；同一台词跨卷必须逐字相同 |

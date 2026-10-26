@@ -87,9 +87,14 @@ def strip_html(text: str) -> str:
     return re.sub(r"<[^>]+>", "", text).strip()
 
 
-def audit_risk_flags(old: str, new: str, jp: str = "") -> list[str]:
-    """返回改动命中风险标记的短标签列表（如 ['negation', 'number']）。"""
-    details = audit_risk_details(old, new, jp)
+def audit_risk_flags(old: str, new: str, jp: str = "", *,
+                     extra_terms: list[tuple[str, str, str]] | None = None) -> list[str]:
+    """返回改动命中风险标记的短标签列表（如 ['negation', 'number']）。
+
+    `extra_terms` 与 `audit_risk_details` 同义，供复核入口把裁定表登记的
+    「成品旧译」一并纳入受控术语标记。
+    """
+    details = audit_risk_details(old, new, jp, extra_terms=extra_terms)
     return [d["flag"] for d in details]
 
 

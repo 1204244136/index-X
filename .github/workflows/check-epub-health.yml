@@ -86,6 +86,17 @@ jobs:
             --tsv /tmp/epub-health.tsv \
             --json /tmp/epub-health.json
 
+      # 术语锚点门禁需要中日逐行配对，CI 的 checkout 只有中文 EPUB/。
+      # 仓库里若存在日文缓存（自建 runner 或显式拉取）才执行；否则明确跳过，
+      # 本地发布预检 publish_preflight.py 会在带日文参考的发布时再阻断一次。
+      - name: 术语锚点门禁（无日文侧则跳过）
+        run: |
+          if [ -d .cache/epub-work/japanese-text ]; then
+            python tools/check_term_anchors.py --strict --out /tmp/term-anchor-check.tsv
+          else
+            echo "无日文参考（.cache/epub-work/japanese-text），跳过中日锚点检查；本地发布预检会执行。"
+          fi
+
       - name: 写入 job summary
         if: always()
         run: |
@@ -116,5 +127,6 @@ jobs:
           path: |
             /tmp/epub-health.tsv
             /tmp/epub-health.json
+            /tmp/term-anchor-check.tsv
           if-no-files-found: warn
           retention-days: 30

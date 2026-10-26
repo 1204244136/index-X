@@ -40,6 +40,12 @@ class AuditRiskTests(unittest.TestCase):
         flags = audit_risk_flags("她穿着袴", "她穿着和服裤裙")
         self.assertIn("controlled_term", flags)
 
+    def test_extra_terms_reach_flags(self):
+        """复核入口把裁定表规则传进 audit_risk_flags 时应产生受控术语标记。"""
+        flags = audit_risk_flags("使用魔法", "使用魔术", "魔術を使う",
+                                 extra_terms=[(r"魔术", "魔法", "裁定表：魔術→魔法")])
+        self.assertIn("controlled_term", flags)
+
     def test_ruling_terms_from_table(self):
         """裁定表候选列标「成品旧译」的条目才生成受控术语规则。"""
         from audit_risk import load_ruling_terms
