@@ -7,7 +7,10 @@
 | 文档 | 写什么 | 什么时候看 |
 | --- | --- | --- |
 | [`README.md`](../README.md) | 面向读者：项目介绍、下载、反馈、版本对比 | 了解 X 系列是什么、怎么获取 |
-| [`AGENTS.md`](../AGENTS.md) | 仓库级规约与入口：项目定位、目录约定、系列编号、版式规范指针、维护流程、数据流与编辑边界、版本控制边界 | 任何维护动作前；流程与落点／边界的**唯一规范来源** |
+| [`AGENTS.md`](../AGENTS.md) | 常驻核心边界与强制入口：项目定位、交互职责、系列编号、数据流、写入与版本控制边界 | 每轮在场；按任务读取其指向的执行正文 |
+| [智能体资料访问与受阻说明](agents/reference-access.md) | 原文与外部材料的定位、可生成输入的恢复、证据覆盖及向使用者解释受阻；按角色准备资料 | 原文核对、外部证据／材料缺失或工具环境受阻时 |
+| [EPUB 内容维护流程](agents/content-maintenance.md) | 内容修改的环境分支、写前／写后同步、门禁、留档与本地提交步骤 | 修改任何 EPUB 内容前；只读问答不触发 |
+| [工具与文档维护流程](agents/tool-maintenance.md) | 工具行为说明、维护记录、脚本说明软门禁及复用工具／一次性产物边界 | 修改工具、测试、CI 脚本或规范说明前 |
 | [提交规范](commit-spec.md) | 提交单元、标题、正文字段、业务提交分支、执行核验与对话收尾格式 | 编写、检查或重写提交信息；各 skill 的提交格式只引用本规范 |
 | [`tools/README.md`](../tools/README.md) | 工具入口、参数、数据流、判定口径与可验证行为 | 运行任何 `tools/` 命令前 |
 | [`translation-term-unification/SKILL.md`](../.agents/skills/translation-term-unification/SKILL.md) | 流程：译名／术语统一**怎么做** | 收敛异译、统一角色口癖与专名、裁定敬称与术语分层 |
@@ -49,7 +52,7 @@
 ## 四、维护约定
 
 - 本文件**不承载规范条文、裁定结论或工具参数**——那些仍在各自文档中维护，保持单一来源，不在本文件复制。
-- 同一规则只在一处写正文，其余处只留指针：译文规范以 `translation-spec.md` 为准，版式规范以 `epub-naming-spec.md`／`epub-structure-spec.md`／`epub-css-layout-spec.md`／`epub-artifact-spec.md` 为准，译名选取以 `translation-name-selection-spec.md` 为准，已决裁定以 `translation-name-rulings.md` 为准，机器可判定的词表以对应 `tools/check_*.py` 的常量为准。
+- 同一规则只在一处写正文，其余处只留指针：常驻边界在 `AGENTS.md`，资料访问、内容修改及工具维护步骤在上表登记的 `docs/agents/` 正文；译文规范以 `translation-spec.md` 为准，版式规范以 `epub-naming-spec.md`／`epub-structure-spec.md`／`epub-css-layout-spec.md`／`epub-artifact-spec.md` 为准，译名选取以 `translation-name-selection-spec.md` 为准，已决裁定以 `translation-name-rulings.md` 为准，机器可判定的词表以对应 `tools/check_*.py` 的常量为准。
 - 职责变化只在本索引登记；其他入口保留指针，文件新增／改名时修复受影响的相对链接。工具行为变更更新 `tools/README.md` 合同和对应验证，不在索引复制参数。顶层文档登记与活跃文档回指由 `tools/check_project_docs.py` 机械检查，缺项在 CI 非零。
 - 外部规范、译名表与说话习惯表的动态定位、版本证据及缺失时的处理统一见 `translation-spec.md`「外部依赖与核验」；私人机器路径不写入活跃文档。
 - `maintenance-records/` 保留当次事实和当时口径；旧流程不能作为当前操作依据。允许修复链接或有提交证据的日期错误，必须保留更正说明。

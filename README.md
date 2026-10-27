@@ -54,15 +54,11 @@ GitHub Releases 每日定时打包整合版与单行本归档，并添加北京�
 - **译名和台版、网译一致吗？** 部分不同。X 系列全库统一术语，多跟进魔禁维基最新标准，具体取舍与差异可查阅 [译名裁定总表](docs/translation-name-rulings.md) §7.1 及[作者博客](https://toaru.huijiwiki.com/wiki/Project:%E6%B2%99%E7%9B%92/%E7%9F%A5%E4%B8%80%E4%B8%80)。
 - **和魔禁维基、汉化组是什么关系？** 无直接关系。本项目为同好独立发起与维护，非魔禁维基或汉化组官方出品。
 
-## EPUB 打包工具
+## 通过智能体使用仓库
 
-本仓库归档支持直接生成阅读用 `.epub`：
+除阅读 EPUB 成品外，可向智能体提出中文检索、成品检查、本地打包或原文核对请求。中文功能无需额外挂载资料；原文查询由智能体先定位已有来源，必要时从完整 BW 提取包生成工作源，并说明实际核验范围与仍缺的材料。
 
-```powershell
-python tools/package_cache_epubs.py --source EPUB --output output/epubs
-```
-
-完整命令、筛选参数与测试门禁详见 [工具合同](tools/README.md#打包工具ci-和手动使用)。
+智能体的处理流程和按角色准备资料的清单见 [资料访问与受阻说明](docs/agents/reference-access.md)，工具参数与执行边界见 [工具合同](tools/README.md#克隆后的运行环境)。
 
 ## 支持
 

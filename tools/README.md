@@ -1,6 +1,6 @@
 # EPUB 维护工具
 
-文档职责与入口见 [文档索引](../docs/README.md)。本文件是 `tools/` 的**命令合同**：每个工具的入口、参数、读写范围、门禁与失败边界、测试与所属簇。规范与边界（写成什么样、什么不许做）以 [AGENTS.md](../AGENTS.md) 与版式规范四份文档（[EPUB 命名规范](../docs/epub-naming-spec.md)、[EPUB 结构规范](../docs/epub-structure-spec.md)、[EPUB 排版规范](../docs/epub-css-layout-spec.md)、[EPUB 成品构成规范](../docs/epub-artifact-spec.md)）为准，本文件只留指针、不复述条文；成品语言规范以 [翻译规范](../docs/translation-spec.md) 为准；需要判断分支的流程以 `.agents/skills/` 为准。历史验收与修改统计只在维护记录和提交中保存；修改脚本说明时执行 [脚本说明软门禁](../AGENTS.md#脚本说明软门禁)。
+文档职责与入口见 [文档索引](../docs/README.md)。本文件是 `tools/` 的**命令合同**：每个工具的入口、参数、读写范围、门禁与失败边界、测试与所属簇。规范与边界（写成什么样、什么不许做）以 [AGENTS.md](../AGENTS.md) 与版式规范四份文档（[EPUB 命名规范](../docs/epub-naming-spec.md)、[EPUB 结构规范](../docs/epub-structure-spec.md)、[EPUB 排版规范](../docs/epub-css-layout-spec.md)、[EPUB 成品构成规范](../docs/epub-artifact-spec.md)）为准，本文件只留指针、不复述条文；成品语言规范以 [翻译规范](../docs/translation-spec.md) 为准；共用流程以文档索引登记的 `docs/agents/` 正文为准，专门任务走 `.agents/skills/`。历史验收与修改统计只在维护记录和提交中保存；修改脚本说明时执行 [脚本说明软门禁](../AGENTS.md#脚本说明软门禁)。
 
 ## 三层职责
 
@@ -9,9 +9,9 @@
 | [AGENTS.md](../AGENTS.md) | **规范与边界**：系列编号、版式规范指针、数据流与编辑边界、提交边界 | 任何维护动作前；本文件不复述 |
 | 版式规范四份 | **版式条文**：[命名规范](../docs/epub-naming-spec.md)（表头与文件名）、[结构规范](../docs/epub-structure-spec.md)（行模板与结构）、[排版规范](../docs/epub-css-layout-spec.md)（移动端 CSS）、[成品构成规范](../docs/epub-artifact-spec.md)（部件与必备性、元数据对齐） | 动 XHTML／文件名／图片／CSS／容器文件前 |
 | 本文件 | **命令合同**：入口、参数、读写范围、门禁与失败边界、测试、簇归属 | 运行任何 `tools/` 命令前 |
-| `.agents/skills/` | **流程与判断分支**：材料核对、执行顺序、人工确认点、失败退路 | 做对应任务时（新书导入、日文源导入、校对复核、术语统一） |
+| `docs/agents/`、`.agents/skills/` | **流程与判断分支**：共用资料访问、内容／工具维护，以及专门任务的材料核对与执行步骤 | 原文或材料受阻、内容／工具修改、新书或日文源导入、校对复核、术语统一时 |
 
-同一规则只在一处写正文：规范在 AGENTS 与版式规范三份，命令在本文件，流程在 skill。本文的四个固定说法：**阻断** = 该工具或门禁直接非零退出；**只读** = 不修改输入书籍，允许写显式报告或系统临时产物；**预览** = 默认只报告、显式开关才写盘（写工具用 `--apply`，发布用 `--dry-run`，PowerShell 入口用 `-WhatIf`）；**成员表** = 各簇内「工具｜入口命令｜读写范围｜门禁与失败边界｜测试」五列表。
+同一规则只在一处写正文：常驻边界在 AGENTS，版式条文在四份规范，命令在本文件，共用流程在 `docs/agents/`，专门任务流程在 skill。本文的四个固定说法：**阻断** = 该工具或门禁直接非零退出；**只读** = 不修改输入书籍，允许写显式报告或系统临时产物；**预览** = 默认只报告、显式开关才写盘（写工具用 `--apply`，发布用 `--dry-run`，PowerShell 入口用 `-WhatIf`）；**成员表** = 各簇内「工具｜入口命令｜读写范围｜门禁与失败边界｜测试」五列表。
 
 ## 公共输出约定
 
@@ -25,7 +25,7 @@
 
 ## 克隆后的运行环境
 
-本节供智能体选择工具、配置输入并判断实际执行覆盖。普通中文查询与打包无需外部内容；中文归档直接作为输入，原文工作源及缓存按任务准备后再调用对应入口。
+本节供智能体选择工具、配置输入并判断实际执行覆盖。面向使用者的资料定位、恢复和受阻说明按 [智能体资料访问流程](../docs/agents/reference-access.md) 执行；使用者／维护者的上游资料清单也由该文维护。普通中文查询与打包无需外部内容，原文工作源及缓存是生成物，按任务准备后再调用对应入口。
 
 软件按入口准备：表格读取使用 openpyxl、图片工具使用 Pillow，相应转换与补充校验使用 calibre；L2 语义检查需要 PyTorch、SentenceTransformers 及对应模型。BetweenLines 本身不是本仓库基础运行前提，只有使用其 AI 校对流程时才另行部署并配置实际采用的档案、预设和接口。外部分发与现有工作状态的初始化／保全按 C1 合同执行。
 
@@ -60,7 +60,7 @@ python tools/publish_preflight.py --source EPUB
 python tools/package_cache_epubs.py --source EPUB --output output/epubs
 ```
 
-需要同行工具时，完整 BW 原始提取包按 [日文源导入流程](../.agents/skills/bw-source-import/SKILL.md) 处理并核对。现成工作源是可选的便捷入口：已解包且符合表头与固定行模板的目录可通过各工具的 `--jp-root`、`--jp-dir` 或 `--jp-base` 直接作为只读参考；已持有工作源 `.epub` 时，可用下列命令预览并建立参考缓存，无需使用维护者的 OneDrive 目录：
+原文核对先按 [资料访问流程](../docs/agents/reference-access.md) 选择直接取证或生成工作源；需要同行工具时，完整 BW 原始提取包按 [日文源导入流程](../.agents/skills/bw-source-import/SKILL.md) 处理并核对。现成工作源是可选的便捷入口：已解包且符合表头与固定行模板的目录可通过各工具的 `--jp-root`、`--jp-dir` 或 `--jp-base` 直接作为只读参考；已持有工作源 `.epub` 时，可用下列命令预览并建立参考缓存，无需使用维护者的 OneDrive 目录：
 
 ```powershell
 ./tools/pull.ps1 -Side japanese -JapaneseSourceDirectory "<日文工作源epub目录>" -WhatIf
@@ -70,7 +70,7 @@ python tools/check_alignment.py --jp-root .cache/epub-work/japanese-text --requi
 
 未经整理的 BW 分页源不能直接当作同行参考。参考目录存在不代表对应作品、正文文件或物理行已覆盖；结果分别说明已检查、未核验和已登记例外。使用时结合退出码与覆盖范围：零命中只说明已检查部分未发现问题。
 
-CI 同样只承担其实际可执行的单侧检查；日文核验明确跳过，不能据 CI 绿色宣布双语验收。
+普通克隆的本地内容修改与提交分支见 [AGENTS.md 维护流程](../AGENTS.md#维护流程)；缺原文时仅完成单侧检查，语义复核仍需补源。CI 同样只承担其实际可执行的单侧检查；日文核验明确跳过，不能据 CI 绿色宣布双语验收。
 
 ## 路由
 
@@ -257,7 +257,7 @@ python tools/import_build_wrappers.py .cache/epub-work/import/plan.json --templa
     --info 制作信息.txt --intro 简介.txt --out "EPUB/【S4_04】…" --apply --calibre-id 197
 ```
 
-- `import_materials.py` 是**材料门禁**：交稿、图片素材、制作信息、简介、作品号与书目录名、日文工作源、模板书七项逐项核对。缺项非零退出，并把要补的东西列成可直接发给用户的清单——材料不齐不许开工，不得自拟封面、简介或制作信息。三副本待发布状态需人工用 `publish_auto.py --dry-run` 确认。
+- `import_materials.py` 是**材料门禁**：交稿、图片素材、制作信息、简介、作品号与书目录名、日文工作源、模板书七项逐项核对。缺项非零退出并输出缺失项；智能体按资料访问与导入流程定位、恢复或说明，齐备前不生成成品，不得自拟封面、简介或制作信息。三副本待发布状态需人工用 `publish_auto.py --dry-run` 确认。
 - `import_docx_outline.py` 只读诊断，写显式 `--out`。阻断项：无 Heading 1、段内换行（`w:br`）、注音／译注记号未闭合；提示项：全角空格、段内制表符、独占成段的译注。
 - `import_align_plan.py` 按**日文物理行**逐行比对（日文一行＝一个行单元，中文侧允许 1:2），输出 `1:1`／`1:2`／`1:0`／`0:1` 关系与建议改动，并生成计划骨架。改动类型只有 `split`／`merge_prev`／`insert_br_after`／`drop`／`note_to_prev` 五种，`para` 用清单里的段落序号。章标题识别覆盖 `引子／序章／第N章／行间（可带副标题，`行　间` 的排版空格先折叠）／深度N（外典书库的专用后缀，写作 `DepthN`）／终章／后记／尾声`；识别不出的条目骨架留空 `fname`，由人工在计划里补。计划是任务工作产物，放 `.cache/epub-work/import/`，不提交。
 - `import_build_text.py` 渲染正文（固定行模板、`<ruby>`、Note 页与脚注引用）。**写盘前逐章断言物理行数与日文一致，任何一章不齐整批不写**；只清段落首尾的 ASCII 空格与不换行空格，段内全角空格（对齐／分字）原样保留。译注正文在正文渲染时已由 `esc_ruby` 转成可安全嵌入的行内 XML（含 `<ruby>`／`<b>`），写 Note 页时**原样写入**，不得二次转义（否则译注里的注音会退化成 `&lt;ruby&gt;` 字面文本）。
