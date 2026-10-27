@@ -365,7 +365,7 @@ python tools/reorder_notes.py --root EPUB --pattern "*S1_01*" --apply --no-backu
 | `check_semantic_alignment.py` | `python tools/check_semantic_alignment.py --work S3_01 --strict` | 只读；写语义诊断报告；L2 模型运行时只读 | strict 全范围 L2；环境失败及未通过结果非零【P4】 | `test_check_semantic_alignment.py`、`test_diff_paired_lines.py` |
 | `check_note_order.py` | `python tools/check_note_order.py --root EPUB` | 只读；写 TSV／JSON／Markdown | 未定义／重复／未引用与阅读顺序问题【无】 | `test_check_note_order.py`；共享规则：`test_docx_and_notes.py` |
 | `check_epub_health.py` | `python tools/check_epub_health.py --root EPUB --strict` | 只读；写显式 TSV／JSON | 单侧项目规约；strict 遇 error 非零【P4】 | `test_check_epub_health.py`（每项含负例） |
-| `check_translation_spec.py` | `python tools/check_translation_spec.py --cache EPUB --output 显式报告目录` | 只读；写 TSV／JSON／Markdown | P1–P25 规则报告；**error 级由 `publish_preflight.py` 接入发布阻断**【P3】，warning／info 不自动当缺陷 | `test_translation_spec.py` |
+| `check_translation_spec.py` | `python tools/check_translation_spec.py --root EPUB --output 显式报告目录` | 只读；写 TSV／JSON／Markdown | P1–P25 规则报告；**error 级由 `publish_preflight.py` 接入发布阻断**【P3】，warning／info 不自动当缺陷 | `test_translation_spec.py` |
 | `check_translation_table.py` | `python tools/check_translation_table.py --table 显式译名表.xlsx --strict` | 只读外部 xlsx＋日文缓存＋中文归档＋译名裁定总表；写本地核对报告 | 折叠 → 同形例外 → 裁定表（含注音判定）→ 译名表；strict 存在待判未落地项非零【无】 | `test_check_translation_table.py` |
 | `check_term_anchors.py` | `python tools/check_term_anchors.py --strict`／`--book S5_01_02` | 只读中文归档＋日文缓存＋译名裁定总表；写 `--out` TSV | 日文裁定锚点出现、中文却用裁定表登记的误形时命中；塔罗牌名等语境例外；strict 命中非零【P3】 | `test_check_term_anchors.py` |
 | `compare_epub_images.py` | `python tools/compare_epub_images.py --pattern "*S3_*" --output 显式报告目录` | 只读；写图片核对报告 | 字节／像素相同与感知候选分开；候选需视觉确认【无】 | `test_compare_epub_images.py` |
@@ -450,6 +450,8 @@ python tools/check_note_order.py --root EPUB
 
 只读检查 Note 条目的物理顺序是否等于正文首次引用顺序，并报告重复 ID、悬空引用与未引用条目；允许缺号与数字顺序不同，不检查数值连续性或数值排序。ID 格式与属性由 `check_epub_health.py` 的 `note-structure` 检查。在输出目录生成 `note-order-check.tsv`／JSON／Markdown。TSV 每本 Note 一行，列为 `book`、`note_file`、`defined_order`、`appearance_order`、`first_appearance`、`issues`，复杂值用 JSON 单元格保全。输入根目录无效或报告写入失败时 stderr 诊断并返回 2；检查发现的问题仍按既有 strict 语义阻断。重排写入在 C3 的 `reorder_notes.py`，两者共享 `notes_core.py` 的阅读顺序。
 
+默认中文输入为 `EPUB/`，`--root` 与兼容参数 `--cache` 互斥。没有选中书籍返回 2；选中书籍存在而无 Note 页返回 0，并说明「译注顺序检查不适用」，不声称核验了译注页。
+
 ### 单侧成品体检
 
 ```powershell
@@ -464,6 +466,8 @@ python tools/check_epub_health.py --only css-layout --tsv 显式报告.tsv
 `title-style` 检查中文默认标题样式、分层角色／字号与引用 CSS、序终章间距、彩页及特典集合标题；`title-catalog` 检查 nav/NCX 的纯文本标签与 h1/h2/h3 投影及两套目录的目标／标签／顺序一致性。未知结构／样式与目录差异为 error，并通过共享 `audit_book` 进入本地发布和 CI 预检；不自动修复、不推断层数，非标题目标只由资源／锚点检查验证跳转。规范正文见 [结构规范](../docs/epub-structure-spec.md) 三和 [成品构成规范](../docs/epub-artifact-spec.md) 四。
 
 `note-structure` 只对 `*-Note.xhtml` 判定，覆盖外壳（XML 声明引号、`<head>` 与 `<link>` 间距、空 `<title>`）、L4 固定 h1、L5 容器必须是 `<ul>`、`<li>` 属性顺序与完整性（含 `noteN` ID 格式）、缩进、行内标签白名单，规范见 [EPUB 结构规范](../docs/epub-structure-spec.md)「译注页（Note）结构规约」。ID 唯一性、引用完整性及条目物理顺序由 `check_note_order.py` 检查；数字连续性和数值排序均不要求。`S0_00-Note.xhtml` 第 7 行的说明型条目是登记在案的唯一豁免。
+
+默认中文输入为 `EPUB/`。输入根无效、筛选无匹配书籍、读取或报告写入失败返回 2；真实检查得到的 error 级发现仍按 strict 返回 1。
 
 ### 图片对应核对
 
@@ -490,6 +494,8 @@ python tools/check_translation_spec.py --cache EPUB --output 显式报告目录
 ```
 
 P1–P25 与规范条款的完整对应表唯一维护于 [翻译规范](../docs/translation-spec.md) 七。检查器只发现可机械形状，warning／info 与例外须人工判断，不自动改正文。`--pattern` 限定书名，`--top` 只控制样例显示；输出 TSV／JSON／Markdown。
+
+默认检查 `EPUB/`；`--root` 与兼容参数 `--cache` 可指定中文输入，二者互斥。根目录不存在、选书没有 XHTML 输入或报告写入失败返回 2；正常产生规范报告仍返回 0，error 级是否阻断由发布预检统一判断。
 
 `audit_book(text_dir)` 是 `main()` 与 `publish_preflight.py` 共用的入口，返回 `(file, line, category, severity, message, example)`；发布预检只取 `severity == "error"`。**注意两处计数粒度不同**：`main()` 的 `emit` 按「行×类别」去重，`audit_book` 不去重、按命中逐条返回——引用计数时须注明粒度。
 
@@ -589,6 +595,8 @@ python tools/audit_risk.py --old "旧句" --new "新句" --jp "日文"
 
 `proofread_review.py` 编排 Git 行级配对、`japanese_lookup.py` 原文提取、`audit_risk.py` 风险提示；不修改正文。支持 `--repo`、`--jp-base`、`--no-jp`、`--no-audit`；未提取／未诊断的侧明确未核验。原文 lookup 的 `--raw` 保留标签，`--jp-base` 指定参考；risk 的 `--json` 输出结构。
 
+`japanese_lookup.py` CLI 缺日文根、作品或文件返回 2，并提示通过 `--jp-base` 指定已有参考；行号越界返回 1。
+
 产物为 `changes.tsv`、`semantic.tsv`、`spec.tsv`、`groups.txt`。TSV 使用标准 tab 分隔和 CSV 字段引用，保留字段里的双引号、制表符及换行，读取用 `csv.DictReader`。一物理行合一条记录，用最小差异分级：spec 为确定规范形状，tiny 为 ≤2 字且全属虚词，local 为 ≤12 字局部变化，rewrite 为更大变化或整段增删；spec 仅在整段最小差异都能由规范解释时放行。数字／字母不当标点剥除。
 
 `line` 使用 Git 行级配对的新侧行号，纯删除回旧侧行号；不可用 word-diff 物理行推算。`jp` 是当前参考的同行，不证明历史提交对应关系；行数变动时人工检索上下文。risk 标记包括否定、数字、疑问、字形、加粗标点、嵌套引号、受控术语和明显增删；它们只提示复核优先级。人工处置和抽样范围以 [校对复核 skill](../.agents/skills/proofread-review/SKILL.md) 为准。
@@ -642,6 +650,10 @@ python tools/search_text.py "カリキュラム" --format markdown
 ```
 
 用于在 EPUB 工作缓存（`.cache/epub-work/`）及归档中进行精准的全文与术语检索，支持注音假名搜索、汉字长词跨标签搜索、BW 源假名妥协折叠与中日双向对齐联动。只读，不修改文件。
+
+默认按作品优先读取中文缓存，空缓存或未缓存的作品从 `EPUB/` 补足；同一作品只读取一份副本，显式 `--cn-root` 不回退其它来源。
+
+`--cn-root`／`--jp-root` 指定独立参考根，显式中文路径失效不回退其它源。`both` 缺日文时继续搜中文，并通过 stderr 说明未核验日文；`jp` 缺源返回 2。无可搜索文件、作品筛选未命中或无效显式输入返回 2，有实际检索范围而零命中仍为 0。JSON／TSV 保持机器格式，前置错误和范围提示走 stderr。
 
 - **注音完整保全（绝不丢失读音信息）**：自动将 HTML 中冗长的 `<ruby>基文<rt>注音</rt></ruby>` 解析并转化为精炼的 `基文(注音)` 纯文本展示（如 `超電磁砲(レールガン)`），彻底清除 `<p>`/`<div>`/`<span>` 排版标签，同时汉字基文与特殊读音假名一个不漏。
 - **三轨匹配引擎**：

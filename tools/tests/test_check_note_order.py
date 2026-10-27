@@ -114,5 +114,33 @@ class NoteOrderTests(unittest.TestCase):
                 self.assertFalse(report.exists())
 
 
+    def test_default_source_is_archive_without_cache(self):
+        self.write(["note1"], ["note1"])
+        with patch.dict(check_note_order.__dict__, {"DEFAULT_ROOT": str(self.root),
+                                                   "DEFAULT_CACHE": str(self.root / "missing-cache")}):
+            with patch.object(sys, "argv", ["check_note_order.py", "--output", str(self.root / "report")]):
+                with redirect_stdout(io.StringIO()):
+                    self.assertEqual(check_note_order.main(), 0)
+
+    def test_empty_selection_is_setup_error_without_report(self):
+        self.write(["note1"], ["note1"])
+        report = self.root / "report"
+        with patch.object(sys, "argv", ["check_note_order.py", "--root", str(self.root),
+                                       "--pattern", "*unknown*", "--output", str(report)]):
+            with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+                self.assertEqual(check_note_order.main(), 2)
+        self.assertFalse(report.exists())
+
+    def test_book_without_note_page_is_not_claimed_as_note_pass(self):
+        (self.text / "S1_01-01_Chapter.xhtml").write_text("<html><body><p>正文。</p></body></html>", encoding="utf-8")
+        output = io.StringIO()
+        with patch.object(sys, "argv", ["check_note_order.py", "--root", str(self.root),
+                                       "--output", str(self.root / "report")]):
+            with redirect_stdout(output):
+                self.assertEqual(check_note_order.main(), 0)
+        self.assertIn("无 Note", output.getvalue())
+        self.assertNotIn("所有 Note 条目均", output.getvalue())
+
+
 if __name__ == "__main__":
     unittest.main()

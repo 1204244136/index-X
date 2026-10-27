@@ -88,6 +88,35 @@ class P9EndToEndTests(unittest.TestCase):
         tsv = (self.out / "translation-spec-check.tsv").read_text(encoding="utf-8")
         return [ln for ln in tsv.splitlines() if "\tP9\t" in ln]
 
+    def test_default_source_is_archive_without_cache(self):
+        self.build_book(["正文。"])
+        with patch.dict(cts.__dict__, {"DEFAULT_ROOT": str(self.cache),
+                                     "DEFAULT_CACHE": str(self.tmp / "missing-cache")}):
+            with patch.object(sys, "argv", ["check_translation_spec.py", "--output", str(self.out)]):
+                with contextlib.redirect_stdout(io.StringIO()):
+                    self.assertEqual(cts.main(), 0)
+        import json
+        report = json.loads((self.out / "translation-spec-check.json").read_text(encoding="utf-8"))
+        self.assertEqual(report["books_checked"], 1)
+
+    def test_empty_selection_is_setup_error_without_report(self):
+        self.build_book(["正文。"])
+        with patch.object(sys, "argv", ["check_translation_spec.py", "--cache", str(self.cache),
+                                       "--pattern", "*unknown*", "--output", str(self.out)]):
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                self.assertEqual(cts.main(), 2)
+        self.assertFalse(self.out.exists())
+
+    def test_report_write_failure_returns_two_on_stderr(self):
+        self.build_book(["正文。"])
+        self.out.write_text("not a directory", encoding="utf-8")
+        errors = io.StringIO()
+        with patch.object(sys, "argv", ["check_translation_spec.py", "--cache", str(self.cache),
+                                       "--output", str(self.out)]):
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(errors):
+                self.assertEqual(cts.main(), 2)
+        self.assertIn("未完成", errors.getvalue())
+
     def test_event_name_not_reported_but_distance_is(self):
         self.build_book([
             "这附近的路好像是十公里长跑的指定路线。",

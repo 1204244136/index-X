@@ -216,6 +216,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--jp-base", default=DEFAULT_JP_BASE, help="日文解包缓存基础目录")
     args = parser.parse_args(argv)
 
+    if args.line < 1:
+        parser.error("行号必须大于零（从 1 开始）")
+    if not Path(args.jp_base).is_dir():
+        print(f"[错误] 日文参考目录不存在：{args.jp_base}；"
+              "请自行提供已解包的日文工作源，并用 --jp-base 指定参考根目录", file=sys.stderr)
+        return 2
+
     mode = args.mode
     if args.raw:
         mode = "raw"
@@ -223,7 +230,23 @@ def main(argv: list[str] | None = None) -> int:
         mode = "strip"
 
     lookup = JapaneseSourceLookup(REPO_ROOT, args.jp_base)
-    text = lookup.get_line(args.work, args.file, args.line, ruby_mode=mode)
+    try:
+        work_dir = lookup.find_work_dir(args.work)
+        if work_dir is None:
+            print(f"[错误] 日文参考中缺少作品 {args.work}；请核对 --jp-base 与完整作品号", file=sys.stderr)
+            return 2
+        source = work_dir / lookup.resolve_jp_filename(args.work, args.file)
+        if not source.is_file():
+            print(f"[错误] 日文参考文件不存在：{source}；请核对文件名/内容序与 --jp-base", file=sys.stderr)
+            return 2
+        lines = source.read_text(encoding="utf-8-sig").splitlines()
+        text = None
+        if args.line <= len(lines):
+            raw = lines[args.line - 1]
+            text = to_ruby_markup(raw) if mode == "markup" else strip_rt_and_tags(raw) if mode == "strip" else raw.strip()
+    except (OSError, UnicodeError) as exc:
+        print(f"[错误] 日文原文查询未完成：{exc}", file=sys.stderr)
+        return 2
     if text is None:
         print(f"[未找到] 作品 {args.work} 文件 {args.file} 第 {args.line} 行", file=sys.stderr)
         return 1

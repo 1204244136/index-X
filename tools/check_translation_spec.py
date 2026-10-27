@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""检查中文缓存正文的「翻译与修嵌规范」符合性（EPUB 正文层）。只读。
+"""检查中文成品正文的「翻译与修嵌规范」符合性（EPUB 正文层）。只读。
 
 依据《翻译与修嵌规范.docx》中「落实到 EPUB 最终正文」的条款检查，
 排除仅为交稿制作服务的机制（|基文[注文] 注音、内联（*译注：）、空行规则、
@@ -26,7 +26,7 @@ docx 交稿格式、漫画修嵌），那些在 EPUB 成品中已转换为 ruby 
   P16 正文繁体字残留（汉化组的繁简混杂 X 版不保留，一律简体；日文引用与包装页豁免）
 
 报告写入 .cache/epub-work/translation-spec-check.tsv / .json / .md。
-只读，不修改缓存。
+默认读取 EPUB/，不修改输入书籍。
 """
 import os
 import re
@@ -44,7 +44,7 @@ from epub_ids import content_sequence
 from xhtml_text import strip_ruby_annotations
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DEFAULT_CACHE = os.path.join(REPO_ROOT, ".cache", "epub-work", "chinese-text")
+DEFAULT_ROOT = os.path.join(REPO_ROOT, "EPUB")
 DEFAULT_OUTPUT = os.path.join(REPO_ROOT, ".cache", "epub-work")
 
 TAG_RE = re.compile(r"<[^>]*>")
@@ -584,17 +584,19 @@ def audit_book(text_dir) -> list[tuple[str, int, str, str, str, str]]:
     return findings
 
 
-def main():
+def _run():
     configure_output()
     ap = argparse.ArgumentParser(
-        description="检查中文缓存正文的翻译与修嵌规范符合性（EPUB 正文层，只读）")
-    ap.add_argument("--cache", default=DEFAULT_CACHE, help="中文缓存根目录")
+        description="检查中文成品正文的翻译与修嵌规范符合性（只读，无需日文参考）")
+    source = ap.add_mutually_exclusive_group()
+    source.add_argument("--root", default=None, help="中文输入根目录（默认 EPUB/）")
+    source.add_argument("--cache", default=None, help="兼容参数：显式中文输入根目录")
     ap.add_argument("--output", default=DEFAULT_OUTPUT, help="报告输出目录")
     ap.add_argument("--pattern", default=None, help="按书名子串筛选，如 '*S3_10*'")
     ap.add_argument("--top", type=int, default=12, help="报告里每类最多列出的样例数")
     args = ap.parse_args()
 
-    root = args.cache
+    root = args.root or args.cache or DEFAULT_ROOT
     if not os.path.isdir(root):
         print(f"[错误] 中文输入根目录不存在或不是目录：{root}", file=sys.stderr)
         return 2
@@ -617,7 +619,7 @@ def main():
 
     for book in sorted(os.listdir(root)):
         text_dir = os.path.join(root, book, "OEBPS", "Text")
-        if not os.path.isdir(text_dir):
+        if not os.path.isdir(text_dir) or not any(fn.endswith(".xhtml") for fn in os.listdir(text_dir)):
             continue
         if args.pattern:
             pat = args.pattern.replace("*", ".*")
@@ -628,6 +630,10 @@ def main():
         for fn, ln, cat, sev, msg, ex in audit_book(text_dir):
             per_book[book].setdefault(fn, OrderedDict())
             emit(book, fn, ln, cat, sev, msg, ex)
+
+    if not books_checked:
+        print("[错误] 没有匹配的中文书籍/正文文件，未执行翻译规范检查", file=sys.stderr)
+        return 2
 
     # ---- 终端摘要 ----
     print("共检查 %d 本书。命中 %d 条（按类别：%s）。" % (
@@ -649,7 +655,7 @@ def main():
     # ---- JSON ----
     json_path = os.path.join(args.output, "translation-spec-check.json")
     payload = {
-        "scope": "chinese-text/**/OEBPS/Text/*.xhtml（EPUB 正文层）",
+        "scope": os.path.join(os.fspath(root), "**", "OEBPS", "Text", "*.xhtml"),
         "books_checked": len(books_checked),
         "total_findings": len(findings),
         "category_counts": dict(category_counts),
@@ -765,12 +771,20 @@ def main():
         lines.append("")
 
     lines.append("---\n")
-    lines.append("生成命令：`python tools/check_translation_spec.py`。只读检查，未修改任何缓存文件。\n")
+    lines.append("生成命令：`python tools/check_translation_spec.py`。只读检查，未修改输入书籍。\n")
     with open(md_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
     print("MD 已写入: %s" % md_path)
 
     return 0
+
+
+def main():
+    try:
+        return _run()
+    except (OSError, UnicodeError) as exc:
+        print(f"[错误] 翻译规范检查未完成：{exc}", file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":

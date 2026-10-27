@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import os
+import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -17,6 +19,36 @@ from japanese_lookup import (
 
 
 class JapaneseLookupTests(unittest.TestCase):
+    def test_cli_missing_reference_has_setup_diagnostic(self):
+        with tempfile.TemporaryDirectory() as directory:
+            missing = Path(directory) / "missing"
+            result = subprocess.run(
+                [sys.executable, str(TOOLS / "japanese_lookup.py"), "S1_01", "01", "6",
+                 "--jp-base", str(missing)],
+                capture_output=True, text=True, encoding="utf-8", check=False,
+            )
+            self.assertEqual(result.returncode, 2)
+            self.assertEqual(result.stdout, "")
+            self.assertIn("日文参考目录", result.stderr)
+            self.assertIn("--jp-base", result.stderr)
+
+    def test_cli_missing_work_and_file_are_setup_errors(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            book = root / "【S1_01】日本語" / "item" / "xhtml"
+            book.mkdir(parents=True)
+            (book / "S1_01-01.xhtml").write_text("<p>本文。</p>", encoding="utf-8")
+            for work, sequence, expected in (("S1_99", "01", "作品"), ("S1_01", "02", "文件")):
+                with self.subTest(work=work, sequence=sequence):
+                    result = subprocess.run(
+                        [sys.executable, str(TOOLS / "japanese_lookup.py"), work, sequence, "1",
+                         "--jp-base", str(root)],
+                        capture_output=True, text=True, encoding="utf-8", check=False,
+                    )
+                    self.assertEqual(result.returncode, 2)
+                    self.assertEqual(result.stdout, "")
+                    self.assertIn(expected, result.stderr)
+
     def test_strip_rt_and_tags(self):
         html = '<p>彼女の<ruby>横槍<rt>よこやり</rt></ruby>がなければ<ruby>浜面<rt>はまづら</rt></ruby>達は助からなかった。</p>'
         cleaned = strip_rt_and_tags(html)

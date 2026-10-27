@@ -80,6 +80,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 import re
 import xml.etree.ElementTree as ET
 from collections import Counter, defaultdict
@@ -735,7 +736,7 @@ def audit_book(book_dir: Path, only: set[str] | None) -> tuple[list[tuple], Coun
     return findings, counts, exempted, covered
 
 
-def main() -> int:
+def _run() -> int:
 
     configure_output()
     ap = argparse.ArgumentParser(
@@ -755,6 +756,9 @@ def main() -> int:
         raise SystemExit("未知检查项：%s（可选：%s）" % (", ".join(sorted(unknown)), ", ".join(CHECK_ORDER)))
 
     root = args.root.resolve()
+    if not root.is_dir():
+        print(f"[错误] 中文输入根目录不存在或不是目录：{root}", file=sys.stderr)
+        return 2
     findings: list[tuple] = []
     counts: Counter = Counter()
     exempted: Counter = Counter()
@@ -770,7 +774,11 @@ def main() -> int:
         exempted.update(book_exempted)
         files += covered["files"]
 
-    # `unique-identifier` 唯一性要跨书汇总，`audit_book` 判不了，故在 main() 层算。
+    if not books:
+        print("[错误] 没有匹配的书籍，未执行单侧体检", file=sys.stderr)
+        return 2
+
+    # `unique-identifier` 唯一性需要汇总所选书籍。
     if only is None or "identifier-unique" in only:
         for name, msg in find_identifier_duplicates(book_dirs):
             bid = book_id(name)
@@ -841,6 +849,14 @@ def main() -> int:
         print("JSON：%s" % args.json)
 
     return 1 if (args.strict and errors) else 0
+
+
+def main() -> int:
+    try:
+        return _run()
+    except (OSError, UnicodeError) as exc:
+        print(f"[错误] 单侧体检未完成：{exc}", file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":

@@ -1,14 +1,18 @@
 from __future__ import annotations
 
 import json
+import contextlib
+import io
 import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
+import search_text
 
 from search_text import (
     BilingualCorpus,
@@ -24,6 +28,58 @@ from search_text import (
 
 
 class SearchTextTests(unittest.TestCase):
+    def write_chinese(self, root: Path, wid: str, content: str) -> None:
+        path = root / f"【{wid}】测试" / "OEBPS" / "Text" / f"{wid}-01_Chapter.xhtml"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(f"<p>{content}</p>", encoding="utf-8")
+
+    def run_default_sources(self, root: Path, *extra: str):
+        out, err = io.StringIO(), io.StringIO()
+        with patch.object(search_text, "DEFAULT_CN_CACHE", root / "cache"), \
+                patch.object(search_text, "DEFAULT_EPUB_DIR", root / "archive"), \
+                contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = search_text.main(["中文", "--side", "cn", "--no-pair", "--format", "json",
+                                     "--jp-root", str(root / "jp"), *extra])
+        return code, out.getvalue(), err.getvalue()
+
+    def test_default_empty_cache_falls_back_to_available_archive(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "cache").mkdir()
+            self.write_chinese(root / "archive", "S1_01", "中文归档")
+            code, out, err = self.run_default_sources(root)
+            self.assertEqual(code, 0, err)
+            self.assertEqual(len(json.loads(out)), 1)
+
+    def test_default_partial_cache_fills_missing_books_from_archive(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.write_chinese(root / "cache", "S1_01", "中文缓存")
+            self.write_chinese(root / "archive", "S1_02", "中文归档")
+            code, out, err = self.run_default_sources(root, "--work", "S1_02")
+            self.assertEqual(code, 0, err)
+            self.assertEqual(len(json.loads(out)), 1)
+
+    def test_default_cache_takes_precedence_for_the_same_book(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.write_chinese(root / "cache", "S1_01", "中文缓存")
+            self.write_chinese(root / "archive", "S1_01", "中文归档")
+            code, out, err = self.run_default_sources(root)
+            self.assertEqual(code, 0, err)
+            self.assertEqual(len(json.loads(out)), 1)
+            self.assertIn("中文缓存", out)
+            self.assertNotIn("中文归档", out)
+
+    def test_explicit_empty_chinese_source_does_not_fall_back(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "empty").mkdir()
+            self.write_chinese(root / "archive", "S1_01", "中文归档")
+            code, out, err = self.run_default_sources(root, "--cn-root", str(root / "empty"))
+            self.assertEqual(code, 2)
+            self.assertEqual(out, "")
+
     def test_cli_missing_query_reports_usage_on_stderr(self):
         result = subprocess.run(
             [sys.executable, str(TOOLS / "search_text.py")],
@@ -43,22 +99,84 @@ class SearchTextTests(unittest.TestCase):
             with self.subTest(output_format=output_format):
                 self.assertIn("未找到", format_search_results([], output_format, "absent"))
 
+    def test_cli_unknown_work_is_setup_error_instead_of_zero_matches(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            cn = root / "cn" / "【S1_01】中文" / "OEBPS" / "Text"
+            cn.mkdir(parents=True)
+            (cn / "S1_01-01_Chapter.xhtml").write_text("<p>正文。</p>", encoding="utf-8")
+            result = subprocess.run(
+                [sys.executable, str(TOOLS / "search_text.py"), "absent", "--side", "cn",
+                 "--cn-root", str(root / "cn"), "--work", "S1_99", "--format", "json"],
+                capture_output=True, text=True, encoding="utf-8", check=False,
+            )
+            self.assertEqual(result.returncode, 2)
+            self.assertEqual(result.stdout, "")
+            self.assertIn("作品", result.stderr)
+
     def test_cli_no_matches_emits_parseable_json_and_tsv_header(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            cn = root / "cn" / "【S1_01】中文" / "OEBPS" / "Text"
+            cn.mkdir(parents=True)
+            (cn / "S1_01-01_Chapter.xhtml").write_text("<p>正文。</p>", encoding="utf-8")
+            for output_format in ("json", "tsv"):
+                with self.subTest(output_format=output_format):
+                    result = subprocess.run(
+                        [sys.executable, str(TOOLS / "search_text.py"), "absent", "--side", "cn",
+                         "--cn-root", str(root / "cn"), "--no-pair", "--format", output_format],
+                        capture_output=True, text=True, encoding="utf-8", check=False,
+                    )
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertEqual(result.stderr, "")
+                    if output_format == "json":
+                        self.assertEqual(json.loads(result.stdout), [])
+                    else:
+                        self.assertEqual(result.stdout.strip().split("\t"),
+                                         ["Work", "Side", "File", "Line", "Track",
+                                          "Formatted_Text", "Paired_Text"])
+
+    def test_cli_missing_japanese_is_partial_for_both_but_error_for_jp(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            cn = root / "cn" / "【S1_01】中文" / "OEBPS" / "Text"
+            cn.mkdir(parents=True)
+            (cn / "S1_01-01_Chapter.xhtml").write_text("<p>正文。</p>", encoding="utf-8")
+            command = [sys.executable, str(TOOLS / "search_text.py"), "正文",
+                       "--cn-root", str(root / "cn"), "--jp-root", str(root / "missing-jp"),
+                       "--format", "json"]
+            result = subprocess.run(command, capture_output=True, text=True, encoding="utf-8", check=False)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(len(json.loads(result.stdout)), 1)
+            self.assertIn("日文", result.stderr)
+            result = subprocess.run(command + ["--side", "jp"], capture_output=True,
+                                    text=True, encoding="utf-8", check=False)
+            self.assertEqual(result.returncode, 2)
+            self.assertEqual(result.stdout, "")
+            self.assertIn("--jp-root", result.stderr)
+
+    def test_explicit_missing_chinese_root_never_falls_back(self):
+        with tempfile.TemporaryDirectory() as directory:
+            result = subprocess.run(
+                [sys.executable, str(TOOLS / "search_text.py"), "正文", "--side", "cn",
+                 "--cn-root", str(Path(directory) / "missing"), "--format", "json"],
+                capture_output=True, text=True, encoding="utf-8", check=False,
+            )
+            self.assertEqual(result.returncode, 2)
+            self.assertEqual(result.stdout, "")
+            self.assertIn("中文", result.stderr)
+
+    def test_cli_invalid_regex_reports_setup_error_without_traceback(self):
         for output_format in ("json", "tsv"):
             with self.subTest(output_format=output_format):
                 result = subprocess.run(
-                    [sys.executable, str(TOOLS / "search_text.py"), "absent",
-                     "--work", "__CLI_OUTPUT_NO_MATCH__", "--format", output_format],
+                    [sys.executable, str(TOOLS / "search_text.py"), "[", "--regex",
+                     "--side", "cn", "--format", output_format],
                     capture_output=True, text=True, encoding="utf-8", check=False,
                 )
-                self.assertEqual(result.returncode, 0, result.stderr)
-                self.assertEqual(result.stderr, "")
-                if output_format == "json":
-                    self.assertEqual(json.loads(result.stdout), [])
-                else:
-                    self.assertEqual(result.stdout.strip().split("\t"),
-                                     ["Work", "Side", "File", "Line", "Track",
-                                      "Formatted_Text", "Paired_Text"])
+                self.assertEqual(result.returncode, 2)
+                self.assertEqual(result.stdout, "")
+                self.assertNotIn("Traceback", result.stderr)
 
     def test_fold_text(self):
         # 1. 小字假名折叠为大字假名
@@ -159,7 +277,7 @@ class SearchTextTests(unittest.TestCase):
             cn_file.write_text(cn_content, encoding="utf-8")
             jp_file.write_text(jp_content, encoding="utf-8")
 
-            corpus = BilingualCorpus(cn_dir=cn_dir, jp_dir=jp_dir)
+            corpus = BilingualCorpus(cn_dir=cn_dir, jp_dir=jp_dir, epub_dir=temp_path / "archive")
 
             # 1. 搜中文，联动出日文
             matches_cn = search_corpus(corpus, "超电磁炮", side="cn")

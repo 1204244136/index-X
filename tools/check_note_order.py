@@ -10,7 +10,7 @@
   ID 不要求连续或按数值递增。
 
 正文文件按表头内容序（如 S1_01-02 < S1_01-03）排序后逐行扫描，
-取每个注释 id 的首次引用位置作为“书中出现顺序”。只读，不修改缓存。
+取每个注释 id 的首次引用位置作为“书中出现顺序”。默认读取 EPUB/，不修改输入书籍。
 """
 import os
 import re
@@ -32,7 +32,7 @@ from notes_core import (
 )
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DEFAULT_CACHE = os.path.join(REPO_ROOT, ".cache", "epub-work", "chinese-text")
+DEFAULT_ROOT = os.path.join(REPO_ROOT, "EPUB")
 DEFAULT_OUTPUT = os.path.join(REPO_ROOT, ".cache", "epub-work")
 
 def read(path):
@@ -80,20 +80,21 @@ def check_book(book, text_dir, nf):
     return entry, issues
 
 
-def main():
+def _run():
     configure_output()
     ap = argparse.ArgumentParser(description="检查 Note 条目首引顺序与稳定 ID 引用完整性（只读）")
-    ap.add_argument("--root", default=None,
-                    help="EPUB 根目录或中文缓存根目录（若指定则优先使用）")
-    ap.add_argument("--cache", default=DEFAULT_CACHE,
-                    help="中文缓存根目录（默认 .cache/epub-work/chinese-text）")
+    source = ap.add_mutually_exclusive_group()
+    source.add_argument("--root", default=None,
+                        help="中文输入根目录（默认 EPUB/，无需日文参考）")
+    source.add_argument("--cache", default=None,
+                        help="兼容参数：显式中文输入根目录")
     ap.add_argument("--output", default=DEFAULT_OUTPUT,
                     help="报告输出目录（默认 .cache/epub-work）")
     ap.add_argument("--pattern", default=None,
                     help="按书名子串筛选要检查的书，如 '*S1_01*'")
     args = ap.parse_args()
 
-    root = args.root or args.cache
+    root = args.root or args.cache or DEFAULT_ROOT
     if not os.path.isdir(root):
         print(f"[错误] 中文输入根目录不存在或不是目录：{root}", file=sys.stderr)
         return 2
@@ -104,18 +105,26 @@ def main():
         pat = args.pattern.replace("*", ".*")
         books = [b for b in books if re.search(pat, b)]
 
+    selected_books = []
+    without_notes = []
     for book in books:
         text_dir = os.path.join(root, book, "OEBPS", "Text")
-        if not os.path.isdir(text_dir):
+        if not os.path.isdir(text_dir) or not any(f.endswith(".xhtml") for f in os.listdir(text_dir)):
             continue
+        selected_books.append(book)
         note_files = [f for f in os.listdir(text_dir) if NOTEFILE_RE.match(f)]
         if not note_files:
+            without_notes.append(book)
             continue
         for nf in note_files:
             entry, issues = check_book(book, text_dir, nf)
             per_book[book] = entry
             if issues:
                 problems.append((book, nf, issues))
+
+    if not selected_books:
+        print("[错误] 没有匹配的中文书籍/正文文件，未执行 Note 检查", file=sys.stderr)
+        return 2
 
     # 终端输出
     if problems:
@@ -131,9 +140,13 @@ def main():
             print("  首次出现位置:")
             for k, v in data["first_appearance"].items():
                 print("    %s -> %s:%s" % (k, v["file"], v["line"]))
-    else:
+    elif per_book:
         print("所有 Note 条目均按正文首次引用顺序排列，ID 引用完整且无重复定义。")
+    else:
+        print("所选书籍无 Note 页，未执行 Note 条目检查。")
     print("\n共检查 %d 本书。" % len(per_book))
+    if without_notes:
+        print("无 Note 页（不适用）：%d 本；%s" % (len(without_notes), "、".join(without_notes)))
 
     # 报告写入
     if args.output:
@@ -174,8 +187,12 @@ def main():
                     for k, v in data["first_appearance"].items():
                         lines.append("- %s → `%s:%s`" % (k, v["file"], v["line"]))
                     lines.append("")
-            else:
+            elif per_book:
                 lines.append("所有 Note 条目均按正文首次引用顺序排列，ID 引用完整且无重复定义。\n")
+            else:
+                lines.append("所选书籍无 Note 页，未执行 Note 条目检查。\n")
+            if without_notes:
+                lines.append("无 Note 页（不适用）：%s。\n" % "、".join(without_notes))
             lines.append("\n共检查 %d 本书。\n" % len(per_book))
             with open(md_path, "w", encoding="utf-8") as f:
                 f.write("\n".join(lines))
@@ -185,6 +202,14 @@ def main():
             return 2
 
     return 1 if problems else 0
+
+
+def main():
+    try:
+        return _run()
+    except (OSError, UnicodeError) as exc:
+        print(f"[错误] Note 检查未完成：{exc}", file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":

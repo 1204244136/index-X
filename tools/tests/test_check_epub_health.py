@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sys
 import io
-from contextlib import redirect_stdout
+from contextlib import redirect_stderr, redirect_stdout
 import tempfile
 import unittest
 from pathlib import Path
@@ -44,6 +44,25 @@ class HealthCheckNegativeTests(unittest.TestCase):
         self._tmp = tempfile.TemporaryDirectory()
         self.tmp = Path(self._tmp.name)
         self.addCleanup(self._tmp.cleanup)
+
+    def test_empty_selection_is_setup_error_without_report(self):
+        report = self.tmp / "report.json"
+        with patch.object(sys, "argv", ["check_epub_health.py", "--root", str(self.tmp),
+                                       "--strict", "--json", str(report)]):
+            with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+                self.assertEqual(check_epub_health.main(), 2)
+        self.assertFalse(report.exists())
+
+    def test_report_write_failure_returns_two_on_stderr(self):
+        self.build("S1_01", {"OEBPS/Text/S1_01-01_Chapter.xhtml": GOOD})
+        blocked = self.tmp / "blocked"
+        blocked.write_text("not a directory", encoding="utf-8")
+        errors = io.StringIO()
+        with patch.object(sys, "argv", ["check_epub_health.py", "--root", str(self.tmp),
+                                       "--json", str(blocked / "report.json")]):
+            with redirect_stdout(io.StringIO()), redirect_stderr(errors):
+                self.assertEqual(check_epub_health.main(), 2)
+        self.assertIn("未完成", errors.getvalue())
 
     @staticmethod
     def page(title: str) -> list[str]:

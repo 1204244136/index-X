@@ -340,18 +340,25 @@ class BilingualCorpus:
         return entry
 
     def _scan_work_dirs(self) -> None:
-        """扫描中日缓存目录下的所有作品子目录（若中文缓存缺失则自动回退到 EPUB/）。"""
+        """Index available works, preferring each cached Chinese book over its archive copy."""
         # 1. 扫描日文
         if self.jp_dir.is_dir():
             for entry in self.jp_dir.iterdir():
                 if entry.is_dir():
                     m = re.search(r"【([A-Za-z0-9_.]+)】", entry.name)
                     w_id = m.group(1) if m else entry.name
-                    self._work_dirs["jp"][w_id] = self._find_text_dir(entry)
+                    text_dir = self._find_text_dir(entry)
+                    if list(text_dir.glob("*.xhtml")):
+                        self._work_dirs["jp"][w_id] = text_dir
 
-        # 2. 扫描中文（优先 .cache，若无则读 EPUB）
-        cn_source = self.cn_dir if self.cn_dir.is_dir() else self.epub_dir
-        if cn_source.is_dir():
+        # The archive fills missing works; a usable cached book replaces its
+        # whole archive counterpart so one search never mixes two revisions.
+        cn_sources = [self.epub_dir]
+        if self.use_cache and self.cn_dir != self.epub_dir:
+            cn_sources.append(self.cn_dir)
+        for cn_source in cn_sources:
+            if not cn_source.is_dir():
+                continue
             for entry in cn_source.iterdir():
                 if entry.is_dir():
                     m = re.search(r"【([A-Za-z0-9_.]+)】", entry.name)
@@ -369,10 +376,7 @@ class BilingualCorpus:
         if not file_path.is_file():
             return []
 
-        try:
-            content = file_path.read_text(encoding="utf-8", errors="replace")
-        except Exception:
-            return []
+        content = file_path.read_text(encoding="utf-8", errors="replace")
 
         lines = content.splitlines()
         parsed_list = [parse_ruby_line(line, idx + 1) for idx, line in enumerate(lines)]
@@ -676,19 +680,56 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="输出到目标文件，默认打印到控制台 (stdout)",
     )
+    parser.add_argument("--cn-root", type=Path,
+                        help="显式中文参考根目录；缺省按作品优先中文缓存，未缓存的作品读取 EPUB/")
+    parser.add_argument("--jp-root", type=Path, default=DEFAULT_JP_CACHE,
+                        help="日文参考根目录（默认 .cache/epub-work/japanese-text）")
     return parser
 
 
-def main(argv: list[str] | None = None) -> int:
+def _run(argv: list[str] | None = None) -> int:
     configure_output()
     parser = build_parser()
     args = parser.parse_args(argv)
 
-    if not args.query:
+    if not args.query or not args.query.strip():
         parser.print_help(file=sys.stderr)
         return 1
 
-    corpus = BilingualCorpus()
+    if args.cn_root is not None and not args.cn_root.is_dir():
+        print(f"[错误] 中文参考目录不存在：{args.cn_root}；请用 --cn-root 指定存在的解包目录", file=sys.stderr)
+        return 2
+    if args.context < 0 or args.max_matches < 0:
+        parser.error("--context 与 --max-matches 必须为非负数")
+    if args.regex:
+        re.compile(args.query, 0 if args.exact else re.IGNORECASE)
+
+    corpus = BilingualCorpus(
+        cn_dir=args.cn_root or DEFAULT_CN_CACHE,
+        jp_dir=args.jp_root,
+        epub_dir=args.cn_root or DEFAULT_EPUB_DIR,
+        use_cache=args.cn_root is None,
+    )
+    selected = {
+        side: {work for work in works if not args.work or
+               fnmatch.fnmatch(work.casefold(), args.work.casefold())}
+        for side, works in corpus._work_dirs.items()
+    }
+    required_sides = ("cn", "jp") if args.side == "both" else (args.side,)
+    if not any(selected[side] for side in required_sides):
+        scope = f"作品筛选 {args.work} " if args.work else ""
+        option = "--jp-root" if args.side == "jp" else "--cn-root / --jp-root"
+        print(f"[错误] {scope}没有可检索的{'日文' if args.side == 'jp' else '中文' if args.side == 'cn' else '中日'}正文；"
+              f"请用 {option} 指定含所选作品 XHTML 的参考根目录", file=sys.stderr)
+        return 2
+    # Optional sides describe coverage without contaminating JSON/TSV stdout.
+    for side, label in (("cn", "中文"), ("jp", "日文")):
+        other_side = "jp" if side == "cn" else "cn"
+        if args.side == "both" or (not args.no_pair and args.side == other_side):
+            missing = selected[other_side] - selected[side]
+            if missing:
+                print(f"[未核对] 缺少{label}参考：{'、'.join(sorted(missing))}；"
+                      f"这些作品仅检索已有侧，未作{label}检索或配对", file=sys.stderr)
     matches = search_corpus(
         corpus=corpus,
         query=args.query,
@@ -716,6 +757,14 @@ def main(argv: list[str] | None = None) -> int:
         print(formatted_output)
 
     return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    try:
+        return _run(argv)
+    except (OSError, UnicodeError, re.error) as exc:
+        print(f"[错误] 文本检索未完成：{exc}", file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":
