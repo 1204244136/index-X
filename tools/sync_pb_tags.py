@@ -73,7 +73,7 @@ def main() -> int:
     refused: list[str] = []
     existing = added = 0
     try:
-        pairs = list(iter_content_pairs(root, jp_root, args.book))
+        pairs = list(iter_content_pairs(root, jp_root, args.book, require_reference=True))
         for wid, header, jp_path, cn_path in pairs:
             japanese = jp_path.read_text(encoding="utf-8-sig").splitlines()
             raw = cn_path.read_bytes()

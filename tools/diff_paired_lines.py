@@ -8,7 +8,7 @@
     - 按作品分批做深度检查（--work），避免一次性跑全库
 
 用法：
-    # 方式 1：直接传表头（自动在 .cache/epub-work 下定位中日配对文件）
+    # 方式 1：直接传表头（中文归档与本地日文参考）
     python tools/diff_paired_lines.py S1_01-02
 
     # 方式 2：传入两个具体文件路径
@@ -42,52 +42,32 @@ import sys
 from pathlib import Path
 from typing import NamedTuple
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
 try:
     from tools.cli_output import configure_output
 except ImportError:
     from cli_output import configure_output
 
-try:
-    from tools.alignment_rules import (
-        MANUAL_ALIGNMENT_HEADERS,
-        NON_PAIR_WORK_IDS,
-        PAIR_RULES,
-        TEXTUAL_IMAGE_HEADERS,
-        pairing_header_of,
-    )
-    from tools.epub_ids import book_id, japanese_book_id
-except ImportError:
-    try:
-        from alignment_rules import (
-            MANUAL_ALIGNMENT_HEADERS,
-            NON_PAIR_WORK_IDS,
-            PAIR_RULES,
-            TEXTUAL_IMAGE_HEADERS,
-            pairing_header_of,
-        )
-        from epub_ids import book_id, japanese_book_id
-    except ImportError:
-        MANUAL_ALIGNMENT_HEADERS = frozenset()
-        NON_PAIR_WORK_IDS = frozenset()
-        PAIR_RULES = {}
-        TEXTUAL_IMAGE_HEADERS = frozenset()
-
-        def pairing_header_of(name: str) -> str | None:
-            m = re.match(r"^(S\d+_\d+-\d+|S5_\d+_\d+-\d+|S6_\d{2}\.\d{2}\.\d{2}-\d+)", name)
-            return m.group(1) if m else None
-
-        def book_id(name: str) -> str | None:
-            m = re.search(r"【([^】]+)】", name)
-            return m.group(1).upper() if m else None
-
-        def japanese_book_id(chinese_id: str) -> str:
-            return chinese_id.upper()
+from alignment_rules import (
+    MANUAL_ALIGNMENT_HEADERS,
+    NON_PAIR_WORK_IDS,
+    PAIR_RULES,
+    TEXTUAL_IMAGE_HEADERS,
+    pairing_header_of,
+)
+from epub_ids import book_id, japanese_book_id
 
 try:
     from xhtml_text import visible_text_of
 except ImportError:  # 以包方式导入时 tools/ 不在 sys.path
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     from xhtml_text import visible_text_of
+
+from epub_ids import is_packaging_header
+from xhtml_structure import books_by_id
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
 
 # ---------------------------------------------------------------------------
 # 文本与标签解析
@@ -410,29 +390,21 @@ def render_html(pairs: list[AlignedPair], output_path: Path, title: str) -> None
 # 主流程与配对定位
 # ---------------------------------------------------------------------------
 
-def locate_pair_by_header(header: str, cache_dir: Path) -> tuple[Path, Path]:
-    cn_dir = cache_dir / "chinese-text"
-    jp_dir = cache_dir / "japanese-text"
-
-    if not cn_dir.exists() or not jp_dir.exists():
-        raise FileNotFoundError(f"缓存目录不存在或未解包: {cache_dir}")
-
-    cn_match = None
-    jp_match = None
-
-    for p in cn_dir.rglob("*.xhtml"):
-        if pairing_header_of(p.name) == header or header in p.name:
-            cn_match = p
-            break
-
-    for p in jp_dir.rglob("*.xhtml"):
-        if pairing_header_of(p.name) == header or header in p.name:
-            jp_match = p
-            break
-
-    if not cn_match or not jp_match:
-        raise FileNotFoundError(f"在缓存区未完整找到表头 [{header}] 的中日配对文件 (CN: {cn_match}, JP: {jp_match})")
-    return jp_match, cn_match
+def locate_pair_by_header(header: str, cache_dir: Path, *, cn_root: Path | None = None,
+                          jp_root: Path | None = None) -> tuple[Path, Path]:
+    cn_dir = cn_root if cn_root is not None else cache_dir / "chinese-text"
+    jp_dir = jp_root if jp_root is not None else cache_dir / "japanese-text"
+    matches: list[Path] = []
+    for side, directory in (("中文", cn_dir), ("日文", jp_dir)):
+        if not directory.is_dir():
+            raise FileNotFoundError(
+                f"{side}输入目录不存在：{directory}；用 --root/--jp-root 指定已有归档与日文参考")
+        found = [path for path in directory.rglob("*.xhtml")
+                 if (pairing_header_of(path.name) or "").upper() == header.upper()]
+        if len(found) != 1:
+            raise ValueError(f"{side}表头 {header} 应有唯一文件，实际 {len(found)} 个：{directory}")
+        matches.append(found[0])
+    return matches[1], matches[0]
 
 
 # ---------------------------------------------------------------------------
@@ -542,51 +514,91 @@ def afterword_moved(jp_raw: list[str], cn_raw: list[str]) -> bool:
 
 
 def run_batch(cache: Path, only_diff: bool, progress: bool, tsv_path: Path | None,
-              works: list[str] | None = None) -> int:
+              works: list[str] | None = None, *, cn_root: Path | None = None,
+              jp_root: Path | None = None, strict: bool = False) -> int:
     """遍历缓存区中日配对文件，逐文件报告结构锚点冲突与行数差异。
 
     works 为作品号 glob 列表（如 ``S1_*``、``S5_01_02``）；给出时只检查命中
     的作品，便于按批次分次深检，避免一次性跑全库。
     """
-    cn_root = cache / "chinese-text"
-    jp_root = cache / "japanese-text"
+    cn_root = cn_root if cn_root is not None else cache / "chinese-text"
+    jp_root = jp_root if jp_root is not None else cache / "japanese-text"
     if not cn_root.is_dir() or not jp_root.is_dir():
-        raise FileNotFoundError(f"缓存目录不存在或未解包: {cache}")
+        missing = [str(root) for root in (cn_root, jp_root) if not root.is_dir()]
+        raise FileNotFoundError(
+            f"配对输入目录不存在：{'、'.join(missing)}；用 --root/--jp-root 指定已有归档与日文参考")
 
-    cn_books = {book_id(d.name): d for d in cn_root.iterdir() if d.is_dir()}
-    jp_books = {book_id(d.name): d for d in jp_root.iterdir() if d.is_dir()}
+    cn_books = books_by_id(cn_root)
+    jp_books = books_by_id(jp_root)
+    works = [pattern.upper() for pattern in works] if works else None
 
     # 先收集全部配对单元，才能给出准确的总数与百分比进度
     units: list[tuple[str, str, Path, Path]] = []
-    skipped_books: list[str] = []
+    coverage_issues: list[tuple[str, str, str]] = []
+    excluded: list[str] = []
+    for pattern in works or ():
+        if not any(fnmatch.fnmatch(wid, pattern) for wid in cn_books):
+            coverage_issues.append((pattern, "-", "中文侧没有匹配作品"))
     for cn_id, cn_dir in sorted(cn_books.items()):
-        if cn_id is None or cn_id in NON_PAIR_WORK_IDS:
-            continue
         if works and not any(fnmatch.fnmatch(cn_id, pat) for pat in works):
+            continue
+        if cn_id in NON_PAIR_WORK_IDS:
+            excluded.append(f"{cn_id}（已确认非配对作品）")
+            continue
+        cn_all = [p for p in cn_dir.rglob("*.xhtml") if p.name.lower() != "nav.xhtml"]
+        cn_by, cn_duplicates = index_by_header(cn_all)
+        if cn_by and not cn_duplicates and not any(
+                not is_packaging_header(header) and header not in MANUAL_ALIGNMENT_HEADERS
+                and header not in TEXTUAL_IMAGE_HEADERS for header in cn_by):
+            excluded.append(f"{cn_id}（只有包装页或已确认例外，没有适用的普通正文）")
             continue
         jp_dir = jp_books.get(japanese_book_id(cn_id))
         if jp_dir is None:
-            skipped_books.append(f"{cn_id}（无日文对应作品）")
+            coverage_issues.append((cn_id, "-", "缺日文对应作品"))
             continue
-        cn_all = [p for p in cn_dir.rglob("*.xhtml") if p.name.lower() != "nav.xhtml"]
+        if not cn_by and not cn_duplicates:
+            coverage_issues.append((cn_id, "-", "中文侧没有可识别的正文或包装表头"))
+            continue
         jp_all = [p for p in jp_dir.rglob("*.xhtml") if p.name.lower() != "nav.xhtml"]
-        cn_by, _ = index_by_header(cn_all)
-        jp_by, _ = index_by_header(jp_all)
+        jp_by, jp_duplicates = index_by_header(jp_all)
+        for side, duplicates in (("中文", cn_duplicates), ("日文", jp_duplicates)):
+            coverage_issues.extend((cn_id, header, f"{side}侧重复表头，未选择配对文件")
+                                   for header in sorted(duplicates))
+        for header in sorted(set(cn_by) ^ set(jp_by)):
+            if is_packaging_header(header) or header in MANUAL_ALIGNMENT_HEADERS or header in TEXTUAL_IMAGE_HEADERS:
+                continue
+            if header in cn_duplicates or header in jp_duplicates:
+                continue
+            coverage_issues.append((cn_id, header, f"缺{'日文' if header in cn_by else '中文'}对照文件"))
         for h in sorted(set(cn_by) & set(jp_by)):
             if h in MANUAL_ALIGNMENT_HEADERS:
                 continue
             units.append((cn_id, h, jp_by[h], cn_by[h]))
 
     total = len(units)
-    print(f"缓存：{cache}")
+    if not total:
+        details = "；".join(f"{wid}/{header}: {reason}" for wid, header, reason in coverage_issues)
+        print(f"没有可检查的配对单元，未完成对齐诊断：{details or '所选范围为空或全部属于已确认例外'}", file=sys.stderr)
+        return 2
+    print(f"中文输入：{cn_root}；日文参考：{jp_root}")
     if works:
         print(f"作品筛选：{', '.join(works)}")
     print(f"待检查配对单元：{total}（涉及作品 {len({u[0] for u in units})} 个）")
-    if skipped_books:
-        print(f"跳过无日文对应的作品 {len(skipped_books)} 个：{', '.join(skipped_books)}")
+    print(f"未覆盖 {len(coverage_issues)} 项；已确认范围排除 {len(excluded)} 项")
+    for wid, header, reason in coverage_issues:
+        print(f"  [未核对] {wid}/{header}: {reason}")
+    for item in excluded:
+        print(f"  [范围排除] {item}")
     print("-" * 95)
 
-    rows: list[list[str]] = []
+    rows: list[list[str]] = [[wid, header, "", "", "", "", f"未核对：{reason}", "", "覆盖不完整"]
+                             for wid, header, reason in coverage_issues]
+
+    def relative(path: Path) -> str:
+        try:
+            return str(path.relative_to(cache))
+        except ValueError:
+            return str(path)
     bad = 0
     for i, (cn_id, header, jp_p, cn_p) in enumerate(units, 1):
         if progress:
@@ -595,6 +607,13 @@ def run_batch(cache: Path, only_diff: bool, progress: bool, tsv_path: Path | Non
                   end="", flush=True)
         jp_raw = jp_p.read_text(encoding="utf-8", errors="ignore").splitlines()
         cn_raw = cn_p.read_text(encoding="utf-8", errors="ignore").splitlines()
+        if not any(line.strip() for line in jp_raw) or not any(line.strip() for line in cn_raw):
+            bad += 1
+            problem = "输入含空文件，未核对"
+            print(f"[{cn_id}] {header}: {problem}")
+            rows.append([cn_id, header, relative(jp_p), relative(cn_p),
+                         str(len(jp_raw)), str(len(cn_raw)), problem, "", ""])
+            continue
         jl = [parse_line(l) for l in jp_raw]
         cl = [parse_line(l) for l in cn_raw]
         problems: list[str] = []
@@ -603,7 +622,7 @@ def run_batch(cache: Path, only_diff: bool, progress: bool, tsv_path: Path | Non
         if not has_body(jl) and not has_body(cl):
             pairs = align_lines(jl, cl)
             rows.append([
-                cn_id, header, str(jp_p.relative_to(cache)), str(cn_p.relative_to(cache)),
+                cn_id, header, relative(jp_p), relative(cn_p),
                 str(len(jl)), str(len(cl)), "", "0",
             ])
             continue
@@ -611,7 +630,7 @@ def run_batch(cache: Path, only_diff: bool, progress: bool, tsv_path: Path | Non
         # 行数/h2/图片行本就允许不同，配对检查整体豁免（同 check_alignment 口径）。
         if header in TEXTUAL_IMAGE_HEADERS:
             rows.append([
-                cn_id, header, str(jp_p.relative_to(cache)), str(cn_p.relative_to(cache)),
+                cn_id, header, relative(jp_p), relative(cn_p),
                 str(len(jl)), str(len(cl)), "",
                 str(sum(1 for p in align_lines(jl, cl) if p.status == "DRIFT")),
             ])
@@ -647,7 +666,7 @@ def run_batch(cache: Path, only_diff: bool, progress: bool, tsv_path: Path | Non
                 _print_conflicts(pairs, conflicts)
         rows.append([
             cn_id, header,
-            str(jp_p.relative_to(cache)), str(cn_p.relative_to(cache)),
+            relative(jp_p), relative(cn_p),
             str(len(jl)), str(len(cl)),
             "; ".join(problems),
             str(drift),
@@ -657,7 +676,7 @@ def run_batch(cache: Path, only_diff: bool, progress: bool, tsv_path: Path | Non
         print("\r" + " " * 95 + "\r", end="")
 
     print("-" * 95)
-    print(f"已检查配对单元：{total}；行数/结构问题：{bad}")
+    print(f"已检查配对单元：{total}；行数/结构问题：{bad}；未覆盖 {len(coverage_issues)} 项")
 
     if tsv_path:
         import csv as _csv
@@ -667,7 +686,7 @@ def run_batch(cache: Path, only_diff: bool, progress: bool, tsv_path: Path | Non
             w.writerow(["书", "表头", "日文文件", "中文文件", "日文行数", "中文行数", "问题", "译文DRIFT数", "备注"])
             w.writerows(rows)
         print(f"报告：{tsv_path}")
-    return 1 if bad else 0
+    return 1 if bad or (strict and coverage_issues) else 0
 
 
 def _kind(info: LineInfo | None) -> str:
@@ -698,7 +717,10 @@ def main():
     parser.add_argument("target", nargs="?", default=None,
                         help="表头编号（如 S1_01-02）或日文文件路径；省略则批量检查全部配对文件")
     parser.add_argument("cn_path", nargs="?", default=None, help="中文文件路径（仅在第一个参数为文件路径时提供）")
-    parser.add_argument("--cache", default=".cache/epub-work", help="缓存根目录（默认 .cache/epub-work）")
+    parser.add_argument("--cache", type=Path, help="兼容双侧缓存根；显式指定时从其 chinese-text/japanese-text 读取")
+    parser.add_argument("--root", type=Path, help="中文成品根目录（默认 EPUB/）")
+    parser.add_argument("--jp-root", type=Path, help="日文参考根目录（默认本地缓存 japanese-text）")
+    parser.add_argument("--strict", action="store_true", help="批量模式下将缺作品、缺表头或重复表头的未覆盖范围计为失败")
     parser.add_argument("--html", type=Path, default=None, help="导出 HTML 报告文件路径")
     parser.add_argument("--only-diff", action="store_true", help="仅在控制台显示存在差异/漂移的行及其上下文")
     parser.add_argument("--all", action="store_true", help="在控制台打印所有行，不进行最大行数截断")
@@ -708,16 +730,23 @@ def main():
     parser.add_argument("--work", action="append", default=None, metavar="GLOB",
                         help="批量模式只检查指定作品号（可重复，支持 * 通配，如 --work 'S1_*'）")
     args = parser.parse_args()
+    if args.cache is not None and (args.root is not None or args.jp_root is not None):
+        parser.error("--cache 与 --root/--jp-root 不能同时使用")
+    cache = args.cache if args.cache is not None else REPO_ROOT / ".cache" / "epub-work"
+    cn_root = args.root if args.root is not None else (cache / "chinese-text" if args.cache is not None else REPO_ROOT / "EPUB")
+    jp_root = args.jp_root if args.jp_root is not None else cache / "japanese-text"
 
     batch = args.batch or args.target is None
+    if args.strict and not batch:
+        parser.error("--strict 仅用于批量模式；单文件诊断请检查报告中的结构差异")
     if batch:
         if args.target is not None:
             parser.error("批量模式不接受表头参数")
-        tsv = args.tsv or (Path(args.cache) / "diff-paired-lines.tsv")
+        tsv = args.tsv or (cache / "diff-paired-lines.tsv")
         try:
-            return run_batch(Path(args.cache), args.only_diff, not args.no_progress, tsv,
-                             args.work)
-        except OSError as exc:
+            return run_batch(cache, args.only_diff, not args.no_progress, tsv,
+                             args.work, cn_root=cn_root, jp_root=jp_root, strict=args.strict)
+        except (OSError, ValueError) as exc:
             print(f"[错误] 无法读取配对输入：{exc}", file=sys.stderr)
             return 2
 
@@ -731,13 +760,17 @@ def main():
                     return 2
             title = f"{jp_file.name} vs {cn_file.name}"
         else:
-            cache_path = Path(args.cache)
-            jp_file, cn_file = locate_pair_by_header(args.target, cache_path)
+            jp_file, cn_file = locate_pair_by_header(args.target, cache, cn_root=cn_root, jp_root=jp_root)
             title = args.target
 
-        jp_lines = [parse_line(line) for line in jp_file.read_text(encoding="utf-8", errors="ignore").splitlines()]
-        cn_lines = [parse_line(line) for line in cn_file.read_text(encoding="utf-8", errors="ignore").splitlines()]
-    except OSError as exc:
+        jp_raw = jp_file.read_text(encoding="utf-8", errors="ignore").splitlines()
+        cn_raw = cn_file.read_text(encoding="utf-8", errors="ignore").splitlines()
+        if not any(line.strip() for line in jp_raw) or not any(line.strip() for line in cn_raw):
+            print("[错误] 配对输入含空文件，未完成对齐诊断。", file=sys.stderr)
+            return 2
+        jp_lines = [parse_line(line) for line in jp_raw]
+        cn_lines = [parse_line(line) for line in cn_raw]
+    except (OSError, ValueError) as exc:
         print(f"[错误] 无法读取配对输入：{exc}", file=sys.stderr)
         return 2
 
@@ -746,7 +779,11 @@ def main():
     render_cli(pairs, only_diff=args.only_diff, max_display=max_disp)
 
     if args.html:
-        render_html(pairs, args.html, title)
+        try:
+            render_html(pairs, args.html, title)
+        except (OSError, UnicodeError) as exc:
+            print(f"[错误] HTML 报告写入失败：{exc}", file=sys.stderr)
+            return 2
     return 0
 
 if __name__ == "__main__":

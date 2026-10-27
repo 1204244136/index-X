@@ -27,6 +27,83 @@ class PreflightTests(unittest.TestCase):
         self.assertEqual(main(["--source", str(source)]), 1)
         self.assertEqual(main(["--source", str(source / "missing")]), 2)
 
+    def test_mixed_present_and_missing_explicit_books_do_not_pass(self):
+        cn = self.root / "EPUB"
+        make_book(cn / "【S1_01】中文X", layout=True)
+        keys = ["chinese-text/【S1_01】中文X", "chinese-text/【S1_99】不存在"]
+        errors = io.StringIO()
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(errors):
+            self.assertFalse(validate_publication(cn, book_keys=keys))
+        self.assertIn("【S1_99】不存在", errors.getvalue())
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            self.assertTrue(validate_publication(cn, book_keys=keys, allow_removed=True))
+
+    def test_explicit_empty_japanese_reference_does_not_pass(self):
+        cn, jp = self.root / "EPUB", self.root / "jp"
+        make_book(cn / "【S1_01】中文X", layout=True)
+        jp.mkdir()
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = main(["--source", str(cn), "--jp-root", str(jp)])
+        self.assertEqual(code, 1)
+        self.assertIn("核对文件 0", out.getvalue())
+        self.assertIn("未核对", err.getvalue())
+
+    def test_optional_empty_reference_reports_single_side(self):
+        cn, jp = self.root / "EPUB", self.root / "jp"
+        make_book(cn / "【S1_01】中文X", layout=True)
+        jp.mkdir()
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+            passed = validate_publication(cn, jp)
+        self.assertTrue(passed)
+        self.assertIn("仅单侧", out.getvalue())
+        self.assertNotIn("/中日模板与对齐", out.getvalue())
+
+    def test_explicit_missing_japanese_directory_is_setup_error(self):
+        cn = self.root / "EPUB"
+        make_book(cn / "【S1_01】中文X", layout=True)
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            code = main(["--source", str(cn), "--jp-root", str(self.root / "missing")])
+        self.assertEqual(code, 2)
+
+    def test_explicit_complete_reference_passes(self):
+        cn, jp = self.root / "EPUB", self.root / "jp"
+        make_book(cn / "【S1_01】中文X", layout=True)
+        make_book(jp / "【S1_01】日文")
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+            code = main(["--source", str(cn), "--jp-root", str(jp)])
+        self.assertEqual(code, 0)
+        self.assertIn("完整覆盖", out.getvalue())
+
+    def test_optional_partial_reference_is_reported_without_claiming_complete(self):
+        cn, jp = self.root / "EPUB", self.root / "jp"
+        make_book(cn / "【S1_01】中文X", layout=True)
+        second = make_book(cn / "【S1_02】中文X", layout=True)
+        second.rename(second.with_name("S1_02-01_Chapter.xhtml"))
+        opf = second.parents[1] / "content.opf"
+        opf.write_text(opf.read_text(encoding="utf-8").replace("S1_01-01_Chapter.xhtml", "S1_02-01_Chapter.xhtml"), encoding="utf-8")
+        make_book(jp / "【S1_01】日文")
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+            passed = validate_publication(cn, jp)
+        self.assertTrue(passed)
+        self.assertIn("部分覆盖", out.getvalue())
+        self.assertIn("S1_02: 缺日文参考，未核对", out.getvalue())
+        self.assertNotIn("完整覆盖", out.getvalue())
+
+    def test_explicit_partial_reference_does_not_pass(self):
+        cn, jp = self.root / "EPUB", self.root / "jp"
+        make_book(cn / "【S1_01】中文X", layout=True)
+        japanese = make_book(jp / "【S1_01】日文")
+        japanese.rename(japanese.with_name("S1_01-02_Chapter.xhtml"))
+        opf = japanese.parents[1] / "content.opf"
+        opf.write_text(opf.read_text(encoding="utf-8").replace("S1_01-01_Chapter.xhtml", "S1_01-02_Chapter.xhtml"), encoding="utf-8")
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            code = main(["--source", str(cn), "--jp-root", str(jp)])
+        self.assertEqual(code, 1)
+
     def test_alignment_reads_archive_not_previous_cache(self):
         cn, jp = self.root / "EPUB", self.root / "japanese"
         chapter = make_book(cn / "【S1_01】中文X", layout=True)

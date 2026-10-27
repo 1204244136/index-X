@@ -71,7 +71,8 @@ def plan(japanese: list[str], chinese: list[str]) -> tuple[list[str] | None, str
 
 def collect(cache: Path, only_book: str | None, jp_root: Path | None = None):
     root = cache if jp_root is not None else cache / "chinese-text"
-    yield from iter_content_pairs(root, jp_root or cache / "japanese-text", only_book)
+    yield from iter_content_pairs(root, jp_root or cache / "japanese-text", only_book,
+                                 require_reference=True)
 
 
 def main() -> int:

@@ -82,6 +82,14 @@ class FindBookDirTests(unittest.TestCase):
     def test_missing_root(self):
         self.assertIsNone(find_book_dir(Path("no-such-root"), "S1_01"))
 
+    def test_duplicate_work_is_not_resolved_to_an_arbitrary_book(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "【S1_01】版本甲").mkdir()
+            (root / "【S1_01】版本乙").mkdir()
+            with self.assertRaisesRegex(ValueError, "重复作品号"):
+                find_book_dir(root, "S1_01")
+
 
 class LoadPairsTests(unittest.TestCase):
     def test_pairs_by_content_sequence(self):
@@ -405,12 +413,41 @@ class ConventionStatsTests(unittest.TestCase):
                  "--convention", "息を吐", "--convention-words", "叹气"],
                 capture_output=True, text=True, encoding="utf-8", check=False,
             )
-            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(result.returncode, 2, result.stderr)
             for rendered in (result.stdout, (out / "convention.md").read_text(encoding="utf-8")):
                 self.assertIn("请求 1 本", rendered)
                 self.assertIn("可靠配对 0 本", rendered)
                 self.assertIn("零覆盖：S1_01", rendered)
                 self.assertIn("cn=1 jp=2", rendered)
+
+    def test_cli_zero_coverage_is_not_success_but_zero_matches_are(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            cn_root, jp_root = build_fixture(root)
+            base = [sys.executable, str(TOOLS / "check_echo.py"), "--root", str(cn_root),
+                    "--jp-root", str(jp_root), "--out", str(root / "report")]
+            no_matches = subprocess.run([*base, "--convention", "存在しない語"],
+                                       capture_output=True, text=True, encoding="utf-8")
+            self.assertEqual(no_matches.returncode, 0, no_matches.stderr)
+            for selection in (["--book", "S1_99"], ["--convention", "息", "--convention-books", "S1_99"]):
+                result = subprocess.run([*base, *selection], capture_output=True, text=True, encoding="utf-8")
+                self.assertEqual(result.returncode, 2, result.stderr)
+                self.assertIn("可靠配对", result.stderr)
+
+    def test_candidate_summary_preserves_partial_coverage_and_warnings(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            cn_root, jp_root = build_fixture(root)
+            out = root / "report"
+            result = subprocess.run(
+                [sys.executable, str(TOOLS / "check_echo.py"), "--root", str(cn_root),
+                 "--jp-root", str(jp_root), "--out", str(out), "--book", "S1_01", "--book", "S1_99"],
+                capture_output=True, text=True, encoding="utf-8")
+            self.assertEqual(result.returncode, 0, result.stderr)
+            for rendered in (result.stdout, (out / "summary.md").read_text(encoding="utf-8")):
+                self.assertIn("请求 2 本", rendered)
+                self.assertIn("可靠配对 1 本", rendered)
+                self.assertIn("S1_99", rendered)
 
     def test_repeated_work_arguments_do_not_double_count(self):
         with tempfile.TemporaryDirectory() as tmp:

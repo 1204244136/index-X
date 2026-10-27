@@ -83,6 +83,11 @@ BOOK_RE = re.compile(r"^【([^】]+)】")
 KANA_RE = re.compile(r"[\u3041-\u3096\u30a1-\u30fa\u30fc]")
 CJK_RE = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff]")
 BRACKET_CHARS = "【】「」『』"
+BODY_OPEN = re.compile(r"<(?:[\w.-]+:)?body\b[^>]*>", re.I)
+BODY_CLOSE = re.compile(r"</(?:[\w.-]+:)?body\s*>", re.I)
+HTML_OPEN = re.compile(r"<(?:[\w.-]+:)?html\b", re.I)
+NON_BODY_BLOCK = re.compile(r"<((?:[\w.-]+:)?(?:head|style|script))\b[^>]*>.*?</\1\s*>", re.S | re.I)
+COMMENT_BLOCK = re.compile(r"<!--.*?-->", re.S)
 
 # 折叠归一化表（`Data_Translation_九列口径裁定.md` §5.3「不妥协写法」）：
 # 译名表的 base_ori／ruby_ori 写**不妥协写法**（注音小字假名、半角 ASCII、半角 `=`），
@@ -211,6 +216,25 @@ def book_id(dir_name: str) -> str:
     return m.group(1) if m else ""
 
 
+def body_markup(raw: str, *, preserve_lines: bool = False) -> str:
+    """Select body markup or a standalone content fragment, excluding non-visible blocks.
+
+    Line-preserving extraction keeps source evidence at its original physical line.
+    """
+    def blank(value: str) -> str:
+        return "\n" * value.count("\n") if preserve_lines else ""
+
+    opening = BODY_OPEN.search(raw)
+    if opening is not None:
+        closing = BODY_CLOSE.search(raw, opening.end())
+        end = closing.start() if closing is not None else len(raw)
+        raw = blank(raw[:opening.end()]) + raw[opening.end():end] + blank(raw[end:])
+    elif HTML_OPEN.search(raw):
+        return blank(raw)
+    raw = NON_BODY_BLOCK.sub(lambda match: blank(match.group(0)), raw)
+    return COMMENT_BLOCK.sub(lambda match: blank(match.group(0)), raw)
+
+
 def collect_books(root: Path, text_subdir: str, only: set[str],
                   ruby: bool = False, *, titles: bool = False) -> dict[str, str]:
     """收集 {作品号: 全书纯文本}。目录名形如 `【S3_06】…`。
@@ -233,10 +257,10 @@ def collect_books(root: Path, text_subdir: str, only: set[str],
         for f in sorted(text_dir.iterdir()):
             if f.suffix.lower() == ".xhtml":
                 raw = f.read_text(encoding="utf-8-sig")
-                body, heading = split_heading_markup(raw)
+                body, heading = split_heading_markup(body_markup(raw))
                 selected = heading if titles else body
                 chunks.append(to_ruby_text(selected) if ruby else strip_markup(selected))
-        if chunks:
+        if any(chunk.strip() for chunk in chunks):
             books[bid] = "\n".join(chunks)
     return books
 
@@ -767,7 +791,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--include-suspect", action="store_true",
                     help="把疑似子串命中（suspect）也计入未落地")
     ap.add_argument("--limit", type=int, default=0, help="只检查前 N 条条目（调试用）")
-    ap.add_argument("--strict", action="store_true", help="存在未落地项时非 0 退出")
+    ap.add_argument("--strict", action="store_true", help="存在未落地项或显式选书未完整核验时非 0 退出")
     args = ap.parse_args(argv)
 
     table_path = Path(args.table).expanduser()
@@ -785,21 +809,59 @@ def main(argv: list[str] | None = None) -> int:
     if args.audit_rulings:
         return run_audit_rulings(rulings_path, entries, table_path, Path(args.out))
 
-    only = {b.strip() for b in args.book if b.strip()}
+    try:
+        from alignment_rules import SETTLED_ANCHORS, TRANSLATION_HOST  # noqa: PLC0415
+    except ImportError as exc:
+        print(f"[提示] 未加载译文归属映射与已判定锚点（{exc}）；"
+              f"跨书归属与已判定项可能被误报为待判。", file=sys.stderr)
+        TRANSLATION_HOST = {}
+        SETTLED_ANCHORS = {}
+
+    only = {b.strip().upper() for b in args.book if b.strip()}
+    host_ids = {TRANSLATION_HOST[b] for b in only if b in TRANSLATION_HOST}
+    cn_filter = only | host_ids
     jp_books = collect_books(Path(args.jp_dir), "item/xhtml", only)
-    cn_books = collect_books(Path(args.epub), "OEBPS/Text", only)
+    cn_books = collect_books(Path(args.epub), "OEBPS/Text", cn_filter)
 
     if not cn_books:
         print(f"[错误] 中文成品侧没有可用书籍：{args.epub}", file=sys.stderr)
         return 2
     if not jp_books:
-        print(f"[提示] 日文缓存侧没有可用书籍（{args.jp_dir}）；"
-              f"先运行 ./tools/pull.ps1 建立缓存。", file=sys.stderr)
+        print(f"[提示] 日文参考侧没有可用书籍（{args.jp_dir}）；"
+              "用 --jp-dir 指定已解包的日文工作源，或从自有源拉取建立缓存。", file=sys.stderr)
 
     # 只核对中日两侧都存在的作品
     shared = sorted(set(jp_books) & set(cn_books))
+    available_hosts = {TRANSLATION_HOST[b] for b in shared if b in TRANSLATION_HOST} & cn_books.keys()
+    auxiliary = sorted(available_hosts - (only or set(shared)))
+    missing_cn = sorted(only - cn_books.keys())
+    missing_jp = sorted(only - jp_books.keys())
+    unpaired_cn = sorted(cn_books.keys() - jp_books.keys() - set(auxiliary))
+    unpaired_jp = sorted(jp_books.keys() - cn_books.keys())
+    incomplete = bool(missing_cn or missing_jp)
+    coverage = {
+        "mode": "selected" if only else "shared",
+        "status": "partial" if incomplete else ("shared_only" if unpaired_cn or unpaired_jp else "complete"),
+        "requested": sorted(only),
+        "compared": shared,
+        "missing_chinese": missing_cn,
+        "missing_japanese": missing_jp,
+        "unpaired_chinese": unpaired_cn,
+        "unpaired_japanese": unpaired_jp,
+        "auxiliary_chinese": auxiliary,
+    }
     print(f"译名表条目 {len(entries)} 条；日文侧 {len(jp_books)} 本、中文侧 {len(cn_books)} 本；"
           f"可比对 {len(shared)} 本")
+    if only:
+        print(f"显式请求 {len(only)} 本；已核验范围 {len(shared)} 本；"
+              + ("部分覆盖" if incomplete else "完整覆盖"))
+    else:
+        print("默认仅核验双侧交集；单侧作品不计已核验。")
+    for label, ids in (("缺中文正文，未核验", missing_cn), ("缺日文正文，未核验", missing_jp),
+                       ("仅中文侧，未配对", unpaired_cn), ("仅日文侧，未配对", unpaired_jp),
+                       ("中文辅助归属源，不计核验目标", auxiliary)):
+        if ids:
+            print(f"  [{label}] {'、'.join(ids)}")
     if not shared:
         print("[错误] 中日两侧没有共同作品号，无法核对。", file=sys.stderr)
         return 2
@@ -812,7 +874,7 @@ def main(argv: list[str] | None = None) -> int:
     need_ruby = any(rd.get("ruby_forms") or rd.get("match_axis", MATCH_BASE) != MATCH_BASE
                     for rd in rulings.values())
     jp_ruby = collect_books(Path(args.jp_dir), "item/xhtml", only, ruby=True) if need_ruby else None
-    cn_ruby = collect_books(Path(args.epub), "OEBPS/Text", only, ruby=True) if need_ruby else None
+    cn_ruby = collect_books(Path(args.epub), "OEBPS/Text", cn_filter, ruby=True) if need_ruby else None
     if args.no_rulings:
         print("[提示] 已按 --no-rulings 跳过 裁定表门禁。", file=sys.stderr)
     elif not rulings:
@@ -820,13 +882,6 @@ def main(argv: list[str] | None = None) -> int:
               f"该门禁用于避免把人为差异报成未落地。", file=sys.stderr)
     else:
         print(f"裁定表门禁：{len(rulings)} 条锚点（{Path(args.rulings).name}）")
-    try:
-        from alignment_rules import SETTLED_ANCHORS, TRANSLATION_HOST  # noqa: PLC0415
-    except ImportError as exc:
-        print(f"[提示] 未加载译文归属映射与已判定锚点（{exc}）；"
-              f"跨书归属与已判定项可能被误报为待判。", file=sys.stderr)
-        TRANSLATION_HOST = {}
-        SETTLED_ANCHORS = {}
     translation_host_pairs = [f"{k}→{v}" for k, v in sorted(TRANSLATION_HOST.items())]
     if translation_host_pairs:
         print(f"译文归属映射：{len(translation_host_pairs)} 项"
@@ -886,6 +941,7 @@ def main(argv: list[str] | None = None) -> int:
         "skipped_empty_trans": skipped_empty_trans,
         "books_compared": len(shared),
         "books": shared,
+        "coverage": coverage,
         "hits": len(records),
         "landed": len(records) - len(missing),
         "missing": len(missing),
@@ -911,6 +967,8 @@ def main(argv: list[str] | None = None) -> int:
         "",
         f"- 译名表：`{table_path.name}`（工作表列：{', '.join(headers)}）",
         f"- 比对作品：{len(shared)} 本（{'、'.join(shared)}）",
+        f"- 核验范围：{'显式选书，部分覆盖' if incomplete else ('显式选书，完整覆盖' if only else '默认双侧交集')}；"
+        + (f"请求 {len(only)} 本；" if only else "") + "未配对作品不计通过。",
         f"- 译名表条目：{len(entries)}"
         + (f"（其中表定译名为空、跳过核对 {skipped_empty_trans} 条）" if skipped_empty_trans else ""),
         f"- 日文侧命中：{len(records)}（译名已落地 {summary['landed']}）",
@@ -923,6 +981,12 @@ def main(argv: list[str] | None = None) -> int:
         f"- 已判定锚点（同形不同义／暂缓，**不计待判**）：{len(SETTLED_ANCHORS)} 条，命中 {len(settled_hits)} 条",
         "",
     ]
+    for label, ids in (("缺中文正文、未核验", missing_cn), ("缺日文正文、未核验", missing_jp),
+                       ("仅中文侧、未配对", unpaired_cn), ("仅日文侧、未配对", unpaired_jp),
+                       ("中文辅助归属源、不计核验目标", auxiliary)):
+        if ids:
+            lines.append(f"- {label}：{'、'.join(ids)}")
+    lines.append("")
     if settled_hits:
         lines += [
             "## 已判定锚点命中（工具误报或暂缓，非缺陷）",
@@ -1030,6 +1094,9 @@ def main(argv: list[str] | None = None) -> int:
             print(f"        {r['jp_context'][:120]}")
 
     if args.strict:
+        if incomplete:
+            print("\n[阻断] --strict：显式请求的作品未完成双侧核验，详见覆盖范围。", file=sys.stderr)
+            return 2
         effective = missing if args.include_suspect else missing_real
         if effective:
             print(f"\n[阻断] --strict：存在 {len(effective)} 条未落地项", file=sys.stderr)

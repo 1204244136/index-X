@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compare raster images in paired Chinese/Japanese EPUB cache books.
+"""Compare raster images in paired Chinese/Japanese EPUB books.
 
 The report is deliberately conservative: exact byte matches and decoded pixel
 matches are separated from perceptual candidates.  A perceptual candidate can
@@ -32,8 +32,13 @@ if __package__:
 else:
     from cli_output import configure_output
 from alignment_rules import NON_PAIR_WORK_IDS, pairing_header_of
-from epub_ids import book_id, japanese_book_id
+from epub_ids import japanese_book_id
 from image_signature import dhash_image, hamming
+from xhtml_structure import books_by_id
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_ROOT = REPO_ROOT / "EPUB"
+DEFAULT_CACHE = REPO_ROOT / ".cache" / "epub-work"
 
 try:
     from PIL import Image, ImageFilter, ImageOps, UnidentifiedImageError
@@ -715,6 +720,9 @@ def compare_book(cn_assets: list[Asset], jp_assets: list[Asset]) -> tuple[list[M
 def render_markdown(report: dict) -> str:
     lines = ["# 中日 EPUB 图片对应检查", "", f"缓存：`{report['cache']}`", "",
              "算法候选（尤其是 `possible_same_content_text_or_font_changed`）需要人工查看原图确认。", ""]
+    if "chinese_root" in report:
+        lines += [f"中文输入：`{report['chinese_root']}`", "",
+                  f"日文参考：`{report['japanese_root']}`", ""]
     summary = report["summary"]
     lines += ["## 汇总", "", "| 项目 | 数量 |", "| --- | ---: |",
               f"| 配对书籍 | {summary['paired_books']} |",
@@ -770,10 +778,17 @@ def render_markdown(report: dict) -> str:
     return "\n".join(lines)
 
 
-def scan(cache: Path, pattern: str) -> dict:
-    cn_root, jp_root = cache / "chinese-text", cache / "japanese-text"
-    cn_dirs = {book_id(d.name): d for d in cn_root.iterdir() if d.is_dir() and book_id(d.name)} if cn_root.is_dir() else {}
-    jp_dirs = {book_id(d.name): d for d in jp_root.iterdir() if d.is_dir() and book_id(d.name)} if jp_root.is_dir() else {}
+def scan(cache: Path, pattern: str, *, cn_root: Path | None = None,
+         jp_root: Path | None = None) -> dict:
+    """Compare selected books while preserving explicit source identities.
+
+    Existing callers supplying only cache and pattern retain the dual-cache
+    input convention. The CLI supplies independent archive/reference roots.
+    """
+    cn_root = cn_root if cn_root is not None else cache / "chinese-text"
+    jp_root = jp_root if jp_root is not None else cache / "japanese-text"
+    cn_dirs = books_by_id(cn_root) if cn_root.is_dir() else {}
+    jp_dirs = books_by_id(jp_root) if jp_root.is_dir() else {}
     cn_dirs = {key: value for key, value in cn_dirs.items() if Path(value.name).match(pattern)}
     books: list[dict] = []
     unpaired: list[dict] = []
@@ -832,6 +847,8 @@ def scan(cache: Path, pattern: str) -> dict:
     }
     return {
         "cache": cache.as_posix(),
+        "chinese_root": cn_root.as_posix(),
+        "japanese_root": jp_root.as_posix(),
         "pattern": pattern,
         "algorithms": {
             "sha256": True,
@@ -847,21 +864,53 @@ def scan(cache: Path, pattern: str) -> dict:
 
 def main(argv: list[str] | None = None) -> int:
     configure_output()
-    parser = argparse.ArgumentParser(description="比较缓存中成对中文/日文 EPUB 的图片内容")
-    parser.add_argument("--cache", type=Path, default=Path(".cache/epub-work"), help="EPUB 缓存根目录")
+    parser = argparse.ArgumentParser(description="比较成对中文归档与日文参考的 EPUB 图片内容")
+    parser.add_argument("--cache", type=Path, help="兼容双侧缓存根；显式指定时读取 chinese-text/japanese-text")
+    parser.add_argument("--root", type=Path, help="中文成品根目录（默认 EPUB/）")
+    parser.add_argument("--jp-root", type=Path, help="日文参考根目录（默认本地缓存 japanese-text）")
     parser.add_argument("--output", type=Path, default=None, help="报告目录；默认写入 <cache>/image-comparison")
     parser.add_argument("--pattern", default="*", help="按中文书目录名筛选，例如 '*S1_01*'")
     args = parser.parse_args(argv)
-    cache = args.cache.resolve()
-    if not (cache / "chinese-text").is_dir() or not (cache / "japanese-text").is_dir():
-        parser.error(f"缓存必须包含 chinese-text/ 和 japanese-text/：{cache}")
-    report = scan(cache, args.pattern)
-    output = (args.output or cache / "image-comparison").resolve()
-    output.mkdir(parents=True, exist_ok=True)
-    (output / "report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
-    (output / "report.md").write_text(render_markdown(report), encoding="utf-8")
+    if args.cache is not None and (args.root is not None or args.jp_root is not None):
+        parser.error("--cache 与 --root/--jp-root 不能同时使用")
+    cache = (args.cache or DEFAULT_CACHE).resolve()
+    cn_root = (args.root if args.root is not None else
+               (cache / "chinese-text" if args.cache is not None else DEFAULT_ROOT)).resolve()
+    jp_root = (args.jp_root or cache / "japanese-text").resolve()
+    missing = [f"{label}目录不存在：{root}" for label, root in (
+        ("中文成品", cn_root), ("日文参考", jp_root)) if not root.is_dir()]
+    if missing:
+        print("图片检查未完成：" + "；".join(missing)
+              + "；请用 --root/--jp-root 指定已有中文归档与日文工作源。", file=sys.stderr)
+        return 2
+    try:
+        report = scan(cache, args.pattern, cn_root=cn_root, jp_root=jp_root)
+        incomplete = [book for book in report["books"]
+                      if not book["chinese_images"] or not book["japanese_images"]]
+        report["incomplete_books"] = [book["id"] for book in incomplete]
+        report["summary"]["incomplete_books"] = len(incomplete)
+        report["summary"]["unpaired_books"] = len(report["unpaired_books"])
+        output = (args.output or cache / "image-comparison").resolve()
+        output.mkdir(parents=True, exist_ok=True)
+        (output / "report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+        (output / "report.md").write_text(render_markdown(report), encoding="utf-8")
+    except (OSError, UnicodeError, ValueError) as exc:
+        print(f"图片检查未完成：{exc}", file=sys.stderr)
+        return 2
     print(json.dumps(report["summary"], ensure_ascii=False, indent=2))
+    print(f"配对作品：{len(report['books'])}；未配对作品：{len(report['unpaired_books'])}")
+    for entry in report["unpaired_books"]:
+        print(f"  [未配对] {entry['side']}/{entry['book']}：{entry['reason']}")
     print(f"报告：{output / 'report.md'}")
+    if not report["books"]:
+        print("图片检查未完成：所选范围没有可比较的中日配对作品；请核对输入与 --pattern。", file=sys.stderr)
+        return 2
+    if incomplete:
+        for book in incomplete:
+            print(f"图片检查未完成：{book['id']} 图片输入为空"
+                  f"（中文 {book['chinese_images']}／日文 {book['japanese_images']}），未完成双侧比较。",
+                  file=sys.stderr)
+        return 2
     return 0
 
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""检查中日缓存 XHTML 是否符合统一固定行模板并保持对齐（只读）。
+"""检查归档及可选日文参考的固定行模板与配对结构（只读）。
 
 模板（`docs/epub-structure-spec.md`「固定行模板」）：
     1  <?xml …?>
@@ -14,7 +14,7 @@
 - 正文行原子性：每条物理行只允许一个同级正文块，正文不得与 body/html 闭标签同行；
 - 配对文件：总行数一致、h2 位置一致、图片行一致（gaiji/height-2em 字形不计；
   已确认的文本化图片例外唯一在 alignment_rules.TEXTUAL_IMAGE_HEADERS，配对检查整体豁免）；
-- 纯图片页/无正文页不适用；仅单侧存在的 EPUB、日文独有包装页不参与检查。
+- 纯图片页/无正文页不适用；未配对内容仍检查单侧模板，并单列覆盖范围。
 
 用法：
     python tools/check_alignment.py
@@ -42,9 +42,13 @@ from alignment_rules import (
     pairing_header_of,
     template_exempt,
 )
-from epub_ids import book_id, content_sequence, is_list_packaging_header, japanese_book_id
+from epub_ids import book_id, content_sequence, is_list_packaging_header, is_packaging_header, japanese_book_id
 from xhtml_slots import LINE_BODY_FIRST, LINE_H1, LINE_H2, SLOT_COUNT
 from xhtml_structure import line_kind, PB_RE, books_by_id
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_ROOT = REPO_ROOT / "EPUB"
+DEFAULT_CACHE = REPO_ROOT / ".cache" / "epub-work"
 
 TAG_RE = re.compile(r"<[^>]*>")
 H_OPEN_RE = re.compile(r"<(h1|h2)\b", re.I)
@@ -334,13 +338,12 @@ def audit_roots(cn_root: Path, jp_root: Path, work_ids: set[str] | None = None):
         else {}
     )
     jp_books = (
-        books_by_id(jp_root, work_ids)
+        books_by_id(jp_root, {japanese_book_id(wid) for wid in work_ids} if work_ids else work_ids)
         if jp_root.is_dir()
         else {}
     )
     if work_ids is not None:
         cn_books = {k: v for k, v in cn_books.items() if k in work_ids}
-        jp_books = {k: v for k, v in jp_books.items() if k in work_ids}
     pairs = []
     for cn_id, cn_dir in sorted(cn_books.items(), key=lambda item: item[0] or ""):
         if cn_id is None or cn_id in NON_PAIR_WORK_IDS:
@@ -411,7 +414,14 @@ def audit_roots(cn_root: Path, jp_root: Path, work_ids: set[str] | None = None):
             if header is None or JP_WRAPPER_RE.match(path.name):
                 continue
             lines = read_lines(path)
+            if not any(line.strip() for line in lines):
+                seen.add(path)
+                add(side, book, relative(path), header, False,
+                    ["XHTML 内容为空，未执行检查"], "输入缺失")
+                continue
             if not has_body(lines):
+                seen.add(path)
+                add(side, book, relative(path), header, False, [], "无正文/纯图片，不适用正文模板与配对检查")
                 continue
             seen.add(path)
             checked += 1
@@ -504,6 +514,16 @@ def audit_roots(cn_root: Path, jp_root: Path, work_ids: set[str] | None = None):
             add("日", jp_id, relative(jp_dir), "-", False, [],
                 "无中文对应作品，仅单侧模板检查")
 
+    # A directory-level note is not evidence that any XHTML was inspected.
+    for side, books in (("中", cn_books), ("日", jp_books)):
+        for wid, directory in sorted(books.items()):
+            if wid in NON_PAIR_WORK_IDS:
+                continue
+            if not any(pairing_header_of(path.name) and not JP_WRAPPER_RE.match(path.name)
+                       for path in directory.rglob("*.xhtml") if path.name.casefold() != "nav.xhtml"):
+                add(side, wid, relative(directory), "-", False,
+                    ["没有可识别的 XHTML 正文或包装页，未执行检查"], "输入缺失")
+
     return rows, bad, checked
 
 
@@ -511,15 +531,23 @@ def main() -> int:
     configure_output()
     import argparse
     ap = argparse.ArgumentParser(description="检查中日统一固定行模板与对齐（只读）")
-    ap.add_argument("--cache", type=Path, default=Path(".cache/epub-work"))
-    ap.add_argument("--root", type=Path, help="中文成品根目录；默认 <cache>/chinese-text")
+    ap.add_argument("--cache", type=Path, help="兼容双侧缓存根；显式指定时中文为 <cache>/chinese-text")
+    ap.add_argument("--root", type=Path, help="中文成品根目录；默认 EPUB/")
     ap.add_argument("--jp-root", type=Path, help="日文参考根目录；默认 <cache>/japanese-text")
     ap.add_argument("--book", action="append", help="作品号筛选，可重复")
     ap.add_argument("--output", type=Path, help="TSV 输出；默认 <cache>/alignment-check.tsv")
     ap.add_argument("--strict", action="store_true", help="发现问题时非零退出")
+    ap.add_argument("--require-jp", action="store_true", help="要求所选正文均有日文配对；覆盖不完整时非零")
     args = ap.parse_args()
-    cn_root = args.root or args.cache / "chinese-text"
-    jp_root = args.jp_root or args.cache / "japanese-text"
+    cache = args.cache or DEFAULT_CACHE
+    cn_root = args.root or (cache / "chinese-text" if args.cache is not None else DEFAULT_ROOT)
+    jp_root = args.jp_root or cache / "japanese-text"
+    if args.root is not None and not cn_root.is_dir():
+        print(f"中文成品目录不存在：{cn_root}", file=sys.stderr)
+        return 2
+    if args.jp_root is not None and not jp_root.is_dir():
+        print(f"日文参考目录不存在：{jp_root}；请提供工作源目录，单侧检查可省略 --jp-root", file=sys.stderr)
+        return 2
     if not cn_root.is_dir() and not jp_root.is_dir():
         print("中文/日文输入根目录均不存在", file=sys.stderr)
         return 2
@@ -532,16 +560,50 @@ def main() -> int:
     if not rows:
         print("没有匹配的书籍/内容文件", file=sys.stderr)
         return 2
-    tsv = args.output or args.cache / "alignment-check.tsv"
-    tsv.parent.mkdir(parents=True, exist_ok=True)
-    with tsv.open("w", encoding="utf-8-sig", newline="") as f:
-        w = csv.writer(f, delimiter="\t")
-        w.writerow(["侧", "书", "文件", "表头", "配对", "问题", "备注"])
-        w.writerows(rows)
+    tsv = args.output or cache / "alignment-check.tsv"
+    try:
+        tsv.parent.mkdir(parents=True, exist_ok=True)
+        with tsv.open("w", encoding="utf-8-sig", newline="") as f:
+            w = csv.writer(f, delimiter="\t")
+            w.writerow(["侧", "书", "文件", "表头", "配对", "问题", "备注"])
+            w.writerows(rows)
+    except OSError as exc:
+        print(f"对齐报告写入失败：{exc}", file=sys.stderr)
+        return 2
+    registered_headers = MANUAL_ALIGNMENT_HEADERS | TEXTUAL_IMAGE_HEADERS
+    eligible = [r for r in rows if r[3] != "-" and not is_packaging_header(r[3])
+                and r[1] not in NON_PAIR_WORK_IDS and r[3] not in registered_headers
+                and not r[6].startswith("无正文/纯图片")]
+    paired = {r[3] for r in eligible if r[4] == "是"}
+    unpaired = {r[3] for r in eligible if r[4] == "否"} - paired
+    known_books = {r[1] for r in rows}
+    unknown = {w.upper() for w in args.book or []} - known_books
+    scope = ("不适用普通正文配对" if not eligible else "仅单侧") if not paired else (
+        "部分配对" if unpaired else "配对范围已覆盖")
+    print(f"检查范围：{scope}；配对单元：{len(paired)}；未配对正文：{len(unpaired)}")
+    exception_units = {r[3] for r in rows if r[3] != "-" and r[3] in registered_headers}
+    exception_books = known_books & NON_PAIR_WORK_IDS
+    packaging = {r[3] for r in rows if r[3] != "-" and is_packaging_header(r[3])}
+    if exception_units or exception_books:
+        print(f"  已登记例外：{len(exception_units)} 个单元、{len(exception_books)} 本非同一形态作品；不计普通配对覆盖")
+    if packaging:
+        print(f"  包装页：{len(packaging)} 个单元；不适用普通正文配对")
+    if unpaired:
+        print("  未配对：" + "、".join(sorted(unpaired)))
     print(f"已验证正文文件：{checked}；问题记录：{len(bad)}")
     print(f"报告：{tsv}")
     for r in bad:
         print(f"  [{r[0]}] {r[1]} | {r[2].split(chr(92))[-1]} | {r[5]}")
+    if any(r[6] == "输入缺失" for r in bad):
+        print("检查未完成：所选书籍或 XHTML 输入为空，请核对根目录与作品范围。", file=sys.stderr)
+        return 2
+    if unknown:
+        print("检查未完成：未知作品号 " + "、".join(sorted(unknown)), file=sys.stderr)
+        return 2
+    if args.require_jp and eligible and (unpaired or not paired):
+        print("双语检查未完成：缺少可靠日文配对；请补齐对应工作源或省略 --require-jp 做单侧检查。",
+              file=sys.stderr)
+        return 2
     return 1 if args.strict and bad else 0
 
 

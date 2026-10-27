@@ -123,6 +123,44 @@ class NormalizePairedScopeCliTests(unittest.TestCase):
         self.assertIn("同侧重复表头", result.stderr)
         self.assertEqual(self.snapshot(), before)
 
+    def test_missing_reference_refuses_the_whole_batch_before_writing(self):
+        for missing in ("book", "header"):
+            with self.subTest(missing=missing):
+                path = self.paths["jp", "S1_02"]
+                original = path.read_bytes()
+                target = path.parents[1] if missing == "book" else path
+                renamed = target.with_name("unpaired-book" if missing == "book" else "S1_02-02.xhtml")
+                target.rename(renamed)
+                try:
+                    before = {p: p.read_bytes() for p in self.root.rglob("*.xhtml")}
+                    result = self.run_cli()
+                    self.assertNotEqual(result.returncode, 0, result.stdout)
+                    self.assertIn("缺日文参考", result.stderr)
+                    self.assertEqual({p: p.read_bytes() for p in before}, before)
+                finally:
+                    renamed.rename(target)
+                self.assertEqual(path.read_bytes(), original)
+
+    def test_empty_selected_book_refuses_all_writes(self):
+        (self.root / "【S1_03】空").mkdir()
+        before = self.snapshot()
+        result = self.run_cli()
+        self.assertNotEqual(result.returncode, 0, result.stdout)
+        self.assertIn("S1_03", result.stderr)
+        self.assertEqual(self.snapshot(), before)
+
+    def test_empty_or_bodyless_japanese_reference_refuses_all_writes(self):
+        path = self.paths["jp", "S1_02"]
+        for content in ("", "<html><body></body></html>",
+                        '<html><body><img src="image.png"/></body></html>'):
+            with self.subTest(content=content):
+                path.write_text(content, encoding="utf-8")
+                before = self.snapshot()
+                result = self.run_cli()
+                self.assertNotEqual(result.returncode, 0, result.stdout)
+                self.assertIn("正文", result.stderr)
+                self.assertEqual(self.snapshot(), before)
+
     def test_unknown_targets_and_directories_refuse_all_writes(self):
         unrecognized = self.paths["cn", "S1_01"].with_name("page.xhtml")
         unrecognized.write_text(xhtml(), encoding="utf-8")
@@ -213,12 +251,12 @@ class NormalizePairedScopeCliTests(unittest.TestCase):
         self.assertTrue(all(path.read_bytes() != originals[path] for path in targets))
         self.assertEqual(self.snapshot(), before)
 
-    def test_known_book_without_japanese_book_keeps_original_skip_behavior(self):
+    def test_selected_book_without_japanese_book_is_not_silently_skipped(self):
         before = self.snapshot()
         result = self.run_cli("--file", self.paths["cn", "S1_01"],
                               jp_root=self.paths["jp", "S1_02"].parents[1])
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("待改写文件：0", result.stdout)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("缺日文参考", result.stderr)
         self.assertEqual(self.snapshot(), before)
 
     def test_known_structure_exception_is_still_skipped(self):

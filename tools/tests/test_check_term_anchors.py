@@ -6,6 +6,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
@@ -92,6 +93,133 @@ class MatchLineTests(unittest.TestCase):
 
 
 class AuditTests(unittest.TestCase):
+    def run_strict(self, book: TempBook, *extra: str):
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = main(["--epub", str(book.cn_root), "--jp-dir", str(book.jp_root),
+                         "--rulings", str(book.rulings), "--out", str(book.root / "out.tsv"),
+                         "--strict", *extra])
+        return code, out.getvalue(), err.getvalue()
+
+    def test_strict_empty_japanese_library_is_incomplete(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            book = TempBook(Path(tmp))
+            book.write(["<p>使用魔法。</p>"], ["<p>魔術。</p>"])
+            (book.jp_root / "【S1_01】テスト" / "item" / "xhtml" / "S1_01-01.xhtml").unlink()
+            code, out, err = self.run_strict(book)
+        self.assertEqual(code, 2)
+        self.assertIn("已核对文件 0", out)
+        self.assertIn("未完成", err)
+
+    def test_strict_missing_japanese_book_is_incomplete(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            book = TempBook(Path(tmp))
+            book.write(["<p>使用魔法。</p>"], ["<p>魔術。</p>"])
+            (book.jp_root / "【S1_01】テスト").rename(book.jp_root / "unidentified")
+            code, out, err = self.run_strict(book)
+        self.assertEqual(code, 2)
+        self.assertIn("缺日文参考", out)
+
+    def test_strict_partial_coverage_is_incomplete(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            book = TempBook(Path(tmp))
+            book.write(["<p>使用魔法。</p>"], ["<p>魔術。</p>"])
+            cn = book.cn_root / "【S1_01】测试书" / "OEBPS" / "Text"
+            (cn / "S1_01-02_Chapter2.xhtml").write_text("<p>正文。</p>", encoding="utf-8")
+            code, out, err = self.run_strict(book)
+        self.assertEqual(code, 2)
+        self.assertIn("S1_01-02", out)
+
+    def test_strict_line_mismatch_is_incomplete(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            book = TempBook(Path(tmp))
+            book.write(["<p>正文。</p>", "<p>另一行。</p>"], ["<p>本文。</p>"])
+            code, out, err = self.run_strict(book)
+        self.assertEqual(code, 2)
+        self.assertIn("行数不等", out)
+
+    def test_strict_same_line_count_with_shifted_structure_is_incomplete(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            book = TempBook(Path(tmp))
+            book.write(["<h2>章节</h2>", "<p>正文。</p>"], ["<p>本文。</p>", "<h2>章</h2>"])
+            code, out, err = self.run_strict(book)
+        self.assertEqual(code, 2)
+        self.assertIn("行类型错位", out)
+
+    def test_strict_unknown_book_is_setup_error(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            book = TempBook(Path(tmp))
+            book.write(["<p>使用魔法。</p>"], ["<p>魔術。</p>"])
+            code, out, err = self.run_strict(book, "--book", "S1_99")
+        self.assertEqual(code, 2)
+
+    def test_strict_duplicate_header_is_incomplete(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            book = TempBook(Path(tmp))
+            book.write(["<p>使用魔法。</p>"], ["<p>魔術。</p>"])
+            cn = book.cn_root / "【S1_01】测试书" / "OEBPS" / "Text"
+            (cn / "S1_01-01_Copy.xhtml").write_text("<p>正文。</p>", encoding="utf-8")
+            code, out, err = self.run_strict(book)
+        self.assertEqual(code, 2)
+        self.assertIn("同侧重复表头", out)
+
+    def test_strict_reviewed_structure_exception_is_not_missing_coverage(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            book = TempBook(Path(tmp))
+            book.write(["<p>正文。</p>"], ["<p>本文。</p>"])
+            with patch("check_term_anchors.MANUAL_ALIGNMENT_HEADERS", frozenset({"S1_01-01"})):
+                code, out, err = self.run_strict(book)
+        self.assertEqual(code, 0)
+        self.assertIn("无适用配对单元", out)
+        self.assertIn("豁免作品 0／单元 1", out)
+
+    def test_packaging_only_book_is_not_missing_a_japanese_chapter(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            book = TempBook(Path(tmp))
+            book.write(["<p>制作信息。</p>"], ["<p>本文。</p>"])
+            cn = book.cn_root / "【S1_01】测试书" / "OEBPS" / "Text" / "S1_01-01_Chapter1.xhtml"
+            cn.rename(cn.with_name("S1_01-Information.xhtml"))
+            code, out, err = self.run_strict(book)
+        self.assertEqual(code, 0)
+        self.assertIn("仅有包装页", out)
+
+    def test_strict_empty_pair_files_are_not_checked(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            book = TempBook(Path(tmp))
+            book.write([], [])
+            for path in [*book.cn_root.rglob("*.xhtml"), *book.jp_root.rglob("*.xhtml")]:
+                path.write_text("", encoding="utf-8")
+            code, out, err = self.run_strict(book)
+        self.assertEqual(code, 2)
+        self.assertIn("已核对文件 0", out)
+
+    def test_whitespace_and_head_only_pairs_are_not_reference_coverage(self):
+        for content in (["  ", ""], ['<html><head><title>魔術</title><style>魔術師</style></head><body></body></html>']):
+            with self.subTest(content=content), tempfile.TemporaryDirectory() as tmp:
+                book = TempBook(Path(tmp))
+                book.write(content, content)
+                code, out, _ = self.run_strict(book)
+                self.assertEqual(code, 2)
+                self.assertIn("已核对文件 0", out)
+
+    def test_pure_image_pairs_are_exempt_from_textual_term_coverage(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            book = TempBook(Path(tmp))
+            book.write(['<p><img src="a.jpg"/></p>'], ['<p><img src="b.jpg"/></p>'])
+            code, out, _ = self.run_strict(book)
+        self.assertEqual(code, 0)
+        self.assertIn("已核对文件 0", out)
+        self.assertIn("非文字配对", out)
+
+    def test_html_head_terms_do_not_create_findings_in_real_body(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            book = TempBook(Path(tmp))
+            book.write(['<html><head><title>魔术</title></head><body><p>正文。</p></body></html>'],
+                       ['<html><head><title>魔術</title></head><body><p>本文。</p></body></html>'])
+            rows, checked, _, _ = audit_roots(book.cn_root, book.jp_root, rulings_path=book.rulings)
+        self.assertEqual(checked, 1)
+        self.assertEqual(rows, [])
+
     def test_hit_reported_with_location(self):
         with tempfile.TemporaryDirectory() as tmp:
             book = TempBook(Path(tmp))

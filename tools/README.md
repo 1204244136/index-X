@@ -23,6 +23,55 @@
 
 公共输出与 GBK 管道环境下的全入口帮助由 `test_cli_output.py` 验证；业务输出的完整性由各工具专用测试验证。
 
+## 克隆后的运行环境
+
+本节供智能体选择工具、配置输入并判断实际执行覆盖。普通中文查询与打包无需外部内容；中文归档直接作为输入，原文工作源及缓存按任务准备后再调用对应入口。
+
+软件按入口准备：表格读取使用 openpyxl、图片工具使用 Pillow，相应转换与补充校验使用 calibre；L2 语义检查需要 PyTorch、SentenceTransformers 及对应模型。BetweenLines 本身不是本仓库基础运行前提，只有使用其 AI 校对流程时才另行部署并配置实际采用的档案、预设和接口。外部分发与现有工作状态的初始化／保全按 C1 合同执行。
+
+### 各工具的可用范围
+
+中文成品检查默认读取 `EPUB/`；文本分析工具 `search_text.py` 按作品优先读取有效中文缓存，未缓存的作品读取归档，同一作品只使用一份副本。显式指定输入路径时使用该路径，路径缺失直接报告，不悄悄换源。报告写入 `.cache/epub-work/` 不表示输入必须来自缓存。
+
+| 能力 | 工具 | 无日文参考时 |
+| --- | --- | --- |
+| 中文成品与文字规范 | `check_epub_health.py`、`check_translation_spec.py`、`check_note_order.py`、`text_norm.py`、`normalize_single.py` | 可独立运行；检查器空选书报前置错误，无译注页说明不适用；写工具按各自显式范围预览 |
+| 打包与篇幅统计 | `package_cache_epubs.py`、`epub_char_count.py`、`epub_composition_metrics.py` | 可对归档或显式输入独立运行 |
+| 发布前检查 | `publish_preflight.py` | 缺省只做中文单侧；CLI 显式提供日文参考时要求所选适用范围完整覆盖 |
+| 模板与对齐 | `check_alignment.py` | 继续单侧模板检查并列出未配对范围；要求双语覆盖时加 `--require-jp` |
+| 全文检索 | `search_text.py` | 可搜中文；双侧检索缺日文时说明部分范围，单搜日文缺源为前置错误 |
+| 差异与语义对齐 | `diff_paired_lines.py`、`check_semantic_alignment.py` | 需要参考；零配对报前置错误，部分覆盖在报告列明并由 strict 阻断 |
+| 图片对照 | `compare_epub_images.py` | 需要参考；可使用归档与独立日文根，零配对或某侧无图片说明未完成 |
+| 术语锚点与译名落地 | `check_term_anchors.py`、`check_translation_table.py` | 需要参考；strict 不接受显式所选范围未核验，译名表默认全库交集与两侧独有作品分别报告 |
+| 呼应与惯例候选 | `check_echo.py` | 需要可靠配对；零配对报前置错误，有配对而零候选／零模式命中属于正常结果 |
+| 原文定位与插图映射 | `japanese_lookup.py`、`check_illustration_mapping.py` | 缺日文源明确失败，不能把缺输入解释成零命中 |
+| 校对改动分级 | `proofread_review.py` | 可降级分级，始终列出原文覆盖；`--no-jp` 明确仅分级、未核验日文 |
+| 复核取证包 | `proofread_session.py prepare` | 缺参考阻断，不能形成可验收的语义取证包 |
+| 配对规范化与结构修复 | `normalize_paired.py`、`fix_legacy_pagebreak_br.py`、`restore_cn_scene_breaks.py`、`sync_pb_tags.py`、`wrap_cn_image_lines.py` | 配对修复与删除图片容器结构行前需要参考；已登记结构例外另列，单侧模板用 `normalize_single.py`，仅包裸图用 `--wrap-only` |
+| 导入与外部分发 | C2 材料导入、C1 拉取／同步／上传 | 各自需要显式材料或已配置的外部源；不作为普通克隆的运行前提 |
+
+无参考环境的起步命令：
+
+```powershell
+python tools/check_epub_health.py --strict
+python tools/check_translation_spec.py
+python tools/check_note_order.py
+python tools/publish_preflight.py --source EPUB
+python tools/package_cache_epubs.py --source EPUB --output output/epubs
+```
+
+需要同行工具时，完整 BW 原始提取包按 [日文源导入流程](../.agents/skills/bw-source-import/SKILL.md) 处理并核对。现成工作源是可选的便捷入口：已解包且符合表头与固定行模板的目录可通过各工具的 `--jp-root`、`--jp-dir` 或 `--jp-base` 直接作为只读参考；已持有工作源 `.epub` 时，可用下列命令预览并建立参考缓存，无需使用维护者的 OneDrive 目录：
+
+```powershell
+./tools/pull.ps1 -Side japanese -JapaneseSourceDirectory "<日文工作源epub目录>" -WhatIf
+./tools/pull.ps1 -Side japanese -JapaneseSourceDirectory "<同一日文工作源epub目录>"
+python tools/check_alignment.py --jp-root .cache/epub-work/japanese-text --require-jp --strict
+```
+
+未经整理的 BW 分页源不能直接当作同行参考。参考目录存在不代表对应作品、正文文件或物理行已覆盖；结果分别说明已检查、未核验和已登记例外。使用时结合退出码与覆盖范围：零命中只说明已检查部分未发现问题。
+
+CI 同样只承担其实际可执行的单侧检查；日文核验明确跳过，不能据 CI 绿色宣布双语验收。
+
 ## 路由
 
 正常任务从这张表进；出问题时从下一节的 [阻塞与恢复](#阻塞与恢复) 进。
@@ -56,7 +105,7 @@
 | P2 | 发布停止并给重建提示：某处理侧在清单中全无基线记录 | 侧名取值只有 `chinese-text`／`japanese-text`（`python tools/manifest.py --help`），重建写入 `python tools/manifest.py --update-books <侧>/<书目录>`，例如 `japanese-text/【S5_01】外典书库(1)` | 仅在已确认「缓存即已发布状态」后重建基线 | 不得用清单更新掩盖未发布变化；`--force` 也不跳过成品结构门禁 | C1 | [manifest-baseline-missing-side-2026-09-13.md](../docs/maintenance-records/manifest-baseline-missing-side-2026-09-13.md) |
 | P3 | `publish_preflight.py` 非零（预检失败不推进该书发布与基线） | `python tools/publish_preflight.py --source EPUB`（可加 `--jp-root`、`--only-books`） | 按报错类别转到 C3／C4 修，修完重跑预检 | 不得绕过预检发布；不得临时覆盖缓存来做检查 | C1→C3/C4 | — |
 | P4 | `check_alignment.py --strict` 或 `check_epub_health.py --strict` 非零 | 对齐用 `--root EPUB --jp-root .cache/epub-work/japanese-text --strict`；漂移定位用 `python tools/diff_paired_lines.py` | 按 C3 的对应工具处理：`fix_legacy_pagebreak_br.py`／`restore_cn_scene_breaks.py`／`sync_pb_tags.py`（页边界）、`wrap_cn_image_lines.py`（图片行）、`normalize_single.py`／`normalize_paired.py`（模板）、`migrate_heading_breaks.py`（标题）、`shift_content_sequences.py`／`fix_empty_placeholders.py`（序号与空页）、`reorder_notes.py`（Note） | 不得临时放宽门禁；不得为凑行数增删结构标签；语义未确认先人工确认 | C4 查→C3 修 | — |
-| P5 | `--jp-root` 缺目录或缺书；CI 结构上看不到日文侧 | `./tools/pull.ps1 -WhatIf`、`-Side japanese` | 先拉取建立缓存；确无日文源时只做单侧检查 | 不得据未配对书宣布「双侧通过」 | C1→C4 | — |
+| P5 | 日文根缺失、目录存在但缺书／正文；CI 无日文侧 | 按 [克隆后的运行环境](#克隆后的运行环境) 核对输入与覆盖 | 自行提供工作源或从显式外部目录拉取；无源时使用单侧能力 | 不得据未配对书或零命中宣布「双侧通过」 | C1→C4 | — |
 | P6 | 上传成功但状态写入失败（`OSError`：外部副本已更新、清单未推进） | 比对 OneDrive 实际内容与 `manifest.json`／`pull-state.tsv` | 按 P1 的冲突流程处理（外部副本当作待合并的一方），必要时重跑发布 | 不得假定「上传失败」直接重传覆盖；不得直接编辑 OneDrive 里的 `.epub` | C1 | [tool-responsibility-cleanup-2026-09-19.md](../docs/maintenance-records/tool-responsibility-cleanup-2026-09-19.md) |
 | P7 | CI `normalize-epub-text.yml` 产生了提交（自动规范化／译注自愈／裸图包裹）——非阻塞，属必做后续 | `git log`／`git pull`，比对 CI 提交与本地未发布改动 | 工作站拉取该提交后按 CI 实际作品范围运行 `python tools/publish_auto.py --only-books "<side/书目录,...>"` 回流 | 不得把 CI 提交当作「三副本已同步」；CI 不连 OneDrive | C1 | [AGENTS.md](../AGENTS.md)「CI 例外」 |
 
@@ -131,7 +180,7 @@ python tools/publish_preflight.py --source EPUB --only-books chinese-text/某书
 python tools/publish_preflight.py --source EPUB --calibre
 ```
 
-`--source` 为中文候选根；`--jp-root` 是可选只读日文参考，省略时输出“仅单侧检查”。`--only-books` 以逗号分隔的 `side/book` 限定书籍，`--calibre` 显式启用全 source 的补充校验，不与 `--only-books` 合用；任一硬错误非零。内部 `validate_publication(cn_root, jp_root=None, book_keys=None)` 返回 bool，复用 alignment、health、note 和 package 的判定实现。
+`--source` 为中文候选根；`--jp-root` 是可选只读日文参考，省略时仅检查中文。CLI 显式指定日文根时要求所选适用范围的参考完整，缺目录为 2，缺书／正文或无法可靠配对为 1。输出实际覆盖与未核验原因，不把空目录记作双语通过。`--only-books` 以逗号分隔的 `side/book` 限定书籍，逐项核对请求范围，不存在项不能被其它已找到的书掩盖；内部 `allow_removed=True` 保留同步器的删除路径。`--calibre` 显式启用全 source 的补充校验，不与 `--only-books` 合用；任一硬错误非零。内部 `validate_publication(cn_root, jp_root=None, book_keys=None, *, allow_removed=False, require_reference=False)` 返回 bool；同步器默认允许合法的单侧作品，但须报告仅单侧／部分／完整覆盖，调用方可用 `require_reference=True` 要求参考完整。
 
 ### 拉取
 
@@ -305,7 +354,7 @@ python tools/normalize_paired.py --root EPUB --jp-root .cache/epub-work/japanese
 python tools/normalize_paired.py --cache 暂存根 --staging --apply
 ```
 
-single 只处理命令行指定文件或 `--dir`／`--pattern`，可用 `--side cn|jp` 明确重建侧；归档默认中文，未知暂存路径按路径识别，不保证双侧对齐。paired 的 `--root`／`--jp-root` 接受库根或单书目录；`--book <完整作品号>` 与 `--file <中文 XHTML 路径>` 均可重复，文件路径相对当前目录，二者求交后才索引和预检。未知作品、无效／越界文件及空交集非零退出；选中表头有重复仍阻断，无关作品或表头不参与检查。不加筛选参数处理所给根目录全部内容。无日文书与已裁定结构特例仍按原合同跳过；缺单个日文文件时仅规范化中文。归档模式仅读日文，双侧暂存模式只修改选中的中日文件。两者调用 `xhtml_template.py`，不承担历史多层标题语义迁移。行模板规则与豁免事实分别在 [EPUB 结构规范](../docs/epub-structure-spec.md) 和 `alignment_rules.py`。
+single 只处理命令行指定文件或 `--dir`／`--pattern`，可用 `--side cn|jp` 明确重建侧；归档默认中文，未知暂存路径按路径识别，不保证双侧对齐。paired 的 `--root`／`--jp-root` 接受库根或单书目录；`--book <完整作品号>` 与 `--file <中文 XHTML 路径>` 均可重复，文件路径相对当前目录，二者求交后才索引和预检。未知作品、无效／越界文件及空交集非零退出；选中表头有重复仍阻断，无关作品或表头不参与检查。不加筛选参数处理所给根目录全部内容。所选普通正文缺日文作品或文件时整批预检失败，写入前停止；仅单侧模板处理用 single。已裁定结构特例仍列明跳过，中文单有的包装页按单侧模板处理。归档模式仅读日文，双侧暂存模式只修改选中的中日文件。两者调用 `xhtml_template.py`，不承担历史多层标题语义迁移。行模板规则与豁免事实分别在 [EPUB 结构规范](../docs/epub-structure-spec.md) 和 `alignment_rules.py`。
 
 ### 多层标题迁移
 
@@ -334,7 +383,7 @@ python tools/restore_cn_scene_breaks.py --root EPUB --jp-root .cache/epub-work/j
 python tools/sync_pb_tags.py --root EPUB --jp-root .cache/epub-work/japanese-text --book S1_01
 ```
 
-这些入口默认预览，确认后加 `--apply`；只写中文，日文仅读。legacy 删除逐边界确认的多余旧换页行；restore 只补有源证据且总差额一致的场景分隔；pb 在一一对应段落添加缺失 class，不增删行。行数、块类型或差额条件不足时拒绝；真实一段对多段关系先人工确认语义，不由这些工具拆合。
+这些入口默认预览，确认后加 `--apply`；只写中文，日文仅读。配对收集先核对整个选定范围，缺参考作品／正文、未知选书或空书目录时非零退出，不把它们当成「无需修改」；已登记非配对作品与结构特例保持豁免。legacy 删除逐边界确认的多余旧换页行；restore 只补有源证据且总差额一致的场景分隔；pb 在一一对应段落添加缺失 class，不增删行。行数、块类型或差额条件不足时拒绝；真实一段对多段关系先人工确认语义，不由这些工具拆合。
 
 ### 中文图片行包装
 
@@ -343,7 +392,7 @@ python tools/wrap_cn_image_lines.py --root EPUB --book S1_01 --wrap-only
 python tools/wrap_cn_image_lines.py --root EPUB --jp-root .cache/epub-work/japanese-text --book S1_01 --apply
 ```
 
-`--wrap-only` 仅包装裸 img、不删结构行；完整模式只接受配平的图片专用 div 区段，改写删除结构行前需指定日文参考并验证配对行数。普通带语义 div 不处理。输出修改计划与拒绝原因，默认预览。
+`--wrap-only` 仅包装裸 img、不删结构行；完整模式只接受配平的图片专用 div 区段，普通正文删除结构行前必须找到同表头日文文件，并验证改写后的行数与行类型。缺对应文件、空参考、重复表头或配对不符时整批拒绝；不因日文目录存在就允许删除。普通带语义 div 不处理，中文单有的包装页不要求正文配对。所有候选先预检再写入，写失败回滚本批次；未知选书或无 XHTML 输入非零。输出修改计划与拒绝原因，默认预览。
 
 ### Note 顺序重排
 
@@ -368,7 +417,7 @@ python tools/reorder_notes.py --root EPUB --pattern "*S1_01*" --apply --no-backu
 | `check_translation_spec.py` | `python tools/check_translation_spec.py --root EPUB --output 显式报告目录` | 只读；写 TSV／JSON／Markdown | P1–P25 规则报告；**error 级由 `publish_preflight.py` 接入发布阻断**【P3】，warning／info 不自动当缺陷 | `test_translation_spec.py` |
 | `check_translation_table.py` | `python tools/check_translation_table.py --table 显式译名表.xlsx --strict` | 只读外部 xlsx＋日文缓存＋中文归档＋译名裁定总表；写本地核对报告 | 折叠 → 同形例外 → 裁定表（含注音判定）→ 译名表；strict 存在待判未落地项非零【无】 | `test_check_translation_table.py` |
 | `check_term_anchors.py` | `python tools/check_term_anchors.py --strict`／`--book S5_01_02` | 只读中文归档＋日文缓存＋译名裁定总表；写 `--out` TSV | 日文裁定锚点出现、中文却用裁定表登记的误形时命中；塔罗牌名等语境例外；strict 命中非零【P3】 | `test_check_term_anchors.py` |
-| `compare_epub_images.py` | `python tools/compare_epub_images.py --pattern "*S3_*" --output 显式报告目录` | 只读；写图片核对报告 | 字节／像素相同与感知候选分开；候选需视觉确认【无】 | `test_compare_epub_images.py` |
+| `compare_epub_images.py` | `python tools/compare_epub_images.py --root EPUB --jp-root 日文参考目录 --pattern "*S3_*" --output 显式报告目录` | 只读；写图片核对报告 | 字节／像素相同与感知候选分开；缺参考或零图片覆盖非零，候选需视觉确认【P5】 | `test_compare_epub_images.py` |
 | `check_epub_validity.py` | `python tools/check_epub_validity.py EPUB --structural --strict` | 只读；写显式报告；系统临时解包 | calibre 补充检查；strict 过滤后仍有问题为 1，环境／输入前提错误为 2【无】 | `test_calibre_validity.py` |
 | `check_project_docs.py` | `python tools/check_project_docs.py` | 只读；终端报告 | 本地链接／锚点、索引登记与回指、工具簇归属与单一来源；缺项非零【无】 | `test_check_project_docs.py` |
 | `check_echo.py` | `python tools/check_echo.py --book S1_01 --book S1_02`／`--convention "<日文正则>" --convention-words "<中文正则表>"` | 只读；写 `--out` 候选清单或惯例报告 | 只定位呼应候选（片段多译／同源复现／引述回指）与全库用词分布，不判定、不阻断【无】 | `test_check_echo.py` |
@@ -387,6 +436,8 @@ python tools/check_echo.py --book S1_01 --include-marker-quotes   # 实验分支
 定位作品内「应当一致」的呼应点候选：**同一日文片段在作品内出现多次而中文译法不一致**（并按 `实词／语体／虚词` 标注差异性质、据此排序）、**日文相似行对**（原句及其引述／复现形态）、**日语侧引文回全文找出的疑似出处**（`『…』` 引用符，或 `って／とか` 引述助词——后者默认关闭）。默认读 `EPUB/` 与 `.cache/epub-work/japanese-text/`，按内容序配平行号；输出 `--out` 目录下每作品一份 `*-呼应候选.md` 与 `summary.md`。
 
 配对使用 `xhtml_structure.py` 的共享表头索引，排除包装页；`alignment_rules.py` 已登记的非同一形态作品、人工对齐、文本化图片与特殊配对单元不做通用逐行比较，逐项说明跳过原因。普通单元缺对照、行数不等或行类型错位时跳过该单元；同侧重复表头时跳过整部作品，均不猜测偏移或把不可靠记录送入候选／惯例统计。
+
+候选模式和惯例模式均要求至少有可靠配对行；根目录缺失、请求作品无可用配对或全部配对被拒绝时返回 2。部分覆盖仍可生成诊断报告，并在终端、作品报告及汇总保留未核验原因；有可靠配对而没有候选或模式命中时返回 0。
 
 相似行召回使用覆盖全部起点的 n-gram 倒排索引，单字插入／删除造成的位移不会因奇偶起点不同而丢失全部公共键；相似度阈值和高频片段降噪仍单独生效。全位置桶超过 40 行时回退原有偶数起点桶，该桶仍超过 40 行则忽略，避免扩充索引反而滤掉原先由稀疏桶召回的句对。
 
@@ -414,9 +465,12 @@ python tools/check_echo.py --convention "そっと息を吐" --convention-books 
 ```powershell
 python tools/check_alignment.py --strict
 python tools/check_alignment.py --root EPUB --jp-root .cache/epub-work/japanese-text --strict
+python tools/check_alignment.py --book S1_01 --jp-root .cache/epub-work/japanese-text --require-jp --strict
 ```
 
 检查双侧模板及完整表头配对、行数和 h1/h2、图片、独占 br、pb 的物理位置。已确认配对规则只调整有依据的共同范围／顺序，其余结构差异照常阻断；位置规范唯一在 [EPUB 结构规范](../docs/epub-structure-spec.md)。支持 `--cache` 旧双侧根、`--root` 中文与 `--jp-root` 日文独立根、重复 `--book` 与 `--output` 报告；L6 标准正文必须为 p，中文列表包装页可为 li；中文作品级包装页原有多段语义 div 的开标记与完整首段 p 同行也可保留。裸 div 或裸文字不作标准正文豁免。普通模式完整报告后返回成功，strict 有问题非零。缺侧目录按空集合处理，不应据未配对书宣布双侧通过。例外从 `alignment_rules.py` 读取，报告应保留实际检查与未配对范围。
+
+默认中文输入为 `EPUB/`，可选日文输入为参考缓存；显式 `--cache` 才从旧双侧缓存取中文。终端分别统计配对单元、未配对正文与已登记例外。单侧检查可独立完成；`--require-jp` 要求所选适用正文完整配对，覆盖不足返回 2，结构问题仍由 `--strict` 返回 1。显式路径不存在、空输入、未知作品与报告写入失败返回 2。
 
 ### 逐行漂移诊断
 
@@ -425,7 +479,7 @@ python tools/diff_paired_lines.py --work S3_01 --tsv 显式报告.tsv
 python tools/diff_paired_lines.py 日文.xhtml 中文.xhtml --html 显式诊断.html
 ```
 
-同长度直接按物理行对齐，不等长才回退序列诊断；结果为结构／语义启发式候选，不作文字写入。支持 `--cache`、重复 `--work`、`--batch`、`--only-diff`、`--all`、`--no-progress`。批量问题非零，HTML／TSV 只写报告。
+同长度直接按物理行对齐，不等长才回退序列诊断；结果为结构／语义启发式候选，不作文字写入。默认中文归档与日文缓存，可用 `--root`／`--jp-root` 指定独立根；显式 `--cache` 保留旧双侧缓存模式，与独立根参数互斥。支持重复 `--work`、`--batch`、`--only-diff`、`--all`、`--no-progress`。零可检查配对返回 2；部分缺书／表头或重复表头写入终端与 TSV，`--strict` 时非零，普通诊断可保留部分报告。空文件不能当纯图片页通过，单表头定位歧义直接失败。HTML／TSV 只写报告。
 
 ### 语义逐行对齐
 
@@ -438,7 +492,7 @@ python tools/check_semantic_alignment.py --strict --betweenlines-dir 显式Betwe
 
 L1 是 CPU 初筛，L2 使用多语言矢量模型分析窗口。非 strict 的 `--auto-audit` 默认只诊断前 20 项，`--top` 限制诊断数量；该输出不能称全范围门禁。
 
-strict 先执行结构前检，再对所选作品／表头范围执行 L2 完整检查，禁止与 `--l1-only` 或 `--top` 合用。已确认 `PAIR_RULES` 只解释对应结构差异；后记迁出时只检查共同正文，并在 TSV“结构范围说明”列标明实际范围，未被规则解释的尾部缺行仍失败。模型、运行时或输入不完整时非零退出，不降级成“无问题”。`--include-exempt` 可用于人工诊断已登记豁免；`--cache`、`--out` 指定输入报告。
+strict 先执行结构前检，再对所选作品／表头范围执行 L2 完整检查，禁止与 `--l1-only` 或 `--top` 合用。已确认 `PAIR_RULES` 只解释对应结构差异；后记迁出时只检查共同正文，并在 TSV“结构范围说明”列标明实际范围，未被规则解释的尾部缺行仍失败。模型、运行时或输入不完整时非零退出，不降级成“无问题”。输入与选书验证先于模型环境准备，零配对为 2；非 strict 报告也保留部分覆盖说明。`--include-exempt` 可用于人工诊断已登记豁免。默认中文归档与日文缓存，`--root`／`--jp-root` 指定独立根；显式 `--cache` 是旧双侧输入，与独立根互斥，`--out` 指定报告目录。
 
 L2 运行时由 `--vector-python`／`--betweenlines-dir`、`BETWEENLINES_PYTHON`／`BETWEENLINES_DIR` 或相邻 BetweenLines checkout 动态定位；不写私人机器路径。记录模型、环境与外部 checkout 版本，模型结果仍需结合原文判断。
 
@@ -461,13 +515,13 @@ python tools/check_epub_health.py --only css-layout --tsv 显式报告.tsv
 
 汇总既有项目规则，检查 XML、ruby、正文原子块、标题、加粗、悬空引用、图片资源、CSS 分页保护、**译注页结构**与**成品构成**；资源检查覆盖全部 CSS url／@import、SVG 和导航引用。主 `style.css` 检查完整布局声明，辅助 CSS 只阻断 html／body 非零左右边距，不能要求每份字体 CSS 重复主样式，不另立规则。`--pattern` 筛书、`--only` 选项、`--top` 控制样例、`--json`／`--tsv` 显式报告。strict 有 error 非零；每项必须有负向测试。
 
+默认中文输入为 `EPUB/`。输入根无效、筛选无匹配书籍、读取或报告写入失败返回 2；真实检查得到的 error 级发现仍按 strict 返回 1。
+
 成品构成项（规范见 [EPUB 成品构成规范](../docs/epub-artifact-spec.md)）：`dir-name`（书目录名的 `【作品号】` 前缀）、`metadata-title`（`dc:title` 逐字节等于书目录名）、`packaging-required`（`content.opf`／`nav.xhtml`／`toc.ncx` 与封面、制作信息页存在，且两张包装页已被 manifest 声明、已在 spine 中）、`nav-structure`（`nav.xhtml` 的 `<html>` 只含 `head`／`body`、`<head>` 只含元数据类元素且 `<title>` 非空）、`ncx-doctitle`（`docTitle` 等于 `dc:title`）、`toc-entry`（首条目为制作信息、封面不入目录）、`ncx-uid`（`toc.ncx` 的 `dtb:uid` 等于包文档 `unique-identifier`）、`identifier-unique`（跨书 `unique-identifier` 唯一）为 **error 级，接入发布预检**。`identifier-unique` 需跨书汇总：`check_epub_health` 在 `main()` 层计算，`publish_preflight` 在库级复核同一实现；豁免按「作品 + 检查项」登记在 `alignment_rules.HEALTH_EXEMPT_WORK_IDS`（当前仅 `S0_00` 的 `toc-entry` 一项）。
 
 `title-style` 检查中文默认标题样式、分层角色／字号与引用 CSS、序终章间距、彩页及特典集合标题；`title-catalog` 检查 nav/NCX 的纯文本标签与 h1/h2/h3 投影及两套目录的目标／标签／顺序一致性。未知结构／样式与目录差异为 error，并通过共享 `audit_book` 进入本地发布和 CI 预检；不自动修复、不推断层数，非标题目标只由资源／锚点检查验证跳转。规范正文见 [结构规范](../docs/epub-structure-spec.md) 三和 [成品构成规范](../docs/epub-artifact-spec.md) 四。
 
 `note-structure` 只对 `*-Note.xhtml` 判定，覆盖外壳（XML 声明引号、`<head>` 与 `<link>` 间距、空 `<title>`）、L4 固定 h1、L5 容器必须是 `<ul>`、`<li>` 属性顺序与完整性（含 `noteN` ID 格式）、缩进、行内标签白名单，规范见 [EPUB 结构规范](../docs/epub-structure-spec.md)「译注页（Note）结构规约」。ID 唯一性、引用完整性及条目物理顺序由 `check_note_order.py` 检查；数字连续性和数值排序均不要求。`S0_00-Note.xhtml` 第 7 行的说明型条目是登记在案的唯一豁免。
-
-默认中文输入为 `EPUB/`。输入根无效、筛选无匹配书籍、读取或报告写入失败返回 2；真实检查得到的 error 级发现仍按 strict 返回 1。
 
 ### 图片对应核对
 
@@ -476,6 +530,8 @@ python tools/compare_epub_images.py --pattern "*S3_*" --output 显式报告目�
 ```
 
 读两侧图片和 XHTML 引用，区分字节相同、解码像素相同、稳定命名对应与感知候选。双页范围可对应连续单页；旧命名依表头／槽位条件，不把页码猜为内容序。感知相似可能有修嵌或替换，必须视觉确认。`--cache` 指定参考根。
+
+默认中文输入为 `EPUB/`、日文输入为参考缓存，`--root`／`--jp-root` 可指定独立根；显式 `--cache` 保留旧双侧缓存模式，与独立根互斥。缺根、无匹配书籍或零配对返回 2；已有对应作品但任一侧没有图片时写出未完成报告并返回 2。存在有效配对时可保留部分结果，终端与 `unpaired_books` 列出未配对作品，`incomplete_books` 列出无图片的作品；不把它们计作已完成图片核验。报告写失败为 2。旧 `scan(cache, pattern)` 调用保留，库调用可用可选关键字 `cn_root`／`jp_root`。
 
 ### 插图映射表核对
 
@@ -518,6 +574,8 @@ python tools/check_translation_table.py --table 显式译名表.xlsx --audit-rul
 
 `--rulings` 指定《译名裁定总表》（默认仓库内路径）；`--no-rulings` 是诊断绕过，不可据此要求回改已登记裁定。`--include-suspect` 展示短串候选、`--limit` 是局部调试，不能称全表验收。`alignment_rules.TRANSLATION_HOST` 和 `SETTLED_ANCHORS` 是已确认跨书归属／同形词事实源。`SETTLED_ANCHORS` 每条含 `note`／`scope`／`status`：**抑制只在该锚点被判定过的那本书内生效**；`status=settled`（已判定同形不同义）始终抑制，`status=待裁定`（两案都成立、尚未定）在裁定表登记该锚点后失效、改按裁定判定。
 
+显式 `--book` 逐本报告请求范围，缺任一侧或正文为空时标为未核验，strict 返回 2；全部无可用配对也返回 2。正文只从实际 body 内容提取，head、style、script、注释和标题不并入正文核验。默认全库模式只核两侧交集，并列出中文／日文独有作品，保留合法单侧收录。终端、Markdown 和 JSON 的 `summary.coverage` 保留请求、核验、缺侧与辅助来源。`TRANSLATION_HOST` 指向的中文宿主即使未选中也作为辅助源加载，单列 `auxiliary_books`，不计核验目标。
+
 正文与 h1/h2/h3 分开收集：标题命中不为正文补足译名落地，也不计入 `--strict`；另写同一报告目录下的 `translation-title-check.tsv`，主 JSON 的 `title_records` 和 Markdown 的标题人工核对节同时展示。标题中的状态仅供人工结合原文判断，不直接产生替换要求。落地未命中只产生待判项，不等于误译；回原文判断普通词／专名、单复数与语境，执行 [术语统一 skill](../.agents/skills/translation-term-unification/SKILL.md)。strict 存在待判未落地项非零。`--audit-rulings` 只核裁定表与译名表：锚点全角英数字母、裁定列解析不出写法（散文格式漏标 `人读`）、锚点 `<rt>` 与 `Ruby_Ori` 不一致（一格多锚点时**逐块**核对，逐字分解的碎片按基文长度跳过）、译名表同锚点多译法未在裁定表登记、同一锚点多行匹配轴混用、声明了匹配轴但锚点不是单段 ruby，出问题非零；改裁定表后重跑。
 
 ### 术语锚点门禁
@@ -529,7 +587,7 @@ python tools/check_term_anchors.py --book S5_01_02 --book S5_01_01 --strict
 
 `check_translation_table.py` 用译名表的原始写法当锚：表里的 `【魔術】` 带括号，正文裸写 `魔術` 匹配不到。本工具补这一步：中日逐行配对，**日文出现裁定锚点、中文没有裁定写法却含裁定表登记的误形**时命中。规则只从《译名裁定总表》读——锚点取 `DEFAULT_ANCHORS`（默认 `魔術`、`魔術師`），应作取「裁定」列，误形取「被否决或并存的候选」列；新增锚点只改常量（或用 `--anchor`），不复制第二份映射。
 
-书名、省略与改写也可能缺少裁定写法，因此只报「误形命中且无裁定写法」。**塔罗牌名是语境例外**：`ANCHOR_CONTEXT_EXCEPTIONS` 对 `魔術師` 命中 `タロット`／`大アルカナ`／`カード` 的日文行跳过（中文通行牌名「魔术师」）。`人读` 条目、非配对作品、行数不等文件都在报告里单列，不计通过。`--strict` 命中非零（退出码 1），根目录或锚点缺失为 2；报告默认 `.cache/epub-work/term-anchor-check.tsv`。建立背景与历史回测见 [术语锚点门禁记录](../docs/maintenance-records/term-anchor-gate-2026-10-27.md)。
+书名、省略与改写也可能缺少裁定写法，因此只报「误形命中且无裁定写法」。**塔罗牌名是语境例外**：`ANCHOR_CONTEXT_EXCEPTIONS` 对 `魔術師` 命中 `タロット`／`大アルカナ`／`カード` 的日文行跳过（中文通行牌名「魔术师」）。已登记非配对作品、人工／结构特例、仅包装页及双侧纯图范围单列为不适用，不计文字核对数。缺书、缺正文表头、空白或仅元数据文件、行数或行类型错位、重复表头及未知选书属于未完成；普通报告可保留部分结果，`--strict` 返回 2。完整覆盖时误形命中返回 1，无命中返回 0；根目录或锚点缺失、报告写入失败为 2。报告默认 `.cache/epub-work/term-anchor-check.tsv`。库函数 `audit_coverage()` 返回命中和覆盖状态，旧 `audit_roots()` 四元组保留兼容。建立背景与历史回测见 [术语锚点门禁记录](../docs/maintenance-records/term-anchor-gate-2026-10-27.md)。
 
 接入点：`publish_preflight.py`（带日文参考的发布预检按书阻断）、`proofread-review` R7、`translation-term-unification` S6。CI 只有中文侧，工作流里仅在日文缓存存在时执行，否则明确跳过。
 
@@ -593,9 +651,7 @@ python tools/japanese_lookup.py S3_03 04 55
 python tools/audit_risk.py --old "旧句" --new "新句" --jp "日文"
 ```
 
-`proofread_review.py` 编排 Git 行级配对、`japanese_lookup.py` 原文提取、`audit_risk.py` 风险提示；不修改正文。支持 `--repo`、`--jp-base`、`--no-jp`、`--no-audit`；未提取／未诊断的侧明确未核验。原文 lookup 的 `--raw` 保留标签，`--jp-base` 指定参考；risk 的 `--json` 输出结构。
-
-`japanese_lookup.py` CLI 缺日文根、作品或文件返回 2，并提示通过 `--jp-base` 指定已有参考；行号越界返回 1。
+`proofread_review.py` 编排 Git 行级配对、`japanese_lookup.py` 原文提取、`audit_risk.py` 风险提示；不修改正文。支持 `--repo`、`--jp-base`、`--no-jp`、`--no-audit`；汇总始终列出日文覆盖数（含 0）、未核验数，`--no-jp` 明确仅分级。缺参考可保留分级报告，不能据此宣布语义复核完成。原文 lookup 的 `--raw` 保留标签，`--jp-base` 指定参考；CLI 缺日文根、作品或文件返回 2，并提示指定参考，行号越界为 1。risk 的 `--json` 输出结构。
 
 产物为 `changes.tsv`、`semantic.tsv`、`spec.tsv`、`groups.txt`。TSV 使用标准 tab 分隔和 CSV 字段引用，保留字段里的双引号、制表符及换行，读取用 `csv.DictReader`。一物理行合一条记录，用最小差异分级：spec 为确定规范形状，tiny 为 ≤2 字且全属虚词，local 为 ≤12 字局部变化，rewrite 为更大变化或整段增删；spec 仅在整段最小差异都能由规范解释时放行。数字／字母不当标点剥除。
 
@@ -650,8 +706,6 @@ python tools/search_text.py "カリキュラム" --format markdown
 ```
 
 用于在 EPUB 工作缓存（`.cache/epub-work/`）及归档中进行精准的全文与术语检索，支持注音假名搜索、汉字长词跨标签搜索、BW 源假名妥协折叠与中日双向对齐联动。只读，不修改文件。
-
-默认按作品优先读取中文缓存，空缓存或未缓存的作品从 `EPUB/` 补足；同一作品只读取一份副本，显式 `--cn-root` 不回退其它来源。
 
 `--cn-root`／`--jp-root` 指定独立参考根，显式中文路径失效不回退其它源。`both` 缺日文时继续搜中文，并通过 stderr 说明未核验日文；`jp` 缺源返回 2。无可搜索文件、作品筛选未命中或无效显式输入返回 2，有实际检索范围而零命中仍为 0。JSON／TSV 保持机器格式，前置错误和范围提示走 stderr。
 

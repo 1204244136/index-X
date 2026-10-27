@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import sys
 import csv
+import io
 import tempfile
 import unittest
 from pathlib import Path
+from contextlib import redirect_stdout
 
 TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
@@ -21,6 +23,7 @@ from proofread_review import (  # noqa: E402
     to_text,
     unquote_git_path,
     write_tsv,
+    summarize,
 )
 
 # 两个文件交错的 diff：用于验证片段不会串到别的文件上
@@ -284,6 +287,25 @@ class TsvRoundTripTests(unittest.TestCase):
             with output.open(encoding="utf-8", newline="") as stream:
                 recovered = list(csv.DictReader(stream, delimiter="\t"))
         self.assertEqual(recovered, [row])
+
+
+class ReferenceCoverageTests(unittest.TestCase):
+    def row(self, jp: str = "") -> dict:
+        return dict(work="S1_01", grade="local", kind="", old="旧译", new="新译", jp=jp)
+
+    def test_zero_japanese_coverage_is_always_shown(self):
+        output = io.StringIO()
+        with redirect_stdout(output):
+            summarize([self.row()], "reports")
+        self.assertIn("日文原文 0/1", output.getvalue())
+        self.assertIn("未核验", output.getvalue())
+
+    def test_explicit_no_jp_is_named_in_the_summary(self):
+        output = io.StringIO()
+        with redirect_stdout(output):
+            summarize([self.row()], "reports", enable_jp=False)
+        self.assertIn("--no-jp", output.getvalue())
+        self.assertIn("未核验", output.getvalue())
 
 
 if __name__ == "__main__":

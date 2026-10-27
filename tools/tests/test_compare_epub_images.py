@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+import io
+import json
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
+from unittest.mock import patch
 
 TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
@@ -12,6 +16,7 @@ sys.path.insert(0, str(TOOLS))
 # 工具模块在缺 Pillow 时会主动 raise SystemExit，因此也要捕获 SystemExit。
 try:
     from PIL import Image  # noqa: E402
+    import compare_epub_images as image_compare
 
     from compare_epub_images import (  # noqa: E402
         Asset,
@@ -29,6 +34,7 @@ try:
         scan,
     )
 except (ImportError, SystemExit):  # pragma: no cover - 取决于运行环境是否装有 Pillow
+    image_compare = None
     Image = None  # type: ignore[assignment]
     Asset = None  # type: ignore[assignment,misc]
     _layout_from_ratio = None  # type: ignore[assignment]
@@ -353,6 +359,104 @@ class ScanReportTests(unittest.TestCase):
         report = scan(cache, "*S1_01*")
         self.assertEqual(report["books"], [])
         self.assertEqual([row["book"] for row in report["unpaired_books"]], ["【S1_01】测试书"])
+
+
+@requires_pillow
+class ImageCompareSourceCliTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name)
+        self.cn = self.root / "EPUB"
+        self.jp = self.root / "jp"
+        self.output = self.root / "report"
+
+    def make_pair(self, wid="S1_01"):
+        for source in (self.cn, self.jp):
+            write_png(source / f"【{wid}】书" / "OEBPS" / "Images" / f"{wid}-cover.png")
+
+    def invoke(self, *args):
+        output, errors = io.StringIO(), io.StringIO()
+        with redirect_stdout(output), redirect_stderr(errors):
+            code = image_compare.main(["--output", str(self.output), *map(str, args)])
+        return code, output.getvalue(), errors.getvalue()
+
+    def test_defaults_read_archive_without_chinese_cache(self):
+        self.make_pair()
+        cache = self.root / "cache"
+        japanese_cache = cache / "japanese-text"
+        cache.mkdir()
+        self.jp.rename(japanese_cache)
+        with patch.object(image_compare, "DEFAULT_ROOT", self.cn, create=True), patch.object(
+                image_compare, "DEFAULT_CACHE", cache, create=True):
+            code, output, errors = self.invoke()
+        self.assertEqual(code, 0, errors)
+        payload = json.loads((self.output / "report.json").read_text(encoding="utf-8"))
+        self.assertEqual(payload["summary"]["paired_books"], 1)
+        self.assertEqual(payload["chinese_root"], self.cn.as_posix())
+        self.assertFalse((cache / "chinese-text").exists())
+
+    def test_independent_roots_work_and_partial_unpaired_books_stay_visible(self):
+        self.make_pair()
+        write_png(self.cn / "【S1_02】缺日文" / "OEBPS" / "Images" / "S1_02-cover.png")
+        code, output, errors = self.invoke("--root", self.cn, "--jp-root", self.jp)
+        self.assertEqual(code, 0, errors)
+        payload = json.loads((self.output / "report.json").read_text(encoding="utf-8"))
+        self.assertEqual(payload["summary"]["paired_books"], 1)
+        self.assertEqual(len(payload["unpaired_books"]), 1)
+        self.assertIn("未配对", output)
+
+    def test_legacy_cache_remains_supported_and_does_not_mix_with_roots(self):
+        self.make_pair()
+        cache = self.root / "cache"
+        cache.mkdir()
+        self.cn.rename(cache / "chinese-text")
+        self.jp.rename(cache / "japanese-text")
+        self.assertEqual(self.invoke("--cache", cache)[0], 0)
+        for option, source in (("--root", self.cn), ("--jp-root", self.jp)):
+            with self.subTest(option=option), redirect_stderr(io.StringIO()):
+                with self.assertRaises(SystemExit) as raised:
+                    self.invoke("--cache", cache, option, source)
+                self.assertEqual(raised.exception.code, 2)
+
+    def test_missing_reference_is_setup_error_with_source_argument_hint(self):
+        self.make_pair()
+        code, output, errors = self.invoke("--root", self.cn, "--jp-root", self.root / "missing")
+        self.assertEqual(code, 2)
+        self.assertEqual(output, "")
+        self.assertIn("日文", errors)
+        self.assertIn("--jp-root", errors)
+        self.assertFalse(self.output.exists())
+
+    def test_empty_roots_or_unknown_book_filter_cannot_succeed(self):
+        self.cn.mkdir()
+        self.jp.mkdir()
+        code, _, errors = self.invoke("--root", self.cn, "--jp-root", self.jp)
+        self.assertEqual(code, 2)
+        self.assertIn("未完成", errors)
+        self.make_pair()
+        code, _, errors = self.invoke("--root", self.cn, "--jp-root", self.jp, "--pattern", "*S1_99*")
+        self.assertEqual(code, 2)
+        self.assertIn("未完成", errors)
+
+    def test_a_paired_book_without_images_on_one_side_is_incomplete(self):
+        self.make_pair()
+        for path in (self.jp / "【S1_01】书").rglob("*.png"):
+            path.unlink()
+        code, _, errors = self.invoke("--root", self.cn, "--jp-root", self.jp)
+        self.assertEqual(code, 2)
+        self.assertIn("S1_01", errors)
+        self.assertIn("图片", errors)
+        payload = json.loads((self.output / "report.json").read_text(encoding="utf-8"))
+        self.assertEqual(payload["books"][0]["japanese_images"], 0)
+
+    def test_report_write_failure_is_nonzero_without_traceback(self):
+        self.make_pair()
+        self.output.write_text("not a directory", encoding="utf-8")
+        code, _, errors = self.invoke("--root", self.cn, "--jp-root", self.jp)
+        self.assertEqual(code, 2)
+        self.assertIn("未完成", errors)
+        self.assertNotIn("Traceback", errors)
 
 
 if __name__ == "__main__":

@@ -25,7 +25,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from alignment_rules import NON_PAIR_WORK_IDS, pairing_header_of  # noqa: E402
-from epub_ids import book_id  # noqa: E402
+from epub_ids import is_packaging_header, japanese_book_id  # noqa: E402
+from file_transaction import rollback_paths  # noqa: E402
+from xhtml_structure import books_by_id, header_index, pair_structure_problems  # noqa: E402
 
 IMG = re.compile(r"<img\b[^>]*/?>", re.I)
 DIV_OPEN = re.compile(r"<div\b[^>]*>", re.I)
@@ -118,23 +120,6 @@ def check_xml(lines: list[str]) -> str:
     return ""
 
 
-def jp_headers(cache: Path, *, direct: bool = False) -> set[str]:
-    out = set()
-    jp_dir = cache if direct else cache / "japanese-text"
-    if not jp_dir.is_dir():
-        return out
-    for d in jp_dir.iterdir():
-        if not d.is_dir():
-            continue
-        for p in d.rglob("*.xhtml"):
-            if p.name.lower() == "nav.xhtml":
-                continue
-            h = pairing_header_of(p.name)
-            if h:
-                out.add(h.upper())
-    return out
-
-
 def main() -> int:
     configure_output()
     ap = argparse.ArgumentParser(description="中文侧裸图片行包 <p>")
@@ -148,66 +133,84 @@ def main() -> int:
     if not args.wrap_only and (args.jp_root is None or not args.jp_root.is_dir()):
         ap.error("非 --wrap-only 模式必须显式指定 --jp-root 日文参考目录")
 
-    jph = jp_headers(args.jp_root, direct=True) if args.jp_root is not None else set()
     total_wrapped = total_dropped = total_files = 0
     refused = []
-    
-    cn_dirs = [d for d in sorted(root.iterdir()) if d.is_dir()]
-    if args.apply:
-        try:
-            for cn_dir in cn_dirs:
-                if args.book and book_id(cn_dir.name) != args.book.upper():
+    plans = []
+    try:
+        selected = {args.book.upper()} if args.book else None
+        cn_dirs = books_by_id(root, selected)
+        if not cn_dirs:
+            raise ValueError("没有匹配的中文书籍，请核对 --root 与 --book")
+        jp_dirs = (books_by_id(args.jp_root,
+                              {japanese_book_id(wid) for wid in cn_dirs})
+                   if args.jp_root is not None and not args.wrap_only else {})
+        for bid, cn_dir in cn_dirs.items():
+            if bid in NON_PAIR_WORK_IDS:
+                print(f"[不适用] {bid}: 已登记非同一形态作品")
+                continue
+            paths = [p for p in sorted(cn_dir.rglob("*.xhtml")) if p.name.lower() != "nav.xhtml"]
+            if not paths:
+                raise ValueError(f"{bid}: 没有可检查的 XHTML 文件")
+            # Resolve reference ambiguity before planning any content writes.
+            jp_dir = jp_dirs.get(japanese_book_id(bid))
+            jp_by = header_index(jp_dir) if jp_dir is not None else {}
+            for path in paths:
+                raw = path.read_bytes()
+                text = raw.decode("utf-8-sig")
+                lines = text.splitlines()
+                new, wrapped, dropped = normalize(lines)
+                if wrapped == 0 and dropped == 0:
                     continue
-                for path in cn_dir.rglob("*.xhtml"):
+                header = (pairing_header_of(path.name) or "").upper()
+                issue = check_xml(new)
+                if not issue and args.wrap_only and dropped:
+                    issue = f"wrap-only 模式禁止删除结构行（涉及 {dropped} 行）"
+                if not issue and dropped and not is_packaging_header(header):
+                    jp_path = jp_by.get(header)
+                    if jp_path is None:
+                        issue = "缺少对应日文参考文件，不能验证删除结构行后的配对"
+                    else:
+                        jp_lines = jp_path.read_text(encoding="utf-8-sig").splitlines()
+                        if not any(line.strip() for line in jp_lines):
+                            issue = "日文参考文件为空，未执行配对验证"
+                        else:
+                            issue = "; ".join(pair_structure_problems(jp_lines, new)[:3])
+                if issue:
+                    refused.append((bid, path.name, issue))
+                    continue
+                if args.apply:
                     require_edit_target(path, args.staging)
-        except EditSafetyError as exc:
-            ap.error(str(exc))
-
-    for cn_dir in cn_dirs:
-        bid = book_id(cn_dir.name)
-        if bid is None or bid in NON_PAIR_WORK_IDS:
-            continue
-        if args.book and bid.upper() != args.book.upper():
-            continue
-        for path in sorted(cn_dir.rglob("*.xhtml")):
-            if path.name.lower() == "nav.xhtml":
-                continue
-            raw = path.read_bytes()
-            bom = raw.startswith(b"\xef\xbb\xbf")
-            text = raw.decode("utf-8-sig", errors="replace")
-            crlf = "\r\n" in text
-            lines = text.splitlines()
-            new, wrapped, dropped = normalize(lines)
-            if wrapped == 0 and dropped == 0:
-                continue
-            header = (pairing_header_of(path.name) or "").upper()
-            issue = check_xml(new)
-            if not issue and args.wrap_only and dropped:
-                issue = f"wrap-only 模式禁止删除结构行（涉及 {dropped} 行）"
-            if not issue and dropped and header in jph:
-                issue = f"该表头在日文侧有对应文件，删除 {dropped} 行会改变行数"
-            if not issue and len(new) - sum(1 for x in new if x == "") != len(lines):
-                pass
-            if issue:
-                refused.append((bid, path.name, issue))
-                continue
-            total_files += 1
-            total_wrapped += wrapped
-            total_dropped += dropped
-            print(f"[规范] {bid} {path.name}: 包 <p> {wrapped} 行"
-                  + (f"，删除纯结构行 {dropped}" if dropped else "")
-                  + ("   （行数不变）" if not dropped else ""))
-            if args.apply:
-                sep = "\r\n" if crlf else "\n"
-                out_text = sep.join(new) + sep
-                path.write_bytes((b"\xef\xbb\xbf" if bom else b"") + out_text.encode("utf-8"))
-    print(f"\n{'已写盘' if args.apply else '预览'}：{total_files} 个文件，"
-          f"包 <p> {total_wrapped} 行，删除结构行 {total_dropped} 行")
+                plans.append((path, raw, new))
+                total_files += 1
+                total_wrapped += wrapped
+                total_dropped += dropped
+                print(f"[规范] {bid} {path.name}: 包 <p> {wrapped} 行"
+                      + (f"，删除纯结构行 {dropped}" if dropped else "")
+                      + ("   （行数不变）" if not dropped else ""))
+    except (EditSafetyError, OSError, UnicodeError, ValueError) as exc:
+        print(f"图片规范化未完成；没有写入任何文件：{exc}", file=sys.stderr)
+        return 2
     if refused:
+        print(f"\n预览（未写盘）：{total_files} 个可修改文件，拒绝 {len(refused)} 个文件")
         print(f"拒绝写入 {len(refused)} 个：", file=sys.stderr)
         for bid, name, why in refused[:10]:
             print(f"   {bid} {name}: {why}", file=sys.stderr)
-    return 1 if refused else 0
+        print("预检未完成；没有写入任何文件。", file=sys.stderr)
+        return 1
+    if args.apply:
+        try:
+            with rollback_paths(path for path, _, _ in plans):
+                for path, raw, new in plans:
+                    sep = "\r\n" if b"\r\n" in raw else "\n"
+                    out_text = sep.join(new) + sep
+                    bom = b"\xef\xbb\xbf" if raw.startswith(b"\xef\xbb\xbf") else b""
+                    path.write_bytes(bom + out_text.encode("utf-8"))
+        except OSError as exc:
+            print(f"图片规范化写入失败，已回滚本批次：{exc}", file=sys.stderr)
+            return 2
+    print(f"\n{'已写盘' if args.apply else '预览'}：{total_files} 个文件，"
+          f"包 <p> {total_wrapped} 行，删除结构行 {total_dropped} 行")
+    return 0
 
 
 if __name__ == "__main__":

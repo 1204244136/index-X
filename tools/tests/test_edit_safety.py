@@ -83,6 +83,35 @@ class OutputStreamCliTests(unittest.TestCase):
                     self.assertNotIn(diagnostic, result.stdout)
                     self.assertEqual(cn.read_text(encoding="utf-8"), chinese)
 
+    def test_paired_repairs_reject_empty_references_before_writing_earlier_files(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root, jp_root = Path(tmp) / "cn", Path(tmp) / "jp"
+            files = {}
+            for side, directory in (("cn", root), ("jp", jp_root)):
+                book = directory / "【S1_01】书"
+                book.mkdir(parents=True)
+                for sequence in ("01", "02"):
+                    path = book / f"S1_01-{sequence}.xhtml"
+                    path.write_text(xhtml('<p class="pb">正文</p>'), encoding="utf-8")
+                    files[side, sequence] = path
+            for tool in ("sync_pb_tags", "restore_cn_scene_breaks", "fix_legacy_pagebreak_br"):
+                for side in ("cn", "jp"):
+                    with self.subTest(tool=tool, side=side):
+                        path = files[side, "02"]
+                        original = path.read_bytes()
+                        path.write_text("\ufeff \n\t", encoding="utf-8")
+                        before = {file: file.read_bytes() for file in files.values()}
+                        try:
+                            result = self.run_cli(tool, "--root", root, "--jp-root", jp_root,
+                                                  "--staging", "--apply")
+                            self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+                            self.assertIn("S1_01-02", result.stderr)
+                            self.assertIn("为空", result.stderr)
+                            self.assertNotIn("Traceback", result.stderr)
+                            self.assertEqual({file: file.read_bytes() for file in before}, before)
+                        finally:
+                            path.write_bytes(original)
+
     def test_note_and_image_refusals_keep_preview_summary_on_stdout(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

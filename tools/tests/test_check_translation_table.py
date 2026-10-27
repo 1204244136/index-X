@@ -1,9 +1,13 @@
 from __future__ import annotations
 
 import sys
+import contextlib
+import io
+import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
@@ -47,6 +51,89 @@ class NormTests(unittest.TestCase):
     def test_whitespace_removed(self):
         self.assertEqual(norm_anchor("超絶者 　アラディア"),
                          norm_anchor("超絶者アラディア"))
+
+
+class CoverageCliTests(unittest.TestCase):
+    ENTRY = [{"ori": "テスト", "trans": "译文", "type": "", "debuts": ""}]
+
+    def write_book(self, root: Path, side: str, wid: str, body: str) -> None:
+        relative = "item/xhtml" if side == "jp" else "OEBPS/Text"
+        target = root / side / f"【{wid}】测试" / relative / f"{wid}-01.xhtml"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(f"<p>{body}</p>", encoding="utf-8")
+
+    def run_cli(self, root: Path, *extra: str):
+        out, err = io.StringIO(), io.StringIO()
+        with patch("check_translation_table.load_table", return_value=(self.ENTRY, ["Base_Ori", "Base_Trans"])), \
+                contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = main(["--table", str(root / "external.xlsx"), "--epub", str(root / "cn"),
+                         "--jp-dir", str(root / "jp"), "--out", str(root / "out"),
+                         "--no-rulings", *extra])
+        return code, out.getvalue(), err.getvalue()
+
+    def fixture(self, root: Path):
+        self.write_book(root, "cn", "S1_01", "译文")
+        self.write_book(root, "jp", "S1_01", "テスト")
+
+    def test_selected_missing_reference_is_not_strict_success(self):
+        for missing_side in ("cn", "jp"):
+            with self.subTest(missing_side=missing_side), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                self.fixture(root)
+                existing_side = "jp" if missing_side == "cn" else "cn"
+                self.write_book(root, existing_side, "S1_02", "译文")
+                code, out, err = self.run_cli(root, "--book", "S1_01", "--book", "S1_02", "--strict")
+                self.assertEqual(code, 2)
+                self.assertIn("S1_02", out)
+                self.assertIn("未完成", err)
+
+    def test_partial_report_records_unchecked_requested_book(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.fixture(root)
+            self.write_book(root, "cn", "S1_02", "译文")
+            code, out, err = self.run_cli(root, "--book", "S1_01", "--book", "S1_02")
+            report = json.loads((root / "out" / "translation-table-check.json").read_text(encoding="utf-8"))
+            self.assertEqual(code, 0)
+            self.assertEqual(report["summary"]["coverage"]["missing_japanese"], ["S1_02"])
+            self.assertEqual(report["summary"]["coverage"]["compared"], ["S1_01"])
+            self.assertIn("部分覆盖", out)
+
+    def test_implicit_single_side_book_is_reported_without_claiming_checked(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.fixture(root)
+            self.write_book(root, "cn", "S6_24.06.07", "译文")
+            code, out, err = self.run_cli(root, "--strict")
+            report = json.loads((root / "out" / "translation-table-check.json").read_text(encoding="utf-8"))
+            self.assertEqual(code, 0)
+            self.assertEqual(report["summary"]["coverage"]["unpaired_chinese"], ["S6_24.06.07"])
+            self.assertEqual(report["summary"]["coverage"]["status"], "shared_only")
+            self.assertEqual(report["summary"]["books"], ["S1_01"])
+
+    def test_empty_requested_japanese_text_is_not_counted_as_coverage(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.fixture(root)
+            self.write_book(root, "cn", "S1_02", "译文")
+            self.write_book(root, "jp", "S1_02", "")
+            code, out, err = self.run_cli(root, "--book", "S1_01", "--book", "S1_02", "--strict")
+            self.assertEqual(code, 2)
+            self.assertIn("缺日文正文，未核验", out)
+
+    def test_selected_source_loads_its_chinese_host_as_auxiliary(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.fixture(root)
+            self.write_book(root, "cn", "S1_01", "无关正文")
+            self.write_book(root, "cn", "S1_02", "译文")
+            with patch("alignment_rules.TRANSLATION_HOST", {"S1_01": "S1_02"}):
+                code, out, err = self.run_cli(root, "--book", "S1_01", "--strict")
+            report = json.loads((root / "out" / "translation-table-check.json").read_text(encoding="utf-8"))
+            self.assertEqual(code, 0)
+            self.assertEqual(report["records"][0]["cn_host"], "S1_02")
+            self.assertEqual(report["summary"]["books"], ["S1_01"])
+            self.assertEqual(report["summary"]["coverage"]["auxiliary_chinese"], ["S1_02"])
 
 
 class StripMarkupEntityTests(unittest.TestCase):
@@ -245,6 +332,22 @@ class BookIdTests(unittest.TestCase):
 
 
 class CollectBooksTests(unittest.TestCase):
+    def test_head_style_script_and_comments_are_not_body_corpus(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            directory = root / "【S1_01】书" / "item" / "xhtml"
+            directory.mkdir(parents=True)
+            page = directory / "S1_01-01.xhtml"
+            page.write_text('<html><head><title>伪锚点</title><style>伪样式</style></head>'
+                            '<body><script>伪脚本</script><!-- 伪批注 --></body></html>', encoding="utf-8")
+            self.assertEqual(collect_books(root, "item/xhtml", set()), {})
+            page.write_text('<html><head><title>伪锚点</title></head><body><h1>标题</h1>'
+                            '<p><ruby>魔術<rt>まじゅつ</rt></ruby>。</p>'
+                            '<style>伪样式</style><script>伪脚本</script></body></html>', encoding="utf-8")
+            self.assertEqual(collect_books(root, "item/xhtml", set())["S1_01"].strip(), "魔術。")
+            self.assertEqual(collect_books(root, "item/xhtml", set(), ruby=True)["S1_01"].strip(), "魔術（まじゅつ）。")
+            self.assertEqual(collect_books(root, "item/xhtml", set(), titles=True), {"S1_01": "标题"})
+
     def test_collects_only_requested_book(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

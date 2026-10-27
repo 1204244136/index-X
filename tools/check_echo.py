@@ -109,10 +109,14 @@ def find_book_dir(root: Path, work: str) -> Path | None:
     """按作品号定位目录，兼容全角【】与历史半角[]形态。"""
     if not root.is_dir():
         return None
+    found = []
     for entry in sorted(root.iterdir()):
-        if entry.is_dir() and (f"【{work}】" in entry.name or f"[{work}]" in entry.name):
-            return entry
-    return None
+        match = WORK_DIR_RE.match(entry.name)
+        if entry.is_dir() and match and (match.group(1) or match.group(2)).upper() == work.upper():
+            found.append(entry)
+    if len(found) > 1:
+        raise ValueError(f"同侧重复作品号 {work}：{' / '.join(str(path) for path in found)}")
+    return found[0] if found else None
 
 
 def iter_works(cn_root: Path, jp_root: Path) -> list[str]:
@@ -728,8 +732,8 @@ def main(argv: list[str] | None = None) -> int:
     configure_output()
     parser = argparse.ArgumentParser(description="呼应一致性检查（只读，输出候选供回原文判定）")
     parser.add_argument("--book", action="append", default=[], help="作品号，如 S1_01；可重复")
-    parser.add_argument("--root", type=Path, default=Path("EPUB"), help="中文成品根目录")
-    parser.add_argument("--jp-root", type=Path, default=Path(".cache/epub-work/japanese-text"),
+    parser.add_argument("--root", type=Path, default=REPO_ROOT / "EPUB", help="中文成品根目录（默认 EPUB/）")
+    parser.add_argument("--jp-root", type=Path, default=REPO_ROOT / ".cache/epub-work/japanese-text",
                         help="日文参考根目录")
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT, help="输出目录")
     parser.add_argument("--min-frag", type=int, default=12, help="片段多译的最短日文字数")
@@ -751,6 +755,21 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--convention-min-book", type=int, default=5,
                         help="分卷分布只列达到该行数的作品（默认 5）")
     args = parser.parse_args(argv)
+    try:
+        return run_reports(args, parser)
+    except (OSError, UnicodeError, ValueError, re.error) as exc:
+        print(f"[错误] 呼应检查未完成：{exc}", file=sys.stderr)
+        return 2
+
+
+def run_reports(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
+    """Write candidate reports with their actual reference coverage."""
+    missing_roots = [f"{side}目录不存在：{root}" for side, root in (
+        ("中文成品", args.root), ("日文参考", args.jp_root)) if not root.is_dir()]
+    if missing_roots:
+        print("[错误] " + "；".join(missing_roots) +
+              "；请用 --root/--jp-root 指定已有归档与日文参考。", file=sys.stderr)
+        return 2
 
     if args.convention:
         words = [w.strip() for w in args.convention_words.split(",") if w.strip()]
@@ -764,6 +783,9 @@ def main(argv: list[str] | None = None) -> int:
         target.write_text(text, encoding="utf-8")
         print(summary)
         print(f"\n明细 -> {target}")
+        if not stats["paired_rows"]:
+            print("[未完成] 未取到可靠配对行；零覆盖不能作为惯例统计结论。", file=sys.stderr)
+            return 2
         return 0
     if not args.book:
         parser.error("需要 --book（呼应检查）或 --convention（惯例统计）")
@@ -771,12 +793,20 @@ def main(argv: list[str] | None = None) -> int:
     args.out.mkdir(parents=True, exist_ok=True)
     summaries = []
     all_notes: list[str] = []
-    for work in args.book:
+    works = list(dict.fromkeys(work.upper() for work in args.book))
+    skipped_works: list[str] = []
+    partial_works: list[str] = []
+    paired_rows = 0
+    for work in works:
         rows, notes = load_pairs(work, args.root, args.jp_root)
         all_notes.extend(notes)
         if not rows:
             print(f"{work}: 未取到配对行，跳过", file=sys.stderr)
+            skipped_works.append(work)
             continue
+        paired_rows += len(rows)
+        if notes:
+            partial_works.append(work)
         report = {
             "frag": frag_groups(rows, args.min_frag),
             "pairs": sim_pairs(rows, 8, args.pair_threshold),
@@ -784,7 +814,10 @@ def main(argv: list[str] | None = None) -> int:
         }
         text, summary = render(work, rows, report)
         target = args.out / f"{work}-呼应候选.md"
-        target.write_text(text, encoding="utf-8")
+        coverage_note = f"\n可靠配对行：{len(rows)}；{'部分覆盖' if notes else '所选配对范围已读取'}。\n"
+        if notes:
+            coverage_note += "\n配对告警与跳过原因：\n" + "\n".join(f"- {note}" for note in notes) + "\n"
+        target.write_text(text + coverage_note, encoding="utf-8")
         summaries.append(summary)
         print(summary.replace("\t", "  ") + f"  -> {target}")
 
@@ -792,10 +825,21 @@ def main(argv: list[str] | None = None) -> int:
         print("\n告警：", file=sys.stderr)
         for note in all_notes:
             print("  " + note, file=sys.stderr)
+    coverage = f"覆盖：请求 {len(works)} 本；可靠配对 {len(summaries)} 本；可靠配对行 {paired_rows}"
+    details = [coverage]
+    if partial_works:
+        details.append("部分覆盖：" + "、".join(partial_works))
+    if skipped_works:
+        details.append("零覆盖：" + "、".join(skipped_works))
+    if all_notes:
+        details.extend(["", "配对告警与跳过原因：", *[f"- {note}" for note in all_notes]])
+    print("\n".join(details))
     (args.out / "summary.md").write_text(
-        "# 呼应候选统计\n\n" + "\n".join(f"- {s.replace(chr(9), '　')}" for s in summaries) + "\n",
-        encoding="utf-8",
-    )
+        "# 呼应候选统计\n\n" + "\n".join(details) + "\n\n" +
+        "\n".join(f"- {s.replace(chr(9), '　')}" for s in summaries) + "\n", encoding="utf-8")
+    if not paired_rows:
+        print("[未完成] 未取到可靠配对行；未生成可用于判断的呼应候选。", file=sys.stderr)
+        return 2
     return 0
 
 

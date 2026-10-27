@@ -201,8 +201,68 @@ class SemanticPipelineTests(unittest.TestCase):
             self.assertIn("1/3", output.getvalue())
             self.assertNotIn("[门禁通过]", output.getvalue())
 
+    def test_diagnostic_missing_reference_scope_is_persisted(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            add_unit(root, "S1_01", 1)
+            (root / "chinese-text" / "【S1_01】测试" / "S1_01-02_Chapter.xhtml").write_text(
+                "<p>没有日文参考。</p>\n", encoding="utf-8")
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(semantic.run_pipeline(root, l1_only=True), 0)
+            report = (root / "semantic-alignment-summary.tsv").read_text(encoding="utf-8-sig")
+            self.assertIn("未核对", report)
+            self.assertIn("S1_01-02", report)
+
+    def test_packaging_only_work_is_excluded_but_empty_work_is_not(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            add_unit(root, "S1_01", 1)
+            packaging = root / "chinese-text" / "【S0_00】说明"
+            packaging.mkdir()
+            (packaging / "S0_00-Information.xhtml").write_text("<p>阅读说明。</p>\n", encoding="utf-8")
+            with patch.object(semantic, "get_embedding_model", return_value=object()), \
+                    patch.object(semantic, "run_vector_analysis", return_value=PASS_ANALYSIS), \
+                    contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(semantic.run_pipeline(root, strict=True), 0)
+            (packaging / "S0_00-Information.xhtml").unlink()
+            with contextlib.redirect_stderr(io.StringIO()):
+                self.assertNotEqual(semantic.run_pipeline(root, strict=True), 0)
+
 
 class SemanticCliEnvironmentTests(unittest.TestCase):
+    def test_archive_and_explicit_reference_roots_support_l1_without_cache(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            add_unit(root, "S1_01", 1)
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(semantic.main([
+                    "--root", str(root / "chinese-text"), "--jp-root", str(root / "japanese-text"),
+                    "--out", str(root / "report"), "--l1-only"]), 0)
+
+    def test_missing_reference_is_reported_before_model_environment_is_loaded(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "EPUB").mkdir()
+            errors = io.StringIO()
+            with patch.object(semantic, "ensure_vector_environment") as environment, \
+                    contextlib.redirect_stderr(errors):
+                self.assertEqual(semantic.main([
+                    "--cache", str(root / "cache"), "--strict"]), 2)
+            environment.assert_not_called()
+            self.assertIn("输入目录", errors.getvalue())
+
+    def test_unknown_work_is_reported_before_model_environment_is_loaded(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            add_unit(root, "S1_01", 1)
+            errors = io.StringIO()
+            with patch.object(semantic, "ensure_vector_environment") as environment, \
+                    contextlib.redirect_stderr(errors):
+                self.assertEqual(semantic.main([
+                    "--cache", str(root), "--work", "S1_99", "--strict"]), 2)
+            environment.assert_not_called()
+            self.assertIn("S1_99", errors.getvalue())
+
     def test_cli_invalid_strict_modes_and_missing_scope_are_nonzero(self):
         with tempfile.TemporaryDirectory() as tmp:
             for args in (("--strict", "--l1-only"), ("--strict", "--top", "20"),
@@ -213,16 +273,21 @@ class SemanticCliEnvironmentTests(unittest.TestCase):
                     self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
 
     def test_strict_auto_audit_does_not_inject_top20(self):
-        with patch.object(semantic, "ensure_vector_environment", return_value=None), \
+        with tempfile.TemporaryDirectory() as tmp, \
+                patch.object(semantic, "ensure_vector_environment", return_value=None), \
                 patch.object(semantic, "run_pipeline", return_value=0) as pipeline:
-            self.assertEqual(semantic.main(["--strict", "--auto-audit"]), 0)
+            root = Path(tmp)
+            add_unit(root, "S1_01", 1)
+            self.assertEqual(semantic.main(["--strict", "--auto-audit", "--cache", str(root)]), 0)
         self.assertIsNone(pipeline.call_args.kwargs["top_n"])
         self.assertTrue(pipeline.call_args.kwargs["strict"])
 
     def test_explicit_missing_python_is_nonzero(self):
         with tempfile.TemporaryDirectory() as tmp, patch.dict(os.environ, {}, clear=True):
-            missing = Path(tmp) / "missing-python"
-            self.assertEqual(semantic.main(["--strict", "--vector-python", str(missing)]), 2)
+            root = Path(tmp)
+            add_unit(root, "S1_01", 1)
+            missing = root / "missing-python"
+            self.assertEqual(semantic.main(["--strict", "--cache", str(root), "--vector-python", str(missing)]), 2)
 
     def test_environment_failure_never_falls_back_to_l1(self):
         args = argparse.Namespace(vector=True, auto_audit=False, strict=True, l1_only=False,

@@ -370,6 +370,85 @@ class AlignmentTests(unittest.TestCase):
 
 
 class AlignmentCliOutputTests(unittest.TestCase):
+    def test_empty_book_cannot_pass_required_reference_even_with_other_valid_books(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root, jp = Path(tmp) / "cn", Path(tmp) / "jp"
+            (root / "【S1_01】空").mkdir(parents=True)
+            other = root / "【S1_02】中"
+            other.mkdir()
+            (other / "S1_02-01.xhtml").write_text(xhtml(["<p>正文</p>"]), encoding="utf-8")
+            jp.mkdir()
+            report = Path(tmp) / "report.tsv"
+            with patch.object(sys, "argv", ["check_alignment.py", "--root", str(root),
+                                           "--jp-root", str(jp), "--require-jp", "--output", str(report)]):
+                with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+                    self.assertEqual(check_alignment.main(), 2)
+            self.assertIn("S1_01", report.read_text(encoding="utf-8-sig"))
+
+    def test_empty_book_is_setup_error_without_required_reference(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root, jp = Path(tmp) / "cn", Path(tmp) / "jp"
+            (root / "【S1_01】空").mkdir(parents=True)
+            jp.mkdir()
+            with patch.object(sys, "argv", ["check_alignment.py", "--root", str(root),
+                                           "--jp-root", str(jp), "--output", str(Path(tmp) / "report.tsv")]):
+                with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+                    self.assertEqual(check_alignment.main(), 2)
+
+    def test_packaging_and_registered_exceptions_are_not_ordinary_pair_coverage(self):
+        cases = (("S1_01", "S1_01-Cover", '<p><img src="cover.png"/></p>', "包装页"),
+                 ("S2_14", "S2_14-02", "<p>正文</p>", "已登记例外"),
+                 ("S1_02", "S1_02-01", "<p>正文</p>", "已登记例外"),
+                 ("S5_02_03", "S5_02_03-01", "<p>正文</p>", "已登记例外"))
+        for wid, header, body, label in cases:
+            with self.subTest(header=header), tempfile.TemporaryDirectory() as tmp:
+                root, jp = Path(tmp) / "cn", Path(tmp) / "jp"
+                book = root / f"【{wid}】中"
+                book.mkdir(parents=True)
+                jp.mkdir()
+                (book / f"{header}.xhtml").write_text(xhtml([body]), encoding="utf-8")
+                output, errors = io.StringIO(), io.StringIO()
+                with patch.object(check_alignment, "MANUAL_ALIGNMENT_HEADERS", {"S1_02-01"}):
+                    with patch.object(sys, "argv", ["check_alignment.py", "--root", str(root),
+                                                   "--jp-root", str(jp), "--require-jp",
+                                                   "--output", str(Path(tmp) / "report.tsv")]):
+                        with redirect_stdout(output), redirect_stderr(errors):
+                            self.assertEqual(check_alignment.main(), 0, errors.getvalue())
+                self.assertIn("配对单元：0", output.getvalue())
+                self.assertIn(label, output.getvalue())
+
+    def test_archive_default_and_single_side_coverage_are_explicit(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "EPUB"
+            book = root / "【S1_01】中"
+            book.mkdir(parents=True)
+            (book / "S1_01-01.xhtml").write_text(xhtml(["<p>中文</p>"]), encoding="utf-8")
+            output, errors = io.StringIO(), io.StringIO()
+            with patch.object(check_alignment, "DEFAULT_ROOT", root), patch.object(
+                    check_alignment, "DEFAULT_CACHE", Path(tmp) / "cache"):
+                with patch.object(sys, "argv", ["check_alignment.py", "--strict"]):
+                    with redirect_stdout(output), redirect_stderr(errors):
+                        self.assertEqual(check_alignment.main(), 0)
+            self.assertIn("仅单侧", output.getvalue())
+            self.assertIn("配对单元：0", output.getvalue())
+            self.assertIn("未配对正文：1", output.getvalue())
+
+    def test_required_reference_fails_with_report_when_source_is_empty(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root, jp = Path(tmp) / "cn", Path(tmp) / "jp"
+            book = root / "【S1_01】中"
+            book.mkdir(parents=True)
+            jp.mkdir()
+            (book / "S1_01-01.xhtml").write_text(xhtml(["<p>中文</p>"]), encoding="utf-8")
+            report = Path(tmp) / "report.tsv"
+            output, errors = io.StringIO(), io.StringIO()
+            with patch.object(sys, "argv", ["check_alignment.py", "--root", str(root),
+                                           "--jp-root", str(jp), "--require-jp", "--output", str(report)]):
+                with redirect_stdout(output), redirect_stderr(errors):
+                    self.assertEqual(check_alignment.main(), 2)
+            self.assertTrue(report.is_file())
+            self.assertIn("未完成", errors.getvalue())
+
     def test_missing_and_empty_scopes_report_setup_errors_on_stderr(self):
         with tempfile.TemporaryDirectory() as tmp:
             for name, create in (("missing", False), ("empty", True)):

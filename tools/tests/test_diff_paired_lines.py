@@ -188,6 +188,132 @@ class TestDiffPairedLines(unittest.TestCase):
 
 
 class DiffCliInputTests(unittest.TestCase):
+    def paired_cache(self, root: Path) -> Path:
+        cache = root / "cache"
+        for side, title in (("chinese-text", "中"), ("japanese-text", "日")):
+            book = cache / side / f"【S1_01】{title}"
+            book.mkdir(parents=True)
+            (book / "S1_01-01.xhtml").write_text("<p>正文。</p>\n", encoding="utf-8")
+        return cache
+
+    def invoke(self, argv: list[str]) -> tuple[int, str, str]:
+        output, errors = io.StringIO(), io.StringIO()
+        with patch.object(sys, "argv", ["diff_paired_lines.py", *argv]):
+            with redirect_stdout(output), redirect_stderr(errors):
+                code = diff_paired_lines.main()
+        return code, output.getvalue(), errors.getvalue()
+
+    def test_empty_batch_does_not_pass_or_write_a_report(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            cache = root / "cache"
+            (cache / "chinese-text").mkdir(parents=True)
+            (cache / "japanese-text").mkdir()
+            report = root / "report.tsv"
+            code, _, errors = self.invoke(["--cache", str(cache), "--tsv", str(report), "--no-progress"])
+            self.assertEqual(code, 2)
+            self.assertIn("配对单元", errors)
+            self.assertFalse(report.exists())
+
+    def test_partial_coverage_is_reported_and_strict_does_not_pass(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            cache = self.paired_cache(root)
+            cn_book = cache / "chinese-text" / "【S1_01】中"
+            (cn_book / "S1_01-02.xhtml").write_text("<p>未核对。</p>\n", encoding="utf-8")
+            report = root / "report.tsv"
+            argv = ["--cache", str(cache), "--tsv", str(report), "--no-progress"]
+            code, output, _ = self.invoke(argv)
+            self.assertEqual(code, 0)
+            self.assertIn("未覆盖", output)
+            self.assertIn("S1_01-02", report.read_text(encoding="utf-8-sig"))
+            self.assertEqual(self.invoke([*argv, "--strict"])[0], 1)
+
+    def test_unknown_selected_work_is_not_silently_dropped(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            cache = self.paired_cache(root)
+            code, _, errors = self.invoke(["--cache", str(cache), "--work", "S1_99", "--no-progress"])
+            self.assertEqual(code, 2)
+            self.assertIn("S1_99", errors)
+
+    def test_missing_work_and_duplicate_headers_remain_visible_in_partial_report(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            cache = self.paired_cache(root)
+            cn_book = cache / "chinese-text" / "【S1_01】中"
+            jp_book = cache / "japanese-text" / "【S1_01】日"
+            for directory in (cn_book, jp_book):
+                (directory / "S1_01-02.xhtml").write_text("<p>重复。</p>\n", encoding="utf-8")
+            (cn_book / "S1_01-02_duplicate.xhtml").write_text("<p>重复。</p>\n", encoding="utf-8")
+            (cache / "chinese-text" / "【S1_02】缺日文").mkdir()
+            report = root / "report.tsv"
+            code, output, _ = self.invoke(["--cache", str(cache), "--tsv", str(report), "--no-progress", "--strict"])
+            self.assertEqual(code, 1)
+            for rendered in (output, report.read_text(encoding="utf-8-sig")):
+                self.assertIn("重复表头", rendered)
+                self.assertIn("缺日文对应作品", rendered)
+
+    def test_empty_files_are_not_treated_as_valid_image_pages(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            cache = self.paired_cache(root)
+            for path in cache.rglob("*.xhtml"):
+                path.write_text("", encoding="utf-8")
+            report = root / "report.tsv"
+            code, output, _ = self.invoke(["--cache", str(cache), "--tsv", str(report), "--no-progress"])
+            self.assertNotEqual(code, 0)
+            self.assertIn("空文件", output)
+
+    def test_whitespace_only_files_are_not_valid_pairs_in_either_mode(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            cache = self.paired_cache(root)
+            for path in cache.rglob("*.xhtml"):
+                path.write_text(" \n\t\n", encoding="utf-8")
+            for target in ([], ["S1_01-01"]):
+                with self.subTest(target=target):
+                    code, output, errors = self.invoke([*target, "--cache", str(cache),
+                                                        "--tsv", str(root / "report.tsv"), "--no-progress"])
+                    self.assertNotEqual(code, 0)
+                    self.assertIn("空文件", output + errors)
+
+    def test_a_valid_pair_cannot_hide_a_paired_empty_book(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            cache = self.paired_cache(root)
+            for side in ("chinese-text", "japanese-text"):
+                (cache / side / "【S1_02】空书").mkdir()
+            report = root / "report.tsv"
+            code, output, errors = self.invoke(["--cache", str(cache), "--strict",
+                                                "--tsv", str(report), "--no-progress"])
+            self.assertNotEqual(code, 0)
+            self.assertIn("S1_02", output + errors)
+            self.assertIn("正文", report.read_text(encoding="utf-8-sig"))
+
+    def test_packaging_only_work_does_not_require_japanese_body(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            cache = self.paired_cache(root)
+            book = cache / "chinese-text" / "【S0_00】说明"
+            book.mkdir()
+            (book / "S0_00-Information.xhtml").write_text("<p>阅读说明。</p>\n", encoding="utf-8")
+            code, output, _ = self.invoke(["--cache", str(cache), "--tsv", str(root / "report.tsv"),
+                                           "--no-progress", "--strict"])
+            self.assertEqual(code, 0)
+            self.assertIn("没有适用的普通正文", output)
+
+    def test_independent_archive_and_reference_roots_are_supported(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            cache = self.paired_cache(root)
+            report = root / "report.tsv"
+            code, output, _ = self.invoke(["--root", str(cache / "chinese-text"),
+                                           "--jp-root", str(cache / "japanese-text"),
+                                           "--tsv", str(report), "--no-progress", "--strict"])
+            self.assertEqual(code, 0)
+            self.assertIn("已检查配对单元：1", output)
+
     def test_missing_cache_is_a_setup_error_for_batch_and_header_modes(self):
         with tempfile.TemporaryDirectory() as tmp:
             cache = Path(tmp) / "missing"

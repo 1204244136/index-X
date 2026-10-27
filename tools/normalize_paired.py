@@ -31,7 +31,7 @@ from alignment_rules import (JP_H1_BY_HEADER, MANUAL_ALIGNMENT_HEADERS,
 from check_alignment import check_file
 from edit_safety import (EditSafetyError, add_content_roots, add_edit_mode,
                          content_roots, require_edit_target)
-from epub_ids import book_id, is_list_packaging_header, japanese_book_id, work_id
+from epub_ids import book_id, is_list_packaging_header, is_packaging_header, japanese_book_id, work_id
 from xhtml_structure import books_by_id, header_index
 from xhtml_template import has_body, rebuild, write_lines
 
@@ -138,6 +138,8 @@ def main() -> int:
         if scope_ids == set():
             raise ValueError("选择范围为空：--book 与 --file 没有交集")
         cn_books = selected_books(root, scope_ids)
+        if not cn_books:
+            raise ValueError("没有匹配的中文作品，未执行规范化")
         chosen_ids = set(cn_books)
         scoped = bool(args.book or args.file or book_id(root.name))
         jp_books = selected_books(jp_root, {japanese_book_id(wid) for wid in chosen_ids} if scoped else None)
@@ -150,20 +152,35 @@ def main() -> int:
         jp_indexes = {wid: selected_header_index(book, file_headers.get(wid))
                       for wid, book in jp_books.items()}
         for wid, cn_by in sorted(cn_indexes.items()):
-            if wid in NON_PAIR_WORK_IDS or japanese_book_id(wid) not in jp_indexes:
+            if wid in NON_PAIR_WORK_IDS:
+                skipped.append(f"{wid}: 已登记非同一形态作品，保持原样")
                 continue
-            jp_by = jp_indexes[japanese_book_id(wid)]
+            if not cn_by:
+                raise ValueError(f"{wid}: 没有可识别的中文 XHTML 正文或包装页，未执行规范化")
+            jp_by = jp_indexes.get(japanese_book_id(wid), {})
             for header, cn_path in sorted(cn_by.items()):
                 if args.file and cn_path not in files_by_book[wid]:
                     continue
                 if header in MANUAL_ALIGNMENT_HEADERS or header in TEXTUAL_IMAGE_HEADERS or header in PAIR_RULES:
                     skipped.append(f"{header}: 已确认结构特例，保持原样")
                     continue
-                if not has_body(cn_path):
-                    continue
-                chinese = normalized(cn_path, wid, "cn", header)
                 jp_path = jp_by.get(header)
-                if jp_path is not None and has_body(jp_path):
+                chinese_has_body = has_body(cn_path)
+                japanese_has_body = jp_path is not None and has_body(jp_path)
+                if not chinese_has_body:
+                    ET.fromstring("\n".join(read_source(cn_path)[0]))
+                    if not is_packaging_header(header) and japanese_has_body:
+                        raise ValueError(f"{header}: 两侧正文不对称，中文无正文而日文有正文")
+                    skipped.append(f"{header}: 无正文/纯图片，不适用正文模板规范化")
+                    continue
+                if not is_packaging_header(header) and header not in jp_by:
+                    raise ValueError(f"{header}: 缺日文参考，未执行配对规范化；"
+                                     "请补齐 --jp-root；单侧处理请用 normalize_single.py")
+                if not is_packaging_header(header) and not japanese_has_body:
+                    raise ValueError(f"{header}: 日文参考无正文，无法核对中文正文；"
+                                     "请补齐 --jp-root 的对应工作源")
+                chinese = normalized(cn_path, wid, "cn", header)
+                if japanese_has_body:
                     if args.staging:
                         japanese = normalized(jp_path, wid, "jp", header)
                         jp_lines = japanese[0]
@@ -182,7 +199,7 @@ def main() -> int:
         print(f"[阻断] 规范化预检失败；没有写入任何文件：{exc}", file=sys.stderr)
         return 1
 
-    print(f"待改写文件：{len(plans)}；结构特例跳过：{len(skipped)}")
+    print(f"待改写文件：{len(plans)}；跳过/不适用：{len(skipped)}")
     for message in skipped:
         print(f"  跳过 {message}")
     if not args.apply:

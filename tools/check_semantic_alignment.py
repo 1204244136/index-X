@@ -439,11 +439,16 @@ def run_vector_analysis(
 def collect_pairing_units(
     cache: Path, works: list[str] | None = None, include_exempt: bool = False,
     strict: bool = False, target_header: str | None = None,
+    *, cn_root: Path | None = None, jp_root: Path | None = None,
+    coverage_notes: list[str] | None = None,
 ) -> list[tuple[str, str, Path, Path]]:
-    cn_root = cache / "chinese-text"
-    jp_root = cache / "japanese-text"
+    cn_root = cn_root if cn_root is not None else cache / "chinese-text"
+    jp_root = jp_root if jp_root is not None else cache / "japanese-text"
     if not cn_root.is_dir() or not jp_root.is_dir():
-        raise FileNotFoundError(f"缓存目录不存在或未解包: {cache}")
+        missing = [str(root) for root in (cn_root, jp_root) if not root.is_dir()]
+        raise FileNotFoundError(f"配对输入目录不存在：{'、'.join(missing)}；"
+                                "请用 --root/--jp-root 指定已有归档与日文参考")
+    notes = coverage_notes if coverage_notes is not None else []
 
     def index_books(root: Path) -> dict[str, Path]:
         books: dict[str, Path] = {}
@@ -468,12 +473,35 @@ def collect_pairing_units(
         return (not works or any(fnmatch.fnmatch(work, pattern) for pattern in works)) and (
             target_work is None or work == target_work
         )
+    cn_indexes: dict[str, dict[str, Path]] = {}
+    excluded_works: set[str] = set()
+    for work, directory in cn_books.items():
+        if not selected_work(work) or work in NON_PAIR_WORK_IDS:
+            continue
+        paths = [path for path in directory.rglob("*.xhtml") if path.name.lower() != "nav.xhtml"]
+        index, _ = index_by_header(paths)
+        cn_indexes[work] = index
+        if index and not any(not is_packaging_header(header)
+                             and header not in MANUAL_ALIGNMENT_HEADERS
+                             and (include_exempt or header not in TEXTUAL_IMAGE_HEADERS)
+                             for header in index):
+            excluded_works.add(work)
+    for pattern in works or ():
+        if not any(fnmatch.fnmatch(work, pattern) for work in cn_books):
+            notes.append(f"未核对：作品筛选 {pattern} 在中文侧无匹配")
+    selected_cn = [wid for wid in cn_books if selected_work(wid)]
+    if not selected_cn:
+        return []
+    if strict and any(note.startswith("未核对：作品筛选") for note in notes):
+        raise SemanticStructureError("；".join(notes))
     if strict:
         for work in sorted(set(cn_books) | set(jp_books)):
             if not selected_work(work):
                 continue
             if work in NON_PAIR_WORK_IDS:
                 print(f"[范围排除] {work}: 已确认非配对作品")
+                continue
+            if work in excluded_works:
                 continue
             if work not in cn_books or work not in jp_books:
                 raise SemanticStructureError(f"所选作品 {work} 缺少{'中文' if work not in cn_books else '日文'}对应作品")
@@ -484,21 +512,30 @@ def collect_pairing_units(
             continue
         if not selected_work(cn_id):
             continue
+        if cn_id in excluded_works:
+            notes.append(f"范围排除：{cn_id} 只有包装页或已确认例外，没有适用的普通正文")
+            continue
+        cn_by = cn_indexes[cn_id]
+        if not cn_by:
+            if strict:
+                raise SemanticStructureError(f"所选作品 {cn_id} 没有可识别的正文或包装内容")
+            notes.append(f"未核对：{cn_id} 没有可识别的正文或包装内容")
+            continue
         jp_dir = jp_books.get(japanese_book_id(cn_id))
         if jp_dir is None:
+            notes.append(f"未核对：{cn_id} 缺日文对应作品")
             continue
-        cn_all = [p for p in cn_dir.rglob("*.xhtml") if p.name.lower() != "nav.xhtml"]
         jp_all = [p for p in jp_dir.rglob("*.xhtml") if p.name.lower() != "nav.xhtml"]
-        cn_by, _ = index_by_header(cn_all)
         jp_by, _ = index_by_header(jp_all)
-        if strict:
-            missing = [h for h in sorted(set(cn_by) ^ set(jp_by))
-                       if not is_packaging_header(h)
-                       and (not target_header or h.upper() == target_header.upper())
-                       and (include_exempt or h not in TEXTUAL_IMAGE_HEADERS)
-                       and h not in MANUAL_ALIGNMENT_HEADERS]
-            if missing:
+        missing = [h for h in sorted(set(cn_by) ^ set(jp_by))
+                   if not is_packaging_header(h)
+                   and (not target_header or h.upper() == target_header.upper())
+                   and (include_exempt or h not in TEXTUAL_IMAGE_HEADERS)
+                   and h not in MANUAL_ALIGNMENT_HEADERS]
+        if missing:
+            if strict:
                 raise SemanticStructureError(f"所选作品 {cn_id} 正文表头缺少对应侧：{', '.join(missing)}")
+            notes.extend(f"未核对：{cn_id}/{header} 正文表头缺少对应侧" for header in missing)
         for h in sorted(set(cn_by) & set(jp_by)):
             if target_header and h.upper() != target_header.upper():
                 continue
@@ -561,6 +598,9 @@ def run_pipeline(
     output_dir: Path | None = None,
     include_exempt: bool = False,
     strict: bool = False,
+    *, cn_root: Path | None = None, jp_root: Path | None = None,
+    pairing_units: list[tuple[str, str, Path, Path]] | None = None,
+    coverage_notes: list[str] | None = None,
 ) -> int:
     """Run a diagnostic or a complete L2 gate; operational failures return 2."""
     if strict and l1_only:
@@ -575,7 +615,8 @@ def run_pipeline(
     try:
         return _run_pipeline(
             cache, works, target_header, run_vector, l1_only, top_n,
-            output_dir, include_exempt, strict,
+            output_dir, include_exempt, strict, cn_root=cn_root, jp_root=jp_root,
+            pairing_units=pairing_units, coverage_notes=coverage_notes,
         )
     except SemanticStructureError as exc:
         print(f"[结构阻断] {exc}", file=sys.stderr)
@@ -595,13 +636,18 @@ def _run_pipeline(
     output_dir: Path | None,
     include_exempt: bool,
     strict: bool,
+    *, cn_root: Path | None = None, jp_root: Path | None = None,
+    pairing_units: list[tuple[str, str, Path, Path]] | None = None,
+    coverage_notes: list[str] | None = None,
 ) -> int:
     start_time = time.time()
     if output_dir is None:
         output_dir = cache
 
-    units = collect_pairing_units(cache, works, include_exempt=include_exempt, strict=strict,
-                                  target_header=target_header)
+    notes = list(coverage_notes or [])
+    units = pairing_units if pairing_units is not None else collect_pairing_units(
+        cache, works, include_exempt=include_exempt, strict=strict,
+        target_header=target_header, cn_root=cn_root, jp_root=jp_root, coverage_notes=notes)
     if target_header:
         units = [u for u in units if u[1].upper() == target_header.upper()]
 
@@ -609,6 +655,8 @@ def _run_pipeline(
         print(f"未找到匹配的配对单元（works={works}, header={target_header}）", file=sys.stderr)
         return 2
     output_dir.mkdir(parents=True, exist_ok=True)
+    for note in notes:
+        print(f"[参考覆盖] {note}")
 
     print("=" * 95)
     mode = "L1极速初筛" if l1_only else ("L2完整门禁" if strict else ("L2深度矢量化" if run_vector else "L1+L2自适应"))
@@ -665,7 +713,7 @@ def _run_pipeline(
         return 1
 
     if l1_only or not (strict or run_vector or top_n is not None):
-        _write_summary_tsv(results, output_dir / "semantic-alignment-summary.tsv")
+        _write_summary_tsv(results, output_dir / "semantic-alignment-summary.tsv", notes)
         print(f"\n报告已写入: {output_dir / 'semantic-alignment-summary.tsv'}")
         return 0
 
@@ -715,7 +763,7 @@ def _run_pipeline(
             })
 
     # 输出两份成果
-    _write_summary_tsv(results, output_dir / "semantic-alignment-summary.tsv")
+    _write_summary_tsv(results, output_dir / "semantic-alignment-summary.tsv", notes)
     _write_windows_tsv(all_windows, output_dir / "semantic-drift-windows.tsv")
 
     print("\n" + "=" * 95)
@@ -737,7 +785,8 @@ def _run_pipeline(
     return 0
 
 
-def _write_summary_tsv(results: list[UnitSemanticResult], path: Path):
+def _write_summary_tsv(results: list[UnitSemanticResult], path: Path,
+                       coverage_notes: list[str] | None = None):
     with path.open("w", encoding="utf-8-sig", newline="") as f:
         w = csv.writer(f, delimiter="\t")
         w.writerow([
@@ -759,6 +808,8 @@ def _write_summary_tsv(results: list[UnitSemanticResult], path: Path):
                 f"{r.execution_time_sec:.2f}" if r.l2_checked else "",
                 r.structural_note,
             ])
+        for note in coverage_notes or ():
+            w.writerow(["", "", "", "", "", "", "", "", "", "", "", note])
 
 
 def _write_windows_tsv(windows: list[dict], path: Path):
@@ -853,7 +904,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--top", type=int, default=None, help="仅对前 N 个最严重疑点单元执行 L2 精检")
     parser.add_argument("--strict", action="store_true", help="门禁模式：若发现任何结构错位窗口则返回非零退出码阻断")
     parser.add_argument("--include-exempt", action="store_true", help="包含文本化图片等已确认豁免的页面（默认跳过）")
-    parser.add_argument("--cache", type=Path, default=CACHE_DEFAULT, help="缓存目录")
+    parser.add_argument("--cache", type=Path, help="兼容双侧缓存根；显式指定时读取 chinese-text/japanese-text")
+    parser.add_argument("--root", type=Path, help="中文成品根目录（默认 EPUB/）")
+    parser.add_argument("--jp-root", type=Path, help="日文参考根目录（默认本地缓存 japanese-text）")
     parser.add_argument("--out", type=Path, default=None, help="报告输出目录")
     parser.add_argument("--vector-python", type=Path, help="可用的矢量化 Python（或 BETWEENLINES_PYTHON）")
     parser.add_argument("--betweenlines-dir", type=Path, help="BetweenLines 仓库目录（或 BETWEENLINES_DIR；默认探测相邻仓库）")
@@ -866,6 +919,26 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("--top 必须是正整数")
     if args.l1_only and (args.vector or args.auto_audit or args.top is not None):
         parser.error("--l1-only 不能与 L2 参数 --vector/--auto-audit/--top 组合")
+    if args.cache is not None and (args.root is not None or args.jp_root is not None):
+        parser.error("--cache 与 --root/--jp-root 不能同时使用")
+    cache = args.cache if args.cache is not None else CACHE_DEFAULT
+    cn_root = args.root if args.root is not None else (cache / "chinese-text" if args.cache is not None else ROOT_DIR / "EPUB")
+    jp_root = args.jp_root if args.jp_root is not None else cache / "japanese-text"
+    notes: list[str] = []
+    try:
+        units = collect_pairing_units(
+            cache, args.work, include_exempt=args.include_exempt, strict=args.strict,
+            target_header=args.target, cn_root=cn_root, jp_root=jp_root, coverage_notes=notes)
+    except SemanticStructureError as exc:
+        print(f"[结构阻断] {exc}", file=sys.stderr)
+        return 1
+    except (OSError, UnicodeError, ValueError) as exc:
+        print(f"错误: 语义对齐输入未准备好：{exc}", file=sys.stderr)
+        return 2
+    if not units:
+        scope = args.target or ", ".join(args.work or ["全部作品"])
+        print(f"未找到匹配的配对单元（{scope}），未执行语义检查。", file=sys.stderr)
+        return 2
     try:
         code = ensure_vector_environment(args, arguments)
     except Exception as exc:
@@ -875,7 +948,7 @@ def main(argv: list[str] | None = None) -> int:
         return code
 
     return run_pipeline(
-        cache=args.cache,
+        cache=cache,
         works=args.work,
         target_header=args.target,
         run_vector=args.vector,
@@ -884,6 +957,10 @@ def main(argv: list[str] | None = None) -> int:
         output_dir=args.out,
         include_exempt=args.include_exempt,
         strict=args.strict,
+        cn_root=cn_root,
+        jp_root=jp_root,
+        pairing_units=units,
+        coverage_notes=notes,
     )
 
 

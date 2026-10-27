@@ -88,7 +88,8 @@ def collect(cache: Path, only_book: str | None, jp_root: Path | None = None):
     root = cache if jp_root is not None else cache / "chinese-text"
     jp_root = jp_root or cache / "japanese-text"
     result = []
-    for cn_id, h, jp_p, cn_p in iter_content_pairs(root, jp_root, only_book):
+    for cn_id, h, jp_p, cn_p in iter_content_pairs(root, jp_root, only_book,
+                                               require_reference=True):
         jl, cl = read_lines(jp_p), read_lines(cn_p)
         doomed = find_legacy_br(jl, cl)
         if doomed:

@@ -73,18 +73,54 @@ def books_by_id(base: Path, work_ids: set[str] | None = None) -> dict[str, Path]
     return books
 
 
-def iter_content_pairs(root: Path, jp_root: Path, only_book: str | None = None):
-    cn_books, jp_books = books_by_id(root), books_by_id(jp_root)
+def iter_content_pairs(root: Path, jp_root: Path, only_book: str | None = None,
+                       *, require_reference: bool = False):
+    """Yield reviewed pairs; repair callers require every selected source unit.
+
+    The complete scope is checked before yielding so an unavailable reference
+    cannot leave an earlier Chinese file partially repaired.
+    """
+    selected = {only_book.upper()} if only_book else None
+    cn_books = books_by_id(root, selected)
+    jp_ids = {japanese_book_id(wid) for wid in selected} if selected else None
+    jp_books = books_by_id(jp_root, jp_ids)
+    if require_reference and not cn_books:
+        raise ValueError("没有匹配的中文作品；请核对 --root 与 --book")
+    pairs = []
+    missing = []
     for wid, cn_dir in sorted(cn_books.items(), key=lambda item: item[0] or ""):
         if not wid or wid in NON_PAIR_WORK_IDS or (only_book and wid != only_book.upper()):
             continue
+        cn_by = header_index(cn_dir)
+        if not cn_by:
+            has_packaging = any(
+                is_packaging_header(pairing_header_of(path.name))
+                for path in cn_dir.rglob("*.xhtml") if path.name.casefold() != "nav.xhtml")
+            if not has_packaging:
+                missing.append(f"{wid}: 没有可识别的正文文件，未执行配对修复")
+            continue
+        eligible = {h: p for h, p in cn_by.items()
+                    if h not in MANUAL_ALIGNMENT_HEADERS
+                    and h not in TEXTUAL_IMAGE_HEADERS and h not in PAIR_RULES}
         jp_dir = jp_books.get(japanese_book_id(wid))
         if jp_dir is None:
+            if eligible:
+                missing.append(f"{wid}: 缺日文参考作品")
             continue
-        cn_by, jp_by = header_index(cn_dir), header_index(jp_dir)
-        for header in sorted(cn_by.keys() & jp_by.keys()):
-            # These units require their own adjudicated transformations; generic
-            # physical-line repair must preserve them instead of guessing offsets.
-            if header in MANUAL_ALIGNMENT_HEADERS or header in TEXTUAL_IMAGE_HEADERS or header in PAIR_RULES:
-                continue
-            yield wid, header, jp_by[header], cn_by[header]
+        jp_by = header_index(jp_dir)
+        missing.extend(f"{wid}/{header}: 缺日文参考文件" for header in sorted(eligible.keys() - jp_by.keys()))
+        for header in sorted(eligible.keys() & jp_by.keys()):
+            if require_reference:
+                for side, path in (("中文", cn_by[header]), ("日文", jp_by[header])):
+                    try:
+                        source = path.read_text(encoding="utf-8-sig")
+                    except (OSError, UnicodeError) as exc:
+                        missing.append(f"{wid}/{header}: {side}文件无法读取：{exc}")
+                    else:
+                        if not source.strip():
+                            missing.append(f"{wid}/{header}: {side}文件内容为空，未执行配对修复")
+            pairs.append((wid, header, jp_by[header], cn_by[header]))
+    if require_reference and missing:
+        raise ValueError("配对修复未完成：" + "；".join(missing)
+                         + "。请补齐 --jp-root 的对应工作源；单侧模板处理请用 normalize_single.py")
+    yield from pairs

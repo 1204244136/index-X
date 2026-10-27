@@ -84,6 +84,84 @@ class SharedStructureTests(unittest.TestCase):
                 (book / 'S5_01_03-06.xhtml').write_text('')
             self.assertEqual(list(iter_content_pairs(cn, jp)), [])
 
+    def test_required_reference_rejects_missing_books_and_headers(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cn, jp = Path(tmp) / 'cn', Path(tmp) / 'jp'
+            cn_book = cn / '【S1_01】书'
+            cn_book.mkdir(parents=True)
+            jp.mkdir()
+            (cn_book / 'S1_01-01.xhtml').write_text('正文', encoding='utf-8')
+            with self.assertRaisesRegex(ValueError, '缺日文参考'):
+                list(iter_content_pairs(cn, jp, require_reference=True))
+            jp_book = jp / '【S1_01】本'
+            jp_book.mkdir()
+            with self.assertRaisesRegex(ValueError, 'S1_01-01'):
+                list(iter_content_pairs(cn, jp, require_reference=True))
+
+    def test_required_reference_rejects_unknown_selection(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cn, jp = Path(tmp) / 'cn', Path(tmp) / 'jp'
+            cn.mkdir()
+            jp.mkdir()
+            with self.assertRaisesRegex(ValueError, '没有匹配'):
+                list(iter_content_pairs(cn, jp, 'S1_99', require_reference=True))
+
+    def test_empty_book_cannot_hide_behind_a_registered_non_pair_work(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cn, jp = Path(tmp) / 'cn', Path(tmp) / 'jp'
+            (cn / '【S1_01】空').mkdir(parents=True)
+            (cn / '【S5_02_03】非同形').mkdir()
+            jp.mkdir()
+            with self.assertRaisesRegex(ValueError, 'S1_01.*正文'):
+                list(iter_content_pairs(cn, jp, require_reference=True))
+
+    def test_empty_book_is_rejected_before_yielding_an_earlier_valid_pair(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cn, jp = Path(tmp) / 'cn', Path(tmp) / 'jp'
+            for side in (cn, jp):
+                book = side / '【S1_01】正文'
+                book.mkdir(parents=True)
+                (book / 'S1_01-01.xhtml').write_text('<p>正文</p>', encoding='utf-8')
+            (cn / '【S1_02】空').mkdir()
+            pairs = iter_content_pairs(cn, jp, require_reference=True)
+            with self.assertRaisesRegex(ValueError, 'S1_02.*正文'):
+                next(pairs)
+
+    def test_required_reference_rejects_empty_content_before_any_pair_is_yielded(self):
+        for side_name, empty in (('cn', ''), ('jp', ''), ('cn', '\ufeff \n\t'), ('jp', '\ufeff \n\t')):
+            with self.subTest(side=side_name, empty=repr(empty)), tempfile.TemporaryDirectory() as tmp:
+                cn, jp = Path(tmp) / 'cn', Path(tmp) / 'jp'
+                for side in (cn, jp):
+                    book = side / '【S1_01】书'
+                    book.mkdir(parents=True)
+                    for sequence in ('01', '02'):
+                        (book / f'S1_01-{sequence}.xhtml').write_text('<p>正文</p>', encoding='utf-8')
+                empty_path = (cn if side_name == 'cn' else jp) / '【S1_01】书' / 'S1_01-02.xhtml'
+                empty_path.write_text(empty, encoding='utf-8')
+                pairs = iter_content_pairs(cn, jp, require_reference=True)
+                side_label = '中文' if side_name == 'cn' else '日文'
+                with self.assertRaisesRegex(ValueError, f'S1_01-02.*{side_label}.*为空'):
+                    next(pairs)
+
+    def test_required_reference_preserves_nonempty_pure_image_pairs(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cn, jp = Path(tmp) / 'cn', Path(tmp) / 'jp'
+            for side in (cn, jp):
+                book = side / '【S1_01】书'
+                book.mkdir(parents=True)
+                (book / 'S1_01-01.xhtml').write_text('<p><img src="page.jpg"/></p>', encoding='utf-8')
+            self.assertEqual(len(list(iter_content_pairs(cn, jp, require_reference=True))), 1)
+
+    def test_packaging_only_and_registered_exception_scopes_are_inapplicable(self):
+        for wid, header in (('S1_01', 'S1_01-Cover'), ('S2_14', 'S2_14-02')):
+            with self.subTest(header=header), tempfile.TemporaryDirectory() as tmp:
+                cn, jp = Path(tmp) / 'cn', Path(tmp) / 'jp'
+                book = cn / f'【{wid}】书'
+                book.mkdir(parents=True)
+                jp.mkdir()
+                (book / f'{header}.xhtml').write_text('<p>内容</p>', encoding='utf-8')
+                self.assertEqual(list(iter_content_pairs(cn, jp, require_reference=True)), [])
+
     def test_scene_restore_does_not_relocate_chinese_separator(self):
         japanese = xhtml('<p>A</p>', '<br/>', '<p>B</p>', '<p>C</p>', '<br/>')
         chinese = xhtml('<p>甲</p>', '<p>乙</p>', '<br/>', '<p>丙</p>')

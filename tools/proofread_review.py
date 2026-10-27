@@ -394,7 +394,8 @@ def write_tsv(path: str, rows: list[dict]) -> None:
         writer.writerows(rows)
 
 
-def summarize(rows: list[dict], out_dir: str) -> None:
+def summarize(rows: list[dict], out_dir: str, *, enable_jp: bool = True,
+              enable_audit: bool = True) -> None:
     grades = Counter(r["grade"] for r in rows)
     kinds = Counter(r["kind"] for r in rows if r["grade"] == "spec")
     semantic = [r for r in rows if r["grade"] != "spec"]
@@ -411,8 +412,15 @@ def summarize(rows: list[dict], out_dir: str) -> None:
 
     # 日文原文覆盖统计
     jp_hits = sum(1 for r in rows if r.get("jp"))
-    if jp_hits:
-        print("  已配对日文原文 %d/%d (%.1f%%)" % (jp_hits, len(rows), jp_hits / len(rows) * 100))
+    percent = jp_hits / len(rows) * 100 if rows else 0
+    print("  已配对日文原文 %d/%d (%.1f%%)" % (jp_hits, len(rows), percent))
+    if not enable_jp:
+        print("  --no-jp：已禁用原文提取，日文侧未核验；本报告仅供改动分级与风险提示。")
+    elif jp_hits < len(rows):
+        print(f"  日文侧未核验片段 {len(rows) - jp_hits} 条；请用 --jp-base 指定已有日文参考，或显式 --no-jp 仅做分级。")
+    if not enable_audit:
+        print("  --no-audit：已禁用启发式风险诊断，风险项未诊断。")
+    print("  分级和原文提取不代表语义复核通过。")
 
     # 高危风险标签统计
     all_flags = [f for r in rows for f in r.get("flags", "").split(",") if f]
@@ -460,6 +468,10 @@ def main(argv: list[str] | None = None) -> int:
         enable_jp=not args.no_jp,
         enable_audit=not args.no_audit,
     )
+    missing_jp = sum(1 for row in rows if not row.get("jp"))
+    if not args.no_jp and missing_jp:
+        print(f"[未核验] {missing_jp}/{len(rows)} 个片段未提取到日文；报告保留改动分级，"
+              "原文可用后用 --jp-base 重跑提取。", file=sys.stderr)
 
     os.makedirs(args.out, exist_ok=True)
     write_tsv(os.path.join(args.out, "changes.tsv"), rows)
@@ -470,7 +482,7 @@ def main(argv: list[str] | None = None) -> int:
     with open(os.path.join(args.out, "groups.txt"), "w", encoding="utf-8") as f:
         f.write(render_groups([r for r in rows if r["grade"] in ("tiny", "local", "rewrite")]))
 
-    summarize(rows, args.out)
+    summarize(rows, args.out, enable_jp=not args.no_jp, enable_audit=not args.no_audit)
     return 0
 
 
