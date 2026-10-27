@@ -186,7 +186,6 @@ class HealthCheckNegativeTests(unittest.TestCase):
         findings, counts, _e, _c = audit_book(book, {"toc-entry"})
         self.assertTrue(any("首条目应为「制作信息」" in f[5] for f in findings))
         self.assertTrue(any("封面不进目录" in f[5] for f in findings))
-        # 存量清零后由报告级升级为阻断（2026-10-12，见 docs/maintenance-records/）
         self.assertTrue(all(f[4] == "error" for f in findings))
 
     def test_ncx_doctitle_must_match_dc_title(self):
@@ -197,11 +196,10 @@ class HealthCheckNegativeTests(unittest.TestCase):
         findings, counts, _e, _c = audit_book(book, {"ncx-doctitle"})
         self.assertEqual(counts.get("ncx-doctitle"), 1)
         self.assertIn("`docTitle` 与 `dc:title` 不一致", findings[0][5])
-        # 存量清零后由报告级升级为阻断（2026-10-12，见 docs/maintenance-records/）
         self.assertEqual(findings[0][4], "error")
 
     def test_ncx_uid_must_match_unique_identifier(self):
-        """`dtb:uid` 应与包文档 unique-identifier 同值；存量 61 本未清零，故为报告级。"""
+        """`dtb:uid` 与包文档 unique-identifier 不同值时为 error。"""
         book = self.build("S1_01", {"OEBPS/Text/S1_01-01_Chapter1.xhtml": GOOD})
         ncx = book / "toc.ncx"
         ncx.write_text(ncx.read_text(encoding="utf-8").replace(
@@ -209,7 +207,6 @@ class HealthCheckNegativeTests(unittest.TestCase):
         findings, counts, _e, _c = audit_book(book, {"ncx-uid"})
         self.assertEqual(counts.get("ncx-uid"), 1)
         self.assertIn("`dtb:uid` 与包文档 `unique-identifier` 不一致", findings[0][5])
-        # 存量清零后由报告级升级为阻断（2026-10-12，见 docs/maintenance-records/）
         self.assertEqual(findings[0][4], "error")
 
     def test_nav_structure_rejects_stray_elements(self):
@@ -243,7 +240,6 @@ class HealthCheckNegativeTests(unittest.TestCase):
         hits = check_epub_health.find_identifier_duplicates([a, b])
         self.assertEqual(len(hits), 2)
         self.assertTrue(all("共用" in msg for _name, msg in hits))
-        # 存量清零后由报告级升级为阻断（2026-10-12，见 docs/maintenance-records/）
         self.assertEqual(check_epub_health.SEVERITY["identifier-unique"], "error")
 
     def test_artifact_exempt_registry_is_narrow(self):
@@ -460,13 +456,8 @@ class HealthCheckNegativeTests(unittest.TestCase):
         self.assertEqual(counts2.get("bold-punct"), 1)
         self.assertTrue(findings2)
 
-    def test_real_exempt_works_are_the_reviewed_three(self):
-        """名单是「已裁定不纳入模板检查」的两本，不是随手积累的忽略项。
-
-        `S6_24.12.10` 曾在名单里（日文侧画集无 BW 分页源）；该作品补齐日文侧、
-        恢复常规配对后登记已移除（见 `alignment_rules` 中该条注释与提交
-        `cd2b7012`），因此这里只断言现存的两本。
-        """
+    def test_template_exemptions_match_reviewed_works(self):
+        """模板豁免名单须与已裁定作品一致，其它检查仍按各自规则执行。"""
         import alignment_rules
         self.assertEqual(
             alignment_rules.TEMPLATE_EXEMPT_WORK_IDS,

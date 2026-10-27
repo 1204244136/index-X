@@ -7,9 +7,6 @@ import re
 from epub_ids import NUMBERED_BOOK, S6_DATE, header_of
 
 
-# S6_24.12.10：已于 2026-09-18 补齐日文侧（画集内以图片收录的 SS 短篇已用
-# 图像转录还原为单文件 EPUB，交付后经 pull.ps1 入库），两侧恢复常规配对与
-# 模板检查，登记已移除。
 # S5_02_03：日文源不是分页文本，而是一页式固定版式 EPUB——整个作品只有一个
 # `item/xhtml/S5_02_03-01.xhtml`（自成一页，配 `fixed-layout-jp.css`），
 # 中文侧则是拆成 5 章的文本化重排。两者无法按行/表头对应，逐条比对只会
@@ -82,9 +79,7 @@ def template_exempt(work_id_value: str | None) -> bool:
 # 这份名单是唯一事实来源，`check_epub_health.py` 从这里取。
 HEALTH_EXEMPT_WORK_IDS: dict[str, frozenset[str]] = {
     # 读前必看是阅读说明、非卷：目录首条目为「阅读器测试」。
-    # 依据见 docs/epub-artifact-spec.md 第三节的具名例外。`ncx-doctitle` **不在**名单里——
-    # 该书 docTitle 已于 2026-10-12 对齐书名（见 docs/maintenance-records/），
-    # 留一条空条目只会掩盖将来的回归。
+    # 依据见 docs/epub-artifact-spec.md 第三节的具名例外；其它成品构成项仍照常检查。
     "toc-entry": frozenset({"S0_00"}),
 }
 

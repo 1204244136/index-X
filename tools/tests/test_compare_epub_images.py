@@ -8,11 +8,8 @@ from pathlib import Path
 TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 
-# Pillow 与 compare_epub_images.py 保持一致的**可选依赖**口径：CI 只用官方 Python 环境、
-# 不安装任何第三方包，此处若硬导入会在测试采集阶段就 ImportError，使整个
-# unittest discover 失败（而不是仅跳过图片相关用例）——2026-10-09 的 Build EPUB Release
-# 即因此整条发布流水线中断。工具模块在缺 Pillow 时主动 raise SystemExit，所以这里连
-# SystemExit 一起兜住，缺依赖时只跳过本模块。
+# Pillow 是可选依赖，缺失时只跳过本模块，避免整个 unittest discover 采集失败。
+# 工具模块在缺 Pillow 时会主动 raise SystemExit，因此也要捕获 SystemExit。
 try:
     from PIL import Image  # noqa: E402
 

@@ -39,20 +39,17 @@
   packaging-required `content.opf`／`nav.xhtml`／`toc.ncx` 与封面、制作信息页齐备，
               且两张包装页已被 manifest 声明、已进 spine（error）
   nav-structure `nav.xhtml` 的 html 只含 head/body、head 只含元数据、title 非空（error）
-  toc-entry  目录条目口径：首条目为「制作信息」、封面不入目录
-              （error；存量已于 2026-10-12 补齐唯一偏离本后升级为阻断）
-  ncx-doctitle `docTitle` 等于 `dc:title`（error；存量已于 2026-10-12 清零后升级为阻断）
-  ncx-uid    `toc.ncx` 的 `dtb:uid` 等于包文档 `unique-identifier`
-              （error；存量 61 本已于 2026-10-12 对齐后升级为阻断）
-  identifier-unique 库内 `unique-identifier` 唯一
-              （error；跨书汇总，存量已于 2026-10-12 清零后升级为阻断）
+  toc-entry  目录条目口径：首条目为「制作信息」、封面不入目录（error）
+  ncx-doctitle `docTitle` 等于 `dc:title`（error）
+  ncx-uid    `toc.ncx` 的 `dtb:uid` 等于包文档 `unique-identifier`（error）
+  identifier-unique 库内 `unique-identifier` 唯一（error；跨书汇总）
 
 八项均为 error 级：逐本项由 `audit_book` 判定，跨书项在 `main()` 层计算；
 发布阻断由 `publish_preflight.py` 承担——逐本取 error 级，库级再复核 `unique-identifier`。
 
 刻意不纳入的检查项
 ------------------
-  quotes      直角引号配对。全库有 21 处「开/闭不在同一段」的写法（引语跨段、
+  quotes      直角引号配对。「开/闭不在同一段」的写法（引语跨段、
               强调性收尾、把原文截断以模拟通讯中断），逐条都需要人工判断该补还是
               该删，不满足「替换值唯一」，因此只报告不进门禁——本文件不实现它，
               需要时单独逐本人工核查。
@@ -152,18 +149,13 @@ SEVERITY = {
     "bold-empty": "warning", "bold-pair": "error", "ruby": "error", "seq-00": "error",
     "dup-header": "error", "seq-gap": "warning", "img-prefix": "error",
     "dangling": "error", "css-layout": "error",
-    # 译注页结构：零误报的硬规则，与 template/XML/ruby 同级。
-    # 存量违规由 E1 一次性修正（见 docs/maintenance-records/）。
+    # 译注页结构与 template/XML/ruby 同为阻断项。
     "note-structure": "error",
     "title-style": "error", "title-catalog": "error",
-    # 成品构成（`docs/epub-artifact-spec.md`）：六项存量均已清零，全部是硬规则——
-    # 目录名、`dc:title` 对齐、必备部件 2026-10-12 实测 81/81；`docTitle` 对齐同日清理 68 本；
-    # 目录条目口径同日补齐 【S6_24.01.10】；跨书 `unique-identifier` 同日把 6 本的模板串值改回
-    # 各自 uuid（见 docs/maintenance-records/），故由报告级逐项升级为阻断。
+    # 成品构成项均为阻断项；规范见 `docs/epub-artifact-spec.md`。
     "dir-name": "error", "metadata-title": "error", "packaging-required": "error",
     "nav-structure": "error",
     "ncx-doctitle": "error", "toc-entry": "error", "identifier-unique": "error",
-    # `dtb:uid` 对齐（规范第三节）：存量 61 本已于 2026-10-12 对齐，故同样升级为阻断。
     "ncx-uid": "error",
 }
 
@@ -492,7 +484,7 @@ def find_artifact_problems(book_dir: Path) -> list[tuple[str, str]]:
 
 
 def find_toc_problems(book_dir: Path) -> list[tuple[str, str]]:
-    """目录条目口径与 `docTitle`（报告级）；规范见 `docs/epub-artifact-spec.md` 第四节。"""
+    """采集目录条目、`docTitle` 与 `dtb:uid` 问题；级别由 SEVERITY 定义。"""
     out: list[tuple[str, str]] = []
     ncx = book_dir / "toc.ncx"
     nav = book_dir / "nav.xhtml"
@@ -503,7 +495,7 @@ def find_toc_problems(book_dir: Path) -> list[tuple[str, str]]:
     doc = NCX_DOCTITLE_RE.search(ncx_text)
     if title and doc and doc.group(1) != title:
         out.append(("ncx-doctitle", "`docTitle` 与 `dc:title` 不一致：%r ≠ %r" % (doc.group(1), title)))
-    # `dtb:uid` 应与包文档的 unique-identifier 同值（规范第三节）；存量未清零，报告级。
+    # `dtb:uid` 应与包文档的 unique-identifier 同值（成品构成规范第三节）。
     book_id_meta = BOOK_ID_META_RE.search(read_text(opf)) if opf.is_file() else None
     uid = NCX_UID_RE.search(ncx_text)
     if uid and book_id_meta and uid.group(1) != book_id_meta.group(1):
@@ -527,8 +519,7 @@ def find_nav_structure_problems(book_dir: Path) -> list[tuple[str, str]]:
     """`nav.xhtml` 的头部结构（error）。
 
     HTML5 的 XHTML 语法下，`<html>` 的直接子元素只有 `head` 与 `body`，`<head>` 内只放
-    元数据类元素。历史遗留的裸 `<br/>`（79 本曾挂在 head 或 html 下）随手补回即违规，
-    故列入门禁防回流；清理与依据见 `docs/maintenance-records/`。
+    元数据类元素，裸 `<br/>` 不能作为 head 或 html 的直接子元素。
     """
     nav = book_dir / "nav.xhtml"
     if not nav.is_file():
@@ -556,7 +547,7 @@ def find_nav_structure_problems(book_dir: Path) -> list[tuple[str, str]]:
 
 
 def find_identifier_duplicates(books: list[Path]) -> list[tuple[str, str]]:
-    """跨书检查：同一 `unique-identifier` 被多本共用时逐本报出（报告级）。"""
+    """同一 `unique-identifier` 被多本共用时逐本报出；级别由 SEVERITY 定义。"""
     seen: dict[str, list[str]] = defaultdict(list)
     for book_dir in books:
         opf = book_dir / "OEBPS" / "content.opf"
@@ -779,7 +770,7 @@ def main() -> int:
         exempted.update(book_exempted)
         files += covered["files"]
 
-    # `unique-identifier` 唯一性要跨书汇总，`audit_book` 判不了，故在 main() 层算（报告级）。
+    # `unique-identifier` 唯一性要跨书汇总，`audit_book` 判不了，故在 main() 层算。
     if only is None or "identifier-unique" in only:
         for name, msg in find_identifier_duplicates(book_dirs):
             bid = book_id(name)

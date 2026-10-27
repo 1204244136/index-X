@@ -86,8 +86,7 @@ def validate_publication(cn_root: Path, jp_root: Path | None = None,
                 problems.extend(f"{r[1]} {r[2]}: {r[5]}" for r in bad)
             except (OSError, UnicodeError, ValueError) as exc:
                 problems.append(f"中日对齐检查失败：{exc}")
-            # 裁定表锚点门禁：`魔術`→魔法 一类术语回落没有其他自动检查能发现，
-            # 2026-10-05 的整卷重写曾把 98 处改回「魔术」而四道门禁全绿。
+            # 结构与字符检查不覆盖术语回落；按配对原文与裁定表另查误形。
             try:
                 term_rows, _term_checked, _term_skipped, _term_notes = audit_term_anchors(
                     cn_root, jp_root, work_ids if selected is not None else None)

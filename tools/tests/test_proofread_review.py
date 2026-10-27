@@ -252,8 +252,7 @@ class EnrichRowsTests(unittest.TestCase):
     def test_enrich_adds_jp_and_flags(self):
         # 受控术语规则须落在《译名裁定总表》上：此处用裁定表 §九登记的
         # 「和服裤裙」回退写法（与 test_audit_risk.test_controlled_term 同源）。
-        # 旧用例依赖的 Saintium 规则已于 2026-10-05 按维护者决定删除（依据只在历史提交），
-        # 规则再迁移时本用例须同步，不得恢复查不到落点的条目。
+        # 用例随裁定表规则同步，确保测试条目有可核对的来源。
         rows = [{
             "commit": "test",
             "work": "S3_03",

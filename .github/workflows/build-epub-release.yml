@@ -118,7 +118,7 @@ jobs:
             for PREFIX in ${PREFIXES}; do
               for file in output/epubs/${PREFIX}*.epub; do
                 filename=$(basename "$file")
-                # 作品号定界符为全角 `【】`（半角 `[]` 已于 2026-10-12 全库迁移，且不是 glob 元字符）。
+                # 作品号定界符为全角 `【】`；它们不是 glob 元字符，后面的 * 才是通配符。
                 if [[ "${filename}" != 【*】* ]]; then
                   echo "Unexpected EPUB directory name: ${filename}" >&2
                   exit 1

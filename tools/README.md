@@ -1,6 +1,6 @@
 # EPUB 维护工具
 
-文档职责与入口见 [文档索引](../docs/README.md)。本文件是 `tools/` 的**命令合同**：每个工具的入口、参数、读写范围、门禁与失败边界、测试与所属簇。规范与边界（写成什么样、什么不许做）以 [AGENTS.md](../AGENTS.md) 与版式规范四份文档（[EPUB 命名规范](../docs/epub-naming-spec.md)、[EPUB 结构规范](../docs/epub-structure-spec.md)、[EPUB 排版规范](../docs/epub-css-layout-spec.md)、[EPUB 成品构成规范](../docs/epub-artifact-spec.md)）为准，本文件只留指针、不复述条文；成品语言规范以 [翻译规范](../docs/translation-spec.md) 为准；需要判断分支的流程以 `.agents/skills/` 为准。历史验收与修改统计只在维护记录和提交中保存。
+文档职责与入口见 [文档索引](../docs/README.md)。本文件是 `tools/` 的**命令合同**：每个工具的入口、参数、读写范围、门禁与失败边界、测试与所属簇。规范与边界（写成什么样、什么不许做）以 [AGENTS.md](../AGENTS.md) 与版式规范四份文档（[EPUB 命名规范](../docs/epub-naming-spec.md)、[EPUB 结构规范](../docs/epub-structure-spec.md)、[EPUB 排版规范](../docs/epub-css-layout-spec.md)、[EPUB 成品构成规范](../docs/epub-artifact-spec.md)）为准，本文件只留指针、不复述条文；成品语言规范以 [翻译规范](../docs/translation-spec.md) 为准；需要判断分支的流程以 `.agents/skills/` 为准。历史验收与修改统计只在维护记录和提交中保存；修改脚本说明时执行 [脚本说明软门禁](../AGENTS.md#脚本说明软门禁)。
 
 ## 三层职责
 
@@ -519,9 +519,9 @@ python tools/check_term_anchors.py --strict
 python tools/check_term_anchors.py --book S5_01_02 --book S5_01_01 --strict
 ```
 
-`check_translation_table.py` 用译名表的原始写法当锚：表里的 `【魔術】` 带括号，正文裸写 `魔術` 匹配不到（2026-10-27 实测：S5_01_02 有 441 处 `魔術`，只有书名一处带括号）。本工具补这一步：中日逐行配对，**日文出现裁定锚点、中文没有裁定写法却含裁定表登记的误形**时命中。规则只从《译名裁定总表》读——锚点取 `DEFAULT_ANCHORS`（默认 `魔術`、`魔術師`），应作取「裁定」列，误形取「被否决或并存的候选」列；新增锚点只改常量（或用 `--anchor`），不复制第二份映射。
+`check_translation_table.py` 用译名表的原始写法当锚：表里的 `【魔術】` 带括号，正文裸写 `魔術` 匹配不到。本工具补这一步：中日逐行配对，**日文出现裁定锚点、中文没有裁定写法却含裁定表登记的误形**时命中。规则只从《译名裁定总表》读——锚点取 `DEFAULT_ANCHORS`（默认 `魔術`、`魔術師`），应作取「裁定」列，误形取「被否决或并存的候选」列；新增锚点只改常量（或用 `--anchor`），不复制第二份映射。
 
-只报「误形」而不是「缺写法」是实测决定：日文含 `魔術` 而中文无「魔法」的行全库 728 行，多为书名、省略与改写；误形命中才可稳定判定。**塔罗牌名是语境例外**：`ANCHOR_CONTEXT_EXCEPTIONS` 对 `魔術師` 命中 `タロット`／`大アルカナ`／`カード` 的日文行跳过（中文通行牌名「魔术师」）。`人读` 条目、非配对作品、行数不等文件都在报告里单列，不计通过。`--strict` 命中非零（退出码 1），根目录或锚点缺失为 2；报告默认 `.cache/epub-work/term-anchor-check.tsv`。
+书名、省略与改写也可能缺少裁定写法，因此只报「误形命中且无裁定写法」。**塔罗牌名是语境例外**：`ANCHOR_CONTEXT_EXCEPTIONS` 对 `魔術師` 命中 `タロット`／`大アルカナ`／`カード` 的日文行跳过（中文通行牌名「魔术师」）。`人读` 条目、非配对作品、行数不等文件都在报告里单列，不计通过。`--strict` 命中非零（退出码 1），根目录或锚点缺失为 2；报告默认 `.cache/epub-work/term-anchor-check.tsv`。建立背景与历史回测见 [术语锚点门禁记录](../docs/maintenance-records/term-anchor-gate-2026-10-27.md)。
 
 接入点：`publish_preflight.py`（带日文参考的发布预检按书阻断）、`proofread-review` R7、`translation-term-unification` S6。CI 只有中文侧，工作流里仅在日文缓存存在时执行，否则明确跳过。
 
