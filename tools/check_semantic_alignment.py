@@ -5,7 +5,7 @@
   1. Level 1（极速初筛，纯 CPU，零外部依赖）：
      基于结构锚点、字符集重合率与长度宽容度，数秒内扫描全库或指定卷，
      过滤掉完全对齐的绿区文件，输出候选问题清单。
-  2. Level 2（矢量化精检，利用 BetweenLines 文本矢量化工具与 GPU 加速）：
+  2. Level 2（矢量化精检，使用独立 Python 环境，可选 GPU 加速）：
      基于 sentence-transformers (paraphrase-multilingual-MiniLM-L12-v2)，
      计算中日文本行真实跨语言余弦相似度；利用局部位移滑动窗口算法，
      精准区分「意译/假名引起的假阳性」与「段落合并/拆分导致的真实结构性错位（Drift Window）」。
@@ -43,6 +43,7 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 TOOLS_DIR = Path(__file__).resolve().parent
 CACHE_DEFAULT = ROOT_DIR / ".cache" / "epub-work"
 VECTOR_REEXEC_MARKER = "INDEX_X_SEMANTIC_VECTOR_REEXEC"
+EMBEDDING_MODEL_NAME = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 
 try:
     from alignment_rules import (
@@ -244,7 +245,7 @@ def get_embedding_model():
     device = "cuda" if torch.cuda.is_available() else "cpu"
     try:
         _MODEL = SentenceTransformer(
-            "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+            EMBEDDING_MODEL_NAME,
             device=device,
             model_kwargs={"attn_implementation": "eager"},
         )
@@ -824,19 +825,31 @@ def _write_windows_tsv(windows: list[dict], path: Path):
 
 
 def vector_python_candidates(args: argparse.Namespace) -> list[Path]:
-    """Explicit configuration takes precedence over a neighbouring checkout."""
-    explicit_python = args.vector_python or os.environ.get("BETWEENLINES_PYTHON")
+    """Prefer CLI configuration, then environment variables, then local venvs."""
+    explicit_python = args.vector_python
+    explicit_directory = args.betweenlines_dir
+    if not (explicit_python or explicit_directory):
+        explicit_python = os.environ.get("INDEX_X_VECTOR_PYTHON") or os.environ.get("BETWEENLINES_PYTHON")
+        explicit_directory = os.environ.get("BETWEENLINES_DIR")
     if explicit_python:
-        return [Path(explicit_python).expanduser().resolve()]
-    explicit_directory = args.betweenlines_dir or os.environ.get("BETWEENLINES_DIR")
-    directory = (
-        Path(explicit_directory).expanduser().resolve()
-        if explicit_directory else ROOT_DIR.parent / "BetweenLines"
+        # Resolving a POSIX venv's python symlink would start the base interpreter.
+        return [Path(explicit_python).expanduser().absolute()]
+    directories = (
+        [Path(explicit_directory).expanduser().resolve() / ".venv"]
+        if explicit_directory else [ROOT_DIR / ".venv-vector", ROOT_DIR / ".venv"]
     )
-    return [
-        directory / ".venv" / "Scripts" / "python.exe",
-        directory / ".venv" / "bin" / "python",
-    ]
+    return [path for directory in directories for path in (
+        directory / "Scripts" / "python.exe",
+        directory / "bin" / "python",
+    )]
+
+
+def vector_environment_configured(args: argparse.Namespace) -> bool:
+    return bool(
+        args.vector_python or args.betweenlines_dir
+        or os.environ.get("INDEX_X_VECTOR_PYTHON")
+        or os.environ.get("BETWEENLINES_PYTHON") or os.environ.get("BETWEENLINES_DIR")
+    )
 
 
 def vector_dependencies_available() -> bool:
@@ -858,23 +871,23 @@ def ensure_vector_environment(args: argparse.Namespace, argv: list[str]) -> int 
     )
     if not needs_vector:
         return None
-    explicit = args.vector_python or os.environ.get("BETWEENLINES_PYTHON")
+    explicit_selected = vector_environment_configured(args)
     candidates = vector_python_candidates(args)
-    if explicit and not candidates[0].is_file():
+    python = next((path for path in candidates if path.is_file()), None)
+    if explicit_selected and python is None:
         print(f"错误: 显式矢量化 Python 不存在：{candidates[0]}", file=sys.stderr)
         return 2
     current_ready = vector_dependencies_available()
-    explicit_selected = bool(explicit or args.betweenlines_dir or os.environ.get("BETWEENLINES_DIR"))
-    if current_ready and (not explicit_selected or os.environ.get(VECTOR_REEXEC_MARKER)):
+    current_selected = python is not None and python.absolute() == Path(sys.executable).absolute()
+    if current_ready and (not explicit_selected or current_selected or os.environ.get(VECTOR_REEXEC_MARKER)):
         return None
     if os.environ.get(VECTOR_REEXEC_MARKER):
         print("错误: 指定矢量化环境仍缺少 PyTorch/SentenceTransformers，检查未执行。", file=sys.stderr)
         return 2
-    python = next((path for path in candidates if path.is_file()), None)
     if python is None:
         print(
-            "错误: 当前 Python 缺少矢量化依赖；使用 --vector-python/--betweenlines-dir "
-            "或 BETWEENLINES_PYTHON/BETWEENLINES_DIR 指定可用环境。",
+            "错误: 当前 Python 缺少矢量化依赖；请按 tools/README.md 配置本项目 .venv-vector，"
+            "或使用 --vector-python / INDEX_X_VECTOR_PYTHON 指定可用环境。",
             file=sys.stderr,
         )
         return 2
@@ -908,8 +921,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--root", type=Path, help="中文成品根目录（默认 EPUB/）")
     parser.add_argument("--jp-root", type=Path, help="日文参考根目录（默认本地缓存 japanese-text）")
     parser.add_argument("--out", type=Path, default=None, help="报告输出目录")
-    parser.add_argument("--vector-python", type=Path, help="可用的矢量化 Python（或 BETWEENLINES_PYTHON）")
-    parser.add_argument("--betweenlines-dir", type=Path, help="BetweenLines 仓库目录（或 BETWEENLINES_DIR；默认探测相邻仓库）")
+    runtime = parser.add_mutually_exclusive_group()
+    runtime.add_argument("--vector-python", type=Path, help="矢量化 Python（或 INDEX_X_VECTOR_PYTHON；缺省使用当前环境或本项目虚拟环境）")
+    runtime.add_argument("--betweenlines-dir", type=Path, help="显式借用 BetweenLines 的 .venv（兼容入口；或 BETWEENLINES_DIR）")
     args = parser.parse_args(arguments)
     if args.strict and args.l1_only:
         parser.error("--strict 必须执行 L2，不能与 --l1-only 组合")

@@ -314,12 +314,81 @@ class SemanticCliEnvironmentTests(unittest.TestCase):
                 self.assertEqual(semantic.ensure_vector_environment(args, ["--strict"]), 2)
                 run.assert_not_called()
 
-    def test_adjacent_repository_and_environment_configuration(self):
+    def test_project_environments_and_legacy_explicit_configuration(self):
         args = argparse.Namespace(vector_python=None, betweenlines_dir=None)
         with patch.dict(os.environ, {}, clear=True), patch.object(semantic, "ROOT_DIR", Path("/workspace/index-X")):
-            self.assertEqual(semantic.vector_python_candidates(args)[1], Path("/workspace/BetweenLines/.venv/bin/python"))
+            self.assertEqual(semantic.vector_python_candidates(args), [
+                Path("/workspace/index-X/.venv-vector/Scripts/python.exe"),
+                Path("/workspace/index-X/.venv-vector/bin/python"),
+                Path("/workspace/index-X/.venv/Scripts/python.exe"),
+                Path("/workspace/index-X/.venv/bin/python"),
+            ])
         with tempfile.TemporaryDirectory() as tmp, patch.dict(os.environ, {"BETWEENLINES_DIR": tmp}, clear=True):
             self.assertEqual(semantic.vector_python_candidates(args)[0], Path(tmp).resolve() / ".venv/Scripts/python.exe")
+
+    def test_cli_directory_overrides_environment_python(self):
+        with tempfile.TemporaryDirectory() as tmp, patch.dict(os.environ, {
+                "INDEX_X_VECTOR_PYTHON": "wrong-python", "BETWEENLINES_PYTHON": "also-wrong"}, clear=True):
+            args = argparse.Namespace(vector_python=None, betweenlines_dir=Path(tmp))
+            self.assertEqual(semantic.vector_python_candidates(args)[0], Path(tmp).resolve() / ".venv/Scripts/python.exe")
+
+    def test_neutral_environment_variable_overrides_legacy_configuration(self):
+        args = argparse.Namespace(vector_python=None, betweenlines_dir=None)
+        with tempfile.TemporaryDirectory() as tmp, patch.dict(os.environ, {
+                "INDEX_X_VECTOR_PYTHON": tmp, "BETWEENLINES_PYTHON": "wrong-python",
+                "BETWEENLINES_DIR": "wrong-directory"}, clear=True):
+            self.assertEqual(semantic.vector_python_candidates(args), [Path(tmp).absolute()])
+
+    def test_explicit_python_keeps_virtualenv_symlink(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            executable = Path(tmp) / "python"
+            try:
+                executable.symlink_to(sys.executable)
+            except OSError:
+                self.skipTest("symlinks unavailable")
+            args = argparse.Namespace(vector_python=executable, betweenlines_dir=None)
+            self.assertEqual(semantic.vector_python_candidates(args), [executable.absolute()])
+
+    def test_current_ready_environment_runs_without_delegation(self):
+        args = argparse.Namespace(vector=True, auto_audit=False, strict=False, l1_only=False,
+                                  top=None, vector_python=None, betweenlines_dir=None)
+        with patch.dict(os.environ, {}, clear=True), \
+                patch.object(semantic, "vector_dependencies_available", return_value=True), \
+                patch.object(semantic.subprocess, "run") as run:
+            self.assertIsNone(semantic.ensure_vector_environment(args, ["--vector"]))
+            run.assert_not_called()
+
+    def test_missing_explicit_directory_does_not_use_current_ready_environment(self):
+        with tempfile.TemporaryDirectory() as tmp, patch.dict(os.environ, {}, clear=True):
+            args = argparse.Namespace(vector=True, auto_audit=False, strict=False, l1_only=False,
+                                      top=None, vector_python=None, betweenlines_dir=Path(tmp) / "missing")
+            with patch.object(semantic, "vector_dependencies_available", return_value=True), \
+                    patch.object(semantic.subprocess, "run") as run:
+                self.assertEqual(semantic.ensure_vector_environment(args, ["--vector"]), 2)
+                run.assert_not_called()
+
+    def test_l1_does_not_probe_vector_dependencies(self):
+        args = argparse.Namespace(vector=False, auto_audit=False, strict=False, l1_only=True,
+                                  top=None, vector_python=None, betweenlines_dir=None)
+        with patch.object(semantic, "vector_dependencies_available") as dependencies, \
+                patch.object(semantic, "vector_python_candidates") as candidates:
+            self.assertIsNone(semantic.ensure_vector_environment(args, ["--l1-only"]))
+            dependencies.assert_not_called()
+            candidates.assert_not_called()
+
+    def test_local_vector_environment_is_selected_before_base_environment(self):
+        with tempfile.TemporaryDirectory() as tmp, patch.dict(os.environ, {}, clear=True), \
+                patch.object(semantic, "ROOT_DIR", Path(tmp)), \
+                patch.object(semantic, "vector_dependencies_available", return_value=False), \
+                patch.object(semantic.subprocess, "run", return_value=subprocess.CompletedProcess([], 0)) as run:
+            executables = [Path(tmp) / directory / "Scripts/python.exe" for directory in (".venv-vector", ".venv")]
+            for executable in executables:
+                executable.parent.mkdir(parents=True)
+                executable.touch()
+            args = argparse.Namespace(vector=True, auto_audit=False, strict=False, l1_only=False,
+                                      top=None, vector_python=None, betweenlines_dir=None)
+            self.assertEqual(semantic.ensure_vector_environment(args, ["--vector"]), 0)
+            self.assertEqual(run.call_args.args[0][0], str(executables[0]))
 
 
 if __name__ == "__main__":

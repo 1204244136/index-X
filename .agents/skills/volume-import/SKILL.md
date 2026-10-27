@@ -169,4 +169,4 @@ python tools/publish_auto.py --only-books "chinese-text/【S4_04】某暗部的�
    Note 页条目按正文首次引用顺序排列，已有 id 保持不变；具体规则见 [EPUB 结构规范](../../../docs/epub-structure-spec.md)，`check_note_order.py` 会核对。
 7. **全角空格**：段内的 `U+3000` 可能是对齐或分字效果，不要「顺手清理」。
 8. **对齐工具不是语义判据**：`import_align_plan.py` 用「汉字重叠＋长度比」替代外部对齐工具的
-   多语言向量打分，只为离线可用；语义级复核仍走 `check_semantic_alignment.py --betweenlines-dir`。
+   多语言向量打分，只为离线可用；语义级复核使用 `check_semantic_alignment.py --strict`，环境按 [工具合同](../../../tools/README.md#克隆后的运行环境) 配置。

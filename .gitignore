@@ -1,4 +1,6 @@
 .cache/
+.venv/
+.venv-vector/
 .workbuddy/
 __pycache__/
 *.py[cod]

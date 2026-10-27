@@ -1,0 +1,4 @@
+# Install the chosen CPU/CUDA/ROCm torch build first; see tools/README.md.
+numpy>=1.26,<3
+torch>=2.2,<3
+sentence-transformers>=5,<6

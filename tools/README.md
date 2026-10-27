@@ -29,6 +29,50 @@
 
 软件按入口准备：表格读取使用 openpyxl、图片工具使用 Pillow，相应转换与补充校验使用 calibre；L2 语义检查需要 PyTorch、SentenceTransformers 及对应模型。BetweenLines 本身不是本仓库基础运行前提，只有使用其 AI 校对流程时才另行部署并配置实际采用的档案、预设和接口。外部分发与现有工作状态的初始化／保全按 C1 合同执行。
 
+### 创建与核验独立环境
+
+以 CI 使用的 Python 3.12 为验证基线。基础检查、打包和 `unittest` 使用标准库；图片与表格功能按需安装根目录的 `requirements.txt`，L2 依赖在 `requirements-vector.txt` 单独维护。依赖清单约束直接依赖的兼容范围，不是跨平台锁文件；GPU 构建与模型缓存另外准备。
+
+Windows PowerShell 从仓库根目录执行：
+
+```powershell
+py -3.12 -m venv .venv
+./.venv/Scripts/Activate.ps1
+python tools/check_environment.py --profile core
+# 需要图片、Excel 工具时安装；基础检查可跳过此步
+python -m pip install -r requirements.txt
+python tools/check_environment.py --profile maintenance
+python -m unittest discover -s tools/tests -p "test_*.py"
+```
+
+Linux／macOS 用 `python3.12 -m venv .venv` 创建，再用 `source .venv/bin/activate` 激活；后续 `python` 命令相同。未激活时可用 `.venv/Scripts/python.exe`（POSIX 为 `.venv/bin/python`）显式运行。同步入口的 PowerShell 子进程按 PATH 查找 `python`，因此运行同步前应激活环境，或把该环境的 `Scripts`／`bin` 临时前置到本进程 PATH。
+
+L2 使用单独环境。以下为可移植的 CPU 安装例；GPU 按 [PyTorch 官方安装入口](https://pytorch.org/get-started/locally/) 或下方 AMD 说明选择硬件适用的构建，替换第一条安装命令，再安装同一份 L2 清单：
+
+```powershell
+py -3.12 -m venv .venv-vector
+./.venv-vector/Scripts/python.exe -m pip install "torch>=2.2,<3" --index-url https://download.pytorch.org/whl/cpu
+./.venv-vector/Scripts/python.exe -m pip install -r requirements-vector.txt
+./.venv-vector/Scripts/python.exe tools/check_environment.py --profile vector
+# 显式准备模型；模型从 Hugging Face 下载到其正常缓存，供后续离线核验
+./.venv-vector/Scripts/python.exe -c "import sys; sys.path.insert(0, 'tools'); from check_semantic_alignment import get_embedding_model; raise SystemExit(0 if get_embedding_model() is not None else 2)"
+./.venv-vector/Scripts/python.exe tools/check_environment.py --profile vector --model
+```
+
+也可在输入材料齐备后直接运行一次显式 L2 检查，由检查器加载模型。POSIX 将上述解释器路径替换为 `.venv-vector/bin/python`。模型准备可能联网；环境核验本身只读取本地缓存，不下载模型。模型 ID 由 `check_semantic_alignment.py` 的 `EMBEDDING_MODEL_NAME` 维护。只完成包导入核验时不能宣布模型或 GPU 已验收。
+
+AMD GPU 按 [TheRock 发布文档](https://github.com/ROCm/TheRock/blob/main/RELEASES.md#installing-multi-arch-pytorch-python-packages) 从 [AMD release 多架构索引](https://repo.amd.com/rocm/whl-multi-arch/) 选择与本机 Python、系统和 GPU 架构匹配的 torch、ROCm 与设备包，安装到 `.venv-vector`，再安装通用 L2 清单。具体硬件版本组合保存在本地，不作为项目通用依赖。安装后强制验证 GPU：
+
+```powershell
+./.venv-vector/Scripts/python.exe tools/check_environment.py --profile vector --model --device cuda --json
+```
+
+`cuda` 是 PyTorch 对 ROCm GPU 也使用的设备入口；报告以 `backend=rocm`、HIP 版本和显卡名识别 AMD。文本模型使用 eager attention，所需 ROCm DLL 由安装包初始化；本项目环境可直接启动，无需借用外部仓库。该流程不安装文本编码用不到的 torchvision／torchaudio。
+
+`check_environment.py` 检查当前解释器，不安装包、不切换环境、不读取书籍。`--profile core` 只报告 Python 与外部命令可见性；`maintenance` 实际导入 Pillow／openpyxl；`vector` 实际导入 NumPy／PyTorch／SentenceTransformers，并报告依赖版本。`--model` 仅与 `vector` 合用，额外加载本地模型并编码样例；不带该参数时明确列为未核验。`--device cpu` 是模型核验默认值；`--device cuda` 强制 GPU，验证模型及编码结果均驻留 GPU，并同步检查异步执行错误；`--device auto` 在 GPU 可用时选择 GPU，否则使用 CPU。显式 `--device` 须与 `--model --profile vector` 合用。`--json` 将完整报告写到 stdout，失败诊断写 stderr；成功为 0，所选依赖、设备或模型不可用为 2，强制 GPU 检查不回退 CPU。报告保留请求／实际设备、后端、HIP／CUDA 版本与显卡名。外部命令的 PATH 可见性与 ImageHash 可选增强只作信息，不影响退出码。
+
+外部软件按任务准备：Git 用于复核差异；PowerShell 用于拉取与同步；calibre 的 `ebook-convert` 用于 EPUB → DOCX，`calibre-debug` 用于补充合法性检查，未在 PATH 中的安装仍可由相应工具的显式参数定位。ImageHash 可选增强图片感知哈希，可在维护环境运行 `python -m pip install ImageHash`；缺失时保留 Pillow 指标。BetweenLines 的服务、档案与预设只在实际使用其校对工作流时配置。
+
 ### 各工具的可用范围
 
 中文成品检查默认读取 `EPUB/`；文本分析工具 `search_text.py` 按作品优先读取有效中文缓存，未缓存的作品读取归档，同一作品只使用一份副本。显式指定输入路径时使用该路径，路径缺失直接报告，不悄悄换源。报告写入 `.cache/epub-work/` 不表示输入必须来自缓存。
@@ -118,7 +162,7 @@ python tools/check_alignment.py --jp-root .cache/epub-work/japanese-text --requi
 | C1 同步与发布 | 三副本数据流、基线清单、打包与发布前检查；不管内容对错 | 8 | 预检、基线完整性、冲突方向 |
 | C2 导入与交稿往返 | 源 ↔ 成品的构建（交稿 → 成品、成品 → 交稿、BW 分页源 → 章节）；不管成品的后续结构与规范 | 13 | 材料七项、逐章物理行数 |
 | C3 成品结构与配对修复 | 写盘型结构修复；不负责判定通过与否（判定在 C4） | 10 | 逐边界数量、行数与块对应 |
-| C4 门禁与体检 | 只读阻断与诊断；不修内容 | 13 | strict 非零即阻断 |
+| C4 门禁与体检 | 只读阻断与诊断；不修内容 | 14 | strict 非零即阻断 |
 | C5 内容质量 | 字符级与语义级的内容改动；不决定译名取舍（走 skill） | 5 | 字符级规范化 0 命中 |
 | C6 检索与统计 | 只读检索与字数／页数换算；不作语义裁定 | 4 | 无（只读诊断） |
 | C0 共享内核 | 无 CLI 的共享规则与原子写入能力；不另建工作流入口 | 19 | 由调用方承担 |
@@ -420,10 +464,11 @@ python tools/reorder_notes.py --root EPUB --pattern "*S1_01*" --apply --no-backu
 | `compare_epub_images.py` | `python tools/compare_epub_images.py --root EPUB --jp-root 日文参考目录 --pattern "*S3_*" --output 显式报告目录` | 只读；写图片核对报告 | 字节／像素相同与感知候选分开；缺参考或零图片覆盖非零，候选需视觉确认【P5】 | `test_compare_epub_images.py` |
 | `check_epub_validity.py` | `python tools/check_epub_validity.py EPUB --structural --strict` | 只读；写显式报告；系统临时解包 | calibre 补充检查；strict 过滤后仍有问题为 1，环境／输入前提错误为 2【无】 | `test_calibre_validity.py` |
 | `check_project_docs.py` | `python tools/check_project_docs.py` | 只读；终端报告 | 本地链接／锚点、索引登记与回指、工具簇归属与单一来源；缺项非零【无】 | `test_check_project_docs.py` |
+| `check_environment.py` | `python tools/check_environment.py --profile core` | 只读环境；终端／JSON 报告 | 所选依赖导入或显式本地模型验证失败为 2；不检查书籍【无】 | `test_check_environment.py` |
 | `check_echo.py` | `python tools/check_echo.py --book S1_01 --book S1_02`／`--convention "<日文正则>" --convention-words "<中文正则表>"` | 只读；写 `--out` 候选清单或惯例报告 | 只定位呼应候选（片段多译／同源复现／引述回指）与全库用词分布，不判定、不阻断【无】 | `test_check_echo.py` |
 | `check_illustration_mapping.py` | `python tools/check_illustration_mapping.py [--doc …] [--jp-root …] [--json …]` | 只读 `docs/illustration-text-mapping.md` 与日文缓存；写 `--json` 显式报告 | 逐行回查物理行号；不符时按「正文原句」重定位并给建议行号，未解析非零；缓存缺失为 2【无】 | `test_check_illustration_mapping.py` |
 
-- **依赖**：`compare_epub_images.py` 需要 `Pillow`（`python -m pip install Pillow`），与 `image_signature.py` 同一口径：属**可选依赖**，CI 只用官方 Python 环境、不预装第三方包。因此 `test_compare_epub_images.py` 在无 Pillow 环境下整组跳过，而不是让测试采集失败；采集阶段失败会中断整个 `unittest discover`，使发布流水线在「Validate tools and publication source」一步整条中止。
+- **依赖**：`compare_epub_images.py` 与 `image_signature.py` 需要可选的 Pillow，安装见 [独立环境配置](#创建与核验独立环境)；ImageHash 只补充感知哈希。CI 保留标准库运行方式，缺 Pillow 的用例跳过；维护环境安装依赖后实际运行这些用例。
 
 ### 呼应检查
 
@@ -487,14 +532,16 @@ python tools/diff_paired_lines.py 日文.xhtml 中文.xhtml --html 显式诊断.
 python tools/check_semantic_alignment.py --l1-only
 python tools/check_semantic_alignment.py --auto-audit --top 20
 python tools/check_semantic_alignment.py --work S3_01 --strict
-python tools/check_semantic_alignment.py --strict --betweenlines-dir 显式BetweenLines目录
+python tools/check_semantic_alignment.py --strict --vector-python 显式Python路径
 ```
 
 L1 是 CPU 初筛，L2 使用多语言矢量模型分析窗口。非 strict 的 `--auto-audit` 默认只诊断前 20 项，`--top` 限制诊断数量；该输出不能称全范围门禁。
 
 strict 先执行结构前检，再对所选作品／表头范围执行 L2 完整检查，禁止与 `--l1-only` 或 `--top` 合用。已确认 `PAIR_RULES` 只解释对应结构差异；后记迁出时只检查共同正文，并在 TSV“结构范围说明”列标明实际范围，未被规则解释的尾部缺行仍失败。模型、运行时或输入不完整时非零退出，不降级成“无问题”。输入与选书验证先于模型环境准备，零配对为 2；非 strict 报告也保留部分覆盖说明。`--include-exempt` 可用于人工诊断已登记豁免。默认中文归档与日文缓存，`--root`／`--jp-root` 指定独立根；显式 `--cache` 是旧双侧输入，与独立根互斥，`--out` 指定报告目录。
 
-L2 运行时由 `--vector-python`／`--betweenlines-dir`、`BETWEENLINES_PYTHON`／`BETWEENLINES_DIR` 或相邻 BetweenLines checkout 动态定位；不写私人机器路径。记录模型、环境与外部 checkout 版本，模型结果仍需结合原文判断。
+L2 环境按以下顺序选择：命令行 `--vector-python` 或兼容入口 `--betweenlines-dir`（二者互斥）优先于环境变量；无命令行配置时依次取 `INDEX_X_VECTOR_PYTHON`、兼容变量 `BETWEENLINES_PYTHON`、`BETWEENLINES_DIR`。Python 配置指向解释器，BetweenLines 目录配置只取其 `.venv`。显式配置无效直接失败，不改用其它环境。
+
+无显式配置时，当前解释器具备依赖就直接运行；否则依次寻找本仓库 `.venv-vector`、`.venv` 的 Windows／POSIX Python，不再自动探测相邻仓库。找到环境后重启同一检查器并传回退出码，候选环境缺包时明确失败。安装及只读核验见 [创建与核验独立环境](#创建与核验独立环境)。记录实际 Python、依赖版本、模型与设备；模型结果仍需结合原文判断。
 
 ### Note 顺序检查
 
@@ -732,7 +779,7 @@ python tools/read_xlsx.py <file.xlsx> [-q <KEYWORD>] [--head <N>] [--format <mar
 
 用于快速查看、过滤、提取并转换 `.xlsx` 格式文件（如术语表、人名对照表、校对任务表）为模型友好或易读的格式，避免在对话交互中重复临时编写一次性解析脚本。只读，不修改原始文件。
 
-- **依赖**：需要 `openpyxl`（`python -m pip install openpyxl`）。该库是**可选依赖**：未安装时本工具只有在实际调用相关函数时才报错并提示安装命令，不影响 `tools/` 其余工具的导入与运行；对应的 `tools/tests/test_read_xlsx.py` 也在无该库的干净环境（如 CI）下整组跳过，而不是让测试采集失败。
+- **依赖**：需要 `openpyxl`（`python -m pip install openpyxl`）。该库是**可选依赖**：未安装时本工具只有在实际调用相关函数时才报错并提示安装命令，不影响 `tools/` 其余工具的导入与运行；对应的 `tools/tests/test_read_xlsx.py` 在未安装该库的环境中整组跳过，维护环境安装依赖后实际运行这些用例。
 - **工作表查看与选择**：`--list-sheets`（`-l`）列出所有 Sheet 及其行/列规模；`-s` / `--sheet` 按名称或 0-based 序号指定 Sheet（默认读取首个 Sheet）。
 - **格式转换**：`--format markdown`（默认，精美 Markdown 表格，自动转义内部竖线与换行符）、`tsv`、`csv`、`json`（支持 `--json-mode records` 字典列表或 `rows` 二维数组）。
 - **上下文截取与分页**：`--head N`（`-n N`）取前 N 行；`--tail N` 取后 N 行；`--offset N --limit M` 分页切片，防止大表格撑爆大模型上下文。
