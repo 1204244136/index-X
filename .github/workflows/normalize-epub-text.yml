@@ -12,9 +12,8 @@ name: Normalize EPUB Text
 #     写盘，只取单个工具的摘要当主语会在其 0 命中时误报（曾出现「文本 0 处」而实际包
 #     <p> 10 行的提交），因此任一步为 0 都不代表整体为 0。
 #   - 无命中时完全不提交，不制造空 commit。
-#   - 用 GITHUB_TOKEN 推送，GitHub 的防递归机制使该 push 不会触发
-#     build-epub-release.yml；即修复进仓库但不会自动发版，需要发版时手动
-#     workflow_dispatch 触发 Build EPUB Release。
+#   - 修复提交由 build-epub-release.yml 在每日北京时间 23:00 的定时发布中打包；
+#     需要提前发版时可手动 workflow_dispatch 触发 Build EPUB Release。
 
 on:
   schedule:

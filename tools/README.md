@@ -165,6 +165,8 @@ python tools/package_cache_epubs.py --source EPUB --output output/epubs --patter
 
 `--source` 直接指定书目录集合；省略时使用 `--cache` 与 `--side` 选择缓存。`--pattern` 按书目录名筛选，`--output` 指定构建目录。打包验证容器、XML 和书内资源，ZIP 的 `mimetype` 必须首项且未压缩；产物保留书目录名。输入不修改，输出不进入书籍内部或版本化档案。
 
+发布工作流 `.github/workflows/build-epub-release.yml` 每日北京时间 23:00（UTC 15:00，`0 15 * * *`）在默认分支定时运行，也支持 `workflow_dispatch` 手动运行；提交推送不触发发布。每次运行均打包，tag 与发布名称取运行时北京时间日期 `YYYY.MM.DD`，tag 指向本次构建提交；同日重跑会更新该 tag 与 Release 资产。GitHub 定时任务可能排队延迟，实际发布完成时间取决于调度与构建耗时。
+
 发布 CI 先运行工具测试与归档 health，再执行共享容器／XML／资源检查后打包；没有日文源的 CI 明确只做单侧检查。calibre 是本地补充合法性校验，不是云端必需运行时。自动规范化 CI 的提交与工作站回流边界见 AGENTS（预案 P7）。
 
 ## C2 导入与交稿往返

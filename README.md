@@ -27,10 +27,10 @@ OneDrive 为最新版发布源，其余渠道按其节奏镜像；各渠道书�
 | 渠道 | 更新节奏 | 相对最新版的延迟 |
 | :--- | :--- | :--- |
 | [OneDrive](https://1drv.ms/f/c/dd2408f3b9d24400/IgBOKmWl2cxOTJAu7WDk6kBaAVQQEYs1ALcVLLHgC7fAKSI?e=8den6B) | 随每次发布实时同步 | 无（最新版基准） |
-| [GitHub Releases](https://github.com/1204244136/index-X/releases) | 每日随仓库跟进 | 不超过 1 天 |
+| [GitHub Releases](https://github.com/1204244136/index-X/releases) | 每日北京时间 23:00 定时发布 | 通常不超过 1 天 |
 | 网盘 | 每月集中同步一次 | 不超过 1 个月 |
 
-GitHub Releases 随更新打包整合版与单行本归档；群文件（[X 系列专属交流群](https://qm.qq.com/cgi-bin/qm/qr?k=TtTcct3Iz8Y7CewT5QA2RlLrR0p5-WN2&jump_from=webapi) 953679671）则定期发布整合版。
+GitHub Releases 每日定时打包整合版与单行本归档，并添加北京时间日期 tag（`YYYY.MM.DD`）；群文件（[X 系列专属交流群](https://qm.qq.com/cgi-bin/qm/qr?k=TtTcct3Iz8Y7CewT5QA2RlLrR0p5-WN2&jump_from=webapi) 953679671）则定期发布整合版。
 
 不知道从哪本读起？可参考[建议阅读顺序](https://toaru.huijiwiki.com/wiki/Project:%E6%9F%90%E7%B3%BB%E5%88%97%E4%BD%9C%E5%93%81%E8%A7%82%E7%9C%8B%E9%A1%BA%E5%BA%8F%E5%8F%82%E8%80%83)。
 
