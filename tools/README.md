@@ -467,7 +467,7 @@ python tools/reorder_notes.py --root EPUB --pattern "*S1_01*" --apply --no-backu
 | `check_epub_validity.py` | `python tools/check_epub_validity.py EPUB --structural --strict` | 只读；写显式报告；系统临时解包 | calibre 补充检查；strict 过滤后仍有问题为 1，环境／输入前提错误为 2【无】 | `test_calibre_validity.py` |
 | `check_project_docs.py` | `python tools/check_project_docs.py` | 只读；终端报告 | 本地链接／锚点、索引登记与回指、工具簇归属与单一来源；缺项非零【无】 | `test_check_project_docs.py` |
 | `check_environment.py` | `python tools/check_environment.py --profile core` | 只读环境；终端／JSON 报告 | 所选依赖导入或显式本地模型验证失败为 2；不检查书籍【无】 | `test_check_environment.py` |
-| `check_echo.py` | `python tools/check_echo.py --book S1_01 --book S1_02`／`--convention "<日文正则>" --convention-words "<中文正则表>"` | 只读；写 `--out` 候选清单或惯例报告 | 只定位呼应候选（片段多译／同源复现／引述回指）与全库用词分布，不判定、不阻断【无】 | `test_check_echo.py` |
+| `check_echo.py` | `python tools/check_echo.py --book S1_01 --book S1_02`／`--convention "<日文正则>" --convention-words "<中文正则表>"` | 只读；写 `--out` 候选清单或惯例报告 | 只定位呼应候选（片段多译／同源复现／引述回指／短平行句）与全库用词分布，不判定、不阻断【无】 | `test_check_echo.py` |
 | `check_illustration_mapping.py` | `python tools/check_illustration_mapping.py [--doc …] [--jp-root …] [--json …]` | 只读 `docs/illustration-text-mapping.md` 与日文缓存；写 `--json` 显式报告 | 逐行回查物理行号；不符时按「正文原句」重定位并给建议行号，未解析非零；缓存缺失为 2【无】 | `test_check_illustration_mapping.py` |
 
 - **依赖**：`compare_epub_images.py` 与 `image_signature.py` 需要可选的 Pillow，安装见 [独立环境配置](#创建与核验独立环境)；ImageHash 只补充感知哈希。CI 保留标准库运行方式，缺 Pillow 的用例跳过；维护环境安装依赖后实际运行这些用例。
@@ -480,7 +480,7 @@ python tools/check_echo.py --book S1_01 --out .cache/epub-work/echo-check
 python tools/check_echo.py --book S1_01 --include-marker-quotes   # 实验分支，候选量大
 ```
 
-定位作品内「应当一致」的呼应点候选：**同一日文片段在作品内出现多次而中文译法不一致**（并按 `实词／语体／虚词` 标注差异性质、据此排序）、**日文相似行对**（原句及其引述／复现形态）、**日语侧引文回全文找出的疑似出处**（`『…』` 引用符，或 `って／とか` 引述助词——后者默认关闭）。默认读 `EPUB/` 与 `.cache/epub-work/japanese-text/`，按内容序配平行号；输出 `--out` 目录下每作品一份 `*-呼应候选.md` 与 `summary.md`。
+定位作品内「应当一致」的呼应点候选：**同一日文片段在作品内出现多次而中文译法不一致**（并按 `实词／语体／虚词` 标注差异性质、据此排序）、**日文相似行对**（原句及其引述／复现形态）、**日语侧引文回全文找出的疑似出处**（`『…』` 引用符，或 `って／とか` 引述助词——后者默认关闭）、**短平行句**（相邻两行日文只换一个名词、中文量词／结构不一致；按 `量词／功能词／实词` 排序）。默认读 `EPUB/` 与 `.cache/epub-work/japanese-text/`，按内容序配平行号；输出 `--out` 目录下每作品一份 `*-呼应候选.md` 与 `summary.md`。
 
 配对使用 `xhtml_structure.py` 的共享表头索引，排除包装页；`alignment_rules.py` 已登记的非同一形态作品、人工对齐、文本化图片与特殊配对单元不做通用逐行比较，逐项说明跳过原因。普通单元缺对照、行数不等或行类型错位时跳过该单元；同侧重复表头时跳过整部作品，均不猜测偏移或把不可靠记录送入候选／惯例统计。
 
@@ -490,7 +490,9 @@ python tools/check_echo.py --book S1_01 --include-marker-quotes   # 实验分支
 
 引述候选带两级证据：`relation` = `exact`（日语逐字同形）／`wraps`（**引述升级**：引述比被引处更完整更逐字，被引处必须就是引述的版本）／`within`／`fuzzy`；`cn_class` = 中文两侧差异性质。`--include-marker-quotes` 额外扫 `って／とか` 形态的改写式引述（日文措辞与全文不同、中文仍保留引号与回指词），**候选量约为默认的 3 倍且需人工筛**，只在通校收尾专查时开。
 
-**降噪规则**（每条都有实测依据，见分片报告）：元数据行（`<title>`／`<meta>`／`<link>`／XML 声明）不参与——各文件这些行同号，会造出假同源对；含长音／重复假名串的行（惨叫、拟声）不进类 2——S6_24.06.07 的 190 对里 79 对属此类；类 3 要求**出处必须在引述处之前**（引述是回指前文，方向相反的配对多是误配）；`fuzzy`（仅 n-gram 相似、互不包含）要求覆盖率 ≥ 0.8；引文不含平假名（纯专名／名词短语，如 `『ブラフマーアストラ』`）不列为候选。实测降噪幅度：类 3 在 S5_04_01 由 31→2、S5_03_02 由 7→1、S5_01_03 由 86→27；类 2 在 S6_24.06.07 由 190→101。
+短平行句（类 4）补的是类 1／类 2 的长度盲区：类 1 要求日文片段相同，类 2 只收 ≥20 字的行；两句只换一个名词、又短于 20 字时两类都覆盖不到（S2_04-01 L6/L7 的 `たった三人の『木原』`／`たった三人の『グレムリン』` 即此型，只改一侧造成「三名」／「三人的」断裂）。工具按「同文件、行距 ≤ `--short-window`（默认 1）、日文长度 6–24 字、最长公共前后缀 ≥4、序列相似度 ≥0.5、中文不同」收候选，并按差异性质排序：`量词`（两句共享日文数词、中文量词不一致）最高优先，`功能词` 次之，`实词` 最后。实测 S2_04 的 3753 行报出 13 对（L6/L7 为 4.11）；阈值可用 `--short-window／--short-min／--short-max／--short-affix／--short-ratio` 调整。
+
+**降噪规则**（每条都有实测依据，见分片报告）：元数据行（`<title>`／`<meta>`／`<link>`／XML 声明）不参与——各文件这些行同号，会造出假同源对；含长音／重复假名串的行（惨叫、拟声）不进类 2 与类 4——S6_24.06.07 的 190 对里 79 对属此类；类 3 要求**出处必须在引述处之前**（引述是回指前文，方向相反的配对多是误配）；`fuzzy`（仅 n-gram 相似、互不包含）要求覆盖率 ≥ 0.8；引文不含平假名（纯专名／名词短语，如 `『ブラフマーアストラ』`）不列为候选；类 4 排除中文相同、行距超过窗口与超长行，`量词` 型只作提示，刻意平行（不同说话人、语体、对照句）仍须人工排除。实测降噪幅度：类 3 在 S5_04_01 由 31→2、S5_03_02 由 7→1、S5_01_03 由 86→27；类 2 在 S6_24.06.07 由 190→101。
 
 只读、不判定、不设阈值：输出是**候选**，构成呼应与否、哪一侧该改，必须逐条回日文原文核对（流程与判定纪律见 [校对复核 skill](../.agents/skills/proofread-review/SKILL.md)）。差异性质只是提示——`实词` 不必然是异译（同义改写同样命中），`虚词` 也不必然能并存；中文两侧字形不同不等于必须统一，判断依据是日语侧的语气层。它补的是既有门禁查不到的一维——同一句日文被译成多种说法时，行数、模板、XML、加粗、术语裁定全部照常通过。
 

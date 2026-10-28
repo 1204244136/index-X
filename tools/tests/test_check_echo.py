@@ -19,7 +19,9 @@ from check_echo import (  # noqa: E402
     norm_cn,
     norm_jp,
     quote_lookups,
+    render,
     render_convention,
+    short_parallel_pairs,
     sim_pairs,
 )
 
@@ -283,6 +285,75 @@ class SimPairTests(unittest.TestCase):
         pairs = sim_pairs(rows, n=8, threshold=0.5)
         self.assertEqual(len(pairs), 1)
         self.assertGreater(pairs[0][2], 0.9)
+
+
+class ShortParallelTests(unittest.TestCase):
+    def _pair(self, right_cn: str = "与仅有三人的「格雷姆林」，") -> list[dict]:
+        return [
+            {"file": "a.xhtml", "line": 6,
+             "jp": "たった三人の『木原』と。", "cn": "仅有三名「木原」。"},
+            {"file": "a.xhtml", "line": 7,
+             "jp": "たった三人の『グレムリン』。", "cn": right_cn},
+        ]
+
+    def test_flags_measure_word_parallel(self):
+        # 类 1 要求日文片段相同、类 2 只收 ≥20 字；这类 9/11 字的短平行句
+        # 是两类的长度盲区（S2_04-01 L6/L7 的真实断裂形态）。
+        pairs = short_parallel_pairs(self._pair())
+        self.assertEqual(len(pairs), 1)
+        self.assertEqual(pairs[0]["kind"], "量词")
+        self.assertEqual((pairs[0]["left"]["line"], pairs[0]["right"]["line"]), (6, 7))
+
+    def test_measure_word_signal_disappears_after_sync(self):
+        # 两侧都改成「三名」后仍会作为短平行句候选（中文内容不同），
+        # 但不应再被标成量词差异——工具只报候选，不自动判定。
+        pairs = short_parallel_pairs(self._pair("与仅有三名「格雷姆林」，"))
+        self.assertEqual(len(pairs), 1)
+        self.assertNotEqual(pairs[0]["kind"], "量词")
+
+    def test_ignores_identical_chinese(self):
+        pairs = short_parallel_pairs(self._pair("仅有三名「木原」。"))
+        self.assertEqual(pairs, [])
+
+    def test_ignores_long_vowel_and_long_lines(self):
+        # 长音／重复假名串（惨叫、拟声）与类 2 一样不参与，避免拟声互配。
+        rows = [
+            {"file": "a.xhtml", "line": 1, "jp": "あああああああ", "cn": "啊啊啊啊——"},
+            {"file": "a.xhtml", "line": 2, "jp": "ああああああああ", "cn": "啊啊啊啊啊——"},
+        ]
+        self.assertEqual(short_parallel_pairs(rows), [])
+        long_jp = "あ" * 30
+        rows = [
+            {"file": "a.xhtml", "line": 1, "jp": long_jp + "。", "cn": "很长的句子甲。"},
+            {"file": "a.xhtml", "line": 2, "jp": long_jp + "と。", "cn": "很长的句子乙。"},
+        ]
+        self.assertEqual(short_parallel_pairs(rows), [])
+
+    def test_respects_window(self):
+        rows = self._pair()
+        rows.insert(1, {"file": "a.xhtml", "line": 7, "jp": "どうでもいい行。",
+                        "cn": "无关行。"})
+        rows[2]["line"] = 8
+        self.assertEqual(short_parallel_pairs(rows, window=1), [])
+        self.assertEqual(len(short_parallel_pairs(rows, window=2)), 1)
+
+    def test_classifies_function_word_difference(self):
+        rows = [
+            {"file": "a.xhtml", "line": 1,
+             "jp": "そういう事は言わない。", "cn": "那种事不会说。"},
+            {"file": "a.xhtml", "line": 2,
+             "jp": "そういう事は言わないのか。", "cn": "那种事不会说吗？"},
+        ]
+        pairs = short_parallel_pairs(rows)
+        self.assertEqual(len(pairs), 1)
+        self.assertEqual(pairs[0]["kind"], "功能词")
+
+    def test_render_includes_short_parallel_section(self):
+        rows = self._pair()
+        report = {"frag": [], "pairs": [], "short": short_parallel_pairs(rows), "quotes": []}
+        text, summary = render("S1_01", rows, report)
+        self.assertIn("## 类 4 短平行句（1 对）", text)
+        self.assertIn("短平行句 1 对", summary)
 
 
 class QuoteLookupTests(unittest.TestCase):

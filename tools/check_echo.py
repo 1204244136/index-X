@@ -9,13 +9,14 @@
 读者看到的是前后不一致，严重时后文引述的内容与前文原句矛盾。
 这类断裂**不违反任何既有门禁**：行数对齐、XML、加粗、术语裁定都查不出来。
 
-## 三类候选
+## 四类候选
 
 | 类 | 信号 | 含义 |
 | --- | --- | --- |
 | 片段多译 | 同一日文片段（引号内或整行）在作品内出现多次，中文译法不一致 | 同一句话被译成多种说法 |
 | 同源复现 | 日文两行高度相似（n-gram 倒排 + 序列相似度） | 原句与其引述/复现形态 |
 | 引述回指 | 日语侧出现 `『…』` 嵌套引述，回全文找出处 | 引述处与被引处须对应 |
+| 短平行句 | 相邻两行日文只换一个名词、中文量词/结构不一致 | 同一模板的平行句被改断 |
 
 ## 边界
 
@@ -85,6 +86,10 @@ META_LINE = re.compile(r"<\?xml|<!DOCTYPE|<title\b|<meta\b|<link\b", re.I)
 LONG_VOWEL = re.compile(r"([\u3040-\u30ff\u30fc])\1{5,}")
 # 平假名：引文含它才说明带语法成分（助词/活用），纯片假名或纯汉字的引文是专名。
 HIRAGANA = re.compile(r"[\u3040-\u309f]")
+# 短平行句的数词+量词：日文侧判断两行是否共享同一个数量短语，中文侧比较量词
+# 是否一致（`三名`／`三人的`）。只覆盖常见量词，宁窄勿宽。
+NUM_JP = re.compile(r"[一二三四五六七八九十百千万億〇0-9]+[人個回発枚本冊匹頭羽台乗艘機]")
+NUM_CN = re.compile(r"[一二三四五六七八九十百千万亿两0-9]+([名人个位只条张台发辆艘架枚本册件次回层栋间套双对])?")
 
 DEFAULT_OUT = Path(".cache/epub-work/echo-check")
 # 书目录名形如 `【作品号】标题`（兼容历史半角 `[]`）。惯例统计要按目录反查作品号。
@@ -322,6 +327,94 @@ def sim_pairs(rows: list[dict], n: int, threshold: float) -> list[tuple[dict, di
                 if ratio >= threshold:
                     out.append((left, right, ratio))
     out.sort(key=lambda x: -x[2])
+    return out
+
+
+def short_parallel_pairs(rows: list[dict], *, window: int = 1, min_len: int = 6,
+                         max_len: int = 24, affix: int = 4,
+                         ratio: float = 0.5) -> list[dict]:
+    """类 4：短平行句（同一模板、只换名词的相邻行）。
+
+    类 1 要求日文片段相同，类 2 只收 ≥20 字的行；两句只换一个名词、又短于
+    20 字时两类都覆盖不到（实测 S2_04-01 L6/L7：`たった三人の『木原』と。`／
+    `たった三人の『グレムリン』。`，归一后 9／11 字，本批只改一侧造成
+    「三名」／「三人的」断裂）。本类按「同文件、行距 ≤ window、日文长度在
+    [min_len, max_len]、最长公共前后缀 ≥ affix、相似度 ≥ ratio、中文不同」
+    收候选，并按差异性质排序：
+
+    - 量词：两句共享日文数词（如 `三人`），中文量词不一致（`三名`／`三人的`）；
+    - 功能词：中文差异只落在虚词/助词；
+    - 实词：其余（平行句的刻意改写也会落在这里，须人工排除）。
+
+    只报候选，不判定、不写盘；刻意平行而各自成立的写法不得据此强行统一。
+    """
+    def affix_len(a: str, b: str) -> tuple[int, int]:
+        prefix = 0
+        for x, y in zip(a, b):
+            if x != y:
+                break
+            prefix += 1
+        suffix = 0
+        for x, y in zip(reversed(a), reversed(b)):
+            if x != y:
+                break
+            suffix += 1
+        return prefix, suffix
+
+    def measures_for(cn: str, number: str) -> set[str]:
+        """中文行里以该数字开头的数量短语的量词集合（无则空串）。"""
+        found: set[str] = set()
+        for match in NUM_CN.finditer(cn):
+            if match.group(0).startswith(number):
+                found.add(match.group(1) or "")
+        return found
+
+    def class_of(left: dict, right: dict) -> str:
+        shared = set(NUM_JP.findall(left["jp"])) & set(NUM_JP.findall(right["jp"]))
+        for token in shared:
+            number = re.match(r"[一二三四五六七八九十百千万億〇0-9]+", token)
+            if number is None:
+                continue
+            ma = measures_for(left["cn"], number.group(0))
+            mb = measures_for(right["cn"], number.group(0))
+            if ma and mb and ma != mb:
+                return "量词"
+        a, b = norm_cn(left["cn"]), norm_cn(right["cn"])
+        diff = {c for c in set(a) ^ set(b) if c}
+        if diff and diff <= CN_FUNCTION_CHARS:
+            return "功能词"
+        return "实词"
+
+    by_file: dict[str, list[dict]] = defaultdict(list)
+    for row in rows:
+        by_file[row["file"]].append(row)
+    out: list[dict] = []
+    for items in by_file.values():
+        ordered = sorted(items, key=lambda r: int(r["line"]))
+        for i, left in enumerate(ordered):
+            a = norm_jp(left["jp"])
+            if not (min_len <= len(a) <= max_len) or LONG_VOWEL.search(left["jp"]):
+                continue
+            for right in ordered[i + 1:i + 1 + window]:
+                if int(right["line"]) - int(left["line"]) > window:
+                    break
+                b = norm_jp(right["jp"])
+                if not (min_len <= len(b) <= max_len) or LONG_VOWEL.search(right["jp"]):
+                    continue
+                if norm_cn(left["cn"]) == norm_cn(right["cn"]):
+                    continue
+                prefix, suffix = affix_len(a, b)
+                if max(prefix, suffix) < affix:
+                    continue
+                score = difflib.SequenceMatcher(None, a, b).ratio()
+                if score < ratio:
+                    continue
+                out.append({
+                    "left": left, "right": right, "ratio": score,
+                    "prefix": prefix, "suffix": suffix, "kind": class_of(left, right),
+                })
+    order = {"量词": 0, "功能词": 1, "实词": 2}
+    out.sort(key=lambda x: (order.get(x["kind"], 9), -x["ratio"]))
     return out
 
 
@@ -583,10 +676,42 @@ def render(work: str, rows: list[dict], report: dict) -> tuple[str, str]:
             )
         lines.append("")
 
+    shorts = report.get("short", [])
+    short_count = {"量词": 0, "功能词": 0, "实词": 0}
+    for item in shorts:
+        short_count[item["kind"]] = short_count.get(item["kind"], 0) + 1
+    lines.append(f"## 类 4 短平行句（{len(shorts)} 对）")
+    lines.append("")
+    lines.append("相邻两行日文只换一个名词、共用同一模板：中文的平行结构应对应。"
+                 "本类是类 1／类 2 的长度盲区补充（两句都短于 20 字、日文又不相同，"
+                 "前两类收不到）；刻意平行而各自成立的写法须人工排除。")
+    lines.append("")
+    lines.append("**差异性质**（本类按此优先级排序）：")
+    lines.append("")
+    lines.append(f"- **量词 {short_count['量词']} 对**：两句共享日文数词，中文量词不一致"
+                 "（如「三名」／「三人的」）——最高优先，通常是只改一侧造成的断裂")
+    lines.append(f"- **功能词 {short_count['功能词']} 对**：中文差异只在虚词/助词")
+    lines.append(f"- **实词 {short_count['实词']} 对**：其余；含刻意对照句，须逐条核语气与语境")
+    lines.append("")
+    for i, item in enumerate(shorts, 1):
+        left, right = item["left"], item["right"]
+        lines.append(
+            f"### 4.{i}　〔{item['kind']}〕 r={item['ratio']:.2f} "
+            f"前后缀={item['prefix']}/{item['suffix']}　"
+            f"{left['file']}:{left['line']} ↔ {right['file']}:{right['line']}"
+        )
+        lines.append(f"- 日文A：{left['jp'][:180]}")
+        lines.append(f"- 日文B：{right['jp'][:180]}")
+        lines.append(f"- 中文A：{left['cn'][:180]}")
+        lines.append(f"- 中文B：{right['cn'][:180]}")
+        lines.append("")
+
     summary = (
         f"{work}\t片段多译 {len(frags)} 组"
         f"（实词 {klass_count['实词']}／语体 {klass_count['语体']}／虚词 {klass_count['虚词']}）"
         f"\t同源复现 {len(report['pairs'])} 对"
+        f"\t短平行句 {len(shorts)} 对"
+        f"（量词 {short_count['量词']}／功能词 {short_count['功能词']}／实词 {short_count['实词']}）"
         f"\t引述回指 {len(quotes)} 条"
         f"（升级 {n_upgrade}／同形 {n_exact}）"
     )
@@ -739,6 +864,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--min-frag", type=int, default=12, help="片段多译的最短日文字数")
     parser.add_argument("--min-quote", type=int, default=8, help="引述回指的最短引文字数")
     parser.add_argument("--pair-threshold", type=float, default=0.5, help="同源复现的相似度阈值")
+    parser.add_argument("--short-window", type=int, default=1,
+                        help="短平行句的行距窗口（默认 1，即只看相邻行）")
+    parser.add_argument("--short-min", type=int, default=6, help="短平行句的最短日文字数（默认 6）")
+    parser.add_argument("--short-max", type=int, default=24, help="短平行句的最长日文字数（默认 24）")
+    parser.add_argument("--short-affix", type=int, default=4,
+                        help="短平行句的最长公共前后缀下限（默认 4）")
+    parser.add_argument("--short-ratio", type=float, default=0.5,
+                        help="短平行句的序列相似度阈值（默认 0.5）")
     parser.add_argument("--cover", type=float, default=0.5, help="引文在出处中的最低覆盖率")
     parser.add_argument("--include-marker-quotes", action="store_true",
                         help="额外扫描 `って／とか` 引述助词形态的回指（实验性：候选量大、"
@@ -810,6 +943,10 @@ def run_reports(args: argparse.Namespace, parser: argparse.ArgumentParser) -> in
         report = {
             "frag": frag_groups(rows, args.min_frag),
             "pairs": sim_pairs(rows, 8, args.pair_threshold),
+            "short": short_parallel_pairs(
+                rows, window=args.short_window, min_len=args.short_min,
+                max_len=args.short_max, affix=args.short_affix, ratio=args.short_ratio,
+            ),
             "quotes": quote_lookups(rows, args.min_quote, args.cover, args.include_marker_quotes),
         }
         text, summary = render(work, rows, report)
