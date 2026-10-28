@@ -83,7 +83,7 @@
           - `<ruby>超電磁砲<rt>レールガン</rt></ruby>` → `<ruby>超电磁炮<rt>Railgun</rt></ruby>` ✔️
           - `<ruby>四獣ニ命ヲ<rt>はたらけバカども</rt></ruby>。<ruby>北ノ黒式<rt>げんぶ</rt></ruby>、<ruby>西ノ白式<rt>びやつこ</rt></ruby>、<ruby>南ノ赤式<rt>すざく</rt></ruby>、<ruby>東ノ青式<rt>せいりゆう</rt></ruby>` → `<ruby>号令四兽<rt>你们这些家伙动作快</rt></ruby>。<ruby>北之黑式<rt>玄武</rt></ruby>、<ruby>西之白式<rt>白虎</rt></ruby>、<ruby>南之赤式<rt>朱雀</rt></ruby>、<ruby>东之青式<rt>青龙</rt></ruby>` ✔️
           - `<ruby>世界を構築する五大元素の一つ<rt>MTWOTFFTO</rt></ruby>、<ruby>偉大なる始まりの炎よ<rt>IIGOIIOF</rt></ruby>` → `<ruby>构筑世界五大元素之一<rt>MTWOTFFTO</rt></ruby>、<ruby>伟大的始祖之炎啊<rt>IIGOIIOF</rt></ruby>` ✔️
-          - `<ruby>灰は灰に<rt>Ash To Ash</rt></ruby>、<ruby>塵は塵に<rt>Dust To Dust</rt></ruby>、<ruby>吸血殺しの紅十字<rt>Squeamish Bloody Rood</rt></ruby>！` → `<ruby>尘归尘<rt>Ash To Ash</rt></ruby>，<ruby>土归土<rt>Dust To Dust</rt></ruby>，<ruby>吸血猎杀十字<rt>Squeamish Bloody Rood</rt></ruby>！` ✔️
+          - `<ruby>灰は灰に<rt>Ash To Ash</rt></ruby>、<ruby>塵は塵に<rt>Dust To Dust</rt></ruby>、<ruby>吸血殺しの紅十字<rt>Squeamish Bloody Rood</rt></ruby>！` → `<ruby>尘归尘<rt>Ash To Ash</rt></ruby>，<ruby>土归土<rt>Dust To Dust</rt></ruby>，<ruby>吸血猎杀红十字<rt>Squeamish Bloody Rood</rt></ruby>！` ✔️
        2. **以非片假名转写的外来语为主的读写相异**，同时表达相近甚至相反等多重意思 → **汉译**：
           - `<ruby>木原数多<rt>けんきゅうしゃ</rt></ruby>` → `<ruby>木原数多<rt>研究者</rt></ruby>` ✔️（形式示意；BW 源中该词只注 `きはらあまた`）
           - `<ruby>最強<rt>さいじやく</rt></ruby>VS<ruby>最弱<rt>さいきよう</rt></ruby>` → `<ruby>最强<rt>最弱</rt></ruby>VS<ruby>最弱<rt>最强</rt></ruby>` ✔️
