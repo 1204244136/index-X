@@ -13,6 +13,7 @@ else:
 from check_alignment import audit_roots
 from check_epub_health import audit_book, CHECK_ORDER, exempt, find_identifier_duplicates
 from check_note_order import check_book
+from check_paired_text import audit_coverage as audit_paired_text
 from check_term_anchors import audit_coverage as audit_term_coverage
 from check_translation_spec import audit_book as audit_translation_spec
 from epub_ids import book_id
@@ -112,6 +113,16 @@ def validate_publication(cn_root: Path, jp_root: Path | None = None,
                     problems.extend(f"双语覆盖未完成：{message}" for message in term_result.incomplete)
             except (OSError, UnicodeError, ValueError) as exc:
                 problems.append(f"术语锚点检查失败：{exc}")
+            # 术语与注音格式都不覆盖「整句只剩术语」的截断形态，另查对话行。
+            try:
+                cn_ids = {book_id(book.name) for book in cn_books}
+                if cn_ids:
+                    paired_result = audit_paired_text(cn_root, jp_root, cn_ids)
+                    problems.extend(
+                        f"{r['book']} {r['file']}:{r['line']} 疑似整句截断（{r['detail']}）"
+                        for r in paired_result.rows)
+            except (OSError, UnicodeError, ValueError) as exc:
+                problems.append(f"对照完整性检查失败：{exc}")
     scope = "容器/资源/单侧成品/译注/翻译规范 error 级"
     if term_result is not None:
         print(f"日文参考覆盖：已核对文件 {term_result.checked}；未核对文件 {term_result.skipped}；"
@@ -119,7 +130,7 @@ def validate_publication(cn_root: Path, jp_root: Path | None = None,
         for note in term_result.notes:
             print(f"  [参考范围] {note}")
         if term_result.checked:
-            scope += f"/中日模板与对齐/术语锚点（{term_result.status}）"
+            scope += f"/中日模板与对齐/术语锚点/对照完整性（{term_result.status}）"
         else:
             scope += "（仅单侧；无适用日文逐行核验结果）"
     else:

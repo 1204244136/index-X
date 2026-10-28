@@ -87,6 +87,7 @@ AMD GPU 按 [TheRock 发布文档](https://github.com/ROCm/TheRock/blob/main/REL
 | 差异与语义对齐 | `diff_paired_lines.py`、`check_semantic_alignment.py` | 需要参考；零配对报前置错误，部分覆盖在报告列明并由 strict 阻断 |
 | 图片对照 | `compare_epub_images.py` | 需要参考；可使用归档与独立日文根，零配对或某侧无图片说明未完成 |
 | 术语锚点与译名落地 | `check_term_anchors.py`、`check_translation_table.py` | 需要参考；strict 不接受显式所选范围未核验，译名表默认全库交集与两侧独有作品分别报告 |
+| 对照完整性与注音覆盖 | `check_paired_text.py` | 需要参考；截断判据命中即阻断，注音覆盖比值只进报告、不阻断 |
 | 呼应与惯例候选 | `check_echo.py` | 需要可靠配对；零配对报前置错误，有配对而零候选／零模式命中属于正常结果 |
 | 原文定位与插图映射 | `japanese_lookup.py`、`check_illustration_mapping.py` | 缺日文源明确失败，不能把缺输入解释成零命中 |
 | 校对改动分级 | `proofread_review.py` | 可降级分级，始终列出原文覆盖；`--no-jp` 明确仅分级、未核验日文 |
@@ -162,7 +163,7 @@ python tools/check_alignment.py --jp-root .cache/epub-work/japanese-text --requi
 | C1 同步与发布 | 三副本数据流、基线清单、打包与发布前检查；不管内容对错 | 8 | 预检、基线完整性、冲突方向 |
 | C2 导入与交稿往返 | 源 ↔ 成品的构建（交稿 → 成品、成品 → 交稿、BW 分页源 → 章节）；不管成品的后续结构与规范 | 13 | 材料七项、逐章物理行数 |
 | C3 成品结构与配对修复 | 写盘型结构修复；不负责判定通过与否（判定在 C4） | 10 | 逐边界数量、行数与块对应 |
-| C4 门禁与体检 | 只读阻断与诊断；不修内容 | 14 | strict 非零即阻断 |
+| C4 门禁与体检 | 只读阻断与诊断；不修内容 | 15 | strict 非零即阻断 |
 | C5 内容质量 | 字符级与语义级的内容改动；不决定译名取舍（走 skill） | 5 | 字符级规范化 0 命中 |
 | C6 检索与统计 | 只读检索与字数／页数换算；不作语义裁定 | 4 | 无（只读诊断） |
 | C0 共享内核 | 无 CLI 的共享规则与原子写入能力；不另建工作流入口 | 19 | 由调用方承担 |
@@ -461,6 +462,7 @@ python tools/reorder_notes.py --root EPUB --pattern "*S1_01*" --apply --no-backu
 | `check_translation_spec.py` | `python tools/check_translation_spec.py --root EPUB --output 显式报告目录` | 只读；写 TSV／JSON／Markdown | P1–P25 规则报告；**error 级由 `publish_preflight.py` 接入发布阻断**【P3】，warning／info 不自动当缺陷 | `test_translation_spec.py` |
 | `check_translation_table.py` | `python tools/check_translation_table.py --table 显式译名表.xlsx --strict` | 只读外部 xlsx＋日文缓存＋中文归档＋译名裁定总表；写本地核对报告 | 折叠 → 同形例外 → 裁定表（含注音判定）→ 译名表；strict 存在待判未落地项非零【无】 | `test_check_translation_table.py` |
 | `check_term_anchors.py` | `python tools/check_term_anchors.py --strict`／`--book S5_01_02` | 只读中文归档＋日文缓存＋译名裁定总表；写 `--out` TSV | 日文裁定锚点出现、中文却用裁定表登记的误形时命中；塔罗牌名等语境例外；strict 命中非零【P3】 | `test_check_term_anchors.py` |
+| `check_paired_text.py` | `python tools/check_paired_text.py --book S5_01_02 --strict` | 只读中文归档＋日文缓存；写 `--out` TSV | 对话行「中文只剩短语、日文是完整长句」判整句截断，strict 命中非零【P3】；注音覆盖比值只进报告、不阻断 | `test_paired_text.py` |
 | `compare_epub_images.py` | `python tools/compare_epub_images.py --root EPUB --jp-root 日文参考目录 --pattern "*S3_*" --output 显式报告目录` | 只读；写图片核对报告 | 字节／像素相同与感知候选分开；缺参考或零图片覆盖非零，候选需视觉确认【P5】 | `test_compare_epub_images.py` |
 | `check_epub_validity.py` | `python tools/check_epub_validity.py EPUB --structural --strict` | 只读；写显式报告；系统临时解包 | calibre 补充检查；strict 过滤后仍有问题为 1，环境／输入前提错误为 2【无】 | `test_calibre_validity.py` |
 | `check_project_docs.py` | `python tools/check_project_docs.py` | 只读；终端报告 | 本地链接／锚点、索引登记与回指、工具簇归属与单一来源；缺项非零【无】 | `test_check_project_docs.py` |
