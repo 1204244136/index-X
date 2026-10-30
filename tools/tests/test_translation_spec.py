@@ -231,5 +231,32 @@ class P15SidiTests(unittest.TestCase):
         self.assertEqual(cts.P15_SIDI_COMPOUND_PREFIX, "类状形近相好恰神酷胜貌疑宛似")
 
 
+class P15PalaTests(unittest.TestCase):
+    """P15 抓拟声词「噼里啪啦」的异形写法，放过规范词形本身。
+
+    异形面容易漏：起头字（噼／劈／霹）、承接字（里／哩／雳）、末字（啦／拉）
+    三种维度都会被写错，两侧都要有最小用例。
+    """
+
+    def p15(self, line, fkind="content"):
+        return [h for h in cts.check_text(line, fkind) if h[0] == "P15"]
+
+    def test_variants_flagged(self):
+        for s in ("<p>随着一阵疑似柔软物体破裂的霹哩啪啦声，多臂男撑破了那件燕尾服。</p>",
+                  "<p>劈里啪啦！伴随着轰响，测定机械的游戏机前后左右上下剧烈摇晃。</p>",
+                  "<p>她身上开始霹雳啪啦地响起来了。</p>",
+                  "<p>刘海噼哩啪啦地迸出蓝白色的火花。</p>",
+                  "<p>美琴的指尖噼里啪拉地放电。</p>"):
+            with self.subTest(s=s):
+                self.assertTrue(self.p15(s), "拟声词异形应命中 P15：%s" % s)
+
+    def test_normative_form_clean(self):
+        for s in ("<p>随着一阵疑似柔软物体破裂的噼里啪啦声，多臂男撑破了那件燕尾服。</p>",
+                  "<p>噼里啪啦噼里啪啦！让人心惊胆战的电击声迸裂开来。</p>",
+                  "<p>那是一枚形似地雷的装置。</p>"):
+            with self.subTest(s=s):
+                self.assertFalse(self.p15(s), "规范词形不应命中 P15：%s" % s)
+
+
 if __name__ == "__main__":
     unittest.main()
