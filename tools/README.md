@@ -465,7 +465,7 @@ python tools/reorder_notes.py --root EPUB --pattern "*S1_01*" --apply --no-backu
 | `check_paired_text.py` | `python tools/check_paired_text.py --book S5_01_02 --strict` | 只读中文归档＋日文缓存；写 `--out` TSV | 对话行「中文只剩短语、日文是完整长句」判整句截断，strict 命中非零【P3】；注音覆盖比值只进报告、不阻断 | `test_paired_text.py` |
 | `compare_epub_images.py` | `python tools/compare_epub_images.py --root EPUB --jp-root 日文参考目录 --pattern "*S3_*" --output 显式报告目录` | 只读；写图片核对报告 | 字节／像素相同与感知候选分开；缺参考或零图片覆盖非零，候选需视觉确认【P5】 | `test_compare_epub_images.py` |
 | `check_epub_validity.py` | `python tools/check_epub_validity.py EPUB --structural --strict` | 只读；写显式报告；系统临时解包 | calibre 补充检查；strict 过滤后仍有问题为 1，环境／输入前提错误为 2【无】 | `test_calibre_validity.py` |
-| `check_project_docs.py` | `python tools/check_project_docs.py` | 只读；终端报告 | 本地链接／锚点、索引登记与回指、工具簇归属与单一来源；缺项非零【无】 | `test_check_project_docs.py` |
+| `check_project_docs.py` | `python tools/check_project_docs.py` | 只读；终端报告 | 本地链接／锚点、索引登记与回指、工具簇归属、单一来源与裁定表日期（备注／候选列不写日期）；缺项非零【无】 | `test_check_project_docs.py` |
 | `check_environment.py` | `python tools/check_environment.py --profile core` | 只读环境；终端／JSON 报告 | 所选依赖导入或显式本地模型验证失败为 2；不检查书籍【无】 | `test_check_environment.py` |
 | `check_echo.py` | `python tools/check_echo.py --book S1_01 --book S1_02`／`--convention "<日文正则>" --convention-words "<中文正则表>"` | 只读；写 `--out` 候选清单或惯例报告 | 只定位呼应候选（片段多译／同源复现／引述回指／短平行句／术语多译）与全库用词分布，不判定、不阻断【无】 | `test_check_echo.py` |
 | `check_illustration_mapping.py` | `python tools/check_illustration_mapping.py [--doc …] [--jp-root …] [--json …]` | 只读 `docs/illustration-text-mapping.md` 与日文缓存；写 `--json` 显式报告 | 逐行回查物理行号；不符时按「正文原句」重定位并给建议行号，未解析非零；缓存缺失为 2【无】 | `test_check_illustration_mapping.py` |

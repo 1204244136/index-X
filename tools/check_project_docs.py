@@ -317,7 +317,7 @@ def plan_issues(lines: list[str], text: str, referenced: set[str]) -> list[str]:
     return issues
 
 
-# ── 单一来源检查：裁定表锚点唯一、规范不嵌取值、规范不复制词表、§ 引用可解析 ──
+# ── 单一来源检查：裁定表锚点唯一、规范不嵌取值、规范不复制词表、§ 引用可解析、裁定表不记日期 ──
 RULINGS_DOC = "docs/translation-name-rulings.md"
 SPEC_DOCS = ("docs/translation-spec.md", "docs/translation-name-selection-spec.md")
 RULING_SECTIONS = ("五、", "六、", "七、", "八、", "九、", "9.1", "十、")
@@ -325,6 +325,12 @@ BACKTICK_RE = re.compile(r"`([^`]+)`")
 RUBY_ANCHOR_RE = re.compile(r"<ruby\b[^>]*>.*?</ruby\s*>", re.S | re.I)
 MAPPING_MARK_RE = re.compile(r"→|＝|译作|译为")
 WHITELIST_MARK = "single-source-ok"
+RULINGS_DATE_PATTERNS = (
+    re.compile(r"(?<!\d)20\d{2}\s*[-/.年]\s*\d{1,2}\s*[-/.月]\s*\d{1,2}\s*日?(?!\d)"),
+    re.compile(r"(?<!\d)20\d{2}\s*年\s*\d{1,2}\s*月"),
+)
+RULINGS_HISTORY_COLUMNS = ("备注", "理由", "被否决或并存的候选")
+RULINGS_DATE_WHITELIST = "rulings-date-ok"
 TABLE_ROW_RE = re.compile(r"^\s*\|")
 SECTION_HEAD_RE = re.compile(r"^#{2,3}\s+([0-9]+(?:\.[0-9]+)?|[一二三四五六七八九十]+)[、\s]")
 SECTION_REF_RE = re.compile(r"§\s*([0-9]+(?:\.[0-9]+)?|[一二三四五六七八九十]+)")
@@ -338,21 +344,16 @@ def norm_anchor(value: str) -> str:
     return re.sub(r"[【】「」『』\s]", "", text)
 
 
-def ruling_rows(root: Path) -> list[tuple[str, str, int]]:
-    """裁定表主表条目：(锚点, 义项标识, 行号)。义项标识 = 锚点列中反引号与 `<ruby>` 之外的部分。
-
-    锚点列按「列内只写锚点」整理后，该列不再残留义项文字；此时义项标识取**「备注」列**
-    （原「理由」列），同一锚点的多行（如 `スフィア` 的装备／组织两个义项）靠它区分。
-    """
+def ruling_table_rows(root: Path) -> list[tuple[int, list[str], list[str]]]:
+    """裁定表主表数据行：(行号, 表头, 单元格)。锚点唯一与日期检查共用同一解析。"""
     path = root / RULINGS_DOC
     if not path.is_file():
         return []
-    rows: list[tuple[str, str, int]] = []
+    rows: list[tuple[int, list[str], list[str]]] = []
     in_main = False
     header: list[str] | None = None
     for number, line in enumerate(path.read_text(encoding="utf-8-sig").splitlines(), 1):
-        head = re.match(r"^#{2,3}\s", line)
-        if head:
+        if re.match(r"^#{2,3}\s", line):
             in_main = any(key in line for key in RULING_SECTIONS)
             header = None
             continue
@@ -365,6 +366,18 @@ def ruling_rows(root: Path) -> list[tuple[str, str, int]]:
             continue
         if not in_main or set("".join(cells)) <= set("-: ") or len(cells) != len(header):
             continue
+        rows.append((number, header, cells))
+    return rows
+
+
+def ruling_rows(root: Path) -> list[tuple[str, str, int]]:
+    """裁定表主表条目：(锚点, 义项标识, 行号)。义项标识 = 锚点列中反引号与 `<ruby>` 之外的部分。
+
+    锚点列按「列内只写锚点」整理后，该列不再残留义项文字；此时义项标识取**「备注」列**
+    （原「理由」列），同一锚点的多行（如 `スフィア` 的装备／组织两个义项）靠它区分。
+    """
+    rows: list[tuple[str, str, int]] = []
+    for number, header, cells in ruling_table_rows(root):
         index = 1 if "角色" in header[0] else 0
         if index >= len(cells):
             continue
@@ -454,12 +467,24 @@ def single_source_issues(root: Path) -> list[str]:
             for ref in SECTION_REF_RE.findall(line):
                 if ref not in sections:
                     issues.append(f"{rel}:{number}: 引用的裁定表小节 §{ref} 不存在")
+
+    # ⑤ 裁定表不记过往：备注与候选列只写判据与理由，不写日期（时间归留档与提交）
+    for number, header, cells in ruling_table_rows(root):
+        for column, cell in zip(header, cells):
+            if column not in RULINGS_HISTORY_COLUMNS or RULINGS_DATE_WHITELIST in cell:
+                continue
+            hit = next((match.group(0) for pattern in RULINGS_DATE_PATTERNS
+                        for match in pattern.finditer(cell)), None)
+            if hit:
+                issues.append(
+                    f"{RULINGS_DOC}:{number}: 裁定表不记日期（「{column}」列出现「{hit}」），"
+                    f"时间、次数与回滚经过归 docs/maintenance-records/ 与提交")
     return issues
 
 
 def main(argv: list[str] | None = None) -> int:
     configure_output()
-    parser = argparse.ArgumentParser(description="只读检查文档链接、索引登记、回指、工具簇归属与单一来源")
+    parser = argparse.ArgumentParser(description="只读检查文档链接、索引登记、回指、工具簇归属、单一来源与裁定表日期")
     parser.add_argument("--root", type=Path, default=REPO_ROOT)
     args = parser.parse_args(argv)
     issues = audit(args.root)

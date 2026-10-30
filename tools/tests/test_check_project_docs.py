@@ -309,5 +309,48 @@ class SingleSourceTests(unittest.TestCase):
             self.assertEqual(single_source_issues(root), [])
 
 
+class RulingsHistoryTests(unittest.TestCase):
+    """裁定表不记日期：备注与候选列出现日期即报，业务日期不误报。"""
+
+    def test_note_column_date_reported(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            build(root, "## 五、设定\n\n" + HEADER
+                  + "| `サイド` | 阵营 | 势力 | 维护者裁定 2026-10-30 |\n")
+            issues = single_source_issues(root)
+            self.assertTrue(any("裁定表不记日期" in issue and "理由" in issue for issue in issues), issues)
+
+    def test_candidate_column_date_reported(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            build(root, "## 五、设定\n\n" + HEADER
+                  + "| `サイド` | 阵营 | 旧译（2026-10-30 收敛） | |\n")
+            issues = single_source_issues(root)
+            self.assertTrue(any("裁定表不记日期" in issue for issue in issues), issues)
+
+    def test_year_month_form_reported(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            build(root, "## 五、设定\n\n" + HEADER
+                  + "| `サイド` | 阵营 | 势力 | 维护者裁定 2026年10月 全库执行 |\n")
+            issues = single_source_issues(root)
+            self.assertTrue(any("裁定表不记日期" in issue for issue in issues), issues)
+
+    def test_business_dates_allowed(self):
+        """S6 作品号与标准号里的数字不是记述日期 → 不报。"""
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            build(root, "## 五、设定\n\n" + HEADER
+                  + "| `サイド` | 阵营 | 势力 | `S6_24.06.07`；GB/T 26992-2011 |\n")
+            self.assertEqual(single_source_issues(root), [])
+
+    def test_line_whitelist_marker_allowed(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            build(root, "## 五、设定\n\n" + HEADER
+                  + "| `サイド` | 阵营 | 势力 | 维护者裁定 2026-10-30 <!-- rulings-date-ok --> |\n")
+            self.assertEqual(single_source_issues(root), [])
+
+
 if __name__ == "__main__":
     unittest.main()
