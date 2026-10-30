@@ -509,7 +509,8 @@ def term_groups(rows: list[dict], *, min_lines: int = 3, max_lines: int = 60,
                 term_lines[term].append(idx)
 
     groups: list[dict] = []
-    for term, idxs in term_lines.items():
+    for term in sorted(term_lines):
+        idxs = term_lines[term]
         n = len(idxs)
         if not (min_lines <= n <= max_lines):
             continue
@@ -526,7 +527,7 @@ def term_groups(rows: list[dict], *, min_lines: int = 3, max_lines: int = 60,
                 center = int(p_jp * len(cn))
                 width = max(6, int(window * len(cn)))
                 lo, hi = max(0, center - width), min(len(cn), center + width)
-                for gram, start in _han_grams(cn, lo, hi):
+                for gram, start in sorted(_han_grams(cn, lo, hi)):
                     if (gram in CN_TERM_STOP or gram[0] in CN_TERM_EDGE
                             or gram[-1] in CN_TERM_EDGE
                             or any(c in CN_TERM_INNER for c in gram)):
@@ -537,7 +538,7 @@ def term_groups(rows: list[dict], *, min_lines: int = 3, max_lines: int = 60,
                         spots[gram][idx] = (p_cn, p_jp)
 
         candidates: list[dict] = []
-        for gram, by_line in spots.items():
+        for gram, by_line in sorted(spots.items()):
             lines = set(by_line)
             if len(lines) < 2:
                 continue
@@ -554,6 +555,8 @@ def term_groups(rows: list[dict], *, min_lines: int = 3, max_lines: int = 60,
                 "cn": gram, "lines": lines, "cover": coverage,
                 "lift": lift, "drift": drift,
             })
+        candidates.sort(key=lambda cand: (cand["cn"], -cand["cover"],
+                                          tuple(sorted(cand["lines"]))))
         # 短片段被更长的同类片段覆盖时优先保留长形（`肌肉` 之于 `肌肉萎缩症`）。
         kept = [
             cand for cand in candidates
@@ -567,7 +570,7 @@ def term_groups(rows: list[dict], *, min_lines: int = 3, max_lines: int = 60,
         # 成对找「互补的两个译法」：同一个词不会在同一行同时用两种写法，真实异译
         # 必须几乎不相交、又合起来覆盖全部出现行。只挑覆盖最广的词会误伤全行都
         # 出现的场景词，故直接搜最佳配对。
-        best: tuple[tuple[float, int, float], dict, dict] | None = None
+        best: tuple[tuple[float, int, float, str, str], dict, dict] | None = None
         for i in range(len(kept)):
             for j in range(i + 1, len(kept)):
                 left, right = kept[i], kept[j]
@@ -582,12 +585,14 @@ def term_groups(rows: list[dict], *, min_lines: int = 3, max_lines: int = 60,
                 if max(left["cover"], right["cover"]) < 0.5:
                     continue
                 score = (min(left["lift"], right["lift"]), len(union),
-                         -abs(left["cover"] - right["cover"]))
+                         -abs(left["cover"] - right["cover"]),
+                         left["cn"], right["cn"])
                 if best is None or score > best[0]:
                     best = (score, left, right)
         if best is None:
             continue
-        picked = sorted([best[1], best[2]], key=lambda item: -len(item["lines"]))
+        picked = sorted([best[1], best[2]],
+                        key=lambda item: (-len(item["lines"]), item["cn"]))
         groups.append({
             "term": term,
             "lines": idxs,
@@ -604,17 +609,23 @@ def term_groups(rows: list[dict], *, min_lines: int = 3, max_lines: int = 60,
     # 同一对中文写法可能被同一句里的多个日文词各自命中（如一句服装描写里的
     # ブラウス／サマーセーター／プリーツスカート）。按译法对去重，保留位置偏差
     # 最小的归属，避免同一处改写被报成三组。
-    best_by_pair: dict[tuple[str, ...], tuple[float, dict]] = {}
+    best_by_pair: dict[tuple[str, ...], tuple[float, str, dict]] = {}
+    groups.sort(key=lambda group: (
+        group["term"], tuple(sorted(v["cn"] for v in group["variants"])),
+        max(v["drift"] for v in group["variants"])))
     for group in groups:
         key = tuple(sorted(v["cn"] for v in group["variants"]))
         drift = max(v["drift"] for v in group["variants"])
-        if key not in best_by_pair or drift < best_by_pair[key][0]:
-            best_by_pair[key] = (drift, group)
-    groups = [group for _, group in best_by_pair.values()]
+        rank = (drift, group["term"])
+        if key not in best_by_pair or rank < best_by_pair[key][:2]:
+            best_by_pair[key] = (drift, group["term"], group)
+    groups = [group for _, _, group in best_by_pair.values()]
     # 若某组两个候选都只是另一组候选的子串（如 `原因不明` 窗口里截到的
     # 「缩症／养不良症」之于「肌肉萎缩症／肌营养不良症」），保留更完整的一组。
-    groups.sort(key=lambda group: (-len(group["lines"]),
-                                   -max(len(v["cn"]) for v in group["variants"])))
+    groups.sort(key=lambda group: (
+        -len(group["lines"]),
+        -max(len(v["cn"]) for v in group["variants"]),
+        group["term"], tuple(sorted(v["cn"] for v in group["variants"]))))
     pruned: list[dict] = []
     for group in groups:
         subsumed = any(
@@ -626,7 +637,9 @@ def term_groups(rows: list[dict], *, min_lines: int = 3, max_lines: int = 60,
         if not subsumed:
             pruned.append(group)
     out = pruned
-    out.sort(key=lambda group: (-len(group["variants"]), -len(group["lines"]), group["term"]))
+    out.sort(key=lambda group: (
+        -len(group["variants"]), -len(group["lines"]), group["term"],
+        tuple(sorted(v["cn"] for v in group["variants"]))))
     return out
 
 
