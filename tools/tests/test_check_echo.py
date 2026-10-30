@@ -23,6 +23,7 @@ from check_echo import (  # noqa: E402
     render_convention,
     short_parallel_pairs,
     sim_pairs,
+    term_groups,
 )
 
 CN_PROLOGUE = """<p>「那么，你愿意跟我一起走到地狱之底吗？」</p>
@@ -354,6 +355,59 @@ class ShortParallelTests(unittest.TestCase):
         text, summary = render("S1_01", rows, report)
         self.assertIn("## 类 4 短平行句（1 对）", text)
         self.assertIn("短平行句 1 对", summary)
+
+
+class TermGroupTests(unittest.TestCase):
+    @staticmethod
+    def _rows(renders: list[str]) -> list[dict]:
+        """构造同一术语的多次出现；另加 100 行填充，压低头部译法的全卷占比。"""
+        rows = [
+            {
+                "file": "a.xhtml", "line": i + 1,
+                "jp": f"本文{i}。筋ジストロフィーは原因不明の不治の病の一つで、筋肉が動かなくなる。",
+                "cn": f"第{i}行。{cn}是原因不明的不治之症之一，肌肉会逐渐无法动弹。",
+            }
+            for i, cn in enumerate(renders)
+        ]
+        rows.extend(
+            {"file": "b.xhtml", "line": i + 1, "jp": "無関係な文。", "cn": "无关的句子。"}
+            for i in range(100)
+        )
+        return rows
+
+    def test_flags_term_with_divergent_chinese(self):
+        # 类 1 要求同一日文片段重复；术语嵌在各不相同的长句中时收不到。
+        groups = term_groups(self._rows(["肌肉萎缩症"] * 4 + ["肌营养不良症"] * 2))
+        self.assertEqual(len(groups), 1)
+        group = groups[0]
+        self.assertEqual(group["term"], "ジストロフィー")
+        self.assertEqual(
+            {variant["cn"]: len(variant["rows"]) for variant in group["variants"]},
+            {"肌肉萎缩症": 4, "肌营养不良症": 2},
+        )
+
+    def test_ignores_uniform_term(self):
+        self.assertEqual(term_groups(self._rows(["肌肉萎缩症"] * 6)), [])
+
+    def test_ignores_single_minority_line(self):
+        self.assertEqual(term_groups(self._rows(["肌肉萎缩症"] * 5 + ["肌营养不良症"])), [])
+
+    def test_does_not_treat_scene_word_as_variant(self):
+        # 场景词在术语各行都出现时不构成「另一种译法」：两种写法必须互补。
+        rows = self._rows(["肌肉萎缩症"] * 4 + ["肌营养不良症"] * 2)
+        for row in rows[:6]:
+            row["cn"] = "美琴" + row["cn"]
+        groups = term_groups(rows)
+        self.assertEqual(len(groups), 1)
+        self.assertNotIn("美琴", {variant["cn"] for variant in groups[0]["variants"]})
+
+    def test_render_includes_term_section(self):
+        rows = self._rows(["肌肉萎缩症"] * 4 + ["肌营养不良症"] * 2)
+        report = {"frag": [], "pairs": [], "short": [], "quotes": [],
+                  "term": term_groups(rows)}
+        text, summary = render("S1_01", rows, report)
+        self.assertIn("## 类 5 术语多译（1 组）", text)
+        self.assertIn("术语多译 1 组", summary)
 
 
 class QuoteLookupTests(unittest.TestCase):

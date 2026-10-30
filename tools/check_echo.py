@@ -9,7 +9,7 @@
 读者看到的是前后不一致，严重时后文引述的内容与前文原句矛盾。
 这类断裂**不违反任何既有门禁**：行数对齐、XML、加粗、术语裁定都查不出来。
 
-## 四类候选
+## 五类候选
 
 | 类 | 信号 | 含义 |
 | --- | --- | --- |
@@ -17,6 +17,7 @@
 | 同源复现 | 日文两行高度相似（n-gram 倒排 + 序列相似度） | 原句与其引述/复现形态 |
 | 引述回指 | 日语侧出现 `『…』` 嵌套引述，回全文找出处 | 引述处与被引处须对应 |
 | 短平行句 | 相邻两行日文只换一个名词、中文量词/结构不一致 | 同一模板的平行句被改断 |
+| 术语多译 | 同一日文术语（片假名/汉字连写）在作品内多次出现，中文用了不同写法 | 同一术语被译成几种（术语嵌在各不相同的长句中，类 1 的片段索引收不到） |
 
 ## 边界
 
@@ -54,7 +55,7 @@ import argparse
 import difflib
 import re
 import sys
-from collections import defaultdict
+from collections import Counter, defaultdict
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -418,6 +419,202 @@ def short_parallel_pairs(rows: list[dict], *, window: int = 1, min_len: int = 6,
     return out
 
 
+def _compact(text: str) -> str:
+    """去掉注音剥除留下的空白；位置比较按连续文本。"""
+    return re.sub(r"\s+", "", text)
+
+
+def _han_grams(text: str, lo: int, hi: int) -> set[tuple[str, int]]:
+    """取 [lo, hi) 内所有 2–6 字纯汉字片段及其起始位置。"""
+    out: set[tuple[str, int]] = set()
+    for start in range(lo, min(hi, len(text))):
+        for length in range(2, 7):
+            gram = text[start:start + length]
+            if len(gram) == length and all("\u4e00" <= c <= "\u9fff" for c in gram):
+                out.add((gram, start))
+    return out
+
+
+def _term_context(text: str, gram: str, width: int = 10) -> str:
+    """候选词在首个命中行里的上下文（候选词两侧各取 width 字）。"""
+    idx = text.find(gram)
+    if idx < 0:
+        return gram
+    return (text[max(0, idx - width):idx] + "【" + gram + "】"
+            + text[idx + len(gram):idx + len(gram) + width])
+
+
+# 术语多译：日文术语取「片假名连写 ≥4」或「汉字连写 ≥3」。两字汉字词（`自分`、
+# `世界`）歧义大、与场景词共现多，不收。类 1 的片段索引要求同一日文片段重复
+# 出现；术语嵌在各不相同的长句中时收不到（S1_03 的 `筋ジストロフィー` 被译成
+# 「肌肉萎缩症」／「肌营养不良症」即此型）。
+JP_TERM_RE = re.compile(r"[\u30a1-\u30fa\u30fc]{4,}|[\u4e00-\u9fff]{3,}")
+CN_TERM_STOP = frozenset({
+    "自己", "什么", "这样", "那样", "时候", "已经", "还是", "就是", "只是", "不过",
+    "因为", "所以", "但是", "然后", "这个", "那个", "以及", "对于", "关于", "其中",
+    "之后", "之前", "现在", "出来", "起来", "下来", "上去", "一样", "一定", "可能",
+    "无法", "没有", "不是", "这种", "那种", "如此", "而且", "或者", "如果",
+})
+# 首尾虚词：`着一`／`她的` 这类片段不是词。
+CN_TERM_EDGE = frozenset(
+    "的了着过是在有和与跟对从向往就都也才又还更最很挺太真吗呢吧啊哦呀嘛么"
+    "这那哪什怎因所但然而或如若虽即被把让给向从到于为以及并且却"
+)
+# 词内虚词：`衣与夏季用薄` 这类跨词片段不是术语。
+CN_TERM_INNER = frozenset(
+    "的了着过是在有和与跟对从向往就都也才又还更最很挺太真吗呢吧啊哦呀嘛么"
+)
+
+
+def term_groups(rows: list[dict], *, min_lines: int = 3, max_lines: int = 60,
+                lift_min: float = 8.0, window: float = 0.35,
+                union_min: float = 1.0, max_drift: float = 0.22) -> list[dict]:
+    """类 5：术语多译（同一日文术语在作品内被译成多种中文写法）。
+
+    类 1 要求「同一日文片段」重复出现（引号内或整行）；术语嵌在各不相同的长句里
+    时永远不成片段。本类按日文侧术语（片假名连写 ≥4 字或汉字连写 ≥3 字）聚合同一
+    术语的出现行，再看中文侧是否有两种几乎互斥、合起来覆盖全部出现行的写法：
+
+    - 术语出现 `min_lines`–`max_lines` 行；
+    - 中文候选词为 2–6 字纯汉字片段，起点落在术语按比例映射的位置附近
+      （`window` 为行宽比例）；候选词相对全卷的提升倍数 ≥ `lift_min`，且与术语
+      的平均位置偏差 ≤ `max_drift`；
+    - 两种写法在同一行几乎不共现（重叠 < 10%），合起来覆盖术语出现行的
+      `union_min`（默认全部），主要写法覆盖 ≥50%。
+
+    只报候选、不判定、不写盘。本类对同句修饰语、相邻名词截断和「同一句里多个
+    日文词共享一段中文」较敏感，候选量通常高于类 1，必须逐组回原文判定；同一对
+    中文写法被多个日文词命中时只保留位置偏差最小的归属。
+    """
+    total = len(rows)
+    if total == 0:
+        return []
+    # 全卷中文词的出现行数：用于计算提升倍数，压掉场景词/人名。
+    global_counts: Counter[str] = Counter()
+    for row in rows:
+        cn = _compact(row["cn"])
+        seen: set[str] = set()
+        for start in range(len(cn)):
+            for length in range(2, 7):
+                gram = cn[start:start + length]
+                if len(gram) == length and all("\u4e00" <= c <= "\u9fff" for c in gram):
+                    seen.add(gram)
+        global_counts.update(seen)
+
+    term_lines: dict[str, list[int]] = defaultdict(list)
+    for idx, row in enumerate(rows):
+        jp = _compact(row["jp"])
+        for term in set(JP_TERM_RE.findall(jp)):
+            if 3 <= len(term) <= 12:
+                term_lines[term].append(idx)
+
+    groups: list[dict] = []
+    for term, idxs in term_lines.items():
+        n = len(idxs)
+        if not (min_lines <= n <= max_lines):
+            continue
+        # 片段 -> {行号: (中文相对位置, 日文相对位置)}；同一行取离术语最近的一次。
+        spots: dict[str, dict[int, tuple[float, float]]] = defaultdict(dict)
+        for idx in idxs:
+            row = rows[idx]
+            jp = _compact(row["jp"])
+            cn = _compact(row["cn"])
+            if len(cn) < 2:
+                continue
+            for pos in (m.start() for m in re.finditer(re.escape(term), jp)):
+                p_jp = (pos + len(term) / 2) / max(1, len(jp))
+                center = int(p_jp * len(cn))
+                width = max(6, int(window * len(cn)))
+                lo, hi = max(0, center - width), min(len(cn), center + width)
+                for gram, start in _han_grams(cn, lo, hi):
+                    if (gram in CN_TERM_STOP or gram[0] in CN_TERM_EDGE
+                            or gram[-1] in CN_TERM_EDGE
+                            or any(c in CN_TERM_INNER for c in gram)):
+                        continue
+                    p_cn = (start + len(gram) / 2) / max(1, len(cn))
+                    current = spots[gram].get(idx)
+                    if current is None or abs(p_cn - p_jp) < abs(current[0] - current[1]):
+                        spots[gram][idx] = (p_cn, p_jp)
+
+        candidates: list[dict] = []
+        for gram, by_line in spots.items():
+            lines = set(by_line)
+            if len(lines) < 2:
+                continue
+            coverage = len(lines) / n
+            if coverage < 0.1:
+                continue
+            lift = coverage / max(1e-9, global_counts[gram] / total)
+            if lift < lift_min:
+                continue
+            drift = sum(abs(a - b) for a, b in by_line.values()) / len(by_line)
+            if drift > max_drift:
+                continue
+            candidates.append({
+                "cn": gram, "lines": lines, "cover": coverage,
+                "lift": lift, "drift": drift,
+            })
+        # 短片段被更长的同类片段覆盖时优先保留长形（`肌肉` 之于 `肌肉萎缩症`）。
+        kept = [
+            cand for cand in candidates
+            if not any(
+                cand["cn"] in other["cn"]
+                and len(cand["lines"] & other["lines"]) / max(1, len(cand["lines"])) >= 0.6
+                for other in candidates
+                if len(other["cn"]) > len(cand["cn"])
+            )
+        ]
+        # 成对找「互补的两个译法」：同一个词不会在同一行同时用两种写法，真实异译
+        # 必须几乎不相交、又合起来覆盖全部出现行。只挑覆盖最广的词会误伤全行都
+        # 出现的场景词，故直接搜最佳配对。
+        best: tuple[tuple[float, int, float], dict, dict] | None = None
+        for i in range(len(kept)):
+            for j in range(i + 1, len(kept)):
+                left, right = kept[i], kept[j]
+                smaller = min(len(left["lines"]), len(right["lines"]))
+                if smaller == 0:
+                    continue
+                if len(left["lines"] & right["lines"]) / smaller >= 0.1:
+                    continue
+                union = left["lines"] | right["lines"]
+                if len(union) / n < union_min - 1e-9:
+                    continue
+                if max(left["cover"], right["cover"]) < 0.5:
+                    continue
+                score = (min(left["lift"], right["lift"]), len(union),
+                         -abs(left["cover"] - right["cover"]))
+                if best is None or score > best[0]:
+                    best = (score, left, right)
+        if best is None:
+            continue
+        picked = sorted([best[1], best[2]], key=lambda item: -len(item["lines"]))
+        groups.append({
+            "term": term,
+            "lines": idxs,
+            "variants": [
+                {
+                    **item,
+                    "rows": [rows[i] for i in sorted(item["lines"])],
+                    "context": _term_context(
+                        _compact(rows[sorted(item["lines"])[0]]["cn"]), item["cn"]),
+                }
+                for item in picked
+            ],
+        })
+    # 同一对中文写法可能被同一句里的多个日文词各自命中（如一句服装描写里的
+    # ブラウス／サマーセーター／プリーツスカート）。按译法对去重，保留位置偏差
+    # 最小的归属，避免同一处改写被报成三组。
+    best_by_pair: dict[tuple[str, ...], tuple[float, dict]] = {}
+    for group in groups:
+        key = tuple(sorted(v["cn"] for v in group["variants"]))
+        drift = max(v["drift"] for v in group["variants"])
+        if key not in best_by_pair or drift < best_by_pair[key][0]:
+            best_by_pair[key] = (drift, group)
+    out = [group for _, group in best_by_pair.values()]
+    out.sort(key=lambda group: (-len(group["variants"]), -len(group["lines"]), group["term"]))
+    return out
+
+
 def quote_relation(quote: str, source_jp: str) -> str:
     """引文与其出处之间的日语侧关系（归一后比较，标点与叙述框架不计）。
 
@@ -706,12 +903,34 @@ def render(work: str, rows: list[dict], report: dict) -> tuple[str, str]:
         lines.append(f"- 中文B：{right['cn'][:180]}")
         lines.append("")
 
+    terms = report.get("term", [])
+    lines.append(f"## 类 5 术语多译（{len(terms)} 组）")
+    lines.append("")
+    lines.append("同一日文术语在作品内出现多次，中文却用了不同写法。本类补类 1 的片段盲区："
+                 "术语嵌在各不相同的长句中，不构成重复片段。候选里的同句修饰语、相邻名词"
+                 "截断也会进入，须逐组回原文判定。")
+    lines.append("")
+    for i, group in enumerate(terms, 1):
+        lines.append(f"### 5.{i} `{group['term']}`（{len(group['lines'])} 行）")
+        for variant in group["variants"]:
+            refs = "、".join(
+                f"{row['file']}:{row['line']}" for row in variant["rows"][:8])
+            more = "…" if len(variant["rows"]) > 8 else ""
+            lines.append(
+                f"- **{variant['cn']}** {len(variant['rows'])} 行"
+                f"（cover {variant['cover']:.2f}／lift {variant['lift']:.0f}／"
+                f"位置偏差 {variant['drift']:.2f}）：{refs}{more}"
+            )
+            lines.append(f"  - 例：…{variant['context']}…")
+        lines.append("")
+
     summary = (
         f"{work}\t片段多译 {len(frags)} 组"
         f"（实词 {klass_count['实词']}／语体 {klass_count['语体']}／虚词 {klass_count['虚词']}）"
         f"\t同源复现 {len(report['pairs'])} 对"
         f"\t短平行句 {len(shorts)} 对"
         f"（量词 {short_count['量词']}／功能词 {short_count['功能词']}／实词 {short_count['实词']}）"
+        f"\t术语多译 {len(terms)} 组"
         f"\t引述回指 {len(quotes)} 条"
         f"（升级 {n_upgrade}／同形 {n_exact}）"
     )
@@ -872,6 +1091,18 @@ def main(argv: list[str] | None = None) -> int:
                         help="短平行句的最长公共前后缀下限（默认 4）")
     parser.add_argument("--short-ratio", type=float, default=0.5,
                         help="短平行句的序列相似度阈值（默认 0.5）")
+    parser.add_argument("--term-min-lines", type=int, default=3,
+                        help="术语多译：日文术语最少出现行数（默认 3）")
+    parser.add_argument("--term-max-lines", type=int, default=60,
+                        help="术语多译：日文术语最多出现行数（默认 60，高频词不参与）")
+    parser.add_argument("--term-lift", type=float, default=8.0,
+                        help="术语多译：中文候选词相对全卷的出现提升倍数下限（默认 8）")
+    parser.add_argument("--term-window", type=float, default=0.35,
+                        help="术语多译：中文候选词在术语位置附近的搜索半窗（行宽比例，默认 0.35）")
+    parser.add_argument("--term-union", type=float, default=1.0,
+                        help="术语多译：两种译法合起来覆盖术语出现行的比例（默认 1.0，即全部）")
+    parser.add_argument("--term-drift", type=float, default=0.22,
+                        help="术语多译：候选词与日文术语的最大平均位置偏差（默认 0.22）")
     parser.add_argument("--cover", type=float, default=0.5, help="引文在出处中的最低覆盖率")
     parser.add_argument("--include-marker-quotes", action="store_true",
                         help="额外扫描 `って／とか` 引述助词形态的回指（实验性：候选量大、"
@@ -946,6 +1177,11 @@ def run_reports(args: argparse.Namespace, parser: argparse.ArgumentParser) -> in
             "short": short_parallel_pairs(
                 rows, window=args.short_window, min_len=args.short_min,
                 max_len=args.short_max, affix=args.short_affix, ratio=args.short_ratio,
+            ),
+            "term": term_groups(
+                rows, min_lines=args.term_min_lines, max_lines=args.term_max_lines,
+                lift_min=args.term_lift, window=args.term_window,
+                union_min=args.term_union, max_drift=args.term_drift,
             ),
             "quotes": quote_lookups(rows, args.min_quote, args.cover, args.include_marker_quotes),
         }
