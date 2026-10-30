@@ -192,5 +192,44 @@ class P16TraditionalChineseTests(unittest.TestCase):
                          "含假名的原文引用行不应命中 P16")
 
 
+class P15SidiTests(unittest.TestCase):
+    """P15 抓比况助词异形「似地」，但放过 似-compound 后接「地」的黏着组合。
+
+    豁免写成负向后视，最容易出的错是**豁免写宽了**：把「似」前一个字一概放行，
+    真缺陷就漏报了。两侧都要有最小用例，并锁死封闭字表。
+    """
+
+    def p15(self, line, fkind="content"):
+        return [h for h in cts.check_text(line, fkind) if h[0] == "P15"]
+
+    def test_particle_form_flagged(self):
+        for s in ("<p>史提尔无可奈何地摇了摇头，仿佛想再透过浓烟看上一眼似地，说道：</p>",
+                  "<p>他嫌麻烦似地朝身旁的一名黑衣人挥了挥手，</p>",
+                  "<p>美琴抓住上条的后颈，像要咬上去似地在他耳边大喊。</p>",
+                  "<p>少女垂着头，像在重复着什么似地低声呢喃。</p>"):
+            with self.subTest(s=s):
+                self.assertTrue(self.p15(s), "比况助词「似地」应命中 P15：%s" % s)
+
+    def test_compounds_exempt(self):
+        for s in ("<p>一幢类似地铁出入口的建筑物附近，有一群人影穿越而过。</p>",
+                  "<p>不远处还开着状似地下暗渠入口的铁路隧道。</p>",
+                  "<p>神裂听到了某种类似地鸣的声音。</p>",
+                  "<p>使其气候、温度、生态类似地球的环境。</p>",
+                  "<p>两条曲线相似地展开。</p>",
+                  "<p>那是一枚形似地雷的装置。</p>"):
+            with self.subTest(s=s):
+                self.assertFalse(self.p15(s), "黏着组合不应命中 P15：%s" % s)
+
+    def test_normative_form_clean(self):
+        for s in ("<p>仿佛想再透过浓烟看上一眼似的，说道：</p>",
+                  "<p>就像发生了小火灾一样。</p>"):
+            with self.subTest(s=s):
+                self.assertFalse(self.p15(s), "规范词形不应命中 P15：%s" % s)
+
+    def test_compound_prefix_table_is_the_documented_closed_set(self):
+        """字表是封闭集合：改动必须同步 docs/translation-spec.md §一.9。"""
+        self.assertEqual(cts.P15_SIDI_COMPOUND_PREFIX, "类状形近相好恰神酷胜貌疑宛似")
+
+
 if __name__ == "__main__":
     unittest.main()
