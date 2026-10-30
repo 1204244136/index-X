@@ -239,9 +239,17 @@ class AlignmentTests(unittest.TestCase):
         """规则表是逐条确认的结果，不是「遇到差异就登记」。"""
         self.assertEqual(
             alignment_rules.PAIR_RULES,
-            {"S5_01_03-06": "afterword-moved", "S5_01_02-09": "section-order"})
+            {
+                "S5_01_03-06": "afterword-moved",
+                "S5_01_02-09": "section-order",
+                "S1_05-02": "right-wrapper",
+                "S1_05-03": "right-wrapper",
+                "S1_05-04": "right-wrapper",
+                "S1_05-05": "right-wrapper",
+                "S4_01-06": "right-wrapper",
+            })
         for header, rule in alignment_rules.PAIR_RULES.items():
-            self.assertIn(rule, ("afterword-moved", "section-order"), header)
+            self.assertIn(rule, ("afterword-moved", "section-order", "right-wrapper"), header)
 
     def test_fixed_layout_work_is_not_paired(self):
         """S5_02_03 日文是一页式固定版式，与中文文本化重排无法逐行对应。"""

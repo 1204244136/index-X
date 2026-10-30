@@ -125,9 +125,18 @@ TEXTUAL_IMAGE_HEADERS = frozenset({
 #                    （`<p class="pb">` 收束分页 → 中文 `<h2>` → 图片行；
 #                    日文 图片行 → `<h2>`）。中文顺序让 h2 开启新页，是合并
 #                    分页源时应有的形状；改日文侧等于改原样快照。
+#   right-wrapper    中文侧章末署名/时间行用 `<div class="right"><p class="in0">`
+#                    包裹（该卷 CSS 只定义 .right/.in0，不能改成 align-end），
+#                    日文用 `<p class="align-end">`；文本、行数与右对齐语义一致，
+#                    仅行类型不同。
 PAIR_RULES: dict[str, str] = {
     "S5_01_03-06": "afterword-moved",
     "S5_01_02-09": "section-order",
+    "S1_05-02": "right-wrapper",
+    "S1_05-03": "right-wrapper",
+    "S1_05-04": "right-wrapper",
+    "S1_05-05": "right-wrapper",
+    "S4_01-06": "right-wrapper",
 }
 
 
