@@ -39,6 +39,7 @@
 | [翻译规范（EPUB 成品层）](translation-spec.md) | 译文**该写成什么样**：标点、字形、注音、译注、语义与证据边界（规范执行类以此为准） |
 | [译名选取规范](translation-name-selection-spec.md) | 一个译名在多个候选之间**怎么取舍**：从俗 → 从官 → 自拟、原语还原防日语中转、外文人名性别化选字 |
 | [译名裁定总表](translation-name-rulings.md) | **已经作出过的裁定**：某锚点在多个成立候选间定了哪个、否决了什么、哪些不作统一；§7.1 是与灰机 Wiki 译名表的人为固有差异清单，同时作为 `tools/check_translation_table.py` 的**门禁**被机器读取 |
+| [角色说话习惯表](character-speech-habits.csv) | 角色说话习惯的**盘点层**（CSV，一行一个「角色＋口癖」）：类型、首现卷、网翻／台版／本项目写法、裁定状态。已裁定的取值与裁定表 §六 逐字镜像，列义、记号与判定顺序见 `translation-spec.md`「说话习惯表」 |
 | [`maintenance-records/`](maintenance-records/) | **只忠实反映本次修改内容**：范围、涉及书籍与文件数、统计、验证、样例。**不是翻译方案的来源** |
 
 选译法的**原则**看前三份；**已决的取舍**看裁定总表；**这次改了什么、改了多少**看留档与提交。
@@ -54,5 +55,5 @@
 - 本文件**不承载规范条文、裁定结论或工具参数**——那些仍在各自文档中维护，保持单一来源，不在本文件复制。
 - 同一规则只在一处写正文，其余处只留指针：常驻边界在 `AGENTS.md`，资料访问、内容修改及工具维护步骤在上表登记的 `docs/agents/` 正文；译文规范以 `translation-spec.md` 为准，版式规范以 `epub-naming-spec.md`／`epub-structure-spec.md`／`epub-css-layout-spec.md`／`epub-artifact-spec.md` 为准，译名选取以 `translation-name-selection-spec.md` 为准，已决裁定以 `translation-name-rulings.md` 为准，机器可判定的词表以对应 `tools/check_*.py` 的常量为准。
 - 职责变化只在本索引登记；其他入口保留指针，文件新增／改名时修复受影响的相对链接。工具行为变更更新 `tools/README.md` 合同和对应验证，不在索引复制参数。顶层文档登记与活跃文档回指由 `tools/check_project_docs.py` 机械检查，缺项在 CI 非零。
-- 外部规范、译名表与说话习惯表的动态定位、版本证据及缺失时的处理统一见 `translation-spec.md`「外部依赖与核验」；私人机器路径不写入活跃文档。
+- 外部规范与译名表的动态定位、版本证据及缺失时的处理统一见 `translation-spec.md`「外部依赖与核验」；角色说话习惯表已内化为仓库内数据，定位与口径见 `translation-spec.md`「说话习惯表」。私人机器路径不写入活跃文档。
 - `maintenance-records/` 保留当次事实和当时口径；旧流程不能作为当前操作依据。允许修复链接或有提交证据的日期错误，必须保留更正说明。

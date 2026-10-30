@@ -37,6 +37,7 @@
 *.toml  text eol=lf
 *.mdc   text eol=lf
 *.tsv   text eol=lf
+*.csv   text eol=lf
 .gitignore text eol=lf
 .gitattributes text eol=lf
 
