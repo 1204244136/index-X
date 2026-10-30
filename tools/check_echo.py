@@ -468,7 +468,7 @@ CN_TERM_INNER = frozenset(
 
 def term_groups(rows: list[dict], *, min_lines: int = 3, max_lines: int = 60,
                 lift_min: float = 8.0, window: float = 0.35,
-                union_min: float = 1.0, max_drift: float = 0.22) -> list[dict]:
+                union_min: float = 1.0, max_drift: float = 0.12) -> list[dict]:
     """类 5：术语多译（同一日文术语在作品内被译成多种中文写法）。
 
     类 1 要求「同一日文片段」重复出现（引号内或整行）；术语嵌在各不相同的长句里
@@ -610,7 +610,22 @@ def term_groups(rows: list[dict], *, min_lines: int = 3, max_lines: int = 60,
         drift = max(v["drift"] for v in group["variants"])
         if key not in best_by_pair or drift < best_by_pair[key][0]:
             best_by_pair[key] = (drift, group)
-    out = [group for _, group in best_by_pair.values()]
+    groups = [group for _, group in best_by_pair.values()]
+    # 若某组两个候选都只是另一组候选的子串（如 `原因不明` 窗口里截到的
+    # 「缩症／养不良症」之于「肌肉萎缩症／肌营养不良症」），保留更完整的一组。
+    groups.sort(key=lambda group: (-len(group["lines"]),
+                                   -max(len(v["cn"]) for v in group["variants"])))
+    pruned: list[dict] = []
+    for group in groups:
+        subsumed = any(
+            all(any(v["cn"] in other_v["cn"] and v["cn"] != other_v["cn"]
+                    for other_v in other["variants"])
+                for v in group["variants"])
+            for other in pruned
+        )
+        if not subsumed:
+            pruned.append(group)
+    out = pruned
     out.sort(key=lambda group: (-len(group["variants"]), -len(group["lines"]), group["term"]))
     return out
 
@@ -1101,8 +1116,8 @@ def main(argv: list[str] | None = None) -> int:
                         help="术语多译：中文候选词在术语位置附近的搜索半窗（行宽比例，默认 0.35）")
     parser.add_argument("--term-union", type=float, default=1.0,
                         help="术语多译：两种译法合起来覆盖术语出现行的比例（默认 1.0，即全部）")
-    parser.add_argument("--term-drift", type=float, default=0.22,
-                        help="术语多译：候选词与日文术语的最大平均位置偏差（默认 0.22）")
+    parser.add_argument("--term-drift", type=float, default=0.12,
+                        help="术语多译：候选词与日文术语的最大平均位置偏差（默认 0.12）")
     parser.add_argument("--cover", type=float, default=0.5, help="引文在出处中的最低覆盖率")
     parser.add_argument("--include-marker-quotes", action="store_true",
                         help="额外扫描 `って／とか` 引述助词形态的回指（实验性：候选量大、"
