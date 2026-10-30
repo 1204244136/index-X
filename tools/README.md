@@ -134,6 +134,7 @@ python tools/check_alignment.py --jp-root .cache/epub-work/japanese-text --requi
 | 核对译名有没有落地 | C4 | `python tools/check_translation_table.py --table 译名表.xlsx --strict` |
 | 查术语有没有被改回裁定表登记的旧形 | C4 | `python tools/check_term_anchors.py --strict`（中日配对；命中即阻断） |
 | 查彩页上的字在正文哪一行／映射表行号有没有漂 | C4 | `python tools/check_illustration_mapping.py` |
+| 查说话习惯表与裁定表有没有漂 | C4 | `python tools/check_speech_habits.py`（`X版` 与 §六 裁定逐字镜像；有问题非零） |
 | 复核一批校对改动 | C5 | `python tools/proofread_review.py --worktree` |
 | 准备复核取证包、分页阅读或验收子报告 | C5 | `python tools/proofread_session.py --help` |
 | 做字符级规范化 | C5 | `python tools/text_norm.py --root EPUB --pattern "*S1_01*" --apply`（默认预览） |
@@ -163,7 +164,7 @@ python tools/check_alignment.py --jp-root .cache/epub-work/japanese-text --requi
 | C1 同步与发布 | 三副本数据流、基线清单、打包与发布前检查；不管内容对错 | 8 | 预检、基线完整性、冲突方向 |
 | C2 导入与交稿往返 | 源 ↔ 成品的构建（交稿 → 成品、成品 → 交稿、BW 分页源 → 章节）；不管成品的后续结构与规范 | 13 | 材料七项、逐章物理行数 |
 | C3 成品结构与配对修复 | 写盘型结构修复；不负责判定通过与否（判定在 C4） | 10 | 逐边界数量、行数与块对应 |
-| C4 门禁与体检 | 只读阻断与诊断；不修内容 | 15 | strict 非零即阻断 |
+| C4 门禁与体检 | 只读阻断与诊断；不修内容 | 16 | strict 非零即阻断 |
 | C5 内容质量 | 字符级与语义级的内容改动；不决定译名取舍（走 skill） | 5 | 字符级规范化 0 命中 |
 | C6 检索与统计 | 只读检索与字数／页数换算；不作语义裁定 | 4 | 无（只读诊断） |
 | C0 共享内核 | 无 CLI 的共享规则与原子写入能力；不另建工作流入口 | 19 | 由调用方承担 |
@@ -469,6 +470,7 @@ python tools/reorder_notes.py --root EPUB --pattern "*S1_01*" --apply --no-backu
 | `check_environment.py` | `python tools/check_environment.py --profile core` | 只读环境；终端／JSON 报告 | 所选依赖导入或显式本地模型验证失败为 2；不检查书籍【无】 | `test_check_environment.py` |
 | `check_echo.py` | `python tools/check_echo.py --book S1_01 --book S1_02`／`--convention "<日文正则>" --convention-words "<中文正则表>"` | 只读；写 `--out` 候选清单或惯例报告 | 只定位呼应候选（片段多译／同源复现／引述回指／短平行句／术语多译）与全库用词分布，不判定、不阻断【无】 | `test_check_echo.py` |
 | `check_illustration_mapping.py` | `python tools/check_illustration_mapping.py [--doc …] [--jp-root …] [--json …]` | 只读 `docs/illustration-text-mapping.md` 与日文缓存；写 `--json` 显式报告 | 逐行回查物理行号；不符时按「正文原句」重定位并给建议行号，未解析非零；缓存缺失为 2【无】 | `test_check_illustration_mapping.py` |
+| `check_speech_habits.py` | `python tools/check_speech_habits.py` | 只读 `docs/character-speech-habits.csv` 与译名裁定总表；终端报告 | 表头与列序、`(角色, 口癖)` 唯一、裁定状态与 §六 对齐、`X版` 逐字镜像、§六 锚点反向覆盖（三条跨角色例外）、记号只许出现在规定列、`-` 不得回归；有问题非零，输入缺失为 2【无】 | `test_check_speech_habits.py` |
 
 - **依赖**：`compare_epub_images.py` 与 `image_signature.py` 需要可选的 Pillow，安装见 [独立环境配置](#创建与核验独立环境)；ImageHash 只补充感知哈希。CI 保留标准库运行方式，缺 Pillow 的用例跳过；维护环境安装依赖后实际运行这些用例。
 
