@@ -1,6 +1,6 @@
 # 呼应检查新增「术语多译」候选类（2026-10-30）
 
-- 范围：`tools/check_echo.py`、`tools/tests/test_check_echo.py`、`tools/README.md`、`docs/translation-spec.md`、`.agents/skills/translation-term-unification/SKILL.md`、`docs/agents/content-maintenance.md`
+- 范围：`tools/check_echo.py`、`tools/tests/test_check_echo.py`、`tools/README.md`、`docs/translation-spec.md`、`.agents/skills/translation-term-unification/SKILL.md`、`.agents/skills/proofread-review/SKILL.md`、`docs/agents/content-maintenance.md`
 - 触发：S1_03 的 `筋ジストロフィー` 在同卷被译成「肌肉萎缩症」14 处与「肌营养不良症」2 处（L20、L33，系 2026-10-16 通校 `3228ba5f` 整段重译时引入），但既有呼应检查没有报出：类 1 要求同一日文片段重复，术语嵌在各不相同的长句中；类 2 只收 ≥20 字的相似行；类 3 只找 `『…』` 回指；类 4 只收相邻短平行句；`check_term_anchors.py` 只核对裁定表已登记锚点，该病名未登记。S1_03 又未纳入 2026-10-14 的整卷呼应批次（见 `echo-consistency-s101-s102-2026-10-14.md` §遗留），10-29 的「撤退／退出研究」修复只处理了类 2 候选点名的一处。病名已在 `ec8c5814` 统一。
 - 实现：新增类 5「术语多译」。术语取片假名连写 ≥4 字或汉字连写 ≥3 字，出现 3–60 行；在中文侧按术语相对位置 ±`--term-window`（默认 0.35 行宽）取 2–6 字纯汉字候选，要求相对全卷提升倍数 ≥`--term-lift`（默认 8）、平均位置偏差 ≤`--term-drift`（默认 0.12）；再找两种几乎不共现（重叠 <10%）、合起来覆盖全部术语出现行（`--term-union` 默认 1.0）、主译法覆盖 ≥50% 的写法。短片段被长片段覆盖时保留长形；同一对中文写法被多个日文词命中时保留位置偏差最小的归属。默认 0.12 为校准值：0.22 时 S1_03 会多出 `体表面`（跳蚤／碰触）等共现噪声。
 - 验收：
