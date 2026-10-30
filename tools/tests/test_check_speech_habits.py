@@ -36,25 +36,51 @@ class SpeechHabitsTests(unittest.TestCase):
 
     def test_minimal_pass(self):
         self.write(
-            ["甲,あ,第一人称,S1_01,未查到,未查到,阿,,已裁定\n"],
+            ["甲,あ,第一人称,S1_01,【未查到】,【未查到】,阿,,已裁定\n"],
             ["| 甲 | `あ` | 阿 | — | 说明 |  |\n"],
         )
         self.assertEqual(self.run_check(), [])
 
     def test_rule_type_pass(self):
-        self.write(["乙,不适用,句式,S1_01,未查到,未查到,未查到,句尾变片假名,规则型\n"], [])
+        self.write(["乙,【不适用】,句式,S1_01,【不处理】,【不处理】,【不处理】,句尾变片假名,规则型\n"], [])
         self.assertEqual(self.run_check(), [])
+
+    def test_rule_type_allows_unfound_in_versions(self):
+        self.write(["乙,【不适用】,句式,S1_01,【未查到】,【未查到】,【未查到】,句尾变片假名,规则型\n"], [])
+        self.assertEqual(self.run_check(), [])
+
+    def test_rule_type_allows_processed_and_literal(self):
+        self.write(["丙,【不适用】,句式,S1_01,【已处理】,问题一／解答一,【不处理】,文言腔,规则型\n"], [])
+        self.assertEqual(self.run_check(), [])
+
+    def test_no_volume_and_no_text_markers_pass(self):
+        self.write(["戊,【不适用】,句式,S3_09,【无此卷】,【无此卷】,【已处理】,台版未出创约,规则型\n"], [])
+        self.assertEqual(self.run_check(), [])
+
+    def test_no_text_marker_rejected_in_x_version(self):
+        self.write(["己,あ,第一人称,S4_03,【无文本】,【无文本】,【无文本】,仅见于漫画,已裁定\n"],
+                   ["| 己 | `あ` | 阿 | — | 说明 |  |\n"])
+        self.assertTrue(any("只允许出现在" in p for p in self.run_check()))
+
+    def test_processed_marker_rejected_in_habit(self):
+        self.write(["丁,【已处理】,句式,S1_01,【未查到】,【未查到】,【未查到】,x,规则型\n"], [])
+        self.assertTrue(any("只允许出现在" in p for p in self.run_check()))
+
+    def test_type_outside_vocabulary(self):
+        self.write(["甲,あ,自定义类型,S1_01,【未查到】,【未查到】,阿,,已裁定\n"],
+                   ["| 甲 | `あ` | 阿 | — | 说明 |  |\n"])
+        self.assertTrue(any("不在词表" in p for p in self.run_check()))
 
     def test_composite_role_and_anchor_variant_pass(self):
         self.write(
-            ["丙,どす・まへん・はる,方言腔调,S2_14,未查到,未查到,不处理,京都弁,已裁定\n"],
+            ["丙,どす・まへん・はる,方言腔调,S2_14,【未查到】,【未查到】,【不处理】,京都弁,已裁定\n"],
             ["| 丙／丁 | `どす` | 按普通口语译出，不拟方言 | — | 说明 | 人读 |\n"],
         )
         self.assertEqual(self.run_check(), [])
 
     def test_exempt_anchor_pass(self):
         self.write(
-            ["甲,あ,第一人称,S1_01,未查到,未查到,阿,,已裁定\n"],
+            ["甲,あ,第一人称,S1_01,【未查到】,【未查到】,阿,,已裁定\n"],
             [
                 "| 甲 | `あ` | 阿 | — | 说明 |  |\n",
                 "| 乙 | `たん` | 炭 | — | 通用后缀 | 严格全文 |\n",
@@ -74,55 +100,55 @@ class SpeechHabitsTests(unittest.TestCase):
     def test_duplicate_key(self):
         self.write(
             [
-                "甲,あ,第一人称,S1_01,未查到,未查到,阿,,已裁定\n",
-                "甲,あ,第一人称,S1_01,未查到,未查到,阿,,已裁定\n",
+                "甲,あ,第一人称,S1_01,【未查到】,【未查到】,阿,,已裁定\n",
+                "甲,あ,第一人称,S1_01,【未查到】,【未查到】,阿,,已裁定\n",
             ],
             ["| 甲 | `あ` | 阿 | — | 说明 |  |\n"],
         )
         self.assertTrue(any("重复" in p for p in self.run_check()))
 
     def test_dash_forbidden(self):
-        self.write(["甲,あ,第一人称,-,未查到,未查到,阿,,已裁定\n"],
+        self.write(["甲,あ,第一人称,-,【未查到】,【未查到】,阿,,已裁定\n"],
                    ["| 甲 | `あ` | 阿 | — | 说明 |  |\n"])
         self.assertTrue(any("不再允许" in p for p in self.run_check()))
 
     def test_marker_in_wrong_column(self):
-        self.write(["甲,未查到,第一人称,S1_01,未查到,未查到,阿,,已裁定\n"],
+        self.write(["甲,【未查到】,第一人称,S1_01,【未查到】,【未查到】,阿,,已裁定\n"],
                    ["| 甲 | `あ` | 阿 | — | 说明 |  |\n"])
         self.assertTrue(any("只允许出现在" in p for p in self.run_check()))
 
     def test_status_unknown(self):
-        self.write(["甲,あ,第一人称,S1_01,未查到,未查到,阿,,已定\n"],
+        self.write(["甲,あ,第一人称,S1_01,【未查到】,【未查到】,阿,,已定\n"],
                    ["| 甲 | `あ` | 阿 | — | 说明 |  |\n"])
         self.assertTrue(any("不在" in p for p in self.run_check()))
 
     def test_rule_type_requires_placeholder(self):
-        self.write(["甲,あ,句式,S1_01,未查到,未查到,未查到,,规则型\n"],
+        self.write(["甲,あ,句式,S1_01,【未查到】,【未查到】,【未查到】,,规则型\n"],
                    ["| 甲 | `あ` | 阿 | — | 说明 |  |\n"])
-        self.assertTrue(any("必须是 `不适用`" in p for p in self.run_check()))
+        self.assertTrue(any("必须是 `【不适用】`" in p for p in self.run_check()))
 
     def test_ruled_but_missing(self):
-        self.write(["甲,あ,第一人称,S1_01,未查到,未查到,阿,,已裁定\n"], [])
+        self.write(["甲,あ,第一人称,S1_01,【未查到】,【未查到】,阿,,已裁定\n"], [])
         self.assertTrue(any("找不到" in p for p in self.run_check()))
 
     def test_unruled_but_registered(self):
-        self.write(["甲,あ,第一人称,S1_01,未查到,未查到,未查到,,未裁定\n"],
+        self.write(["甲,あ,第一人称,S1_01,【未查到】,【未查到】,【未查到】,,未裁定\n"],
                    ["| 甲 | `あ` | 阿 | — | 说明 |  |\n"])
         self.assertTrue(any("已登记" in p for p in self.run_check()))
 
     def test_mirror_mismatch(self):
-        self.write(["甲,あ,第一人称,S1_01,未查到,未查到,啊,,已裁定\n"],
+        self.write(["甲,あ,第一人称,S1_01,【未查到】,【未查到】,啊,,已裁定\n"],
                    ["| 甲 | `あ` | 阿 | — | 说明 |  |\n"])
         self.assertTrue(any("应镜像" in p for p in self.run_check()))
 
     def test_prose_decision_requires_no_handle(self):
-        self.write(["甲,どす,方言腔调,S2_14,未查到,未查到,按普通口语译出,,已裁定\n"],
+        self.write(["甲,どす,方言腔调,S2_14,【未查到】,【未查到】,按普通口语译出,,已裁定\n"],
                    ["| 甲 | `どす` | 按普通口语译出，不拟方言 | — | 说明 | 人读 |\n"])
-        self.assertTrue(any("应镜像 §六 裁定 `不处理`" in p for p in self.run_check()))
+        self.assertTrue(any("应镜像 §六 裁定 `【不处理】`" in p for p in self.run_check()))
 
     def test_reverse_coverage_missing_row(self):
         self.write(
-            ["甲,あ,第一人称,S1_01,未查到,未查到,阿,,已裁定\n"],
+            ["甲,あ,第一人称,S1_01,【未查到】,【未查到】,阿,,已裁定\n"],
             [
                 "| 甲 | `あ` | 阿 | — | 说明 |  |\n",
                 "| 丙 | `う` | 呜 | — | 说明 |  |\n",
