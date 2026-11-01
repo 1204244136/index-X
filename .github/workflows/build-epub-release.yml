@@ -4,6 +4,16 @@ on:
   schedule:
     - cron: '0 15 * * *' # UTC 15:00 = 北京时间 23:00
   workflow_dispatch:
+    inputs:
+      release_date:
+        description: '发布日期（北京时间，YYYY.MM.DD）；留空按最近一次计划发布日推算'
+        required: false
+        default: ''
+      force_release:
+        description: '当前提交已有日期标签时仍强制重新发布'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -19,33 +29,73 @@ jobs:
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
+        with:
+          fetch-tags: true
+
+      - name: Prepare release metadata
+        env:
+          RELEASE_DATE_INPUT: ${{ inputs.release_date }}
+        run: |
+          set -euo pipefail
+          # 标签取「计划发布日」而非作业启动时刻：cron 15:00Z 与北京时间 23:00 同为一天，
+          # 而 GitHub 计划任务常延迟数小时，按启动时刻取北京时间日期会跨过零点把标签推到次日。
+          RELEASE_DATE="${RELEASE_DATE_INPUT}"
+          if [ -z "${RELEASE_DATE}" ]; then
+            SLOT_DAY=$(date -u +%F)
+            if [ "$(date -u +%H)" -lt 15 ]; then
+              SLOT_DAY=$(date -u -d "${SLOT_DAY} -1 day" +%F)
+            fi
+            RELEASE_DATE=${SLOT_DAY//-/.}
+          fi
+          if ! [[ "${RELEASE_DATE}" =~ ^20[0-9]{2}\.[0-9]{2}\.[0-9]{2}$ ]]; then
+            echo "非法发布日期：${RELEASE_DATE}（应为 YYYY.MM.DD）" >&2
+            exit 1
+          fi
+          echo "RELEASE_DATE=${RELEASE_DATE}" >> "$GITHUB_ENV"
+          echo "RELEASE_TAG=${RELEASE_DATE}" >> "$GITHUB_ENV"
+
+      - name: Check whether this snapshot is already published
+        id: published
+        env:
+          FORCE_RELEASE: ${{ inputs.force_release }}
+        run: |
+          set -euo pipefail
+          if [ "${FORCE_RELEASE}" != "true" ]; then
+            PUBLISHED_TAGS=$(git tag --points-at "${GITHUB_SHA}" | grep -E '^20[0-9]{2}\.[0-9]{2}\.[0-9]{2}$' || true)
+            if [ -n "${PUBLISHED_TAGS}" ]; then
+              echo "当前提交已由 $(echo "${PUBLISHED_TAGS}" | tr '\n' ' ')发布，跳过本次重复发布。"
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
+          if git rev-parse -q --verify "refs/tags/${RELEASE_TAG}^{commit}" >/dev/null; then
+            echo "标签 ${RELEASE_TAG} 已存在（$(git rev-parse --short "refs/tags/${RELEASE_TAG}^{commit}")），按同日补充发布更新。"
+          fi
+          echo "skip=false" >> "$GITHUB_OUTPUT"
 
       - name: Setup Python
+        if: steps.published.outputs.skip != 'true'
         uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
       - name: Validate tools, titles and publication source
+        if: steps.published.outputs.skip != 'true'
         run: |
           set -euo pipefail
           python -m unittest discover -s tools/tests -p "test_*.py"
           python tools/check_project_docs.py
           python tools/publish_preflight.py --source EPUB
 
-      - name: Prepare release metadata
-        run: |
-          set -euo pipefail
-          RELEASE_DATE=$(TZ=Asia/Shanghai date +'%Y.%m.%d')
-          echo "RELEASE_DATE=${RELEASE_DATE}" >> "$GITHUB_ENV"
-          echo "RELEASE_TAG=${RELEASE_DATE}" >> "$GITHUB_ENV"
-
       - name: Create EPUB files
+        if: steps.published.outputs.skip != 'true'
         run: |
           set -euo pipefail
           rm -rf output/
           python tools/package_cache_epubs.py --source EPUB --output output/epubs
 
       - name: Create merged ZIPs
+        if: steps.published.outputs.skip != 'true'
         run: |
           set -euo pipefail
           cd output/epubs
@@ -79,6 +129,7 @@ jobs:
           done
 
       - name: Generate Release Notes and Rename EPUB files
+        if: steps.published.outputs.skip != 'true'
         run: |
           set -euo pipefail
           BASE_URL="https://github.com/${{ github.repository }}/releases/download/${RELEASE_TAG}/"
@@ -131,19 +182,15 @@ jobs:
 
           echo -e "${NOTE}" > output/release_notes.md
 
-      - name: Update daily release tag
-        run: |
-          set -euo pipefail
-          git tag --force "${RELEASE_TAG}" "${GITHUB_SHA}"
-          git push origin "refs/tags/${RELEASE_TAG}" --force
-
       - name: Upload to Release
+        if: steps.published.outputs.skip != 'true'
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ env.RELEASE_TAG }}
           name: ${{ env.RELEASE_DATE }}
+          commit: ${{ github.sha }}
           allowUpdates: true
-          removeArtifacts: true
+          replacesArtifacts: true
           artifactErrorsFailBuild: true
           makeLatest: true
           bodyFile: output/release_notes.md
@@ -155,3 +202,11 @@ jobs:
             output/A_Certain_Dark_Side_Item.*.zip
             output/A_Certain_Magical_Index_SP.*.zip
             output/epubs/*.epub
+
+      - name: Update daily release tag
+        if: steps.published.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          # 资产上传成功后才移动标签；上传失败时标签保持原位，下一次运行会重试。
+          git tag --force "${RELEASE_TAG}" "${GITHUB_SHA}"
+          git push origin "refs/tags/${RELEASE_TAG}" --force
