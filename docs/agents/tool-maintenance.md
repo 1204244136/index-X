@@ -12,6 +12,16 @@
 - 日期按用途判断：业务日期、时间格式、S6 作品号、测试样例、协议版本、版权声明与文档引用可以保留；“某日新增／修复／清零／升级为阻断”等叙述归入历史记录。
 - 完成标准：本次新增或修改的说明均已归位，并与实现一致；保留的日期用途明确。此项为人工软门禁，不增加日期正则、测试或 CI 阻断。
 
+### 阻断检查的接入面
+
+工具新增或收紧阻断检查（非零退出即卡住提交或发布）时，同批更新它的全部接入面，不能只落在工具与 CI：
+
+- 受影响的 skill 门禁清单（如 `.agents/skills/translation-term-unification/SKILL.md` §S6、`.agents/skills/proofread-review/SKILL.md` 的 R 系列）；
+- `tools/README.md` 对应小节的「接入点」；
+- 带日文参考的发布路径 `publish_preflight.py`（该检查在发布前可判时）。
+
+判定口径：执行任务的 agent 读的是 skill 与 `tools/README.md`，不是 CI 配置；检查只写进 CI 等于把发现时机推迟到 push 之后。新增检查后回查最近一轮同类任务的门禁清单，确认没有遗漏。
+
 ### 工具与记录的边界
 
 `tools/` 只放**会反复使用**的流程工具：拉取、解包、规范化、对齐检查、审计、打包发布，以及新书导入管线（`pull.ps1`、`normalize_paired.py`／`normalize_single.py`、`check_alignment.py`／`check_translation_spec.py`／`check_note_order.py`、`bw_preprocess.py`、`merge_bw_pages.py`、`publish_auto.py`／`publish.py`／`publish_epub.py` 等）。判断标准只有一条：**这个动作会不会在后续新拉取或新导入的书籍上再次发生？**

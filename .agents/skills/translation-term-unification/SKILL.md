@@ -122,6 +122,7 @@ python tools/check_term_anchors.py --book <作品号> --strict        # 裁定�
 python tools/check_alignment.py --strict        # 中日行数 / 模板 / h2 / 图片行
 python tools/check_epub_health.py --strict      # 单侧结构（XML、ruby、加粗、悬空引用等）
 python tools/check_translation_spec.py          # 涉及标点／注音／单位时跑；报告在 .cache/epub-work/
+python tools/check_project_docs.py              # 改过裁定表／说话习惯表／留档后必跑；0 条（含「裁定表不记日期」）
 ```
 
 记录本次选定范围的实际文件数、未配对范围与问题数；数量变化先核对输入范围和收录状态，不能套用历史全库数字。
@@ -208,6 +209,7 @@ python tools/proofread_review.py <commit>       # 产物 .cache/epub-work/proofr
 - 修订前 / 修订后：<译法分布与残留数>
 - 全部为行内替换，不增删物理行：<各文件 行数/行数 中日一致>
 - `python tools/check_alignment.py --strict`：<本次范围、文件数、问题数、未配对项>
+- `python tools/check_project_docs.py`：<0 条；含裁定表备注无日期、链接与索引检查>
 - `python tools/publish_auto.py --only-books "<实际 side/书目录,...>"`：<哪些书已上传并回流缓存；范围外改动与受阻事实>
 - 回退：`git revert <commit>`
 ```
