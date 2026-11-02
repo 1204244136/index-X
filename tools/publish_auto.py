@@ -61,6 +61,12 @@ DEFAULT_CACHE = REPO_ROOT / ".cache" / "epub-work"
 DEFAULT_EPUB = REPO_ROOT / "EPUB"
 
 SIDE_MAP = {"chinese": "chinese-text", "japanese": "japanese-text"}
+# `--only-books` 的 side 前缀：正式目录名与 `--side` 简写都收，统一归一化成目录名。
+# 只写简写会被当成不存在的键而把范围判空，因此这里显式建表并在解析时校验。
+SIDE_PREFIXES: dict[str, str] = {
+    **{side: side for side in SIDE_DIRECTORIES},
+    **SIDE_MAP,
+}
 DIRECTION_LABELS = {
     "A": "流程 A：OneDrive -> 缓存 + EPUB/",
     "B": "流程 B：缓存 -> EPUB/ + OneDrive",
@@ -141,7 +147,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--only-books",
         default="",
-        help="逗号分隔的 'side/book'，只处理这些书",
+        help=(
+            "逗号分隔的 'side/书目录'，只处理这些书；"
+            "side 取 chinese-text／japanese-text（也接受 chinese／japanese 简写）"
+        ),
     )
     parser.add_argument("--dry-run", action="store_true", help="只预览，不执行任何写入")
     parser.add_argument("--no-upload", action="store_true", help="跳过 OneDrive 上传")
@@ -183,13 +192,47 @@ def in_scope(book_key: str, args: argparse.Namespace) -> bool:
         return False
     if not fnmatch.fnmatch(book.casefold(), args.pattern.casefold()):
         return False
-    if args.only_books and book_key not in parse_only_books(args.only_books):
+    requested = getattr(args, "only_books_scope", None)
+    if requested is None:
+        requested = parse_only_books(args.only_books)
+    if requested and book_key not in requested:
         return False
     return True
 
 
 def parse_only_books(raw: str) -> set[str]:
-    return {item.strip() for item in raw.split(",") if item.strip()}
+    """解析逗号分隔的 `side/书目录`，返回归一化后的书键集合。
+
+    side 接受缓存侧目录名（`chinese-text`／`japanese-text`）与 `--side` 简写
+    （`chinese`／`japanese`）。无法识别的前缀或缺失 `side/` 结构一律抛
+    ValueError——这些写法会让范围判空，静默退化比报错更难排查。
+    """
+    books: set[str] = set()
+    for item in raw.split(","):
+        item = item.strip()
+        if not item:
+            continue
+        side, sep, book = item.partition("/")
+        if not sep or not book.strip():
+            raise ValueError(f"项缺少 'side/书目录' 结构：{item!r}")
+        prefix = SIDE_PREFIXES.get(side.strip())
+        if prefix is None:
+            allowed = "／".join(SIDE_PREFIXES)
+            raise ValueError(
+                f"side 前缀 {side.strip()!r} 无法识别（可用：{allowed}）：{item!r}"
+            )
+        books.add(f"{prefix}/{book.strip()}")
+    return books
+
+
+def book_keys(scanned: dict[str, str]) -> set[str]:
+    """把 `scan_cache`／`scan_epub` 的 `side/书目录/文件` 键归约成书键集合。"""
+    keys: set[str] = set()
+    for rel_path in scanned:
+        parts = rel_path.split("/", 2)
+        if len(parts) >= 2:
+            keys.add(f"{parts[0]}/{parts[1]}")
+    return keys
 
 
 def summarize(file_changes: dict[str, str]) -> str:
@@ -295,8 +338,8 @@ def build_pull_command(
         cmd += ["-Side", args.side]
     if args.pattern != "*":
         cmd += ["-Pattern", args.pattern]
-    if args.only_books:
-        cmd += ["-OnlyBooks", args.only_books]
+    if args.only_books and args.only_books_scope:
+        cmd += ["-OnlyBooks", ",".join(sorted(args.only_books_scope))]
     if args.force:
         cmd.append("-Force")
     if dry_run:
@@ -408,6 +451,18 @@ def prepare_plan(args: argparse.Namespace) -> PublicationPlan:
     cache = args.cache.resolve()
     epub_root = args.epub.resolve()
 
+    try:
+        requested = parse_only_books(args.only_books)
+    except ValueError as exc:
+        builder.emit(f"错误: --only-books {exc}", error=True)
+        builder.emit(
+            f"  正确写法：--only-books \"chinese-text/书目录\""
+            f"（side 可用 {'／'.join(SIDE_PREFIXES)}）",
+            error=True,
+        )
+        return builder.finish('blocked')
+    args.only_books_scope = requested
+
     if args.force and args.source == "auto":
         builder.emit(
             "错误: --force 需要配合 --from 指定方向（cache / epub / onedrive）；"
@@ -470,6 +525,23 @@ def prepare_plan(args: argparse.Namespace) -> PublicationPlan:
     epub_current = scan_epub(epub_root)
     builder.emit(f"  缓存 {len(cache_current)} 个文件 | EPUB/ {len(epub_current)} 个文件"
           f" | 清单基线 {len(baseline)} 个文件")
+
+    if requested:
+        known = book_keys(cache_current) | book_keys(epub_current)
+        missing_books = sorted(requested - known)
+        if missing_books:
+            builder.emit(
+                "错误: --only-books 指定的书籍在缓存与 EPUB/ 中都不存在：", error=True
+            )
+            for book_key in missing_books:
+                builder.emit(f"  {book_key}", error=True)
+            builder.emit(
+                "  书目录名须与缓存侧目录逐字一致（含全角【】与空格）；"
+                "不要写成仅书名或截断的作品号。",
+                error=True,
+            )
+            return builder.finish('blocked')
+        builder.emit(f"  范围限定：--only-books 命中 {len(requested)} 本")
 
     if args.force:
         return _prepare_forced(args, cache, epub_root, cache_current, epub_current, builder)

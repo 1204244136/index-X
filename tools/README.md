@@ -123,7 +123,7 @@ python tools/check_alignment.py --jp-root .cache/epub-work/japanese-text --requi
 
 | 你要做什么 | 簇 | 入口 |
 | --- | --- | --- |
-| 把本地改动发布到 OneDrive 与缓存 | C1 | `python tools/publish_auto.py --only-books "<side/书目录,...>" --dry-run`，确认后以相同范围执行 |
+| 把本地改动发布到 OneDrive 与缓存 | C1 | `python tools/publish_auto.py --only-books "<side/书目录,...>" --dry-run`（side 用 `chinese-text`／`japanese-text`，可简写 `chinese`／`japanese`），确认后以相同范围执行 |
 | 拉 OneDrive 新源进本地参考副本 `.cache/` | C1 | `./tools/pull.ps1 -OnlyBooks "<side/书目录,...>"`（预览 `-WhatIf`） |
 | 打发布包／出 release 产物 | C1 | `python tools/package_cache_epubs.py --source EPUB --output output/epubs` |
 | 新书交稿做成成品 | C2 | `python tools/import_materials.py …`（材料门禁先行，缺项即停） |
@@ -197,7 +197,7 @@ python tools/publish_auto.py --only-books "chinese-text/【S1_01】某魔法的�
 
 `prepare_plan(args)` 只读观察本地副本与基线，不输出、不写盘、不调用子命令，返回不可变 `PublicationPlan`：`ready` 包含完整命令，`blocked`／`noop` 的命令为空；预览模式和诊断同时固定。`run_plan(plan)` 只呈现和消费该计划，不重新扫描、选择方向或拼参数。预览零执行，A 预览命令保留 `-WhatIf`；真实执行按 A／B／C 顺序，首个子命令非零后停止。业务阻塞返回 1，空操作与成功返回 0；扫描、解析与进程启动异常不新增吞没处理。
 
-普通和 `--force` 共用命令装配与执行：B 传递所选 `--side` 及两侧 OneDrive 目标，C 只传中文目标，不传它不支持的 side／日文参数；目标目录在计划中解析为绝对路径。`--only-books` 为逗号分隔的精确 `side/书目录` 键，A 传给 `pull.ps1 -OnlyBooks`，B/C 传给对应发布器；与 side、pattern 求交。发布预检仍由实际执行的下游入口承担；单独调用 `prepare_plan` 不锁定磁盘，真实 CLI 在持有缓存锁期间重新准备并执行计划。
+普通和 `--force` 共用命令装配与执行：B 传递所选 `--side` 及两侧 OneDrive 目标，C 只传中文目标，不传它不支持的 side／日文参数；目标目录在计划中解析为绝对路径。`--only-books` 为逗号分隔的精确 `side/书目录` 键，side 取缓存侧目录名 `chinese-text`／`japanese-text`（也接受 `--side` 的简写 `chinese`／`japanese`，统一归一化成目录名后再匹配与下发），A 传给 `pull.ps1 -OnlyBooks`，B/C 传给对应发布器；与 side、pattern 求交。**范围解析失败一律阻断而不是退化成空范围**：项缺少 `side/书目录` 结构、side 前缀无法识别、或归一化后的书键在缓存与 `EPUB/` 中都不存在时，工具输出具体项与正确写法并以 1 退出；只有在解析成功的范围内「没有改动」才按空操作返回 0，并输出 `--only-books 命中 N 本` 供核对。发布预检仍由实际执行的下游入口承担；单独调用 `prepare_plan` 不锁定磁盘，真实 CLI 在持有缓存锁期间重新准备并执行计划。
 
 ### 同步互斥
 

@@ -293,6 +293,36 @@ class RoutingTests(ToolTestCase):
         self.assertIn("pull.ps1", output)
 
 
+class OnlyBooksScopeTests(ToolTestCase):
+    """`--only-books` 的解析：side 归一化，非法写法阻断而不是静默退化成空范围。"""
+
+    def test_side_alias_routes_after_normalization(self):
+        self.fx.write_book(self.fx.epub, "chinese-text", BOOK_CN, "<p>中文B</p>")
+        code, calls, output = self.run_tool("--only-books", f"chinese/{BOOK_CN}")
+        self.assertEqual(code, 0)
+        self.assertEqual([self.tool_name(cmd) for cmd in calls], ["publish_epub.py"])
+        self.assertEqual(self.only_books(calls[0]), f"chinese-text/{BOOK_CN}")
+        self.assertIn("--only-books 命中 1 本", output)
+
+    def test_unknown_side_prefix_blocks(self):
+        code, calls, output = self.run_tool("--only-books", f"cn/{BOOK_CN}")
+        self.assertEqual(code, 1)
+        self.assertEqual(calls, [])
+        self.assertIn("side 前缀", output)
+
+    def test_missing_side_separator_blocks(self):
+        code, calls, output = self.run_tool("--only-books", BOOK_CN)
+        self.assertEqual(code, 1)
+        self.assertEqual(calls, [])
+        self.assertIn("side/书目录", output)
+
+    def test_unknown_book_blocks_instead_of_empty_scope(self):
+        code, calls, output = self.run_tool("--only-books", "chinese-text/【S9_99】不存在的书")
+        self.assertEqual(code, 1)
+        self.assertEqual(calls, [])
+        self.assertIn("都不存在", output)
+
+
 class OnedriveDriftTests(ToolTestCase):
     """OneDrive 侧外部更新：与 pull.ps1 同一判定（pull-state 的 mtime/size）。"""
 
@@ -354,6 +384,14 @@ class OnedriveDriftTests(ToolTestCase):
     def test_only_books_limits_flow_a_to_the_same_explicit_books(self):
         self.seed_onedrive(self.fx.onedrive_jp, BOOK_JP)
         code, calls, _ = self.run_tool("--only-books", f"japanese-text/{BOOK_JP}")
+        self.assertEqual(code, 0)
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(self.run_script(calls[0]), "pull.ps1")
+        self.assertEqual(calls[0][calls[0].index("-OnlyBooks") + 1], f"japanese-text/{BOOK_JP}")
+
+    def test_only_books_side_alias_reaches_pull_script_normalized(self):
+        self.seed_onedrive(self.fx.onedrive_jp, BOOK_JP)
+        code, calls, _ = self.run_tool("--only-books", f"japanese/{BOOK_JP}")
         self.assertEqual(code, 0)
         self.assertEqual(len(calls), 1)
         self.assertEqual(self.run_script(calls[0]), "pull.ps1")
