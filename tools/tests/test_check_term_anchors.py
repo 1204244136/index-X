@@ -28,6 +28,8 @@ RULINGS = """# 测试裁定表
 | `元女教皇` | 前任女教皇 | 前女教皇／原女教皇 | 测试用 |  |
 | `低周波振動治療器` | 低频振动治疗器 | 低频震动治疗器 | 测试用 |  |
 | `神の子` | 神子 | 神之子 | 测试用 |  |
+| `天国` | 天堂 | 天国 | 测试用 |  |
+| `パラダイス` | 乐园 | 天堂 | 测试用 |  |
 """
 
 
@@ -58,6 +60,11 @@ class RuleLoadingTests(unittest.TestCase):
         by_anchor = {rule["anchor"]: rule for rule in rules}
         self.assertEqual(by_anchor["魔術"]["accepted"], ["魔法", "魔法师"])
         self.assertEqual(by_anchor["魔術"]["rejected"], ["魔术", "魔术师"])
+        # 借词与宗教词分轨：天国→天堂，パラダイス→乐园，两者互不当对方的误形
+        self.assertEqual(by_anchor["天国"]["accepted"], ["天堂"])
+        self.assertEqual(by_anchor["天国"]["rejected"], ["天国"])
+        self.assertEqual(by_anchor["パラダイス"]["accepted"], ["乐园"])
+        self.assertEqual(by_anchor["パラダイス"]["rejected"], ["天堂"])
         # 长锚点排前，避免 `魔術` 把 `魔術師` 拆开重复计数
         anchors = [rule["anchor"] for rule in rules]
         self.assertLess(anchors.index("魔術師"), anchors.index("魔術"))
