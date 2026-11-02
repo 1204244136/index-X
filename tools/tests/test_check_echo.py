@@ -10,6 +10,7 @@ TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 
 from check_echo import (  # noqa: E402
+    _longest_common_span,
     convention_stats,
     find_book_dir,
     frag_groups,
@@ -18,6 +19,7 @@ from check_echo import (  # noqa: E402
     load_pairs,
     norm_cn,
     norm_jp,
+    pattern_echo_pairs,
     quote_lookups,
     render,
     render_convention,
@@ -355,6 +357,172 @@ class ShortParallelTests(unittest.TestCase):
         text, summary = render("S1_01", rows, report)
         self.assertIn("## 类 4 短平行句（1 对）", text)
         self.assertIn("短平行句 1 对", summary)
+
+
+class LongestCommonSpanTests(unittest.TestCase):
+    def test_finds_run_in_the_middle(self):
+        # 类 4 的 affix 判据在这两行上得到 0/0；最长公共子串落在中间。
+        self.assertEqual(_longest_common_span("あらキスの方が良い", "キスの方が良いッ"), (7, 2, 0))
+
+    def test_falls_back_to_dynamic_programming_for_short_strings(self):
+        self.assertEqual(_longest_common_span("あい", "あい"), (2, 0, 0))
+        self.assertEqual(_longest_common_span("あ", "う"), (0, 0, 0))
+
+
+class PatternEchoTests(unittest.TestCase):
+    """类 6「模式复述」：类 4 中缀盲区与类 2 长度断档盲区（S1_09 的真实形态）。"""
+
+    @staticmethod
+    def _rows(jp_a: str, jp_b: str, cn_a: str, cn_b: str,
+              line_a: int = 1, line_b: int = 2) -> list[dict]:
+        return [
+            {"file": "a.xhtml", "line": line_a, "jp": jp_a, "cn": cn_a},
+            {"file": "a.xhtml", "line": line_b, "jp": jp_b, "cn": cn_b},
+        ]
+
+    @staticmethod
+    def _seed_mid_span() -> list[dict]:
+        return PatternEchoTests._rows(
+            "「あら。キスの方が良い？」", "「キスの方が良いッ!!」",
+            "「哎呀。还是要接吻呢？」", "「还是接吻更好！！」", 391, 394)
+
+    @staticmethod
+    def _seed_length_gap() -> list[dict]:
+        return PatternEchoTests._rows(
+            "「……自分で言ってて哀しくないの？」",
+            "哀しくないもん！　と上条は高速であさっての方向を向こうとする。より一層胸の弾力が"
+            "伝わってきて、彼の体がガチガチに凍りついた。吹寄は訝しげな表情のまま、やれやれと"
+            "上条をヘッドロックから解放する。",
+            "「……你自己说出这种话不会感到悲哀吗？」",
+            "「我才不悲哀呢！」上条飞快地想把头扭向毫不相干的方向。然而胸部传来的弹力反而"
+            "更加清晰，他的身体瞬间彻底僵住了。吹寄依旧一脸纳闷，无奈地叹了口气，松开了锁住"
+            "上条脑袋的手臂。", 292, 293)
+
+    def test_flags_shared_run_in_the_middle(self):
+        # S1_09-04 L391/L394：归一 9/8 字，公共前后缀 0/0，中间共享 `キスの方が良い`。
+        # 类 4 只比最长公共前后缀，整类漏掉。
+        pairs = pattern_echo_pairs(self._seed_mid_span())
+        self.assertEqual(len(pairs), 1)
+        item = pairs[0]
+        self.assertEqual(item["blind"], "类4 中间共享")
+        self.assertEqual(item["relation"], "中缀")
+        self.assertEqual(item["evidence"], "单处实词替换")
+        self.assertEqual(item["span"], "キスの方が良い")
+        self.assertEqual((item["diff_a"], item["diff_b"]), ("呢", "更好"))
+
+    def test_flags_short_predicate_inside_long_narration(self):
+        # S1_09-04 L292/L293：短句 13 字 + 长叙述 89 字。类 2 只收 ≥20 字的行，
+        # 类 4 的 max_len 默认 24 又把长行挡掉，两侧都不收。
+        pairs = pattern_echo_pairs(self._seed_length_gap())
+        self.assertEqual(len(pairs), 1)
+        item = pairs[0]
+        self.assertEqual(item["blind"], "类2 长度断档")
+        self.assertEqual(item["evidence"], "长行开头复述")
+        self.assertEqual(item["span"], "哀しくない")
+
+    def test_respects_line_window(self):
+        self.assertEqual(pattern_echo_pairs(self._seed_mid_span(), window=2), [])
+        self.assertEqual(len(pattern_echo_pairs(self._seed_mid_span(), window=3)), 1)
+
+    def test_ignores_proper_noun_and_particle_only_spans(self):
+        # 共享段去掉格助词后没有平假名 = 专名串：名单、职员表类噪音靠这一条整批消失。
+        cases = [
+            ("「言ったよな。左方のテッラ」",
+             "左方のテッラは、土御門元春の言葉を受けて短く黙った。",
+             "「你说过的吧，左方之地。」", "左方之地听到土御门元春的话后，陷入短暂的沉默。"),
+            ("「まさか、学園都市を!?」",
+             "「学園都市を壊せば、それで皆が幸せになるとでも……？」",
+             "「该不会是……学园都市吧？！」", "「你认为破坏了学园都市，大家就能幸福吗……？」"),
+            ("「でさー、何だってお前はベランダに干してあった訳？」",
+             "「干してあった訳じゃないんだよ？」",
+             "「对了，为什么你会晾在阳台上？」", "「我又不是晾在那边的？」"),
+        ]
+        for jp_a, jp_b, cn_a, cn_b in cases:
+            with self.subTest(jp_a=jp_a[:12]):
+                self.assertEqual(pattern_echo_pairs(self._rows(jp_a, jp_b, cn_a, cn_b)), [])
+
+    def test_does_not_repeat_class4_affix_pairs(self):
+        # 公共前后缀够长时属类 4 的 affix 形态，本类不重复报。
+        rows = [
+            {"file": "a.xhtml", "line": 6, "jp": "たった三人の『木原』と。", "cn": "仅有三名「木原」。"},
+            {"file": "a.xhtml", "line": 7, "jp": "たった三人の『グレムリン』。",
+             "cn": "与仅有三名「格雷姆林」，"},
+        ]
+        self.assertEqual(pattern_echo_pairs(rows), [])
+
+    def test_ignores_parallel_template_with_different_neighbours(self):
+        # 职员表形态：共享段两侧紧邻的日文本身不同（監督・／脚本・），中文不同是正确行为。
+        rows = self._rows("監督・山田太郎はこう語った。", "脚本・山田太郎はこう語った。",
+                          "导演·山田太郎这样说道。", "编剧·山田太郎这样说道。")
+        self.assertEqual(pattern_echo_pairs(rows), [])
+
+    def test_ignores_pairs_whose_chinese_is_already_consistent(self):
+        # 两侧中文在共享段处译法一致（含只剩虚词差异），不是断裂候选。
+        cases = [
+            ("「でも、放っておけなかった」", "「……放っておけなかったんだ……」",
+             "「但是，我不能丢下你们不管。」", "「……我不能丢下你们不管……」"),
+            ("「分かってる」", "「分かってる」", "「这我知道。」", "「这个我也知道。」"),
+        ]
+        for jp_a, jp_b, cn_a, cn_b in cases:
+            with self.subTest(jp_b=jp_b[:12]):
+                self.assertEqual(pattern_echo_pairs(self._rows(jp_a, jp_b, cn_a, cn_b)), [])
+
+    def test_render_includes_pattern_section(self):
+        rows = self._seed_mid_span()
+        report = {"frag": [], "pairs": [], "short": [], "quotes": [],
+                  "pattern": pattern_echo_pairs(rows)}
+        text, summary = render("S1_09", rows, report)
+        self.assertIn("## 类 6 模式复述（1 对：类4 中间共享 1 对／类2 长度断档 0 对）", text)
+        self.assertIn("模式复述 1 对", summary)
+
+    def test_render_without_pattern_key_reports_zero(self):
+        # 兼容旧调用方：report 里没有 pattern 键时按 0 对输出，不抛异常。
+        text, summary = render("S1_01", [], {"frag": [], "pairs": [], "short": [], "quotes": []})
+        self.assertIn("## 类 6 模式复述（0 对", text)
+        self.assertIn("模式复述 0 对", summary)
+
+
+class PatternCliTests(unittest.TestCase):
+    """类 6 的命令行接线：默认开启、`--no-pattern-pairs` 可关、`--help` 有说明。"""
+
+    @staticmethod
+    def _fixture(root: Path) -> tuple[Path, Path]:
+        work = "S1_01"
+        cn_dir = root / "EPUB" / f"【{work}】测试书" / "OEBPS" / "Text"
+        cn_dir.mkdir(parents=True)
+        (cn_dir / f"{work}-01_Prologue.xhtml").write_text(
+            "<p>「哎呀。还是要接吻呢？」</p>\n<p>「还是接吻更好！！」</p>\n", encoding="utf-8")
+        jp_dir = root / "jp" / f"【{work}】テスト本" / "item" / "xhtml"
+        jp_dir.mkdir(parents=True)
+        (jp_dir / f"{work}-01.xhtml").write_text(
+            "<p>「あら。キスの方が良い？」</p>\n<p>「キスの方が良いッ!!」</p>\n", encoding="utf-8")
+        return root / "EPUB", root / "jp"
+
+    def test_cli_enables_pattern_pairs_by_default_and_can_disable(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            cn_root, jp_root = self._fixture(root)
+            base = [sys.executable, str(TOOLS / "check_echo.py"), "--root", str(cn_root),
+                    "--jp-root", str(jp_root), "--book", "S1_01"]
+            enabled = subprocess.run([*base, "--out", str(root / "on")],
+                                     capture_output=True, text=True, encoding="utf-8")
+            self.assertEqual(enabled.returncode, 0, enabled.stderr)
+            report = (root / "on" / "S1_01-呼应候选.md").read_text(encoding="utf-8")
+            self.assertIn("## 类 6 模式复述（1 对", report)
+
+            disabled = subprocess.run([*base, "--out", str(root / "off"), "--no-pattern-pairs"],
+                                      capture_output=True, text=True, encoding="utf-8")
+            self.assertEqual(disabled.returncode, 0, disabled.stderr)
+            report_off = (root / "off" / "S1_01-呼应候选.md").read_text(encoding="utf-8")
+            self.assertIn("## 类 6 模式复述（0 对", report_off)
+
+    def test_cli_help_documents_pattern_options(self):
+        result = subprocess.run([sys.executable, str(TOOLS / "check_echo.py"), "--help"],
+                                capture_output=True, text=True, encoding="utf-8")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        for flag in ("--pattern-window", "--pattern-min-span", "--pattern-min-share",
+                     "--pattern-affix", "--no-pattern-pairs"):
+            self.assertIn(flag, result.stdout)
 
 
 class TermGroupTests(unittest.TestCase):

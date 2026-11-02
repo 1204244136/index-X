@@ -9,7 +9,7 @@
 读者看到的是前后不一致，严重时后文引述的内容与前文原句矛盾。
 这类断裂**不违反任何既有门禁**：行数对齐、XML、加粗、术语裁定都查不出来。
 
-## 五类候选
+## 六类候选
 
 | 类 | 信号 | 含义 |
 | --- | --- | --- |
@@ -18,6 +18,7 @@
 | 引述回指 | 日语侧出现 `『…』` 嵌套引述，回全文找出处 | 引述处与被引处须对应 |
 | 短平行句 | 相邻两行日文只换一个名词、中文量词/结构不一致 | 同一模板的平行句被改断 |
 | 术语多译 | 同一日文术语（片假名/汉字连写）在作品内多次出现，中文用了不同写法 | 同一术语被译成几种（术语嵌在各不相同的长句中，类 1 的片段索引收不到） |
+| 模式复述 | 共享日文段落在**中间**（类 4 只比前后缀的盲区），或**短句谓述出现在长行**（类 2 的 20 字门槛与类 4 的 24 字上限造成的长度断档） | 同一句话被复述/接话两次，中文该处译法不一致 |
 
 ## 边界
 
@@ -47,6 +48,7 @@
 用法：
     python tools/check_echo.py --book S1_01 --book S1_02
     python tools/check_echo.py --book S1_01 --out .cache/epub-work/echo-check
+    python tools/check_echo.py --book S1_01 --no-pattern-pairs     # 关掉类 6
     python tools/check_echo.py --convention "そっと息を吐" --convention-words "叹气,吐气"
 """
 from __future__ import annotations
@@ -91,6 +93,22 @@ HIRAGANA = re.compile(r"[\u3040-\u309f]")
 # 是否一致（`三名`／`三人的`）。只覆盖常见量词，宁窄勿宽。
 NUM_JP = re.compile(r"[一二三四五六七八九十百千万億〇0-9]+[人個回発枚本冊匹頭羽台乗艘機]")
 NUM_CN = re.compile(r"[一二三四五六七八九十百千万亿两0-9]+([名人个位只条张台发辆艘架枚本册件次回层栋间套双对])?")
+
+# ---- 类 6「模式复述」用的判据常量（与类 4 的贴边路径互补，见 pattern_echo_pairs）----
+# 最长公共子串的锚点长度：先按 5-gram 命中定位，再向右扩展成极大公共串。
+PATTERN_GRAM = 5
+HAN_TEXT = re.compile(r"[\u4e00-\u9fff]")
+KATAKANA = re.compile(r"[\u30a1-\u30fa]")
+# 格/系助词：去掉后仍剩下的平假名才算谓述成分。`キスの方が良い` 余 `い`（形容词语尾），
+# `哀しくない` 余 `しくない`；而 `インデックスは`／`左方のテッラ` 去掉后没有平假名，
+# 是专名串——名单、职员表类噪音主要靠这一条整批消失。
+CASE_PARTICLES = frozenset("はがをにでとへものやか")
+# 敬称后缀：`フレメアちゃん` 这类人名不能当谓述成分。
+HONORIFICS = ("ちゃん", "さん", "さま", "くん", "どの", "君", "たち")
+# 引述句：`と` + 引用动词（`と上条は思った` 这类，中间容许 6 字叙述框架）。
+QUOTATIVE = re.compile(r"と[^。！？]{0,6}(?:言|思|叫|呟|訊|答|問|繰り返|続け|尋ね|告げ|漏ら|喚)")
+# 引号对话行：真呼应的常见载体（类 6 要求至少一侧有它）。
+DIALOGUE = re.compile(r"[「『]")
 
 DEFAULT_OUT = Path(".cache/epub-work/echo-check")
 # 书目录名形如 `【作品号】标题`（兼容历史半角 `[]`）。惯例统计要按目录反查作品号。
@@ -331,6 +349,21 @@ def sim_pairs(rows: list[dict], n: int, threshold: float) -> list[tuple[dict, di
     return out
 
 
+def _common_affix(a: str, b: str) -> tuple[int, int]:
+    """最长公共前缀与后缀的长度（类 4 与类 6 共用的贴边判据）。"""
+    prefix = 0
+    for x, y in zip(a, b):
+        if x != y:
+            break
+        prefix += 1
+    suffix = 0
+    for x, y in zip(reversed(a), reversed(b)):
+        if x != y:
+            break
+        suffix += 1
+    return prefix, suffix
+
+
 def short_parallel_pairs(rows: list[dict], *, window: int = 1, min_len: int = 6,
                          max_len: int = 24, affix: int = 4,
                          ratio: float = 0.5) -> list[dict]:
@@ -347,21 +380,13 @@ def short_parallel_pairs(rows: list[dict], *, window: int = 1, min_len: int = 6,
     - 功能词：中文差异只落在虚词/助词；
     - 实词：其余（平行句的刻意改写也会落在这里，须人工排除）。
 
+    **已知盲区**：本类只比最长公共**前后缀**，共享片段落在中间时（如 S1_09-04
+    L391「あら。キスの方が良い？」↔ L394「キスの方が良いッ!!」，前后缀 0/0、
+    中间共享 `キスの方が良い` 7 字）整类收不到。该形态与「短行↔长行」的长度
+    断档一起由类 6 `pattern_echo_pairs` 补，本类判据保持不变以免既有候选数量回归。
+
     只报候选，不判定、不写盘；刻意平行而各自成立的写法不得据此强行统一。
     """
-    def affix_len(a: str, b: str) -> tuple[int, int]:
-        prefix = 0
-        for x, y in zip(a, b):
-            if x != y:
-                break
-            prefix += 1
-        suffix = 0
-        for x, y in zip(reversed(a), reversed(b)):
-            if x != y:
-                break
-            suffix += 1
-        return prefix, suffix
-
     def measures_for(cn: str, number: str) -> set[str]:
         """中文行里以该数字开头的数量短语的量词集合（无则空串）。"""
         found: set[str] = set()
@@ -404,7 +429,7 @@ def short_parallel_pairs(rows: list[dict], *, window: int = 1, min_len: int = 6,
                     continue
                 if norm_cn(left["cn"]) == norm_cn(right["cn"]):
                     continue
-                prefix, suffix = affix_len(a, b)
+                prefix, suffix = _common_affix(a, b)
                 if max(prefix, suffix) < affix:
                     continue
                 score = difflib.SequenceMatcher(None, a, b).ratio()
@@ -416,6 +441,331 @@ def short_parallel_pairs(rows: list[dict], *, window: int = 1, min_len: int = 6,
                 })
     order = {"量词": 0, "功能词": 1, "实词": 2}
     out.sort(key=lambda x: (order.get(x["kind"], 9), -x["ratio"]))
+    return out
+
+
+def _gram_positions(text: str) -> dict[str, list[int]]:
+    """text 中每个 5-gram 的起始位置（类 6 求最长公共子串的锚点索引）。"""
+    index: dict[str, list[int]] = {}
+    for start in range(len(text) - PATTERN_GRAM + 1):
+        index.setdefault(text[start:start + PATTERN_GRAM], []).append(start)
+    return index
+
+
+def _longest_common_span(a: str, b: str,
+                         index_b: dict[str, list[int]] | None = None) -> tuple[int, int, int]:
+    """最长公共子串 (长度, a 中起点, b 中起点)。
+
+    类 4 的贴边判据只比前后缀，共享片段落在中间时恒为 0（S1_09-04 L391
+    「あら。キスの方が良い？」↔ L394「キスの方が良いッ!!」，前后缀 0/0、
+    中间共享 `キスの方が良い` 7 字）。本函数按 5-gram 命中定位锚点再向右扩展；
+    短串退回动态规划，保证 <5 字时也能定界。
+    """
+    if min(len(a), len(b)) < PATTERN_GRAM:
+        best = (0, 0, 0)
+        previous = [0] * (len(b) + 1)
+        for i, char_a in enumerate(a, 1):
+            current = [0] * (len(b) + 1)
+            for j, char_b in enumerate(b, 1):
+                if char_a == char_b:
+                    current[j] = previous[j - 1] + 1
+                    if current[j] > best[0]:
+                        best = (current[j], i - current[j], j - current[j])
+            previous = current
+        return best
+    if index_b is None:
+        index_b = _gram_positions(b)
+    best = (0, 0, 0)
+    for i in range(len(a) - PATTERN_GRAM + 1):
+        starts = index_b.get(a[i:i + PATTERN_GRAM])
+        if not starts:
+            continue
+        for j in starts:
+            # 只从极大公共串的起点扩展，避免同一串被每个内部位置重复计算。
+            if i and j and a[i - 1] == b[j - 1]:
+                continue
+            length = PATTERN_GRAM
+            while (i + length < len(a) and j + length < len(b)
+                   and a[i + length] == b[j + length]):
+                length += 1
+            if length > best[0]:
+                best = (length, i, j)
+    return best
+
+
+def _boundary_parallel(a: str, b: str, i_a: int, i_b: int, length: int,
+                       width: int = 4, min_context: int = 1) -> bool:
+    """共享段两侧紧邻的日文本身不同 → 平行模板（职员表「監督・」「脚本・」形态）。
+
+    这类行对是「同一模板换了内容词」，中文跟着不同是正确行为，按呼应报出来只是噪音。
+    一侧为空（短行整体被包含、长行多出的叙述）不算——那正是要抓的形态。
+
+    `min_context` 是两侧都要有够长上下文才比较的门槛。长度断档形态用 2：单字句末
+    助词（L292「……哀しくない**の**？」↔ L293「哀しくない**もん**！」里的 `の`）
+    不足以判定平行模板，把 1 字上下文当内容词比较会误杀真复述。
+    """
+    before_a, before_b = a[max(0, i_a - width):i_a], b[max(0, i_b - width):i_b]
+    if (before_a and before_b
+            and min(len(before_a), len(before_b)) >= min_context):
+        n = min(len(before_a), len(before_b))
+        if before_a[-n:] != before_b[-n:]:
+            return True
+    after_a = a[i_a + length:i_a + length + width]
+    after_b = b[i_b + length:i_b + length + width]
+    if (after_a and after_b
+            and min(len(after_a), len(after_b)) >= min_context):
+        n = min(len(after_a), len(after_b))
+        if after_a[:n] != after_b[:n]:
+            return True
+    return False
+
+
+def _is_onomatopoeia(text: str) -> bool:
+    """叠词/拟声（`ばしゃばしゃばしゃ`）。
+
+    `LONG_VOWEL` 只收同字连写 6 次以上，换字重复（ばしゃばしゃ）会漏掉。
+    """
+    if len(text) < 6:
+        return False
+    pairs = Counter(text[i:i + 2] for i in range(len(text) - 1))
+    return pairs.most_common(1)[0][1] >= 0.45 * (len(text) - 1)
+
+
+def _has_predicate(span: str) -> bool:
+    """共享段是否带谓述成分：去掉格助词与敬称后仍有平假名。
+
+    `キスの方が良い` 余 `い`（形容词语尾）、`哀しくない` 余 `しくない`；
+    而 `学園都市を`、`左方のテッラ`、`フレメアちゃん` 去掉后没有平假名，是专名串。
+    名单、职员表类噪音主要靠这一条整批消失。
+    """
+    rest = span
+    for honorific in HONORIFICS:
+        rest = rest.replace(honorific, "")
+    rest = "".join(char for char in rest if char not in CASE_PARTICLES)
+    return bool(HIRAGANA.search(rest))
+
+
+def _span_has_content(span: str) -> bool:
+    """共享段里要有实字（汉字或片假名）；纯假名语法胶水不构成呼应。"""
+    return bool(HAN_TEXT.search(span) or KATAKANA.search(span))
+
+
+def _mapped_cn(text: str, length_jp: int, start: int, span: int, pad: int = 1) -> str:
+    """把日文共享段的相对位置映射回中文行，取该处片段（两侧各放宽 pad 字）。"""
+    if not text or length_jp <= 0:
+        return ""
+    begin = max(0, int(round(start / length_jp * len(text))) - pad)
+    end = min(len(text), int(round((start + span) / length_jp * len(text))) + pad)
+    return text[begin:end] if end > begin else text[begin:begin + 1]
+
+
+def _content_bigrams(text: str) -> set[str]:
+    return {text[i:i + 2] for i in range(len(text) - 1)}
+
+
+def _single_content_swap(cn_a: str, cn_b: str, i_a: int, i_b: int, span: int,
+                         len_a: int, len_b: int) -> tuple[str, str, str]:
+    """整行中文对齐后，只认落在共享日文段映射区间内的**恰好一处实词替换**。
+
+    窗口式比较会把窗口截断位移当成用词差异，复述框架又会给每个窗口带来不同的
+    插入段。改为整行对齐再看位置：插入/删除一律视为框架材料（复述前缀、长行多出
+    的叙述），只有两侧都有字、长度差 ≤1、至多 4 字的一处 replace 才算「同一个
+    句法位上换了词」。
+
+    返回 (中文 A 该处, 中文 B 该处, 差异性质)；性质为空表示没有合格换词。
+    """
+    na, nb = norm_cn(cn_a), norm_cn(cn_b)
+    if len(na) < 2 or len(nb) < 2:
+        return "", "", ""
+    a0 = i_a / len_a * len(na)
+    a1 = (i_a + span) / len_a * len(na)
+    b0 = i_b / len_b * len(nb)
+    b1 = (i_b + span) / len_b * len(nb)
+    found: list[tuple[str, str]] = []
+    for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(None, na, nb).get_opcodes():
+        if tag != "replace":
+            continue
+        if i2 < a0 - 1 or i1 > a1 + 1 or j2 < b0 - 1 or j1 > b1 + 1:
+            continue
+        x, y = na[i1:i2], nb[j1:j2]
+        if not x or not y or abs(len(x) - len(y)) > 1 or max(len(x), len(y)) > 4:
+            continue
+        if not (HAN_TEXT.search(x) and HAN_TEXT.search(y)):
+            continue
+        found.append((x, y))
+    if len(found) != 1:
+        return "", "", ""
+    x, y = found[0]
+    chars = {char for char in x + y if char}
+    return x, y, ("实词替换" if not chars <= CN_FUNCTION_CHARS else "虚词替换")
+
+
+def _quote_fragment_keys(jp: str, min_len: int) -> set[str]:
+    """类 1 会收的片段键（引号内或整行），用于避免类 6 与类 1 重复报同一对。"""
+    keys = {fragment_key(match.group(1)) for match in QUOTE_PAIR.finditer(jp)}
+    stripped = jp.strip("「」『』")
+    if 12 <= len(norm_jp(stripped)) <= 200:
+        keys.add(fragment_key(stripped))
+    return {key for key in keys if len(key) >= min_len}
+
+
+def _covered_by_class1(jp_a: str, jp_b: str, min_len: int) -> bool:
+    return bool(_quote_fragment_keys(jp_a, min_len) & _quote_fragment_keys(jp_b, min_len))
+
+
+def _covered_by_class2(a: str, b: str, threshold: float) -> bool:
+    """是否已被类 2 的 20 字门槛收走（保守估计：两侧都够长且相似度过线）。"""
+    return (len(a) >= 20 and len(b) >= 20
+            and difflib.SequenceMatcher(None, a, b).ratio() >= threshold)
+
+
+def _covered_by_class4(a: str, b: str, gap: int, *, window: int, min_len: int,
+                       max_len: int, affix: int, ratio: float) -> bool:
+    """是否已被类 4 的贴边路径收走。"""
+    if gap > window or not (min_len <= len(a) <= max_len and min_len <= len(b) <= max_len):
+        return False
+    prefix, suffix = _common_affix(a, b)
+    return (max(prefix, suffix) >= affix
+            and difflib.SequenceMatcher(None, a, b).ratio() >= ratio)
+
+
+def pattern_echo_pairs(rows: list[dict], *, window: int = 6, min_span: int = 5,
+                       min_share: float = 0.35, affix: int = 4, max_short: int = 24,
+                       pair_threshold: float = 0.5, min_frag: int = 12,
+                       short_window: int = 1, short_min: int = 6,
+                       short_ratio: float = 0.5) -> list[dict]:
+    """类 6：模式复述（类 2 长度断档与类 4 中缀两个结构性盲区的合并补充）。
+
+    ## 补的是哪两个盲区
+
+    - **类 4 中缀**：`short_parallel_pairs` 只比最长公共前后缀并要求 ≥4，共享片段
+      落在中间时前后缀同为 0，整类漏掉。实例 S1_09-04 L391「あら。キスの方が良い？」
+      ↔ L394「キスの方が良いッ!!」：归一 9/8 字、公共前后缀 0/0、中间共享
+      `キスの方が良い` 7 字。
+    - **类 2 长度断档**：`sim_pairs` 先按 `len(norm_jp(...)) >= 20` 过滤，短行整对
+      不参与；类 4 的 `max_len` 默认 24 又把长行挡掉，于是「短句 + 长叙述」谁都不收。
+      实例 S1_09-04 L292「……自分で言ってて哀しくないの？」（13 字）↔ L293
+      「哀しくないもん！　と上条は…」（89 字）。
+
+    两类同一形态（同一句话被复述/接话两次）合并在这一类里，按 `blind` 字段区分
+    「类4 中间共享」与「类2 长度断档」，报告里分开列。
+
+    ## 判据（两个盲区共用日文侧，中文侧分两档证据）
+
+    日文侧：同文件、行距 ≤ `window`；至少一侧是短行（≤ `max_short`，两端都超长的
+    行对交给类 2）；最长公共子串 ≥ `min_span` 且占较短行
+    ≥ `min_share`；公共前后缀 < `affix`（贴边的属类 4 的 affix 路径，不重复报）；
+    共享段两侧紧邻的日文若本身不同（职员表「監督・」「脚本・」形态）整对排除——长度
+    断档形态要求两侧各有 ≥2 字上下文才做比较，单字句末助词（L292「哀しくない**の**？」
+    ↔ L293「哀しくない**もん**！」里的 `の`）不足以判定平行模板；
+    共享段要含实字且带**谓述成分**（去掉格助词/敬称后仍有平假名——纯专名串因此
+    整批消失）；至少一侧是引号对话行或「と＋引述动词」的引述句。
+
+    中文侧按证据分两档：
+
+    - `单处实词替换`：两侧中文整行对齐，共享段映射区间内**恰好一处**实词替换
+      （≤4 字、含汉字、长度差 ≤1）；虚词级（的了吗呢）不计。长行比短行多出的叙述
+      只算框架，不参与比较。
+    - `长行开头复述` / `引述回响`：仅用于长度断档形态。这类行对整行对齐会被长行
+      多出的叙述主导，改看两侧中文在共享段处的对应片段：须有共同的 2 字实词片段，
+      且长行以该谓述开头，或该谓述后紧跟「と＋引述动词」（接话/反驳）。
+
+    已被类 1／类 2／类 4 覆盖的行对不再重复报。
+
+    只报候选、不判定、不写盘。同义改写、语气差异、复述框架都可能落在候选里，
+    构成呼应与否须逐条回日文原文核对。
+    """
+    by_file: dict[str, list[dict]] = defaultdict(list)
+    for row in rows:
+        by_file[row["file"]].append(row)
+    out: list[dict] = []
+    for items in by_file.values():
+        ordered = sorted(items, key=lambda row: int(row["line"]))
+        norms = [norm_jp(row["jp"]) for row in ordered]
+        indexes = [_gram_positions(text) for text in norms]
+        for i, left in enumerate(ordered):
+            a = norms[i]
+            if len(a) < min_span or LONG_VOWEL.search(left["jp"]) or _is_onomatopoeia(a):
+                continue
+            for j in range(i + 1, min(i + 1 + window, len(ordered))):
+                right = ordered[j]
+                gap = int(right["line"]) - int(left["line"])
+                if gap > window:
+                    break
+                b = norms[j]
+                if len(b) < min_span or LONG_VOWEL.search(right["jp"]) or _is_onomatopoeia(b):
+                    continue
+                if min(len(a), len(b)) > max_short:
+                    # 两端都超过短句上限：不属本类的两个盲区（长行对交给类 2）。
+                    continue
+                if norm_cn(left["cn"]) == norm_cn(right["cn"]):
+                    continue
+                length, i_a, i_b = _longest_common_span(a, b, indexes[j])
+                if length < min_span:
+                    continue
+                short_len = min(len(a), len(b))
+                share = length / short_len
+                if share < min_share:
+                    continue
+                prefix, suffix = _common_affix(a, b)
+                if max(prefix, suffix) >= affix:
+                    continue  # 贴边形态归类 4 的 affix 路径，本类不重复报
+                if _boundary_parallel(a, b, i_a, i_b, length,
+                                      min_context=1 if max(len(a), len(b)) <= max_short else 2):
+                    continue
+                span = a[i_a:i_a + length]
+                if not _span_has_content(span) or not _has_predicate(span):
+                    continue
+                if not (DIALOGUE.search(left["jp"]) or DIALOGUE.search(right["jp"])
+                        or QUOTATIVE.search(left["jp"]) or QUOTATIVE.search(right["jp"])):
+                    continue
+                if _covered_by_class2(a, b, pair_threshold):
+                    continue
+                if _covered_by_class4(a, b, gap, window=short_window, min_len=short_min,
+                                      max_len=max_short, affix=affix, ratio=short_ratio):
+                    continue
+                if _covered_by_class1(left["jp"], right["jp"], min_frag):
+                    continue
+                cn_span_a = _mapped_cn(norm_cn(left["cn"]), len(a), i_a, length)
+                cn_span_b = _mapped_cn(norm_cn(right["cn"]), len(b), i_b, length)
+                diff_a = diff_b = ""
+                evidence = ""
+                x, y, swap_kind = _single_content_swap(
+                    left["cn"], right["cn"], i_a, i_b, length, len(a), len(b))
+                if swap_kind == "实词替换":
+                    evidence, diff_a, diff_b = "单处实词替换", x, y
+                elif max(len(a), len(b)) > max_short:
+                    # 长度断档：长行多出的叙述主导整行对齐，改看共享段两侧的中文片段。
+                    long_is_right = len(b) > len(a)
+                    long_norm = b if long_is_right else a
+                    long_start = i_b if long_is_right else i_a
+                    at_head = long_start == 0
+                    quoted = bool(QUOTATIVE.search(
+                        long_norm[long_start + length:long_start + length + 14]))
+                    if (at_head or quoted) and (
+                            _content_bigrams(cn_span_a) & _content_bigrams(cn_span_b)):
+                        evidence = "长行开头复述" if at_head else "引述回响"
+                if not evidence:
+                    continue
+                out.append({
+                    "left": left, "right": right,
+                    "span": span, "span_len": length, "span_share": share,
+                    "prefix": prefix, "suffix": suffix,
+                    "relation": ("整行同形" if a == b
+                                 else "包含" if length >= short_len else "中缀"),
+                    "blind": ("类4 中间共享" if max(len(a), len(b)) <= max_short
+                              else "类2 长度断档"),
+                    "evidence": evidence,
+                    "diff_a": diff_a, "diff_b": diff_b,
+                    "cn_a_span": cn_span_a, "cn_b_span": cn_span_b,
+                    "ratio": difflib.SequenceMatcher(None, a, b).ratio(),
+                })
+    blind_order = {"类4 中间共享": 0, "类2 长度断档": 1}
+    evidence_order = {"单处实词替换": 0, "长行开头复述": 1, "引述回响": 2}
+    out.sort(key=lambda item: (
+        blind_order.get(item["blind"], 9), evidence_order.get(item["evidence"], 9),
+        -item["span_len"], -item["span_share"],
+        int(item["left"]["line"]), int(item["right"]["line"])))
     return out
 
 
@@ -952,6 +1302,45 @@ def render(work: str, rows: list[dict], report: dict) -> tuple[str, str]:
             lines.append(f"  - 例：…{variant['context']}…")
         lines.append("")
 
+    patterns = report.get("pattern", [])
+    pattern_count = {"类4 中间共享": 0, "类2 长度断档": 0}
+    for item in patterns:
+        pattern_count[item["blind"]] = pattern_count.get(item["blind"], 0) + 1
+    lines.append(
+        f"## 类 6 模式复述（{len(patterns)} 对：类4 中间共享 {pattern_count['类4 中间共享']} 对／"
+        f"类2 长度断档 {pattern_count['类2 长度断档']} 对）")
+    lines.append("")
+    lines.append("同一句话被复述/接话两次，中文该处应对应。本类补两个结构性盲区：")
+    lines.append("")
+    lines.append(f"- **类4 中间共享 {pattern_count['类4 中间共享']} 对**：两行都是短句（≤24 字），"
+                 "共享片段落在中间、公共前后缀都不足——类 4 只比最长公共前后缀，整类收不到"
+                 "（S1_09-04 L391「あら。キスの方が良い？」↔ L394「キスの方が良いッ!!」即此型）。")
+    lines.append(f"- **类2 长度断档 {pattern_count['类2 长度断档']} 对**：短行（≤24 字）的核心谓述"
+                 "出现在长行（>24 字）中——类 2 的 20 字门槛挡住短句、类 4 的 24 字上限挡住"
+                 "长行，两侧都不收（S1_09-04 L292↔L293 即此型）。")
+    lines.append("")
+    lines.append("**证据**（本类按此排序）：`单处实词替换`（两侧中文整行对齐后只差一处实词，"
+                 "最需要回原文）→ `长行开头复述`（长行以短句谓述开头）→ `引述回响`"
+                 "（该谓述后紧跟「と＋引述动词」）。刻意复述与语气差异仍须人工排除。")
+    lines.append("")
+    for i, item in enumerate(patterns, 1):
+        left, right = item["left"], item["right"]
+        lines.append(
+            f"### 6.{i}　〔{item['blind']}·{item['relation']}〕 r={item['ratio']:.2f}　"
+            f"共享 `{item['span']}`（{item['span_len']} 字，占短行 {item['span_share']:.2f}）"
+            f"／证据 {item['evidence']}　"
+            f"{left['file']}:{left['line']} ↔ {right['file']}:{right['line']}"
+        )
+        lines.append(f"- 日文A：{left['jp'][:180]}")
+        lines.append(f"- 日文B：{right['jp'][:180]}")
+        lines.append(f"- 中文A：{left['cn'][:180]}")
+        lines.append(f"- 中文B：{right['cn'][:180]}")
+        if item["evidence"] == "单处实词替换":
+            lines.append(f"- 该处换词：`{item['diff_a']}` → `{item['diff_b']}`")
+        else:
+            lines.append(f"- 该处中文：`{item['cn_a_span']}` ↔ `{item['cn_b_span']}`")
+        lines.append("")
+
     summary = (
         f"{work}\t片段多译 {len(frags)} 组"
         f"（实词 {klass_count['实词']}／语体 {klass_count['语体']}／虚词 {klass_count['虚词']}）"
@@ -961,6 +1350,9 @@ def render(work: str, rows: list[dict], report: dict) -> tuple[str, str]:
         f"\t术语多译 {len(terms)} 组"
         f"\t引述回指 {len(quotes)} 条"
         f"（升级 {n_upgrade}／同形 {n_exact}）"
+        f"\t模式复述 {len(patterns)} 对"
+        f"（类4 中间共享 {pattern_count['类4 中间共享']}／"
+        f"类2 长度断档 {pattern_count['类2 长度断档']}）"
     )
     return "\n".join(lines) + "\n", summary
 
@@ -1119,6 +1511,22 @@ def main(argv: list[str] | None = None) -> int:
                         help="短平行句的最长公共前后缀下限（默认 4）")
     parser.add_argument("--short-ratio", type=float, default=0.5,
                         help="短平行句的序列相似度阈值（默认 0.5）")
+    parser.add_argument("--pattern-window", type=int, default=6,
+                        help="模式复述（类 6）的行距窗口（默认 6：要覆盖「短句 + 紧随其后的"
+                             "长叙述」，比短平行句的 1 宽）")
+    parser.add_argument("--pattern-min-span", type=int, default=5,
+                        help="模式复述（类 6）的共享日文段最短字数（默认 5，且须含平假名谓述"
+                             "成分；纯专名串整批消失）")
+    parser.add_argument("--pattern-min-share", type=float, default=0.35,
+                        help="模式复述（类 6）的共享段占较短行长度的最小比例（默认 0.35，"
+                             "压掉长行偶然撞词）")
+    parser.add_argument("--pattern-affix", type=int, default=4,
+                        help="模式复述（类 6）的贴边排除阈值（默认 4：最长公共前后缀达到"
+                             "该值的属短平行句的 affix 形态，本类不重复报）")
+    parser.add_argument("--no-pattern-pairs", action="store_true",
+                        help="关闭类 6「模式复述」（默认开启）。其两个形态默认并入候选："
+                             "共享段落在中间（类 4 只比前后缀的盲区）与短行谓述出现在长行"
+                             "（类 2 的 20 字门槛造成的长度断档）")
     parser.add_argument("--term-min-lines", type=int, default=3,
                         help="术语多译：日文术语最少出现行数（默认 3）")
     parser.add_argument("--term-max-lines", type=int, default=60,
@@ -1213,6 +1621,14 @@ def run_reports(args: argparse.Namespace, parser: argparse.ArgumentParser) -> in
             ),
             "quotes": quote_lookups(rows, args.min_quote, args.cover, args.include_marker_quotes),
         }
+        if not args.no_pattern_pairs:
+            report["pattern"] = pattern_echo_pairs(
+                rows, window=args.pattern_window, min_span=args.pattern_min_span,
+                min_share=args.pattern_min_share, affix=args.pattern_affix,
+                max_short=args.short_max, pair_threshold=args.pair_threshold,
+                min_frag=args.min_frag, short_window=args.short_window,
+                short_min=args.short_min, short_ratio=args.short_ratio,
+            )
         text, summary = render(work, rows, report)
         target = args.out / f"{work}-呼应候选.md"
         coverage_note = f"\n可靠配对行：{len(rows)}；{'部分覆盖' if notes else '所选配对范围已读取'}。\n"
