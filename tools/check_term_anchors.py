@@ -49,7 +49,8 @@ DEFAULT_OUT = REPO_ROOT / ".cache" / "epub-work" / "term-anchor-check.tsv"
 
 # 需要严格执行的裁定锚点。新增时确认该行「被否决或并存的候选」列可以直接当误形用，
 # 且没有大量合法的并存义项；否则先补例外或另立裁定行。
-DEFAULT_ANCHORS = ("魔術", "魔術師")
+# 纳入条件与当前名单见裁定表 §四.8；本常量与「判定」列（匹配轴）无关。
+DEFAULT_ANCHORS = ("魔術", "魔術師", "チキンレース", "元女教皇", "低周波振動治療器", "神の子")
 
 # 日文语境例外：锚点 → 命中即整行跳过的正则。
 ANCHOR_CONTEXT_EXCEPTIONS = {

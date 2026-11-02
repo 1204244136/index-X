@@ -24,6 +24,10 @@ RULINGS = """# 测试裁定表
 | 日文锚点 | 裁定 | 被否决或并存的候选 | 备注 | 判定 |
 | --- | --- | --- | --- | --- |
 | `魔術`／`魔術師` | 魔法／魔法师 | 魔术／魔术师 | 术语层须与手技层分开 |  |
+| `チキンレース` | 试胆竞速 | 胆小鬼博弈／斗鸡博弈 | 测试用 |  |
+| `元女教皇` | 前任女教皇 | 前女教皇／原女教皇 | 测试用 |  |
+| `低周波振動治療器` | 低频振动治疗器 | 低频震动治疗器 | 测试用 |  |
+| `神の子` | 神子 | 神之子 | 测试用 |  |
 """
 
 
@@ -55,7 +59,8 @@ class RuleLoadingTests(unittest.TestCase):
         self.assertEqual(by_anchor["魔術"]["accepted"], ["魔法", "魔法师"])
         self.assertEqual(by_anchor["魔術"]["rejected"], ["魔术", "魔术师"])
         # 长锚点排前，避免 `魔術` 把 `魔術師` 拆开重复计数
-        self.assertEqual(rules[0]["anchor"], "魔術師")
+        anchors = [rule["anchor"] for rule in rules]
+        self.assertLess(anchors.index("魔術師"), anchors.index("魔術"))
 
     def test_missing_anchor_raises(self):
         with tempfile.TemporaryDirectory() as tmp:
