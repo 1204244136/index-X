@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import contextlib
 import io
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -12,7 +13,7 @@ TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 
 import publish_auto  # noqa: E402
-from manifest import save_manifest, scan_cache, scan_epub  # noqa: E402
+from manifest import load_manifest, save_manifest, scan_cache, scan_epub  # noqa: E402
 from sync_core import UNIX_TO_DOTNET_TICKS_OFFSET  # noqa: E402
 
 BOOK_CN = "【S1_01】某书X"
@@ -411,6 +412,90 @@ class IntegrationTests(unittest.TestCase):
     def run_tool(self, *extra: str) -> int:
         with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
             return publish_auto.main(self.fx.argv(*extra))
+
+    def run_publication_cli(self, script: str, *extra: str) -> subprocess.CompletedProcess:
+        return subprocess.run(
+            [sys.executable, str(TOOLS / script), "--cache", str(self.fx.cache),
+             "--epub", str(self.fx.epub), "--no-upload", *extra],
+            capture_output=True, text=True, encoding="utf-8", check=False,
+        )
+
+    def test_overwrite_cache_replaces_cache_only_edits_through_real_cli(self):
+        cached = self.fx.cache / "chinese-text" / BOOK_CN
+        archived = self.fx.epub / BOOK_CN
+        (cached / "OEBPS/Text/S1_01-01_Chapter.xhtml").write_text(
+            Fixture.xhtml("<p>缓存独有修改</p>"), encoding="utf-8")
+        (cached / "cache-only.txt").write_text("缓存独有文件", encoding="utf-8")
+        (cached / "OEBPS/Text/S1_01-Information.xhtml").unlink()
+        css = archived / "OEBPS/Styles/style.css"
+        css.write_text(css.read_text(encoding="utf-8") + "\np { letter-spacing: 0; }\n", encoding="utf-8")
+        outside = self.fx.cache / "chinese-text" / BOOK_CN2
+        before_outside = {p.relative_to(outside): p.read_bytes() for p in outside.rglob("*") if p.is_file()}
+
+        result = self.run_publication_cli(
+            "publish_epub.py", "--only-books", f"chinese-text/{BOOK_CN}", "--overwrite-cache")
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(
+            {p.relative_to(cached): p.read_bytes() for p in cached.rglob("*") if p.is_file()},
+            {p.relative_to(archived): p.read_bytes() for p in archived.rglob("*") if p.is_file()},
+        )
+        prefix = f"chinese-text/{BOOK_CN}/"
+        self.assertEqual(
+            {k: v for k, v in scan_cache(self.fx.cache).items() if k.startswith(prefix)},
+            {k: v for k, v in load_manifest(self.fx.cache).items() if k.startswith(prefix)},
+        )
+        self.assertEqual(before_outside,
+                         {p.relative_to(outside): p.read_bytes() for p in outside.rglob("*") if p.is_file()})
+
+    def test_partial_conflict_returns_failure_and_keeps_successful_book_through_real_cli(self):
+        self.fx.write_cache_book("chinese-text", BOOK_CN, "<p>缓存独有</p>")
+        self.fx.write_epub_book(BOOK_CN, "<p>归档独有</p>")
+        self.fx.write_epub_book(BOOK_CN2, "<p>正常发布</p>")
+        baseline = load_manifest(self.fx.cache)
+        conflict = self.fx.cache / "chinese-text" / BOOK_CN / "OEBPS/Text/S1_01-01_Chapter.xhtml"
+        before_conflict = conflict.read_bytes()
+
+        result = self.run_publication_cli("publish_epub.py")
+
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("已跳过", result.stdout)
+        self.assertEqual(conflict.read_bytes(), before_conflict)
+        normal = "OEBPS/Text/S1_02-01_Chapter.xhtml"
+        self.assertEqual((self.fx.cache / "chinese-text" / BOOK_CN2 / normal).read_bytes(),
+                         (self.fx.epub / BOOK_CN2 / normal).read_bytes())
+        after = load_manifest(self.fx.cache)
+        prefix = f"chinese-text/{BOOK_CN}/"
+        self.assertEqual({k: v for k, v in baseline.items() if k.startswith(prefix)},
+                         {k: v for k, v in after.items() if k.startswith(prefix)})
+        normal_key = f"chinese-text/{BOOK_CN2}/{normal}"
+        self.assertEqual(after[normal_key], scan_epub(self.fx.epub)[normal_key])
+
+    def test_forward_handles_removed_and_modified_books_in_one_real_cli_run(self):
+        (self.fx.cache / "chinese-text" / BOOK_CN).rename(self.fx.root / "retired")
+        self.fx.write_cache_book("chinese-text", BOOK_CN2, "<p>正常修改</p>")
+
+        result = self.run_publication_cli("publish.py", "--side", "chinese")
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertFalse((self.fx.epub / BOOK_CN).exists())
+        baseline = load_manifest(self.fx.cache)
+        self.assertFalse(any(key.startswith(f"chinese-text/{BOOK_CN}/") for key in baseline))
+        normal = "OEBPS/Text/S1_02-01_Chapter.xhtml"
+        self.assertEqual((self.fx.cache / "chinese-text" / BOOK_CN2 / normal).read_bytes(),
+                         (self.fx.epub / BOOK_CN2 / normal).read_bytes())
+
+    def test_forward_still_rejects_existing_book_with_deleted_container(self):
+        (self.fx.cache / "chinese-text" / BOOK_CN).rename(self.fx.root / "retired")
+        (self.fx.cache / "chinese-text" / BOOK_CN2 / "mimetype").unlink()
+        baseline = (self.fx.cache / "manifest.json").read_bytes()
+
+        result = self.run_publication_cli("publish.py", "--side", "chinese")
+
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("mimetype", result.stderr)
+        self.assertTrue((self.fx.epub / BOOK_CN).is_dir())
+        self.assertEqual((self.fx.cache / "manifest.json").read_bytes(), baseline)
 
     def test_cache_change_publishes_through_real_tools(self):
         target = self.fx.cache / "chinese-text" / BOOK_CN / "OEBPS" / "Text" / "S1_01-01_Chapter.xhtml"

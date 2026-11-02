@@ -50,7 +50,7 @@ description: index-X 校对复核工作流。用于复核校对工具（外部 A
 改动来源：外部 AI 辅助校对工具的确认结果导出（`out/projects/<id>/snapshots/<ts>/translation-compare.csv`，列含 `jp` / `cn`）经应用后落到 `EPUB/`。**复核入口是 git 改动**，与应用方式无关。
 
 ```powershell
-# 工作区未提交的改动（校对结果刚应用、还没提交）
+# 未提交的净改动（含已暂存与未暂存，按当前工作文件相对 HEAD 提取）
 python tools/proofread_review.py --worktree
 python tools/proofread_review.py --worktree --path "EPUB/【S3_01】创约 某魔法的禁书目录 01"
 python tools/proofread_review.py --worktree --out .cache/epub-work/proofread-review-s301
@@ -80,7 +80,7 @@ python tools/proofread_review.py b7515335 2d44cb26 821c46b9 7a218119
 
 | 级别 | 含义 | 复核处置 |
 | --- | --- | --- |
-| `spec` | 改动由 `docs/translation-spec.md` 条款决定（`punct` 标点排版 / `quote` 引号体例 / `glyph` 全半角 / `erhua` 去儿化 / `particle` 规范语气词） | 批量放行；只确认子类与规范一致，不逐条回原文 |
+| `spec` | 改动由 `docs/translation-spec.md` 条款决定（`punct` 标点排版 / `quote` 引号体例 / `glyph` 全半角 / `particle` 整条独立语气词） | 批量放行；只确认子类与规范一致，不逐条回原文 |
 | `tiny` | 最小差异 ≤ 2 字且差异两侧全是虚词 | 仍要回原文，但一眼能看完；**不是「可跳过」** |
 | `local` | 最小差异 ≤ 12 字（术语、用词、数字） | 逐条看，按 `groups.txt` 的聚类批量核同类 |
 | `rewrite` | 最小差异 > 12 字，或整段增删 | 全量逐条回原文；重点检查信息增删、主体与逻辑方向 |
@@ -97,6 +97,8 @@ python tools/proofread_review.py b7515335 2d44cb26 821c46b9 7a218119
 **R1 跑工具、记基线**：按 [复核契约](references/review-contract.md) 保留本轮工具产物，用共用入口 `init` 生成 `manifest.tsv`，为每个片段分配稳定 ID，并由 Lead 记录基线。此时还未放行 `spec` 或冻结切片；后续判定与统计全部回指该清单，输入或参考内容变化则建新轮。
 
 **R2 放行规范级**：核 `spec.tsv` 的子类分布是否符合规范条款，记录适用条款及片段 ID；掺了语义成分却落到 `spec` 的，保留原 ID、将清单的有效级别改为 `local` 后纳入切片。重分类在派发前冻结。
+
+删除“儿”以及句内语气词替换按语义级核对，先区分儿化音、实义词与实际语气；工具不据单字差异批量放行。
 
 **R3 分层核对语义级**（按风险从高到低；**一律按 §六 强制切片并行**，分级判据与三种出口不变）：
 

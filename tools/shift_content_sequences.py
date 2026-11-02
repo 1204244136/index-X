@@ -15,6 +15,7 @@ else:
     from cli_output import configure_output
 from edit_safety import DEFAULT_EPUB, EditSafetyError, add_edit_mode, require_edit_target
 from epub_structure import REFERENCE_SUFFIXES
+from file_transaction import atomic_write_bytes, rollback_paths
 
 WORK_ID_RE = re.compile(
     r"S\d+_(?:\d+(?:_\d+)?|\d{2}(?:\.\d{2}){2})",
@@ -118,26 +119,14 @@ def apply_shift(root: Path, renames: dict[Path, Path], rewrites: dict[Path, byte
     for _, temporary, _ in staged:
         if temporary.exists():
             raise ValueError(f"临时文件已存在：{temporary}")
-    originals = {path: path.read_bytes() for path in rewrites}
-    for path, data in rewrites.items():
-        path.write_bytes(data)
-
-    moved: list[tuple[Path, Path, Path]] = []
-    try:
+    targets = [*rewrites, *(path for triple in staged for path in triple)]
+    with rollback_paths(targets):
+        for path, data in rewrites.items():
+            atomic_write_bytes(path, data)
         for source, temporary, target in staged:
             source.rename(temporary)
-            moved.append((source, temporary, target))
-        for _, temporary, target in moved:
+        for _, temporary, target in staged:
             temporary.rename(target)
-    except Exception:
-        for source, temporary, target in reversed(moved):
-            if target.exists() and not source.exists():
-                target.rename(source)
-            elif temporary.exists() and not source.exists():
-                temporary.rename(source)
-        for path, data in originals.items():
-            path.write_bytes(data)
-        raise
 
 
 def main() -> int:

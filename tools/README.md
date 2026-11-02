@@ -215,6 +215,8 @@ B 不是 agent 的常规编辑入口，只用于同步器／导入流程已生�
 
 两者支持 `--cache`、`--epub`、`--pattern`、`--only-books`、`--no-upload`、`--force` 和外部目标路径；B 有 `--side`、`--sync-only`，C 有 `--overwrite-cache`。删除随增量镜像传播；`--no-upload` 只省外部上传，不应被描述为完成分发。`--sync-only` 不打包上传，不创建新的已上传事实。
 
+C 的 `--overwrite-cache` 以归档为准，全量重建本次受影响的缓存书，清除其独有增删改；普通 C 仍按变化文件增量镜像。冲突书未显式覆盖时计入失败，其他正常书可完成，但整批返回 1；只为成功书推进清单。B 按书识别“目录已不存在且检测结果全部为删除”的整本删除，与普通修改同批处理；现存书仍执行完整预检。
+
 `--force` 不表示跳过成品结构门禁；限定书籍时只重做所选书，保留其它书的已发布清单记录。清单中某处理侧全无基线记录时，发布停止并给出重建提示；仅确认缓存即已发布状态后用 `python tools/manifest.py --update-books chinese-text/某书目录` 重建，不用清单更新掩盖未发布变化。
 
 ### 共享发布前检查
@@ -227,6 +229,8 @@ python tools/publish_preflight.py --source EPUB --calibre
 ```
 
 `--source` 为中文候选根；`--jp-root` 是可选只读日文参考，省略时仅检查中文。CLI 显式指定日文根时要求所选适用范围的参考完整，缺目录为 2，缺书／正文或无法可靠配对为 1。输出实际覆盖与未核验原因，不把空目录记作双语通过。`--only-books` 以逗号分隔的 `side/book` 限定书籍，逐项核对请求范围，不存在项不能被其它已找到的书掩盖；内部 `allow_removed=True` 保留同步器的删除路径。`--calibre` 显式启用全 source 的补充校验，不与 `--only-books` 合用；任一硬错误非零。内部 `validate_publication(cn_root, jp_root=None, book_keys=None, *, allow_removed=False, require_reference=False)` 返回 bool；同步器默认允许合法的单侧作品，但须报告仅单侧／部分／完整覆盖，调用方可用 `require_reference=True` 要求参考完整。
+
+跨书 UUID 唯一性将所选中文候选与整个中文根比较；所选书与范围外书重复也阻断，范围外书相互重复不阻断无关选书。
 
 ### 拉取
 
@@ -307,6 +311,7 @@ python tools/import_build_wrappers.py .cache/epub-work/import/plan.json --templa
 - `import_docx_outline.py` 只读诊断，写显式 `--out`。阻断项：无 Heading 1、段内换行（`w:br`）、注音／译注记号未闭合；提示项：全角空格、段内制表符、独占成段的译注。
 - `import_align_plan.py` 按**日文物理行**逐行比对（日文一行＝一个行单元，中文侧允许 1:2），输出 `1:1`／`1:2`／`1:0`／`0:1` 关系与建议改动，并生成计划骨架。改动类型只有 `split`／`merge_prev`／`insert_br_after`／`drop`／`note_to_prev` 五种，`para` 用清单里的段落序号。章标题识别覆盖 `引子／序章／第N章／行间（可带副标题，`行　间` 的排版空格先折叠）／深度N（外典书库的专用后缀，写作 `DepthN`）／终章／后记／尾声`；识别不出的条目骨架留空 `fname`，由人工在计划里补。计划是任务工作产物，放 `.cache/epub-work/import/`，不提交。
 - `import_build_text.py` 渲染正文（固定行模板、`<ruby>`、Note 页与脚注引用）。**写盘前逐章断言物理行数与日文一致，任何一章不齐整批不写**；只清段落首尾的 ASCII 空格与不换行空格，段内全角空格（对齐／分字）原样保留。译注正文在正文渲染时已由 `esc_ruby` 转成可安全嵌入的行内 XML（含 `<ruby>`／`<b>`），写 Note 页时**原样写入**，不得二次转义（否则译注里的注音会退化成 `&lt;ruby&gt;` 字面文本）。
+- 计划的章节 `fname` 必须是单个 `.xhtml` 文件名，按不区分大小写判重；绝对路径、目录分隔符及越界输出阻断。正文工具在任何写入前逐项核对实际目标。显式 `--report` 在预览时可写报告，但须避开计划、交稿、素材、日文参考和成品目录；执行模式的报告与正文写入一并回滚。
 - `import_images.py`：`suggest` 用 dHash 把素材对到日文原图给命名建议；`apply` 复制并校验作品号前缀、可解码性与指纹，低置信项必须人工看图。`apply` 子命令与 `import_build_wrappers.py` 的显式 `--report` 在预览时也写计划报告，标明未产出；执行成功的报告标明已写入。两入口在任何写入前检查报告目标，拒绝覆盖计划／制作材料，或落入素材、模板、日文参考及成品目录，路径别名同样检查；报告原子写入，执行模式的报告与本批成品写入一并回滚。
 - `import_build_wrappers.py` 从模板书取样式表、container 与 calibre 元数据块，生成包装页（Cover／Information／Introduction，计划里有 `role=illustration` 彩页时再加 Illustrations）与 `nav.xhtml`／`toc.ncx`／`content.opf`／`mimetype`。`--info`／`--intro` 是页面 L4 起的内容行（第 1 行 h1、第 2 行空行占位），由用户素材决定；简介页文件名默认 `<作品号>-Introduction.xhtml`，计划里写 `intro_fname` 可让它占某个内容序（S5 外典书库用 `-01`，与日文侧整页作品扉页同序）；manifest 的 item id 用 `id-t{n}`，避免与 metadata 的 `id-1`／`id-2` 冲突（calibre 会报 `DuplicateId`）。
 - 六步之后按 C4 跑 `text_norm.py`、`check_alignment.py --strict`、`check_epub_health.py --strict`、`check_note_order.py`、`publish_preflight.py`、`check_epub_validity.py`，再走 C1 的发布。
@@ -368,6 +373,8 @@ python tools/docx2epub.py 交稿.docx --out 显式构建输出 --unpacked 显式
 
 默认预览；`--apply` 必须显式 `--out`，或 `--no-pack` 时显式 `--unpacked`；临时输出需 `--staging`。读交稿并生成 X 版 EPUB，恢复 ruby、Note 与模板。作品身份不足时显式 `--series`／`--volume`，可传 `--title`／`--author`／`--language`、`--css`、`--images-from`、`--cover`、重复 `--illustrations-before`／`--illustrations-after`。`--no-pack` 只生成解包产物，`--pattern` 筛选、`--quiet` 控制显示。有包输出复用 `package_book`，`--no-pack` 也执行资源／容器校验。推荐先转换到暂存并验证后再进入归档；交稿规范不在成品规范里反向要求。
 
+两种交稿译注记号 `【译注：…】`／`（译注：…）` 混用时也按正文从左到右分配初始 ID，Note 列表遵循首次引用顺序。译注内已转义的文字与 ruby／强调标签直接作为行内 XML 写入 Note；同一规则用于分步正文导入。
+
 ## C3 成品结构与配对修复
 
 写盘型结构修复：模板、标题、序号、页边界、图片行、Note。判定通过与否属于 C4，本簇不负责宣布「已对齐」。标题／页边界的语义未确认时，工具输出待人工项并保留内容；译文选词不由结构工具自动处理。
@@ -420,6 +427,8 @@ python tools/fix_empty_placeholders.py --cache 显式书籍根
 ```
 
 shift 用单次映射改文件与 XHTML/OPF/NCX/nav/CSS/SVG/XML 引用，防止相邻序号级联覆盖；歧义旧裸页引用保持不动并报告。空页工具只删除经判定无文本、无图/SVG 的编号页并前移后续序号，默认预览、`--apply` 写入。日文修改在显式暂存模式完成，不修改参考缓存。
+
+shift 将引用改写、源文件、两阶段临时文件和目标文件纳入同一回滚范围；任一写入或重命名失败时恢复执行前内容与文件名。
 
 ### 配对页边界修复
 
@@ -548,6 +557,8 @@ python tools/check_semantic_alignment.py --strict --vector-python 显式Python�
 
 L1 是 CPU 初筛，L2 使用多语言矢量模型分析窗口。非 strict 的 `--auto-audit` 默认只诊断前 20 项，`--top` 限制诊断数量；该输出不能称全范围门禁。
 
+strict 的结构前检包含共同正文范围内的双侧正文存在性，单侧正文缺失返回 1，并在载入模型前停止。L2 仅在双侧均无正文的适用结构范围内豁免编码；单侧为空不能记作满分或完成。
+
 strict 先执行结构前检，再对所选作品／表头范围执行 L2 完整检查，禁止与 `--l1-only` 或 `--top` 合用。已确认 `PAIR_RULES` 只解释对应结构差异；后记迁出时只检查共同正文，并在 TSV“结构范围说明”列标明实际范围，未被规则解释的尾部缺行仍失败。模型、运行时或输入不完整时非零退出，不降级成“无问题”。输入与选书验证先于模型环境准备，零配对为 2；非 strict 报告也保留部分覆盖说明。`--include-exempt` 可用于人工诊断已登记豁免。默认中文归档与日文缓存，`--root`／`--jp-root` 指定独立根；显式 `--cache` 是旧双侧输入，与独立根互斥，`--out` 指定报告目录。
 
 L2 环境按以下顺序选择：命令行 `--vector-python` 或兼容入口 `--betweenlines-dir`（二者互斥）优先于环境变量；无命令行配置时依次取 `INDEX_X_VECTOR_PYTHON`、兼容变量 `BETWEENLINES_PYTHON`、`BETWEENLINES_DIR`。Python 配置指向解释器，BetweenLines 目录配置只取其 `.venv`。显式配置无效直接失败，不改用其它环境。
@@ -634,6 +645,8 @@ python tools/check_translation_table.py --table 显式译名表.xlsx --audit-rul
 
 显式 `--book` 逐本报告请求范围，缺任一侧或正文为空时标为未核验，strict 返回 2；全部无可用配对也返回 2。正文只从实际 body 内容提取，head、style、script、注释和标题不并入正文核验。默认全库模式只核两侧交集，并列出中文／日文独有作品，保留合法单侧收录。终端、Markdown 和 JSON 的 `summary.coverage` 保留请求、核验、缺侧与辅助来源。`TRANSLATION_HOST` 指向的中文宿主即使未选中也作为辅助源加载，单列 `auxiliary_books`，不计核验目标。
 
+所选范围内同侧重复作品号属于输入错误，即使其中一本没有正文也阻断；诊断列出冲突目录并返回 2，不以覆盖后的单本内容代替完整核验。
+
 正文与 h1/h2/h3 分开收集：标题命中不为正文补足译名落地，也不计入 `--strict`；另写同一报告目录下的 `translation-title-check.tsv`，主 JSON 的 `title_records` 和 Markdown 的标题人工核对节同时展示。标题中的状态仅供人工结合原文判断，不直接产生替换要求。落地未命中只产生待判项，不等于误译；回原文判断普通词／专名、单复数与语境，执行 [术语统一 skill](../.agents/skills/translation-term-unification/SKILL.md)。strict 存在待判未落地项非零。`--audit-rulings` 只核裁定表与译名表：锚点全角英数字母、裁定列解析不出写法（散文格式漏标 `人读`）、锚点 `<rt>` 与 `Ruby_Ori` 不一致（一格多锚点时**逐块**核对，逐字分解的碎片按基文长度跳过）、译名表同锚点多译法未在裁定表登记、同一锚点多行匹配轴混用、声明了匹配轴但锚点不是单段 ruby，出问题非零；改裁定表后重跑。
 
 ### 术语锚点门禁
@@ -710,6 +723,8 @@ python tools/audit_risk.py --old "旧句" --new "新句" --jp "日文"
 ```
 
 `proofread_review.py` 编排 Git 行级配对、`japanese_lookup.py` 原文提取、`audit_risk.py` 风险提示；不修改正文。支持 `--repo`、`--jp-base`、`--no-jp`、`--no-audit`；汇总始终列出日文覆盖数（含 0）、未核验数，`--no-jp` 明确仅分级。缺参考可保留分级报告，不能据此宣布语义复核完成。原文 lookup 的 `--raw` 保留标签，`--jp-base` 指定参考；CLI 缺日文根、作品或文件返回 2，并提示指定参考，行号越界为 1。risk 的 `--json` 输出结构。
+
+`--worktree` 比较 HEAD 与当前工作文件的净差异，覆盖已暂存、未暂存及已暂存新增文件；同一行跨暂存区继续修改时只报告旧版本到当前版本的一条变化。规范级只自动收标点／引号／全半角体例，以及整条纯文本为独立语气词的确定替换；删除“儿”与句内语气词替换均保留在语义复核范围。
 
 产物为 `changes.tsv`、`semantic.tsv`、`spec.tsv`、`groups.txt`。TSV 使用标准 tab 分隔和 CSV 字段引用，保留字段里的双引号、制表符及换行，读取用 `csv.DictReader`。一物理行合一条记录，用最小差异分级：spec 为确定规范形状，tiny 为 ≤2 字且全属虚词，local 为 ≤12 字局部变化，rewrite 为更大变化或整段增删；spec 仅在整段最小差异都能由规范解释时放行。数字／字母不当标点剥除。
 
@@ -826,6 +841,8 @@ python tools/epub_composition_metrics.py <目录或epub> [--csv OUT.csv] [--page
 - **密度** = 相邻锚点「字符差 / 页差」的中位数（相邻页差是实测硬事实，不受单张插图占页影响）；
 - **锚点之间**按字符比例在实测页差内插值，锚点之外用密度外推，页号单调、不跨章累积漂移；
 - 每个成分/子成分按字符累计位置取起止页区间；同一成分内子成分区间按顺序压实，严格递增不重叠。
+
+同章内全部正文插图锚点都按各自之前的可见字符数定位，是否有 `<h2>` 不影响锚点保留；子成分只登记自身范围的锚点。只有一个可用页码位置、无法估计密度时保留已知页码范围，密度标为不可用，不将已知插图重置到第 1 页。
 
 输出列：`成分 / 子成分 / 全字符 / 页数（换算）/ 印刷页区间 / 印刷页数`（合计行给出全书正文印刷页推算区间）。成分名规范化（序章/第N章/终章、行间、后记、引子/尾声位置规则）与 `epub_char_count` 完全一致；正文按 `<h2>` 展开子成分，`--chars-only` 只按成分输出。与 `epub_char_count` 的取舍：要「占比」列用前者，要「印刷页推算」用后者——两者的 CLI 面与输出列不互相包含。
 

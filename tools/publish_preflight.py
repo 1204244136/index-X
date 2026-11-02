@@ -39,12 +39,16 @@ def validate_publication(cn_root: Path, jp_root: Path | None = None,
                      if selected is not None else None)
     checked = 0
     cn_books: list[Path] = []
+    all_cn_books: list[Path] = []
     found_selected: set[str] = set()
     for side, root in roots.items():
         if root is None or not root.is_dir():
             continue
         seen: set[str] = set()
-        for book in sorted(p for p in root.iterdir() if p.is_dir() and not p.name.startswith(".extract-")):
+        books = sorted(p for p in root.iterdir() if p.is_dir() and not p.name.startswith(".extract-"))
+        if side == "chinese-text":
+            all_cn_books = books
+        for book in books:
             key = f"{side}/{book.name}"
             if selected is not None and key not in selected and book_id(book.name) not in requested_ids:
                 continue
@@ -82,8 +86,11 @@ def validate_publication(cn_root: Path, jp_root: Path | None = None,
     if selected is not None and not allow_removed:
         problems.extend(f"显式请求的书籍不存在，未执行发布验证：{key}"
                         for key in sorted(selected - found_selected))
-    # 跨书项：`unique-identifier` 唯一（要跨书汇总，逐本的 `audit_book` 判不了）。
-    for name, msg in find_identifier_duplicates(cn_books):
+    # Compare selected books with the whole source; unrelated collisions stay out of scope.
+    selected_cn_names = {book.name for book in cn_books}
+    for name, msg in find_identifier_duplicates(all_cn_books):
+        if name not in selected_cn_names:
+            continue
         if exempt(book_id(name), "identifier-unique"):
             continue
         problems.append(f"chinese-text/{name}: identifier-unique {msg}")

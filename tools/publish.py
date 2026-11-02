@@ -383,9 +383,14 @@ def _publish(args: argparse.Namespace) -> int:
         return 0
 
     print("\n== 发布前只读预检 ==")
-    if not validate_publication(cache / "chinese-text", cache / "japanese-text", list(changes),
-                                allow_removed=all(all(v == "deleted" for v in files.values())
-                                                  for files in changes.values())):
+    removed_books = {
+        key for key, files in changes.items()
+        if files and all(status == "deleted" for status in files.values())
+        and not (cache / key).exists() and not (cache / key).is_symlink()
+    }
+    validation_keys = [key for key in changes if key not in removed_books]
+    if not validate_publication(cache / "chinese-text", cache / "japanese-text", validation_keys,
+                                allow_removed=not validation_keys):
         print(
             "错误: 发布预检未通过，已停止同步、打包与上传。",
             file=sys.stderr,

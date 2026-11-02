@@ -80,6 +80,11 @@ class PageRefTests(unittest.TestCase):
         for offset in offsets:
             self.assertTrue(raw.startswith("<h2", offset), raw[offset:offset + 4])
 
+    def test_sub_offsets_include_document_prefix_exactly_once(self):
+        raw = ('<?xml version="1.0"?><html><head><title>标题</title></head><body>'
+               '<h1>第一章</h1><p>开场</p><h2>一</h2><p>甲</p><h2>二</h2></body></html>')
+        self.assertEqual(sub_offsets(raw), [raw.index("<h2>一"), raw.index("<h2>二")])
+
 
 class PrintedPageAnalysisTests(unittest.TestCase):
     def setUp(self):
@@ -117,6 +122,37 @@ class PrintedPageAnalysisTests(unittest.TestCase):
         self.assertEqual(report["totals"]["anchor_coverage"], 1.0)
         component = report["components"][0]
         self.assertEqual(component["pages"], component["page_end"] - component["page_start"] + 1)
+        self.assertLessEqual(component["page_start"], 20)
+        self.assertGreaterEqual(component["page_end"], 20)
+
+    def test_all_anchors_use_actual_character_positions_with_or_without_h2(self):
+        for subheading in ("", "<h2>一</h2>"):
+            with self.subTest(subheading=subheading):
+                body = ("<h1>第一章</h1>" + subheading + "<p>" + "甲" * 4000 + "</p>"
+                        '<p><img src="../Images/S1_01-i-010.jpg"/></p><p>' + "乙" * 8000 + "</p>"
+                        '<p><img src="../Images/S1_01-i-030.jpg"/></p><p>' + "丙" * 4000 + "</p>")
+                book = make_book(self.root / ("sections" if subheading else "chapter"),
+                                 {"S1_01-01_Chapter1.xhtml": body})
+                report = scan_book(EpubSource(book), pages_per=400, include_all=False)
+                component = report["components"][0]
+                self.assertEqual(report["totals"]["density"], 400)
+                self.assertLessEqual(component["page_start"], 10)
+                self.assertGreaterEqual(component["page_end"], 30)
+                self.assertGreater(component["pages"], 20)
+
+    def test_subsection_anchors_do_not_leak_from_later_sections(self):
+        body = ('<h1>第一章</h1><h2>一</h2><p>' + "甲" * 4000 + '</p>'
+                '<h2>二</h2><p>' + "乙" * 4000 + '</p>'
+                '<p><img src="../Images/S1_01-i-020.jpg"/></p><p>' + "丙" * 8000 + '</p>'
+                '<p><img src="../Images/S1_01-i-040.jpg"/></p>')
+        book = make_book(self.root, {"S1_01-01_Chapter1.xhtml": body})
+        report = scan_book(EpubSource(book), pages_per=400, include_all=False)
+        first, second = report["components"][0]["subs"]
+        self.assertEqual(first["anchors"], [])
+        self.assertFalse(first["measured"])
+        self.assertEqual(second["anchors"], [(20, 20), (40, 40)])
+        self.assertTrue(second["measured"])
+        self.assertEqual(report["totals"]["density"], 400)
 
     def test_kuchie_images_do_not_become_printed_anchors(self):
         body = ('<p>' + "甲" * 100 + "</p>"

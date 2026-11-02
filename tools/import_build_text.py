@@ -28,6 +28,7 @@ from docx_source import chapter_kind, esc, esc_ruby, extract_notes, read_docx, s
 from edit_safety import EditSafetyError, add_edit_mode, require_edit_target
 from file_transaction import atomic_write_bytes, rollback_paths
 from import_plan import PlanError, apply_ops, body_images, load_plan
+from path_safety import archive_member_destination, require_report_target
 from xhtml_slots import NOTE_H1
 from title_rules import normalize_chapter_main
 
@@ -170,6 +171,23 @@ def main(argv: list[str] | None = None) -> int:
         print(f"[阻断] 交稿不存在：{docx}", file=sys.stderr)
         return 2
 
+    report_target = None
+    if args.report:
+        protected_files = [args.plan, docx]
+        if plan.get("source_docx"):
+            protected_files.append(Path(plan["source_docx"]))
+        protected_dirs = [args.out]
+        if plan.get("jp_dir"):
+            protected_dirs.append(Path(plan.get("jp_root", "")) / plan["jp_dir"])
+        if plan.get("images_source"):
+            protected_dirs.append(Path(plan["images_source"]))
+        try:
+            report_target = require_report_target(args.report, protected_files=protected_files,
+                                                  protected_dirs=protected_dirs)
+        except ValueError as exc:
+            print(f"[阻断] {exc}", file=sys.stderr)
+            return 2
+
     try:
         text_files, report, notes = build(plan, docx)
     except PlanError as exc:
@@ -177,25 +195,42 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     print("\n".join(report))
-    if args.report:
-        args.report.parent.mkdir(parents=True, exist_ok=True)
-        args.report.write_text("\n".join(report) + "\n", encoding="utf-8", newline="\n")
+    report_data = ("\n".join(report) + "\n").encode("utf-8")
 
     if not args.apply:
+        if report_target:
+            try:
+                atomic_write_bytes(report_target, report_data)
+            except OSError as exc:
+                print(f"[阻断] 报告写入失败：{exc}", file=sys.stderr)
+                return 1
         print(f"[预览] 将写入 {len(text_files)} 个正文文件到 {args.out}/OEBPS/Text/；"
               f"译注 {len(notes)} 条；加 --apply 写盘")
         return 0
 
     try:
         target = require_edit_target(args.out, args.staging)
-    except EditSafetyError as exc:
+        text_dir = archive_member_destination(target, "OEBPS/Text")
+        destinations = {}
+        for name, content in text_files.items():
+            path = archive_member_destination(text_dir, name)
+            if path in destinations:
+                raise ValueError(f"多个正文文件指向同一写入目标：{path}")
+            destinations[path] = content.encode("utf-8")
+        for path in [text_dir, *destinations]:
+            require_edit_target(path, args.staging)
+    except (EditSafetyError, ValueError) as exc:
         print(f"[阻断] {exc}", file=sys.stderr)
         return 2
-    text_dir = target / "OEBPS" / "Text"
-    text_dir.mkdir(parents=True, exist_ok=True)
-    with rollback_paths([text_dir]):
-        for name, content in sorted(text_files.items()):
-            atomic_write_bytes(text_dir / name, content.encode("utf-8"))
+    try:
+        with rollback_paths([text_dir, *([report_target] if report_target else [])]):
+            for path, data in sorted(destinations.items()):
+                atomic_write_bytes(path, data)
+            if report_target:
+                atomic_write_bytes(report_target, report_data)
+    except OSError as exc:
+        print(f"[阻断] 正文或报告写入失败，已尝试回滚：{exc}", file=sys.stderr)
+        return 1
     print(f"已写入 {len(text_files)} 个正文文件：{text_dir}")
     return 0
 

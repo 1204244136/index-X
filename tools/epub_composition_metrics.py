@@ -165,34 +165,24 @@ def scan_book(source: EpubSource, pages_per: int, include_all: bool) -> dict:
             for s, off in zip(c["subs"], sub_offsets(c["_raw"])):
                 s["off"] = off
 
-    # ---- 锚点定位：把「字符累计位置」与「印刷页码」做线性拟合 ----
-    # 书内插图文件名带印刷页码（`S3_13-i-045.jpg` → 第 45 页），且这些图片在章节
-    # XHTML 中保有原始先后位置，所以「锚点累计字符数 → 印刷页」是一条直线：
-    #     印刷页 = 斜率(字符/页) × 累计字符 + 截距
-    # 用最小二乘拟合全部锚点，再用同一套参数把每个成分/子成分的字符位置映射为
-    # 页区间。这样既用到实测量的斜率（真实排版密度），又保证页区间严格单调不重叠。
+    # 每个插图都按实际位置前的可见字符数定位；小节不含 h1，使用相同的计数轨道。
     body = [c for c in comps if c["kind"] == "正文"]
     anchors: list[dict] = []          # 全书锚点序（按正文累计字符位置）：{page, cum}
     cum = 0
     for c in body:
         c["cum"] = cum
-        if c["subs"]:
-            for pos, ref in zip(c["anchor_pos"], c["anchors"]):
-                cum_chars = cum + sum(s["all_chars"] for s in c["subs"]
-                                      if pos >= s["off"])
-                anchors.append({"page": ref[0], "page_end": ref[1], "cum": cum_chars})
-            cum += sum(s["all_chars"] for s in c["subs"])
-        else:
-            if c["anchors"]:
-                anchors.append({"page": c["anchors"][0][0],
-                                "page_end": c["anchors"][0][1],
-                                "cum": cum + c["all_chars"]})
-            cum += c["all_chars"]
+        for pos, ref in zip(c["anchor_pos"], c["anchors"]):
+            # 引用正则定位在属性名；截到元素开头，避免把未闭合的标签计作文字。
+            prefix = c["_raw"][:c["_raw"].rfind("<", 0, pos + 1)]
+            if c["subs"]:
+                prefix = re.sub(r"<h1[^>]*>.*?</h1>", "", prefix, flags=re.S)
+            anchors.append({"page": ref[0], "page_end": ref[1],
+                            "cum": cum + len(text_of(prefix))})
+        cum += sum(s["all_chars"] for s in c["subs"]) if c["subs"] else c["all_chars"]
     anchors.sort(key=lambda a: (a["cum"], a["page"]))
 
     # 斜率 = 相邻锚点「字符差 / 页差」的中位数（相邻页差是实测的硬事实，
-    # 比全场最小二乘更抗前后段排版密度差异）；截距取全部锚点残差的中位数，
-    # 即 page = cum / density + intercept。斜率同时用于锚点区间外的外推。
+    # 比全场最小二乘更抗前后段排版密度差异）。密度同时用于锚点区间外的外推。
     slope = None
     gaps = []
     for a, b in zip(anchors, anchors[1:]):
@@ -202,13 +192,6 @@ def scan_book(source: EpubSource, pages_per: int, include_all: bool) -> dict:
             gaps.append(ch / pg)
     if gaps:
         slope = statistics.median(gaps)
-    intercept = None
-    if slope:
-        intercept = statistics.median(a["page"] - a["cum"] / slope for a in anchors)
-    if slope and anchors:
-        # 首锚点之前无实测锚点，只能用全局密度外推；若外推越过第 1 页则收在第 1 页
-        intercept = max(intercept, 1 - anchors[0]["cum"] / slope)
-
     def page_at(cum_chars: int) -> float:
         """累计字符 -> 印刷页，保证单调。
 
@@ -217,12 +200,12 @@ def scan_book(source: EpubSource, pages_per: int, include_all: bool) -> dict:
         保留在各区间内部，因此不会跨章累积漂移。
         """
         if slope is None:
-            return 0.0
+            return float(anchors[0]["page"]) if anchors else 0.0
         prev = None
         for a in anchors:
             if cum_chars < a["cum"]:
                 if prev is None:
-                    return cum_chars / slope + intercept
+                    return max(1.0, a["page"] + (cum_chars - a["cum"]) / slope)
                 span_c = a["cum"] - prev["cum"]
                 span_p = a["page"] - prev["page"]
                 if span_c <= 0 or span_p <= 0:
@@ -245,15 +228,20 @@ def scan_book(source: EpubSource, pages_per: int, include_all: bool) -> dict:
                 ends.append(acc)
                 acc += s["all_chars"]
             c["cum"] = acc
-            for s, s_start in zip(sections, ends):
+            for index, (s, s_start) in enumerate(zip(sections, ends)):
+                lower = s["off"] if index else 0
+                upper = sections[index + 1]["off"] if index + 1 < len(sections) else len(c["_raw"])
                 s_anchors = [r for p, r in zip(c["anchor_pos"], c["anchors"])
-                             if s["off"] <= p]
+                             if lower <= p < upper]
                 s["anchors"] = s_anchors
                 s["measured"] = bool(s_anchors)
                 begin = page_at(s_start)
                 finish = page_at(s_start + s["all_chars"] - 1) if s["all_chars"] else begin
                 s["page_start"] = max(1, math.floor(begin + 1e-9))
                 s["page_end"] = max(s["page_start"], math.ceil(finish - 1e-9))
+                if s_anchors:
+                    s["page_start"] = min(s["page_start"], min(ref[0] for ref in s_anchors))
+                    s["page_end"] = max(s["page_end"], max(ref[1] for ref in s_anchors))
             # 短小节在前置页密度不均时可能被算成空区间或与上一节重叠：
             # 按顺序压实，保证同一成分内子成分页区间严格递增、不重叠。
             prev_end = 0
@@ -273,6 +261,9 @@ def scan_book(source: EpubSource, pages_per: int, include_all: bool) -> dict:
             finish = page_at(c["cum"] + c["all_chars"] - 1) if c["all_chars"] else begin
             c["page_start"] = max(1, math.floor(begin + 1e-9))
             c["page_end"] = max(c["page_start"], math.ceil(finish - 1e-9))
+            if c["anchors"]:
+                c["page_start"] = min(c["page_start"], min(ref[0] for ref in c["anchors"]))
+                c["page_end"] = max(c["page_end"], max(ref[1] for ref in c["anchors"]))
             c["pages"] = c["page_end"] - c["page_start"] + 1
             c["measured"] = bool(c["anchors"])
             c["cum"] += c["all_chars"]
@@ -324,14 +315,7 @@ def scan_book(source: EpubSource, pages_per: int, include_all: bool) -> dict:
 
 def sub_offsets(raw: str) -> list[int]:
     """各子成分（<h2> 段）在 raw 中的起始偏移，顺序与 `epub_char_count.split_sections` 一致。"""
-    body_start = len(re.split(r"<h1[^>]*>.*?</h1>", raw, flags=re.S)[0])
-    parts = re.split(r"(<h2[^>]*>.*?</h2>)", raw, flags=re.S)
-    offsets = []
-    pos = body_start + len(parts[0])
-    for i in range(1, len(parts), 2):
-        offsets.append(pos)
-        pos += len(parts[i]) + len(parts[i + 1])
-    return offsets
+    return [match.start() for match in re.finditer(r"<h2[^>]*>.*?</h2>", raw, flags=re.S)]
 
 
 def normalize_labels(rep: dict) -> None:

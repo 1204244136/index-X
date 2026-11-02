@@ -72,7 +72,7 @@ if __package__:
 else:
     from cli_output import configure_output
 from check_alignment import (
-    afterword_offset, allowed_pair_differences, check_file, order_swap_offset,
+    afterword_offset, allowed_pair_differences, check_file, has_body, order_swap_offset,
     pair_problems,
 )
 
@@ -267,8 +267,6 @@ def run_vector_analysis(
     返回:
       (avg_similarity, match_count, real_drift_count, false_positive_count, drift_windows, line_details)
     """
-    import numpy as np
-
     # 1. 提取有效正文段落序列（保留物理行号）
     jp_paras: list[tuple[int, LineData]] = []
     cn_paras: list[tuple[int, LineData]] = []
@@ -282,8 +280,13 @@ def run_vector_analysis(
             cn_paras.append((idx, line))
 
     total_lines = min(len(jp_lines), len(cn_lines))
-    if not jp_paras or not cn_paras:
+    if not jp_paras and not cn_paras:
         return 1.0, total_lines, 0, 0, [], []
+    if not jp_paras or not cn_paras:
+        missing = "JP" if not jp_paras else "CN"
+        raise SemanticStructureError(f"{missing} 缺少可核验正文段落，未执行 L2 检查")
+
+    import numpy as np
 
     # 2. 批量向量编码
     jp_texts = [p[1].text for p in jp_paras]
@@ -586,6 +589,9 @@ def strict_pair_lines(
     # physical lines cannot establish a complete strict semantic gate.
     if len(japanese) != len(chinese):
         problems.append(f"L2 同行范围行数不等：JP {len(japanese)} / CN {len(chinese)}")
+    if has_body(japanese) != has_body(chinese):
+        missing = "JP" if not has_body(japanese) else "CN"
+        problems.append(f"{missing} 缺少可核验正文文字，不能建立完整 L2 配对")
     return japanese, chinese, problems, note
 
 

@@ -114,11 +114,16 @@ def validate_plan(plan: dict) -> list[str]:
                 problems.append(f"{where} 缺少字段 {field}")
         name = chapter.get("fname")
         if name:
+            if not isinstance(name, str):
+                problems.append(f"{where}.fname 必须是文件名字符串")
+                continue
+            if any(char in name for char in "/\\:\x00"):
+                problems.append(f"{where}.fname 必须是单个文件名，不能包含路径：{name!r}")
             if not name.endswith(".xhtml"):
                 problems.append(f"{where}.fname 必须以 .xhtml 结尾：{name}")
-            if name in seen_names:
+            if name.casefold() in seen_names:
                 problems.append(f"{where}.fname 与前面的章节重复：{name}")
-            seen_names.add(name)
+            seen_names.add(name.casefold())
         problems.extend(validate_ops(chapter.get("ops") or [], where))
     problems.extend(validate_images(plan.get("images") or []))
     return problems

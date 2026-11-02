@@ -242,6 +242,7 @@ def collect_books(root: Path, text_subdir: str, only: set[str],
     `ruby=True` 时输出**带注音的复合串文本**（`基文（注文）`），供注音判定使用。
     """
     books: dict[str, str] = {}
+    sources: dict[str, Path] = {}
     if not root.is_dir():
         return books
     for child in sorted(root.iterdir()):
@@ -250,6 +251,9 @@ def collect_books(root: Path, text_subdir: str, only: set[str],
         bid = book_id(child.name)
         if not bid or (only and bid not in only):
             continue
+        if bid in sources:
+            raise ToolError(f"同侧重复作品号 {bid}: {sources[bid]} / {child}")
+        sources[bid] = child
         text_dir = child / text_subdir
         if not text_dir.is_dir():
             continue
@@ -760,8 +764,7 @@ def compare(entries: list[dict[str, str]], jp_books: dict[str, str],
     return records, skipped_empty_trans, shared
 
 
-def main(argv: list[str] | None = None) -> int:
-    configure_output()
+def _run(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(
         description="译名表 ↔ 成品落地核对（只读）",
         formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -1102,6 +1105,15 @@ def main(argv: list[str] | None = None) -> int:
             print(f"\n[阻断] --strict：存在 {len(effective)} 条未落地项", file=sys.stderr)
             return 1
     return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    configure_output()
+    try:
+        return _run(argv)
+    except (ToolError, OSError, UnicodeError, ValueError) as exc:
+        print(f"[错误] 译名表核对未完成：{exc}", file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":

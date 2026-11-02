@@ -19,15 +19,13 @@
 
 - `spec`     改动由 `docs/translation-spec.md` 的规范条款决定，回原文也只会得到同一结论：
              `punct`（只动标点/空白）、`quote`（引号体例）、`glyph`（数字/字母全半角）、
-             `erhua`（去儿化音）、`particle`（规范示例语气词）。**复核时不需要逐条回原文**。
+             `particle`（整条独立的规范示例语气词）。**复核时不需要逐条回原文**。
 - `tiny`     最小差异 <= 2 字 -> 虚词级微调（仍需回原文，但一眼能看完）
 - `local`    最小差异 <= 12 字 -> 局部替换（术语、用词、数字）
 - `rewrite`  最小差异 > 12 字，或某处整段增删（两侧片段数不等）-> 整句/整段重写
 
-「规范级」这一层是本工具的关键前提：**校对产出物本身遵循规范**，所以旧文本的不规范写法
-（弯引号、半角标点、儿化音、非规范语气词）被改写成规范写法是规范化的必然结果，不是语义改动。
-把它们混进 `semantic.tsv` 会让真正需要人工判断的改动被淹没。归类判据只认规范里能确定性判定的
-形状（见 `spec_kind`），拿不准一律留给 `local` / `rewrite`，不做宽松猜测。
+规范级只收可由文本形状确定的体例调整（见 `spec_kind`）。删除「儿」以及句内的语气词替换
+需要区分实义词与语气表达，保留在 `semantic.tsv` 逐条判断。
 
 回查原文：`semantic.tsv` / `groups.txt` 只给「旧 => 新」，判定对错要回日文原文。
 日文缓存 `S3_01-NN.xhtml` 与中文 `S3_01-NN_*.xhtml` 按内容序 NN 一一对应
@@ -81,7 +79,7 @@ FULLWIDTH_FOLD = {c: c - 0xFEE0 for c in range(0xFF01, 0xFF5F)}
 QUOTE_FOLD = str.maketrans({"『": "「", "』": "」", "“": "「", "”": "」",
                             "‘": "『", "’": "』", "﹁": "「", "﹂": "」"})
 # 规范示例语气词的确定性替换（`docs/translation-spec.md` 一.7）。
-# 只收规范里点名、且替换方向唯一的条目；拟声词类的自由统一不在此列，留给 local 由人工判断。
+# 仅在整条文本是独立语气词时自动分级；句内替换仍需结合词义与原文判断。
 SPEC_PARTICLES = frozenset({
     ("切", "啧"),        # チッ -> 啧，而不是「切」
     ("啊啦", ""),        # あら 不译「啊啦」
@@ -254,7 +252,7 @@ def collect(repo: str, commits: list[str], path: str, worktree: bool) -> list[di
     targets = ["worktree"] if worktree else commits
     for c in targets:
         if worktree:
-            args = ["diff", "-U0", "--no-color"]
+            args = ["diff", "-U0", "--no-color", "HEAD"]
             label = "worktree"
         else:
             args = ["diff", "-U0", "--no-color", "%s~1" % c, c]
@@ -282,11 +280,9 @@ def spec_kind(old: str, new: str) -> str:
     # 折成全半角后相同 -> 只差了全角/半角写法（数字、字母、标点）
     if core_of(old.translate(FULLWIDTH_FOLD)) == core_of(new.translate(FULLWIDTH_FOLD)):
         return "glyph"
-    mo, mn = minimal_diff(old, new)
-    # 去儿化音：差异就是删掉一个「儿」（规范要求正文不出现儿化音）
-    if core_of(mo) == "儿" and not core_of(mn):
-        return "erhua"
-    if (mo, mn) in SPEC_PARTICLES:
+    # 单字删除不能区分儿化音与「孤儿」「女儿」等实义成分，留在语义复核。
+    # 语气词只认整条独立表达，不能把「切开」等词内替换判成体例调整。
+    if (core_of(old), core_of(new)) in SPEC_PARTICLES:
         return "particle"
     return ""
 

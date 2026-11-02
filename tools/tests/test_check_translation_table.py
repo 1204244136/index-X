@@ -75,6 +75,36 @@ class CoverageCliTests(unittest.TestCase):
         self.write_book(root, "cn", "S1_01", "译文")
         self.write_book(root, "jp", "S1_01", "テスト")
 
+    def test_duplicate_work_is_an_input_failure_without_success_json(self):
+        for side in ("cn", "jp"):
+            with self.subTest(side=side), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                self.fixture(root)
+                duplicate = root / side / "【S1_01】重复"
+                duplicate.mkdir()
+                code, out, err = self.run_cli(root, "--book", "S1_01", "--strict")
+                self.assertEqual(code, 2)
+                self.assertIn("同侧重复作品号 S1_01", err)
+                self.assertIn("【S1_01】测试", err)
+                self.assertIn("【S1_01】重复", err)
+                self.assertNotIn("Traceback", err)
+                self.assertNotIn("完整覆盖", out)
+                self.assertFalse((root / "out" / "translation-table-check.json").exists())
+
+    def test_unreadable_body_and_report_failure_return_two(self):
+        for failure in ("encoding", "report"):
+            with self.subTest(failure=failure), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                self.fixture(root)
+                if failure == "encoding":
+                    next((root / "cn").rglob("*.xhtml")).write_bytes(b"\xff")
+                else:
+                    (root / "out").write_text("not a directory", encoding="utf-8")
+                code, _out, err = self.run_cli(root, "--book", "S1_01", "--strict")
+                self.assertEqual(code, 2)
+                self.assertIn("核对未完成", err)
+                self.assertNotIn("Traceback", err)
+
     def test_selected_missing_reference_is_not_strict_success(self):
         for missing_side in ("cn", "jp"):
             with self.subTest(missing_side=missing_side), tempfile.TemporaryDirectory() as tmp:
@@ -332,6 +362,20 @@ class BookIdTests(unittest.TestCase):
 
 
 class CollectBooksTests(unittest.TestCase):
+    def test_duplicate_work_directories_are_rejected_in_every_text_scope(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for title in ("A", "B"):
+                directory = root / f"【S1_01】{title}" / "item" / "xhtml"
+                directory.mkdir(parents=True)
+                (directory / "S1_01-01.xhtml").write_text(
+                    "<h1>标题</h1><p>正文</p>", encoding="utf-8")
+            for ruby, titles in ((False, False), (True, False), (False, True), (True, True)):
+                with self.subTest(ruby=ruby, titles=titles), self.assertRaisesRegex(
+                        ToolError, "同侧重复作品号 S1_01"):
+                    collect_books(root, "item/xhtml", {"S1_01"}, ruby=ruby, titles=titles)
+            self.assertEqual(collect_books(root, "item/xhtml", {"S1_02"}), {})
+
     def test_head_style_script_and_comments_are_not_body_corpus(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

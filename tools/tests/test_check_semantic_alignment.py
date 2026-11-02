@@ -109,6 +109,36 @@ class SemanticPipelineTests(unittest.TestCase):
                 self.assertEqual(semantic.run_pipeline(cache, strict=True), 1)
                 model.assert_not_called()
 
+    def test_strict_rejects_one_sided_empty_body_before_loading_model(self):
+        for missing_side in ("japanese-text", "chinese-text"):
+            for heading in ("", "<h1>章节</h1>"):
+                with self.subTest(side=missing_side, heading=heading), tempfile.TemporaryDirectory() as tmp:
+                    cache = Path(tmp)
+                    add_unit(cache, "S1_01", 1)
+                    for side in ("japanese-text", "chinese-text"):
+                        page = next((cache / side).rglob("*.xhtml"))
+                        body = "" if side == missing_side else "可核验正文。" * 20
+                        page.write_text(
+                            '<?xml version="1.0"?>\n<!DOCTYPE html>\n<html><head></head><body>\n'
+                            f'{heading}\n\n<p>{body}</p>\n</body></html>\n', encoding="utf-8")
+                    output, errors = io.StringIO(), io.StringIO()
+                    with patch.object(semantic, "get_embedding_model") as model, \
+                            contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
+                        self.assertEqual(semantic.run_pipeline(cache, strict=True), 1)
+                    model.assert_not_called()
+                    self.assertIn("缺少可核验正文", errors.getvalue())
+                    self.assertNotIn("[门禁通过]", output.getvalue())
+                    self.assertFalse((cache / "semantic-alignment-summary.tsv").exists())
+
+    def test_vector_analysis_exempts_two_nontext_sides_but_rejects_one_empty_side(self):
+        image = [semantic.parse_line('<p><img src="image.jpg"/></p>')]
+        text = [semantic.parse_line("<p>可核验正文。</p>")]
+        self.assertEqual(semantic.run_vector_analysis(image, image, object()), (1.0, 1, 0, 0, [], []))
+        for japanese, chinese, missing in ((image, text, "JP"), (text, image, "CN")):
+            with self.subTest(missing=missing), self.assertRaisesRegex(
+                    semantic.SemanticStructureError, f"{missing} 缺少可核验正文"):
+                semantic.run_vector_analysis(japanese, chinese, object())
+
     def test_confirmed_afterword_rule_limits_l2_to_shared_body(self):
         with tempfile.TemporaryDirectory() as tmp:
             cache = Path(tmp)
@@ -230,6 +260,23 @@ class SemanticPipelineTests(unittest.TestCase):
 
 
 class SemanticCliEnvironmentTests(unittest.TestCase):
+    def test_cli_one_sided_empty_body_reports_a_structure_failure(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            add_unit(root, "S1_01", 1)
+            page = next((root / "chinese-text").rglob("*.xhtml"))
+            page.write_text(page.read_text(encoding="utf-8").replace("<p>正文</p>", "<p></p>"),
+                            encoding="utf-8")
+            output, errors = io.StringIO(), io.StringIO()
+            with patch.object(semantic, "ensure_vector_environment", return_value=None), \
+                    patch.object(semantic, "get_embedding_model") as model, \
+                    contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
+                self.assertEqual(semantic.main(["--cache", str(root), "--strict"]), 1)
+            model.assert_not_called()
+            self.assertIn("缺少可核验正文", errors.getvalue())
+            self.assertNotIn("Traceback", errors.getvalue())
+            self.assertNotIn("[门禁通过]", output.getvalue())
+
     def test_archive_and_explicit_reference_roots_support_l1_without_cache(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

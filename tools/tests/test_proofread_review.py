@@ -3,6 +3,7 @@ from __future__ import annotations
 import sys
 import csv
 import io
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -13,9 +14,11 @@ sys.path.insert(0, str(TOOLS))
 
 from proofread_review import (  # noqa: E402
     clip,
+    collect,
     core_of,
     enrich_rows,
     grade,
+    main as proofread_main,
     minimal_diff,
     parse_diff_file,
     parse_diff_rows,
@@ -158,6 +161,55 @@ class PathTests(unittest.TestCase):
         self.assertEqual(unquote_git_path("\\345\\210\\233"), "创")
 
 
+class WorktreeCollectionTests(unittest.TestCase):
+    def test_collects_net_head_diff_for_staged_and_unstaged_changes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+
+            def git(*args):
+                return subprocess.run(["git", *args], cwd=root, check=True,
+                                      capture_output=True)
+
+            git("init", "-q")
+            text_dir = root / "EPUB"
+            text_dir.mkdir()
+            names = ("S1_01-01.xhtml", "S1_01-02.xhtml", "S1_01-03.xhtml")
+            for name in names:
+                (text_dir / name).write_text("<p>旧译。</p>\n", encoding="utf-8")
+            git("add", "EPUB")
+            git("-c", "user.name=Test", "-c", "user.email=test@example.invalid",
+                "commit", "-qm", "baseline")
+
+            for name in names[:2]:
+                (text_dir / name).write_text("<p>已暂存的新译。</p>\n", encoding="utf-8")
+            added = text_dir / "S1_01-04.xhtml"
+            added.write_text("<p>新加的正文。</p>\n", encoding="utf-8")
+            git("add", "EPUB")
+            (text_dir / names[1]).write_text("<p>最终新译。</p>\n", encoding="utf-8")
+            (text_dir / names[2]).write_text("<p>未暂存的新译。</p>\n", encoding="utf-8")
+            outside = root / "outside.xhtml"
+            outside.write_text("<p>范围外。</p>\n", encoding="utf-8")
+            git("add", "outside.xhtml")
+
+            rows = collect(str(root), [], "EPUB", True)
+            by_file = {row["file"]: row for row in rows}
+            self.assertEqual(len(rows), 4)
+            self.assertEqual(set(by_file), {*names, added.name})
+            for name, expected in zip(names, ("已暂存的新译。", "最终新译。", "未暂存的新译。")):
+                self.assertEqual(by_file[name]["old"], "旧译。")
+                self.assertEqual(by_file[name]["new"], expected)
+                self.assertEqual(by_file[name]["line"], "1")
+            self.assertEqual(by_file[added.name]["old"], "")
+            self.assertEqual(by_file[added.name]["new"], "新加的正文。")
+            report = root / "report"
+            with redirect_stdout(io.StringIO()):
+                result = proofread_main(["--repo", str(root), "--worktree", "--out", str(report),
+                                         "--no-jp", "--no-audit"])
+            self.assertEqual(result, 0)
+            with (report / "changes.tsv").open(encoding="utf-8", newline="") as stream:
+                self.assertEqual(len(list(csv.DictReader(stream, delimiter="\t"))), 4)
+
+
 class SpecKindTests(unittest.TestCase):
     """规范确定性改动：产出物遵循 docs/translation-spec.md，这类改动不需要回原文。"""
 
@@ -177,11 +229,23 @@ class SpecKindTests(unittest.TestCase):
     def test_fullwidth_digits_are_glyph(self):
         self.assertEqual(spec_kind("第３位", "第3位"), "glyph")
 
-    def test_erhua_removal(self):
-        self.assertEqual(spec_kind("不加把劲儿", "不加把劲"), "erhua")
+    def test_erhua_removal_requires_semantic_review(self):
+        for old, new in (("不加把劲儿", "不加把劲"), ("他是孤儿", "他是孤"),
+                         ("这是她的女儿", "这是她的女")):
+            with self.subTest(old=old):
+                self.assertEqual(spec_kind(old, new), "")
+                self.assertNotEqual(g(old, new)[0], "spec")
 
     def test_spec_particle(self):
         self.assertEqual(spec_kind("切！", "啧！"), "particle")
+        self.assertEqual(spec_kind("「啊啦。」", "「。」"), "particle")
+
+    def test_particle_inside_a_word_or_sentence_is_not_spec(self):
+        for old, new in (("切开木板", "啧开木板"), ("啊啦，你来了。", "你来了。"),
+                         ("他说切！", "他说啧！")):
+            with self.subTest(old=old):
+                self.assertEqual(spec_kind(old, new), "")
+                self.assertNotEqual(g(old, new)[0], "spec")
 
     def test_erhua_with_other_change_is_not_spec(self):
         # 「块儿」->「起」不是去掉儿化音，是改词，必须留给人工

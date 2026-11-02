@@ -35,6 +35,7 @@ HTML_KEEP = frozenset({"b", "i", "small", "sup", "sub", "strong", "em", "u"})
 # 行内译注（交稿层面）：【*译注：...】 或 （*译注：...）
 NOTE_BRACKET_RE = re.compile(r"【\*?译注[：:](.*?)】", re.DOTALL)
 NOTE_PAREN_RE = re.compile(r"（\*?译注[：:]([^）]*)）", re.DOTALL)
+NOTE_INLINE_RE = re.compile(f"{NOTE_BRACKET_RE.pattern}|{NOTE_PAREN_RE.pattern}", re.DOTALL)
 
 # 插图占位符：如 【插图-1】/【*插图】(outline 报告用，编号可为空)
 ILLUS_RE = re.compile(r"^【\*?插图(?:-(\d+))?】$")
@@ -217,9 +218,10 @@ def extract_notes(text: str, notes: list[str], header: str) -> str:
     note_header = header if header.endswith("-Note") else f"{header}-Note"
 
     def repl(match: re.Match) -> str:
-        notes.append(match.group(1).strip())
+        content = match.group(1) if match.group(1) is not None else match.group(2)
+        notes.append(content.strip())
         number = len(notes)
         return (f'<a class="nodeco" epub:type="noteref" '
                 f'href="{note_header}.xhtml#note{number}"><sup>㊟</sup></a>')
 
-    return NOTE_PAREN_RE.sub(repl, NOTE_BRACKET_RE.sub(repl, text))
+    return NOTE_INLINE_RE.sub(repl, text)

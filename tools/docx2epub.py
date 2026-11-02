@@ -656,6 +656,7 @@ def render_note_file(notes: list[str], header: str) -> str:
 
     h1 取值来自 `xhtml_slots.NOTE_H1`（唯一来源，规范见
     `docs/epub-structure-spec.md`「译注页（Note）结构规约」）；容器固定 `<ul>`，不得改 `<ol>`——`reorder_notes.py` 依赖它定位条目。
+    条目来自已转义正文的 `extract_notes`，保留其行内 XML，不能再次转义。
     """
     lines = [
         "<?xml version='1.0' encoding='utf-8'?>",
@@ -665,7 +666,7 @@ def render_note_file(notes: list[str], header: str) -> str:
         "<ul>",
     ]
     for i, note in enumerate(notes, 1):
-        lines.append(f'<li epub:type="footnote" id="note{i}">{esc(note)}</li>')
+        lines.append(f'<li epub:type="footnote" id="note{i}">{note}</li>')
     lines += ["</ul>", "</body></html>", ""]
     return "\n".join(lines)
 

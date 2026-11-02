@@ -132,6 +132,29 @@ class PreflightTests(unittest.TestCase):
             path.write_text(text.replace(text.split('id="BookId">')[1].split("<")[0], shared),
                             encoding="utf-8")
         self.assertFalse(validate_publication(cn))
+        errors = io.StringIO()
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(errors):
+            self.assertFalse(validate_publication(cn, book_keys=[f"chinese-text/{second.name}"]))
+        self.assertIn(f"chinese-text/{second.name}: identifier-unique", errors.getvalue())
+        self.assertNotIn(f"chinese-text/{first.name}: identifier-unique", errors.getvalue())
+
+    def test_unselected_identifier_collisions_do_not_block_selected_book(self):
+        cn = self.root / "EPUB"
+        books = []
+        for wid in ("S1_01", "S1_02", "S1_03"):
+            book = cn / f"【{wid}】中文X"
+            chapter = make_book(book, layout=True)
+            chapter.rename(chapter.with_name(f"{wid}-01_Chapter.xhtml"))
+            opf = book / "OEBPS/content.opf"
+            text = opf.read_text(encoding="utf-8").replace(
+                "Text/S1_01-01_Chapter.xhtml", f"Text/{wid}-01_Chapter.xhtml")
+            if wid == "S1_02":
+                text = text.replace("uuid:test-S1_02", "uuid:test-S1_01")
+            opf.write_text(text, encoding="utf-8")
+            books.append(book)
+
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            self.assertTrue(validate_publication(cn, book_keys=[f"chinese-text/{books[2].name}"]))
 
     def test_both_publication_directions_fail_before_mutation(self):
         for side in ("cache", "epub"):

@@ -143,7 +143,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--overwrite-cache",
         action="store_true",
-        help="allow overwriting cache edits that EPUB/ does not already contain",
+        help="rebuild affected cache books from EPUB/, discarding cache-only edits",
     )
     parser.add_argument(
         "--only-books",
@@ -310,7 +310,9 @@ def _publish(args: argparse.Namespace) -> int:
 
     print("\n== 发布（EPUB/ -> OneDrive + 缓存）==")
     successful: list[str] = []
-    failed: list[tuple[str, str]] = []
+    failed: list[tuple[str, str]] = [
+        (book_key, "缓存存在未发布修改，已跳过") for book_key in sorted(conflicted)
+    ]
 
     for book_key in sorted(changes):
         success, msg = publish_book_reverse(
@@ -320,7 +322,7 @@ def _publish(args: argparse.Namespace) -> int:
             cache,
             onedrive_dir,
             no_upload=args.no_upload,
-            full_mirror=args.force,
+            full_mirror=args.force or args.overwrite_cache,
         )
         if success:
             successful.append(book_key)
