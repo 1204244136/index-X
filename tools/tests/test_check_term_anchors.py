@@ -30,6 +30,7 @@ RULINGS = """# 测试裁定表
 | `神の子` | 神子 | 神之子 | 测试用 |  |
 | `天国` | 天堂 | 天国 | 测试用 |  |
 | `パラダイス` | 乐园 | 天堂 | 测试用 |  |
+| `海の家` | 海之家 | 海边民宿／海滨小店／海边小屋／海边旅馆 | 测试用 |  |
 """
 
 
@@ -102,6 +103,12 @@ class MatchLineTests(unittest.TestCase):
     def test_no_rejected_form_is_not_a_hit(self):
         # 缺裁定写法但也没有登记误形：可能是省略或改写，不阻断
         self.assertEqual(match_line("魔術を使う。", "施展术式。", self.rules), [])
+
+    def test_sea_house_rejects_seaside_inn(self):
+        hits = match_line("海の家に行く。", "去海边民宿。", self.rules)
+        self.assertEqual([hit["anchor"] for hit in hits], ["海の家"])
+        self.assertEqual(hits[0]["found"], "海边民宿")
+        self.assertEqual(match_line("海の家に行く。", "去海之家。", self.rules), [])
 
 
 class AuditTests(unittest.TestCase):
