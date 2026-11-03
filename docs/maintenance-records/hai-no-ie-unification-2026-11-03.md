@@ -14,7 +14,7 @@
 | `海の家` | 海边民宿／海滨小店／海边小屋／海边旅馆 → 海之家（26 处） |
 | `海のオヤジ` | 海边民宿老板 → 海之家老板（1 处） |
 
-取形沿用库内既定通称，未新增裁定：
+取形沿用库内既定通称，本轮登记为裁定（[译名裁定总表](../translation-name-rulings.md) §五 `海の家` 行，被否决候选 海边民宿／海滨小店／海边小屋／海边旅馆）：
 
 - 项目译名表（`Data_Translation.tabx.xlsx`，2026-10-29，sha256 `8F033AC98E3F3F7E…`）`わだつみ` 行 Memo 作「神奈川县某海岸的海之家」，以「海之家」指称该设施；
 - `S4_01-Note:8` 译注「海之家（海の家），是日本海边常见的商铺设施……」是成品内的既定释义；
@@ -56,6 +56,7 @@
 - 全部为行内替换：11 文件、26 行、27 处；本任务提交范围为 26 insertions／26 deletions。
 - `python tools/text_norm.py --pattern "*S1_04*" --dry-run`（S1_07／S1_09／S1_10／S1_17／S1_24 同法逐本）：各 0 行命中、0 个字符替换。
 - `python tools/check_term_anchors.py --book S1_04 … --book S1_24 --strict`：已核对文件 56，未核对 0，命中 0 行。
+- `python tools/check_term_anchors.py --strict`（`海の家` 已纳入 `DEFAULT_ANCHORS`）：9 锚点、774 文件、命中 0 行；未核对 16 文件属既有部分覆盖，strict 返回 2。
 - `python tools/check_alignment.py --strict`：已验证正文文件 1129，问题 0（未配对正文 93 属既有状态）。
 - `python tools/check_epub_health.py --strict`：问题 0 条。
 - `python tools/check_project_docs.py`：0 条。
