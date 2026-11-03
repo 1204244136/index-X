@@ -12,25 +12,26 @@ TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 
 from check_term_anchors import (  # noqa: E402
-    DEFAULT_ANCHORS,
     audit_roots,
     load_rules,
+    machine_anchors,
     main,
     match_line,
 )
 
 RULINGS = """# 测试裁定表
 
-| 日文锚点 | 裁定 | 被否决或并存的候选 | 备注 | 判定 |
-| --- | --- | --- | --- | --- |
-| `魔術`／`魔術師` | 魔法／魔法师 | 魔术／魔术师 | 术语层须与手技层分开 |  |
-| `チキンレース` | 试胆竞速 | 胆小鬼博弈／斗鸡博弈 | 测试用 |  |
-| `元女教皇` | 前任女教皇 | 前女教皇／原女教皇 | 测试用 |  |
-| `低周波振動治療器` | 低频振动治疗器 | 低频震动治疗器 | 测试用 |  |
-| `神の子` | 神子 | 神之子 | 测试用 |  |
-| `天国` | 天堂 | 天国 | 测试用 |  |
-| `パラダイス` | 乐园 | 天堂 | 测试用 |  |
-| `海の家` | 海之家 | 海边民宿／海滨小店／海边小屋／海边旅馆 | 测试用 |  |
+| 日文锚点 | 裁定 | 被否决或并存的候选 | 备注 | 判定 | 机检 |
+| --- | --- | --- | --- | --- | --- |
+| `魔術`／`魔術師` | 魔法／魔法师 | 魔术／魔术师 | 术语层须与手技层分开 |  | 是 |
+| `チキンレース` | 试胆竞速 | 胆小鬼博弈／斗鸡博弈 | 测试用 |  | 是 |
+| `元女教皇` | 前任女教皇 | 前女教皇／原女教皇 | 测试用 |  | 是 |
+| `低周波振動治療器` | 低频振动治疗器 | 低频震动治疗器 | 测试用 |  | 是 |
+| `神の子` | 神子 | 神之子 | 测试用 |  | 是 |
+| `天国` | 天堂 | 天国 | 测试用 |  | 是 |
+| `パラダイス` | 乐园 | 天堂 | 测试用 |  | 是 |
+| `海の家` | 海之家 | 海边民宿／海滨小店／海边小屋／海边旅馆 | 测试用 |  | 是 |
+| `手品` | 魔术 | 戏法 | 未标记机检的对照行 |  |  |
 """
 
 
@@ -56,8 +57,8 @@ class TempBook:
 class RuleLoadingTests(unittest.TestCase):
     def test_rules_read_accepted_and_rejected_forms(self):
         with tempfile.TemporaryDirectory() as tmp:
-            book = TempBook(Path(tmp))
-            rules = load_rules(book.rulings, DEFAULT_ANCHORS)
+            path = TempBook(Path(tmp)).rulings
+            rules = load_rules(path, machine_anchors(path))
         by_anchor = {rule["anchor"]: rule for rule in rules}
         self.assertEqual(by_anchor["魔術"]["accepted"], ["魔法", "魔法师"])
         self.assertEqual(by_anchor["魔術"]["rejected"], ["魔术", "魔术师"])
@@ -70,6 +71,17 @@ class RuleLoadingTests(unittest.TestCase):
         anchors = [rule["anchor"] for rule in rules]
         self.assertLess(anchors.index("魔術師"), anchors.index("魔術"))
 
+    def test_machine_column_selects_anchors_in_table_order(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = TempBook(Path(tmp)).rulings
+            anchors = machine_anchors(path)
+        self.assertEqual(
+            anchors,
+            ("魔術", "魔術師", "チキンレース", "元女教皇", "低周波振動治療器",
+             "神の子", "天国", "パラダイス", "海の家"),
+        )
+        self.assertNotIn("手品", anchors)
+
     def test_missing_anchor_raises(self):
         with tempfile.TemporaryDirectory() as tmp:
             book = TempBook(Path(tmp))
@@ -80,7 +92,8 @@ class RuleLoadingTests(unittest.TestCase):
 class MatchLineTests(unittest.TestCase):
     def setUp(self):
         with tempfile.TemporaryDirectory() as tmp:
-            self.rules = load_rules(TempBook(Path(tmp)).rulings, DEFAULT_ANCHORS)
+            path = TempBook(Path(tmp)).rulings
+            self.rules = load_rules(path, machine_anchors(path))
 
     def test_bare_majutsu_with_majutsu_is_hit(self):
         hits = match_line("魔術を使う。", "使用魔术。", self.rules)

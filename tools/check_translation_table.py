@@ -374,6 +374,7 @@ def load_rulings(path: Path) -> dict[str, dict[str, object]]:
         ai = 1 if "角色" in header[0] else 0
         ri = next((n for n, name in enumerate(header) if name in ("裁定", "裁定标准形")), None)
         ji = next((n for n, name in enumerate(header) if name == "判定"), None)
+        mi = next((n for n, name in enumerate(header) if name == "机检"), None)
         if ri is None or max(ai, ri) >= len(cells):
             continue
         anchors = re.findall(r"`([^`]+)`", cells[ai])
@@ -385,6 +386,7 @@ def load_rulings(path: Path) -> dict[str, dict[str, object]]:
             continue
         label = RUBY_ANCHOR_RE.sub("", re.sub(r"`[^`]+`", "", cells[ai])).strip("（）() ").strip()
         human = bool(ji is not None and ji < len(cells) and "人读" in cells[ji])
+        machine = bool(mi is not None and mi < len(cells) and cells[mi].strip() == "是")
         declared = ([ax for ax in MATCH_AXES if ax in cells[ji]]
                     if ji is not None and ji < len(cells) else [])
         axis = declared[0] if len(declared) == 1 else MATCH_BASE
@@ -409,6 +411,7 @@ def load_rulings(path: Path) -> dict[str, dict[str, object]]:
                 continue
             slot = out.setdefault(key, {"forms": [], "ruby_forms": [], "raw": [], "labels": [],
                                         "ori_raw": [], "alt_raw": [], "human_only": False,
+                                        "machine": False,
                                         "anchor_rts": [], "match_axis": MATCH_BASE,
                                         "axis_mixed": False, "_axis_flags": []})
             for form in forms:
@@ -425,6 +428,7 @@ def load_rulings(path: Path) -> dict[str, dict[str, object]]:
             slot["labels"].append(label)
             slot["ori_raw"].append(anchor)
             slot["human_only"] = bool(slot["human_only"]) or human
+            slot["machine"] = bool(slot["machine"]) or machine
             slot["_axis_flags"].append(MATCH_BASE if axis_conflict else axis)
     for slot in out.values():
         axes = slot.pop("_axis_flags", [])

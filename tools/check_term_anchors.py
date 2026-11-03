@@ -4,8 +4,8 @@
 
 中日逐行配对，只报「日文含裁定锚点、中文含误形且无裁定写法」；
 书名、省略或改写也可能缺少裁定写法，因此仅缺写法不作为命中。
-写法与误形从 `docs/translation-name-rulings.md` 读取，锚点由 DEFAULT_ANCHORS
-或 --anchor 指定；日文语境例外由 ANCHOR_CONTEXT_EXCEPTIONS 定义。
+写法与误形从 `docs/translation-name-rulings.md` 读取，锚点取该表 §五「机检」列
+标记的行（或用 --anchor 指定）；日文语境例外由 ANCHOR_CONTEXT_EXCEPTIONS 定义。
 
 只读、只报告，不判定改写方案。命令合同见 `tools/README.md`「术语锚点门禁」，
 建立背景与历史回测见 `docs/maintenance-records/term-anchor-gate-2026-10-27.md`。
@@ -47,10 +47,8 @@ DEFAULT_JP = REPO_ROOT / ".cache" / "epub-work" / "japanese-text"
 DEFAULT_RULINGS = REPO_ROOT / "docs" / "translation-name-rulings.md"
 DEFAULT_OUT = REPO_ROOT / ".cache" / "epub-work" / "term-anchor-check.tsv"
 
-# 需要严格执行的裁定锚点。新增时确认该行「被否决或并存的候选」列可以直接当误形用，
-# 且没有大量合法的并存义项；否则先补例外或另立裁定行。
-# 纳入条件与当前名单见裁定表 §四.8；本常量与「判定」列（匹配轴）无关。
-DEFAULT_ANCHORS = ("魔術", "魔術師", "チキンレース", "元女教皇", "低周波振動治療器", "神の子", "天国", "パラダイス", "海の家")
+# 机检锚点由裁定表 §五 的「机检」列决定（该列填「是」的行纳入），本模块不再维护常量清单：
+# 新增锚点只需在裁定表标记该行。纳入条件见裁定表 §四.8。
 
 # 日文语境例外：锚点 → 命中即整行跳过的正则。
 ANCHOR_CONTEXT_EXCEPTIONS = {
@@ -73,6 +71,18 @@ def form_list(cell: str) -> list[str]:
         if 1 <= len(part) <= 10 and CJK_FORM.match(part):
             out.append(part)
     return list(dict.fromkeys(out))
+
+
+def machine_anchors(rulings_path: Path) -> tuple[str, ...]:
+    """按裁定表「机检」列取锚点，保持表内登记顺序；未标记的行不参与机检。"""
+    anchors: list[str] = []
+    for slot in load_rulings(rulings_path).values():
+        if not slot.get("machine"):
+            continue
+        for anchor in slot["ori_raw"]:
+            if anchor not in anchors:
+                anchors.append(anchor)
+    return tuple(anchors)
 
 
 def load_rules(rulings_path: Path, anchors: tuple[str, ...]) -> list[dict]:
@@ -165,17 +175,22 @@ class TermAnchorAudit:
 
 
 def audit_coverage(cn_root: Path, jp_root: Path, work_ids: set[str] | None = None,
-                   *, anchors: tuple[str, ...] = DEFAULT_ANCHORS,
+                   *, anchors: tuple[str, ...] | None = None,
                    rulings_path: Path = DEFAULT_RULINGS) -> TermAnchorAudit:
     """Audit Chinese content units and retain every reason for missing coverage.
 
     Packaging is outside the line-pair scan. Reviewed structural exceptions are
     distinct from missing references, duplicate headers and unequal line counts.
+    `anchors=None` 取裁定表「机检」列标记的锚点。
     """
     if not cn_root.is_dir():
         raise FileNotFoundError(f"中文成品目录不存在：{cn_root}")
     if not jp_root.is_dir():
         raise FileNotFoundError(f"日文参考目录不存在：{jp_root}")
+    if anchors is None:
+        anchors = machine_anchors(rulings_path)
+    if not anchors:
+        raise ValueError("裁定表没有标记「机检」的锚点")
     rules = load_rules(rulings_path, anchors)
 
     jp_ids = {japanese_book_id(wid) for wid in work_ids} if work_ids is not None else None
@@ -272,7 +287,7 @@ def audit_coverage(cn_root: Path, jp_root: Path, work_ids: set[str] | None = Non
 
 
 def audit_roots(cn_root: Path, jp_root: Path, work_ids: set[str] | None = None,
-                *, anchors: tuple[str, ...] = DEFAULT_ANCHORS,
+                *, anchors: tuple[str, ...] | None = None,
                 rulings_path: Path = DEFAULT_RULINGS) -> tuple[list[dict], int, int, list[str]]:
     """Compatibility tuple: findings, checked files, uncovered files, notes."""
     result = audit_coverage(cn_root, jp_root, work_ids, anchors=anchors, rulings_path=rulings_path)
@@ -299,15 +314,15 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--rulings", type=Path, default=DEFAULT_RULINGS, help="译名裁定总表")
     parser.add_argument("--book", action="append", default=[], help="作品号筛选，可重复")
     parser.add_argument("--anchor", action="append", default=[],
-                        help=f"锚点筛选，可重复；默认为 {'、'.join(DEFAULT_ANCHORS)}")
+                        help="锚点筛选，可重复；默认为裁定表 §五「机检」列标记的锚点")
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT, help="TSV 报告路径")
     parser.add_argument("--top", type=int, default=20, help="终端最多列出的命中数")
     parser.add_argument("--strict", action="store_true", help="误形命中或适用范围未完整核对时非零退出")
     args = parser.parse_args(argv)
 
-    anchors = tuple(args.anchor) if args.anchor else DEFAULT_ANCHORS
     work_ids = {book.upper() for book in args.book} if args.book else None
     try:
+        anchors = tuple(args.anchor) if args.anchor else machine_anchors(args.rulings)
         result = audit_coverage(
             args.epub, args.jp_dir, work_ids, anchors=anchors, rulings_path=args.rulings,
         )
