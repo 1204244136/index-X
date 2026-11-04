@@ -11,12 +11,13 @@ from xhtml_text import (
     strip_ruby_annotations,
     text_of,
     text_of_without_ruby,
+    text_of_without_ruby_compact,
     visible_text_of,
 )
 
 
 class XhtmlTextTests(unittest.TestCase):
-    """注音剥除与纯文本提取的唯一实现：三种口径各测正例与边界。"""
+    """注音剥除与纯文本提取的唯一实现：四种口径各测正例与边界。"""
 
     RUBY = "<p><ruby>超電磁砲<rt>レールガン</rt></ruby>はすごい</p>"
 
@@ -27,6 +28,12 @@ class XhtmlTextTests(unittest.TestCase):
     def test_text_of_without_ruby_drops_readings(self):
         """原文检索口径先剥注音，避免 `魔術サイド` 被拆成 `魔術 まじゆつ サイド`。"""
         self.assertEqual(text_of_without_ruby(self.RUBY.encode("utf-8")), "超電磁砲 はすごい")
+
+    def test_compact_text_keeps_anchor_whole_across_per_character_ruby(self):
+        """按字注音不得把术语拆开：`text_of` 口径读成「魔 術」，锚点检索需要「魔術」。"""
+        html = "<p><ruby>魔<rt>ま</rt></ruby><ruby>術<rt>じゆつ</rt></ruby>サイド</p>"
+        self.assertEqual(text_of_without_ruby(html.encode("utf-8")), "魔 術 サイド")
+        self.assertEqual(text_of_without_ruby_compact(html.encode("utf-8")), "魔術サイド")
 
     def test_visible_text_drops_rt_but_keeps_rp_brackets(self):
         """可见文本比较剥 <rt>，但保留 <rp> 的可见括号。"""

@@ -411,7 +411,7 @@ def load_rulings(path: Path) -> dict[str, dict[str, object]]:
                 continue
             slot = out.setdefault(key, {"forms": [], "ruby_forms": [], "raw": [], "labels": [],
                                         "ori_raw": [], "alt_raw": [], "human_only": False,
-                                        "machine": False,
+                                        "machine": False, "rows": [],
                                         "anchor_rts": [], "match_axis": MATCH_BASE,
                                         "axis_mixed": False, "_axis_flags": []})
             for form in forms:
@@ -427,6 +427,8 @@ def load_rulings(path: Path) -> dict[str, dict[str, object]]:
             slot["alt_raw"].append(cells[ri + 1] if ri + 1 < len(cells) else "")
             slot["labels"].append(label)
             slot["ori_raw"].append(anchor)
+            slot["rows"].append({"forms": list(forms), "alt_raw": cells[ri + 1] if ri + 1 < len(cells) else "",
+                                 "machine": machine, "human_only": human})
             slot["human_only"] = bool(slot["human_only"]) or human
             slot["machine"] = bool(slot["machine"]) or machine
             slot["_axis_flags"].append(MATCH_BASE if axis_conflict else axis)

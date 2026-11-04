@@ -1,11 +1,14 @@
 """XHTML → 纯文本的统一口径；注音剥除规则只在这里实现，调用方不得再各写一套。
 
-三种口径，按「要不要读音」选：
+四种口径，按「要不要读音、要不要保留标签边界」选：
 
 - `text_of(bytes)`：剥标签、解实体、并空白，**保留** `<rt>` 读音。复核 diff 用它，
   否则注音改动不会出现在差异里。
 - `text_of_without_ruby(bytes)`：先移除 `<rt>`/`<rp>` 再按上面同一口径提取。
   原文检索与术语比对用它，否则 `魔術サイド` 会被读成 `魔術 まじゅつ サイド`。
+- `text_of_without_ruby_compact(bytes)`：与上一条同口径，但标签**直接删除、不插入空格**。
+  按字注音（`<ruby>魔<rt>ま</rt></ruby><ruby>術<rt>じゆつ</rt></ruby>`）在上一条口径下
+  会变成「魔 術」，术语锚点（`魔術`／`魔術師`）会因此永远匹配不到；锚点检索用这一条。
 - `visible_text_of(str)`：只移除 `<rt>`（保留 `<rp>` 包裹的可见括号）与全部标签，
   用于行级长度/字形比较。
 
@@ -57,6 +60,18 @@ def text_of(data: bytes) -> str:
 def text_of_without_ruby(data: bytes) -> str:
     """与 `text_of` 同口径，但先移除注音；原文检索与术语比对用。"""
     return _flatten(strip_ruby_annotations(data.decode("utf-8", errors="ignore")))
+
+
+def text_of_without_ruby_compact(data: bytes) -> str:
+    """与 `text_of_without_ruby` 同口径，但标签直接删除、不插入空格。
+
+    术语锚点检索专用：`text_of` 把每个标签换成空格，按字注音的
+    `<ruby>魔</ruby><ruby>術</ruby>` 会被读成「魔 術」，`魔術`／`魔術師` 这类锚点
+    因此永远匹配不到（2026-11-04 查出的门禁漏检即此）。
+    """
+    text = strip_ruby_annotations(data.decode("utf-8", errors="ignore"))
+    text = re.sub(r"<(script|style)\b[^>]*>.*?</\1>", " ", text, flags=re.I | re.S)
+    return html.unescape(re.sub(r"\s+", " ", TAG.sub("", text))).strip()
 
 
 def _flatten(text: str) -> str:

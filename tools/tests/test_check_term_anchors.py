@@ -24,6 +24,7 @@ RULINGS = """# 测试裁定表
 | 日文锚点 | 裁定 | 被否决或并存的候选 | 备注 | 判定 | 机检 |
 | --- | --- | --- | --- | --- | --- |
 | `魔術`／`魔術師` | 魔法／魔法师 | 魔术／魔术师 | 术语层须与手技层分开 |  | 是 |
+| `魔術師` | 魔术师 | 牌名例外 | 塔罗牌名是固定牌名，不随术语层改 |  |  |
 | `チキンレース` | 试胆竞速 | 胆小鬼博弈／斗鸡博弈 | 测试用 |  | 是 |
 | `元女教皇` | 前任女教皇 | 前女教皇／原女教皇 | 测试用 |  | 是 |
 | `低周波振動治療器` | 低频振动治疗器 | 低频震动治疗器 | 测试用 |  | 是 |
@@ -106,6 +107,12 @@ class MatchLineTests(unittest.TestCase):
     def test_majutsushi_is_not_double_counted(self):
         hits = match_line("魔術師だ。", "魔术师。", self.rules)
         self.assertEqual([hit["anchor"] for hit in hits], ["魔術師"])
+
+    def test_majutsushi_exception_row_does_not_whitelist_rejected_form(self):
+        """牌名例外行只说明语境豁免，不能把「魔术师」并成该锚点的合规写法。"""
+        by_anchor = {rule["anchor"]: rule for rule in self.rules}
+        self.assertEqual(by_anchor["魔術師"]["accepted"], ["魔法", "魔法师"])
+        self.assertIn("魔术师", by_anchor["魔術師"]["rejected"])
 
     def test_tarot_name_is_exception(self):
         self.assertEqual(match_line("タロットの『魔術師』。", "塔罗的『魔术师』。", self.rules), [])
@@ -266,6 +273,44 @@ class AuditTests(unittest.TestCase):
         self.assertEqual(len(rows), 1)
         self.assertEqual((rows[0]["book"], rows[0]["file"], rows[0]["line"]), ("S1_01", "S1_01-01_Chapter1.xhtml", 2))
         self.assertEqual(rows[0]["found"], "魔术")
+
+    def test_per_character_ruby_anchor_is_detected(self):
+        """按字注音（`<ruby>魔</ruby><ruby>術</ruby>`）不得让锚点漏检。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            book = TempBook(Path(tmp))
+            book.write(
+                ["<p>使用魔术。</p>"],
+                ["<p>星座を利用した<ruby>魔<rt>ま</rt></ruby><ruby>術<rt>じゆつ</rt></ruby>だ。</p>"],
+            )
+            rows, checked, _, _ = audit_roots(book.cn_root, book.jp_root, rulings_path=book.rulings)
+        self.assertEqual(checked, 1)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["found"], "魔术")
+
+    def test_per_character_ruby_majutsushi_is_detected(self):
+        """逐字注音的 `魔術師` 同样要命中；牌名例外行不得把它挡掉。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            book = TempBook(Path(tmp))
+            book.write(
+                ["<p>假设一名魔术师拥有一百的力量。</p>"],
+                ["<p><ruby>魔<rt>ま</rt></ruby><ruby>術<rt>じゆつ</rt></ruby><ruby>師<rt>し</rt></ruby>に一〇〇の力があったとする。</p>"],
+            )
+            rows, checked, _, _ = audit_roots(book.cn_root, book.jp_root, rulings_path=book.rulings)
+        self.assertEqual(checked, 1)
+        self.assertEqual([row["anchor"] for row in rows], ["魔術師"])
+        self.assertIn("魔术师", rows[0]["found"])
+
+    def test_per_character_ruby_tarot_name_is_still_exception(self):
+        """塔罗牌名逐字注音时仍按牌名例外跳过。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            book = TempBook(Path(tmp))
+            book.write(
+                ["<p>塔罗的『魔术师』。</p>"],
+                ["<p>タロットの『<ruby>魔<rt>ま</rt></ruby><ruby>術<rt>じゆつ</rt></ruby><ruby>師<rt>し</rt></ruby>』。</p>"],
+            )
+            rows, checked, _, _ = audit_roots(book.cn_root, book.jp_root, rulings_path=book.rulings)
+        self.assertEqual(checked, 1)
+        self.assertEqual(rows, [])
 
     def test_line_count_mismatch_is_skipped_not_passed(self):
         with tempfile.TemporaryDirectory() as tmp:

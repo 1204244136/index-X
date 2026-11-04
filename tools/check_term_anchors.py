@@ -40,7 +40,7 @@ from alignment_rules import (  # noqa: E402
 from check_translation_table import body_markup, load_rulings, norm_anchor  # noqa: E402
 from epub_ids import book_id, japanese_book_id  # noqa: E402
 from xhtml_structure import books_by_id, header_index, pair_structure_problems  # noqa: E402
-from xhtml_text import strip_ruby_annotations, text_of  # noqa: E402
+from xhtml_text import text_of_without_ruby_compact  # noqa: E402
 
 DEFAULT_EPUB = REPO_ROOT / "EPUB"
 DEFAULT_JP = REPO_ROOT / ".cache" / "epub-work" / "japanese-text"
@@ -86,18 +86,32 @@ def machine_anchors(rulings_path: Path) -> tuple[str, ...]:
 
 
 def load_rules(rulings_path: Path, anchors: tuple[str, ...]) -> list[dict]:
-    """从裁定表读取锚点的应作写法与误形；缺锚点或解析不出写法时报错。"""
+    """从裁定表读取锚点的应作写法与误形；缺锚点或解析不出写法时报错。
+
+    同一锚点可能有多行登记（如 `魔術師` 的牌名例外行）。机检只取「机检」列为「是」的
+    登记行：例外行的写法（牌名「魔术师」）按语境豁免，不能并进无条件写法，否则门禁
+    会把该锚点的误形当成合规写法而永远不报（2026-11-04 查出）。
+    """
     rulings = load_rulings(rulings_path)
     rules: list[dict] = []
     for anchor in anchors:
         slot = rulings.get(norm_anchor(anchor))
         if slot is None:
             raise ValueError(f"裁定表没有锚点：{anchor}")
-        accepted = [form for form in slot["forms"]
-                    if 1 <= len(form) <= 10 and CJK_FORM.match(form)]
-        rejected: list[str] = []
-        for raw in slot["alt_raw"]:
-            rejected.extend(form_list(raw))
+        machine_rows = [row for row in slot.get("rows", []) if row.get("machine")]
+        if machine_rows:
+            accepted = [form for row in machine_rows for form in row["forms"]
+                        if 1 <= len(form) <= 10 and CJK_FORM.match(form)]
+            accepted = list(dict.fromkeys(accepted))
+            rejected: list[str] = []
+            for row in machine_rows:
+                rejected.extend(form_list(row["alt_raw"]))
+        else:
+            accepted = [form for form in slot["forms"]
+                        if 1 <= len(form) <= 10 and CJK_FORM.match(form)]
+            rejected = []
+            for raw in slot["alt_raw"]:
+                rejected.extend(form_list(raw))
         rejected = [form for form in dict.fromkeys(rejected) if form not in accepted]
         if not accepted or not rejected:
             raise ValueError(f"锚点 {anchor} 解析不出裁定写法或误形")
@@ -247,8 +261,8 @@ def audit_coverage(cn_root: Path, jp_root: Path, work_ids: set[str] | None = Non
                 continue
             cn_body = body_markup("\n".join(cn_lines), preserve_lines=True)
             jp_body = body_markup("\n".join(jp_lines), preserve_lines=True)
-            cn_text = text_of(strip_ruby_annotations(cn_body).encode())
-            jp_text = text_of(strip_ruby_annotations(jp_body).encode())
+            cn_text = text_of_without_ruby_compact(cn_body.encode())
+            jp_text = text_of_without_ruby_compact(jp_body.encode())
             if not cn_text and not jp_text and all(
                     re.search(r"<(?:[\w.-]+:)?(?:img|svg)\b", markup, re.I)
                     for markup in (cn_body, jp_body)):
@@ -267,10 +281,10 @@ def audit_coverage(cn_root: Path, jp_root: Path, work_ids: set[str] | None = Non
                 continue
             result.checked += 1
             for line_no, (cn_line, jp_line) in enumerate(zip(cn_body.split("\n"), jp_body.split("\n")), 1):
-                jp_text = text_of(strip_ruby_annotations(jp_line).encode())
+                jp_text = text_of_without_ruby_compact(jp_line.encode())
                 if not jp_text:
                     continue
-                cn_text = text_of(cn_line.encode())
+                cn_text = text_of_without_ruby_compact(cn_line.encode())
                 for hit in match_line(jp_text, cn_text, rules):
                     result.rows.append({
                         "book": wid,
