@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import shutil
 import sys
 import tempfile
 import unittest
@@ -19,6 +20,7 @@ from sync_core import (  # noqa: E402
     find_conflicts,
     missing_baseline_sides,
     read_pull_state,
+    remove_pull_state_record,
     sync_file_changes,
     upload_book,
 )
@@ -342,6 +344,121 @@ class SyncCoreTests(unittest.TestCase):
             )
 
             self.assertEqual(conflicts, [])
+
+
+class RemovedBookTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name)
+        self.cache = self.root / "cache"
+        self.epub = self.root / "archive"
+        self.onedrive = self.root / "distribution"
+        self.cache.mkdir()
+        self.onedrive.mkdir()
+        self.archive = self.epub / "book"
+        self.destination = self.onedrive / "book.epub"
+        self.state = self.cache / "pull-state.tsv"
+        self.original_state = (
+            b"chinese-text\tbook\t123\t456\n"
+            b"japanese-text\tbook\t789\t100\n"
+            b"chinese-text\tother\t111\t222\n"
+        )
+        self.seed()
+
+    def seed(self):
+        self.archive.mkdir(parents=True, exist_ok=True)
+        (self.archive / "a.xhtml").write_bytes(b"archive body")
+        (self.archive / "b.xhtml").write_bytes(b"archive second body")
+        self.destination.write_bytes(b"distributed package")
+        self.state.write_bytes(self.original_state)
+
+    def retire(self, side="chinese-text", **kwargs):
+        return publish_book(
+            f"{side}/book", {"a.xhtml": "deleted"}, self.cache, self.epub,
+            {side: self.onedrive}, **kwargs,
+        )
+
+    def assert_originals(self):
+        self.assertEqual((self.archive / "a.xhtml").read_bytes(), b"archive body")
+        self.assertEqual((self.archive / "b.xhtml").read_bytes(), b"archive second body")
+        self.assertEqual(self.destination.read_bytes(), b"distributed package")
+        self.assertEqual(self.state.read_bytes(), self.original_state)
+
+    def test_japanese_retirement_keeps_same_named_chinese_archive(self):
+        ok, message = self.retire("japanese-text")
+        self.assertTrue(ok, message)
+        self.assertEqual((self.archive / "a.xhtml").read_bytes(), b"archive body")
+        self.assertEqual((self.archive / "b.xhtml").read_bytes(), b"archive second body")
+        self.assertFalse(self.destination.exists())
+        self.assertEqual(read_pull_state(self.cache), {
+            "chinese-text/book": ("123", "456"),
+            "chinese-text/other": ("111", "222"),
+        })
+
+    def test_missing_upload_target_fails_before_retiring_archive(self):
+        for destination in (None, self.root / "missing"):
+            with self.subTest(destination=destination):
+                ok, message = publish_book(
+                    "chinese-text/book", {"a.xhtml": "deleted"},
+                    self.cache, self.epub, {"chinese-text": destination},
+                )
+                self.assertFalse(ok)
+                self.assertIn("OneDrive", message)
+                self.assert_originals()
+
+    def test_partial_archive_deletion_failure_restores_all_outputs(self):
+        original_rmtree = shutil.rmtree
+
+        def fail_archive(path, *args, **kwargs):
+            if Path(path) == self.archive:
+                (self.archive / "a.xhtml").unlink()
+                raise OSError("archive deletion failed")
+            return original_rmtree(path, *args, **kwargs)
+
+        with patch("publish.shutil.rmtree", side_effect=fail_archive):
+            ok, message = self.retire()
+        self.assertFalse(ok)
+        self.assertIn("archive deletion failed", message)
+        self.assert_originals()
+
+    def test_external_deletion_failure_restores_archive_and_state(self):
+        original_unlink = Path.unlink
+
+        def fail_destination(path, *args, **kwargs):
+            if path == self.destination:
+                raise OSError("external deletion failed")
+            return original_unlink(path, *args, **kwargs)
+
+        with patch.object(Path, "unlink", fail_destination):
+            ok, message = self.retire()
+        self.assertFalse(ok)
+        self.assertIn("external deletion failed", message)
+        self.assert_originals()
+
+    def test_state_failure_restores_deleted_archive_package_and_state(self):
+        def fail_after_state_write(cache, book_key):
+            remove_pull_state_record(cache, book_key)
+            raise OSError("state write failed")
+
+        with patch("publish.remove_pull_state_record", side_effect=fail_after_state_write):
+            ok, message = self.retire()
+        self.assertFalse(ok)
+        self.assertIn("state write failed", message)
+        self.assert_originals()
+
+    def test_local_only_retirement_preserves_external_package(self):
+        for mode in ("no_upload", "sync_only"):
+            with self.subTest(mode=mode):
+                self.seed()
+                ok, message = self.retire(**{mode: True})
+                self.assertTrue(ok, message)
+                self.assertFalse(self.archive.exists())
+                self.assertEqual(self.destination.read_bytes(), b"distributed package")
+                self.assertEqual(read_pull_state(self.cache), {
+                    "japanese-text/book": ("789", "100"),
+                    "chinese-text/other": ("111", "222"),
+                })
 
 
 class PlaceholderTests(unittest.TestCase):

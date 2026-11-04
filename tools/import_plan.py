@@ -46,6 +46,8 @@ import json
 import re
 from pathlib import Path
 
+from epub_ids import book_id
+
 OP_TYPES = ("split", "merge_prev", "insert_br_after", "drop", "note_to_prev")
 IMAGE_ROLES = ("cover", "illustration", "body")
 CHAPTER_FIELDS = ("cn_title", "jp_file", "fname")
@@ -97,7 +99,8 @@ def validate_plan(plan: dict) -> list[str]:
     for field in PLAN_FIELDS:
         if not plan.get(field):
             problems.append(f"缺少字段 {field}")
-    if plan.get("work_id") and not re.fullmatch(r"S\d+_\d+(?:_\d+)?", str(plan["work_id"])):
+    identifier = plan.get("work_id")
+    if identifier and book_id(f"【{identifier}】") != str(identifier).upper():
         problems.append(f"work_id 形状异常：{plan['work_id']}")
     chapters = plan.get("chapters")
     if not isinstance(chapters, list) or not chapters:

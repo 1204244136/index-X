@@ -100,7 +100,7 @@ def check_info(path: Path) -> tuple[bool, str]:
 
 
 def check_work(work: str, book_dir: str) -> tuple[bool, str]:
-    if not re.fullmatch(r"S\d+_\d+(?:_\d+)?", work):
+    if book_id(f"【{work}】") != work.upper():
         return False, f"作品号形状异常：{work}"
     if not book_dir:
         return False, "缺少 --book-dir（中文书目录名）"

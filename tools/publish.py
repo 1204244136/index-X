@@ -45,6 +45,7 @@ from package_cache_epubs import package_book, PackageError  # noqa: E402
 from sync_lock import SyncLockBusy, cache_lock  # noqa: E402
 from sync_core import (  # noqa: E402
     ONEDRIVE_DEFAULTS,
+    PULL_STATE_FILENAME,
     SIDE_DIRECTORIES,
     SIDE_LABELS,
     STATUS_LABELS,
@@ -108,17 +109,14 @@ def retire_removed_book(
     - OneDrive 上旧 `<书名>.epub` 一并删除（不再期望以该书形式分发，
       如 S5 外典合订卷已拆分为独立作品）；
     - pull-state 记录同步移除。
+    外部目标先校验；归档、外部 EPUB 与 pull-state 的删除共用回滚边界。
     成功返回后，清单基线随 update_manifest_for_book 自动清掉该书记录，
     变更列表不再反复出现。
     """
     side, book = book_key.split("/", 1)
     removed: list[str] = []
 
-    epub_book_dir = epub_root / book
-    if epub_book_dir.is_dir():
-        shutil.rmtree(epub_book_dir)
-        removed.append(f"EPUB/{book}")
-
+    dest = None
     if not sync_only and not no_upload:
         onedrive_dir = onedrive_dirs.get(side)
         if onedrive_dir is None:
@@ -126,12 +124,25 @@ def retire_removed_book(
         if not onedrive_dir.is_dir():
             return False, f"OneDrive 目录不存在: {onedrive_dir}"
         dest = onedrive_dir / f"{book}.epub"
-        if dest.is_file():
-            dest.unlink()
-            removed.append(f"OneDrive:{dest.name}")
 
-    if remove_pull_state_record(cache_root, book_key):
-        removed.append("pull-state")
+    epub_book_dir = epub_root / book if side == "chinese-text" else None
+    targets = [cache_root / PULL_STATE_FILENAME]
+    if epub_book_dir is not None:
+        targets.append(epub_book_dir)
+    if dest is not None:
+        targets.append(dest)
+    try:
+        with rollback_paths(targets):
+            if epub_book_dir is not None and epub_book_dir.is_dir():
+                shutil.rmtree(epub_book_dir)
+                removed.append(f"EPUB/{book}")
+            if dest is not None and dest.is_file():
+                dest.unlink()
+                removed.append(f"OneDrive:{dest.name}")
+            if remove_pull_state_record(cache_root, book_key):
+                removed.append("pull-state")
+    except OSError as exc:
+        return False, f"清理失败 {book_key}: {exc}"
 
     detail = "、".join(removed) if removed else "无残留产物"
     print(f"  [清理] {book}: {detail}")

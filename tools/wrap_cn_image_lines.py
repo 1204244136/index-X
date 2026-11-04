@@ -11,6 +11,7 @@
 from __future__ import annotations
 
 import argparse
+import html
 if __package__:
     from .cli_output import configure_output
 else:
@@ -32,7 +33,6 @@ from xhtml_structure import books_by_id, header_index, pair_structure_problems  
 IMG = re.compile(r"<img\b[^>]*/?>", re.I)
 DIV_OPEN = re.compile(r"<div\b[^>]*>", re.I)
 DIV_CLOSE = re.compile(r"</div>", re.I)
-CLASS_RE = re.compile(r'class="([^"]*)"', re.I)
 INNER_SVG = re.compile(r"<(?:svg|image)\b|</svg>", re.I)
 BARE_IMG_LINE = re.compile(r"^\s*<img\b[^>]*/?>\s*$", re.I)
 BODY_RE = re.compile(r"<body\b", re.I)
@@ -47,11 +47,7 @@ def _img_only(line: str) -> bool:
     return not stripped.strip()
 
 
-def _classes(line: str) -> list[str]:
-    return CLASS_RE.findall(line)
-
-
-def normalize(lines: list[str]) -> tuple[list[str], int, int]:
+def normalize(lines: list[str], *, wrap_only: bool = False) -> tuple[list[str], int, int]:
     """返回（新行, 包 <p> 的图片行数, 删除的结构行数）。"""
     out: list[str] = []
     wrapped = dropped = 0
@@ -61,6 +57,14 @@ def normalize(lines: list[str]) -> tuple[list[str], int, int]:
         line = lines[i]
         if INNER_SVG.search(line):
             out.append(line)
+            i += 1
+            continue
+        if wrap_only:
+            if BARE_IMG_LINE.match(line):
+                out.append(f"<p>{IMG.search(line).group(0)}</p>")
+                wrapped += 1
+            else:
+                out.append(line)
             i += 1
             continue
         # 纯 div 结构行或含图的 div 行 → 尝试收集一个「图片区段」
@@ -83,15 +87,25 @@ def normalize(lines: list[str]) -> tuple[list[str], int, int]:
                         t = tok.group(0)
                         low = t.lower()
                         if low.startswith("<div"):
-                            cls = _classes(t)
-                            stack.append(cls[0].strip() if cls else "")
+                            tag = re.match(r"<([^\s/>]+)", t).group(1)
+                            try:
+                                element = ET.fromstring(t + f"</{tag}>")
+                            except ET.ParseError as exc:
+                                raise ValueError(f"图片容器属性无法安全解析：{exc}") from exc
+                            unsupported = set(element.attrib) - {"class"}
+                            if re.search(r"\sxmlns(?::[^\s=]+)?\s*=", t):
+                                unsupported.add("xmlns")
+                            if unsupported:
+                                raise ValueError("图片容器含不可安全迁移的属性："
+                                                 + "、".join(sorted(unsupported)))
+                            stack.append(element.get("class", "").strip())
                         elif low.startswith("</div"):
                             if stack:
                                 stack.pop()
                         else:
                             cls = next((c for c in reversed(stack) if c), "")
                             emitted.append(
-                                f'<p class="{cls}">{t}</p>' if cls else f"<p>{t}</p>")
+                                f'<p class="{html.escape(cls, quote=True)}">{t}</p>' if cls else f"<p>{t}</p>")
                             wrapped += 1
                 out.extend(emitted)
                 dropped += (j - i) - len(emitted)
@@ -158,7 +172,7 @@ def main() -> int:
                 raw = path.read_bytes()
                 text = raw.decode("utf-8-sig")
                 lines = text.splitlines()
-                new, wrapped, dropped = normalize(lines)
+                new, wrapped, dropped = normalize(lines, wrap_only=args.wrap_only)
                 if wrapped == 0 and dropped == 0:
                     continue
                 header = (pairing_header_of(path.name) or "").upper()

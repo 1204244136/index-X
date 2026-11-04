@@ -717,6 +717,15 @@ class MatchAxisTests(unittest.TestCase):
             jp_ruby={"S1_01": to_ruby_text("<ruby>人払い<rt>Opila</rt></ruby>を使う")})
         self.assertEqual(recs[0]["status"], "landed")
 
+    def test_full_axis_checks_ruby_with_fallback_parentheses(self):
+        jp = "<ruby>人払い<rp>（</rp><rt>Opila</rt><rp>）</rp></ruby>を使う"
+        recs, _s, _sh = compare(
+            [self.entry("人払い", "闲人驱散")], {"S1_01": strip_markup(jp)},
+            {"S1_01": "他疏散了人群"}, self.rd(MATCH_FULL),
+            jp_ruby={"S1_01": to_ruby_text(jp)})
+        self.assertEqual(len(recs), 1)
+        self.assertEqual(recs[0]["status"], "missing")
+
     def test_reading_axis_matches_other_base(self):
         """`匹配注文`：基文是别的字（遺産 读 Opila）也算本行命中。"""
         recs, _s, _sh = compare(
@@ -1052,6 +1061,11 @@ class RubyTextTests(unittest.TestCase):
         self.assertEqual(to_ruby_text("<ruby>封<rt>ド</rt></ruby><ruby>の<rt>ロ</rt></ruby>"),
                          "封（ド）の（ロ）")
 
+    def test_fallback_parentheses_are_excluded_from_base(self):
+        self.assertEqual(
+            to_ruby_text("<ruby><rb>人払い</rb><rp>（</rp><rt>Opila</rt><rp>）</rp></ruby>"),
+            "人払い（Opila）")
+
 
 class RubyJudgementTests(unittest.TestCase):
     """注音判定：日文侧带注音时，中文侧必须出现裁定的复合串。"""
@@ -1078,6 +1092,46 @@ class RubyJudgementTests(unittest.TestCase):
         """日文侧本来就裸写时不做注音判定（否则中文裸写会被误报）。"""
         recs, _s, _sh = compare(self.ENTRY, {"S1_01": "主神の槍"}, {"S1_01": "主神之枪"}, self.RD,
                                 None, None, {"S1_01": "主神の槍"}, {"S1_01": "主神之枪"})
+        self.assertEqual(recs[0]["status"], "landed")
+
+    def test_host_with_wrong_or_missing_ruby_does_not_land(self):
+        for host_ruby in ("主神之枪（Gungnir）", "主神之枪", ""):
+            with self.subTest(host_ruby=host_ruby):
+                recs, _s, _sh = compare(
+                    self.ENTRY, {"S5_02_03": "主神の槍"},
+                    {"S5_02_03": "正文", "S5_02_01": "主神之枪"}, self.RD,
+                    translation_host={"S5_02_03": "S5_02_01"},
+                    jp_ruby={"S5_02_03": "主神の槍（グングニル）"},
+                    cn_ruby={"S5_02_03": "正文", "S5_02_01": host_ruby})
+                self.assertEqual(recs[0]["status"], "missing")
+                self.assertEqual(recs[0]["cn_host"], "")
+
+    def test_correct_host_ruby_lands_after_own_book_fails_ruby_check(self):
+        recs, _s, _sh = compare(
+            self.ENTRY, {"S5_02_03": "主神の槍"},
+            {"S5_02_03": "主神之枪", "S5_02_01": "主神之枪"}, self.RD,
+            translation_host={"S5_02_03": "S5_02_01"},
+            jp_ruby={"S5_02_03": "主神の槍（グングニル）"},
+            cn_ruby={"S5_02_03": "主神之枪（Gungnir）", "S5_02_01": "主神之枪（冈格尼尔）"})
+        self.assertEqual(recs[0]["status"], "landed")
+        self.assertEqual(recs[0]["cn_host"], "S5_02_01")
+
+    def test_bare_japanese_anchor_does_not_require_host_ruby(self):
+        recs, _s, _sh = compare(
+            self.ENTRY, {"S5_02_03": "主神の槍"},
+            {"S5_02_03": "正文", "S5_02_01": "主神之枪"}, self.RD,
+            translation_host={"S5_02_03": "S5_02_01"},
+            jp_ruby={"S5_02_03": "主神の槍"},
+            cn_ruby={"S5_02_03": "正文", "S5_02_01": "主神之枪"})
+        self.assertEqual(recs[0]["status"], "landed")
+        self.assertEqual(recs[0]["cn_host"], "S5_02_01")
+
+    def test_chinese_ruby_with_fallback_parentheses_lands(self):
+        cn = "<ruby>主神之枪<rp>（</rp><rt>冈格尼尔</rt><rp>）</rp></ruby>"
+        recs, _s, _sh = compare(
+            self.ENTRY, {"S1_01": "主神の槍"}, {"S1_01": strip_markup(cn)}, self.RD,
+            jp_ruby={"S1_01": "主神の槍（グングニル）"},
+            cn_ruby={"S1_01": to_ruby_text(cn)})
         self.assertEqual(recs[0]["status"], "landed")
 
 

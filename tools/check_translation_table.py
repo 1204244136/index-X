@@ -189,12 +189,13 @@ def to_ruby_text(raw: str) -> str:
 
     剥注音文本只能比基文，判定不了成品把注音写成了什么（`<rt>Gungnir</rt>` 与
     `<rt>冈格尼尔</rt>` 剥完都是「主神之枪」）。复合串让「基文 + 注音」成为可匹配的
-    整体。多段 ruby（当て字逐字分解）按段展开，这类锚点的注音判定交人工。
+    整体。`<rp>` 回退括号不计入基文。多段 ruby（当て字逐字分解）按段展开，
+    这类锚点的注音判定交人工。
     """
     def repl(match):
         inner = match.group(1)
         rt = RT_INNER_RE.search(inner)
-        base = re.sub(r"<[^>]+>", "", RT_INNER_RE.sub("", inner)).strip()
+        base = TAG_RE.sub("", strip_ruby_annotations(inner)).strip()
         note = re.sub(r"<[^>]+>", "", rt.group(1)).strip() if rt else ""
         return f"{base}（{note}）" if note else base
 
@@ -662,8 +663,11 @@ def compare(entries: list[dict[str, str]], jp_books: dict[str, str],
         anchor_rts = [norm_anchor(v) for v in (rd.get("anchor_rts", []) if rd else [])]
         anchor_rts = [v for v in anchor_rts if v]
 
-        def hit(text: str) -> tuple[bool, str]:
-            """在给定中文文本里找可接受写法 → (是否命中, form_kind 标记)。"""
+        def hit(book: str, require_ruby: bool) -> tuple[bool, str]:
+            """本书与宿主书共用基文、注音要求 → (是否命中, form_kind 标记)。"""
+            if require_ruby and not any(rf in cn_ruby_norm.get(book, "") for rf in ruby_forms):
+                return False, ""
+            text = cn_norm[book]
             if forms:
                 # 长写法优先：否则「妹妹」会因是「妹妹们」的子串而误判
                 for form_text in sorted(forms, key=len, reverse=True):
@@ -741,17 +745,15 @@ def compare(entries: list[dict[str, str]], jp_books: dict[str, str],
                 })
                 continue
 
-            landed, form = hit(cn_norm[bid])
             # 注音判定：裁定条目带注音要求、且该书日文侧存在带注音的该锚点时，
-            # 中文侧必须出现裁定的复合串（`基文（注文）`）——否则视为注音未落地
-            if landed and ruby_forms and jp_ruby is not None and cn_ruby is not None:
-                if f"{ori}(" in jp_ruby_norm.get(bid, ""):   # 归一化已把全角括号折叠为半角
-                    if not any(rf in cn_ruby_norm.get(bid, "") for rf in ruby_forms):
-                        landed, form = False, ""
+            # 两个中文候选来源都必须出现裁定的复合串（`基文（注文）`）。
+            require_ruby = bool(ruby_forms and jp_ruby is not None and cn_ruby is not None
+                                and f"{ori}(" in ruby_text)
+            landed, form = hit(bid, require_ruby)
             cn_host = ""
             host = translation_host.get(bid, "")
             if not landed and host and host in cn_norm:
-                landed, form = hit(cn_norm[host])
+                landed, form = hit(host, require_ruby)
                 if landed:
                     cn_host = host
             records.append({

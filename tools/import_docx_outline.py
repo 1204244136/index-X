@@ -29,6 +29,8 @@ else:
     from cli_output import configure_output
 from docx_source import (ILLUS_RE, NOTE_BRACKET_RE, NOTE_PAREN_RE, RUBY_RE,
                          SUSPECT_WHITESPACE, chapter_kind, read_docx)
+from file_transaction import atomic_write_bytes, rollback_paths
+from path_safety import require_report_target
 
 # 交稿层面的阻断形状：固定行模板无法表达，必须先人工处理
 BLOCKING = "阻断"
@@ -163,6 +165,20 @@ def main(argv: list[str] | None = None) -> int:
     if not args.docx.is_file():
         print(f"[{BLOCKING}] 交稿不存在：{args.docx}", file=sys.stderr)
         return 2
+    outputs = {name: path for name, path in (("out", args.out), ("summary", args.summary)) if path}
+    repo = Path(__file__).resolve().parents[1]
+    protected_dirs = [repo / "EPUB", *(repo / ".cache/epub-work" / side
+                                      for side in ("chinese-text", "japanese-text"))]
+    try:
+        targets = {
+            name: require_report_target(
+                path, protected_files=[args.docx, *(other for key, other in outputs.items() if key != name)],
+                protected_dirs=[*protected_dirs, *(other for key, other in outputs.items() if key != name)])
+            for name, path in outputs.items()
+        }
+    except ValueError as exc:
+        print(f"[{BLOCKING}] {exc}", file=sys.stderr)
+        return 2
     try:
         paragraphs, _, _, _ = read_docx(args.docx, collapse_whitespace=False)
     except (OSError, ValueError, KeyError) as exc:
@@ -179,22 +195,29 @@ def main(argv: list[str] | None = None) -> int:
             chapters[-1][1] += 1
     text = summary_text(rows, [(title, count) for title, count in chapters], blocking, warnings)
 
+    payloads = {}
     if args.summary:
-        args.summary.parent.mkdir(parents=True, exist_ok=True)
-        args.summary.write_text(text, encoding="utf-8", newline="\n")
+        payloads[targets["summary"]] = text.encode("utf-8")
     print(text, end="")
 
     if args.out and not args.check:
         fmt = args.format or ("json" if args.out.suffix.casefold() == ".json" else "tsv")
-        args.out.parent.mkdir(parents=True, exist_ok=True)
         if fmt == "json":
             payload = {"docx": str(args.docx), "rows": rows,
                        "chapters": [{"title": t, "rows": c} for t, c in chapters],
                        "blocking": blocking, "warnings": warnings}
-            args.out.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
-                                encoding="utf-8", newline="\n")
+            content = json.dumps(payload, ensure_ascii=False, indent=2) + "\n"
         else:
-            args.out.write_text(format_tsv(rows), encoding="utf-8", newline="\n")
+            content = format_tsv(rows)
+        payloads[targets["out"]] = content.encode("utf-8")
+    try:
+        with rollback_paths(payloads):
+            for path, data in payloads.items():
+                atomic_write_bytes(path, data)
+    except OSError as exc:
+        print(f"[{BLOCKING}] 清单或摘要写入失败，已尝试回滚：{exc}", file=sys.stderr)
+        return 2
+    if args.out and not args.check:
         print(f"清单：{args.out}")
 
     for row in rows[:args.top]:

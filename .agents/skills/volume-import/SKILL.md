@@ -65,6 +65,8 @@ python tools/import_docx_outline.py 交稿.docx --out .cache/epub-work/import/ou
 **段内换行（`w:br`）**、注音或译注记号未闭合；提示项包括全角空格、段内制表符、独占成段的译注。
 段内换行必须先回交稿拆段——固定行模板一段一行，工具不会替你猜。
 
+第 1、2 步的全部输出参数先按 [工具合同 C2](../../../tools/README.md#c2-导入与交稿往返) 核对路径；目标冲突时调整报告位置后重跑，保全输入材料。
+
 ### 2. 结构比对与计划
 
 ```powershell

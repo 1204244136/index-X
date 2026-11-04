@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import argparse
 import collections
+import json
 import re
 import sys
 from pathlib import Path
@@ -37,8 +38,10 @@ if __package__:
 else:
     from cli_output import configure_output
 from docx_source import chapter_kind, read_docx, split_chapters
-from epub_ids import content_sequence
-from import_plan import PlanError, apply_ops, load_plan, sha256_file, write_plan
+from epub_ids import book_id, content_sequence
+from file_transaction import atomic_write_bytes, rollback_paths
+from import_plan import PlanError, apply_ops, load_plan, sha256_file
+from path_safety import require_report_target
 from xhtml_structure import header_index, line_kind
 
 CJK_RE = re.compile(r"[\u3400-\u9fff]")
@@ -480,14 +483,31 @@ def kind_tally(kinds: list[str]) -> str:
 # ---------------------------------------------------------------------------
 
 def locate_jp_dir(jp_root: Path, work_id: str) -> Path | None:
-    from epub_ids import book_id
     for child in sorted(jp_root.iterdir()):
         if child.is_dir() and (book_id(child.name) or "").upper() == work_id.upper():
             return child
     return None
 
 
+def report_inputs(plan: dict, docx: Path, jp_dir: Path) -> tuple[list[Path], list[Path]]:
+    """Protect the selected materials and the repository's book trees."""
+    repo = Path(__file__).resolve().parents[1]
+    files = [docx]
+    directories = [jp_dir, repo / "EPUB", *(repo / ".cache/epub-work" / side
+                                          for side in ("chinese-text", "japanese-text"))]
+    if plan.get("source_docx"):
+        files.append(Path(plan["source_docx"]))
+    if plan.get("images_source"):
+        directories.append(Path(plan["images_source"]))
+    if plan.get("jp_root") and plan.get("jp_dir"):
+        directories.append(Path(plan["jp_root"]) / plan["jp_dir"])
+    return files, directories
+
+
 def build(jp_dir: Path, plan: dict, docx: Path, report_path: Path | None):
+    if report_path:
+        files, directories = report_inputs(plan, docx, jp_dir)
+        report_path = require_report_target(report_path, protected_files=files, protected_dirs=directories)
     paragraphs, _, _, _ = read_docx(docx, collapse_whitespace=False)
     chapters = split_chapters(paragraphs)
     plan_chapters = plan["chapters"]
@@ -514,8 +534,7 @@ def build(jp_dir: Path, plan: dict, docx: Path, report_path: Path | None):
         lines.insert(1, f"  计划改动后 {len(product) if product is not None else len(cn)} 行（差 {delta:+d}）")
         report.extend(lines)
     if report_path:
-        report_path.parent.mkdir(parents=True, exist_ok=True)
-        report_path.write_text("\n".join(report) + "\n", encoding="utf-8", newline="\n")
+        atomic_write_bytes(report_path, ("\n".join(report) + "\n").encode("utf-8"))
     return report, odd_total, deltas
 
 
@@ -524,6 +543,11 @@ def skeleton(docx: Path, work_id: str, book_dir: str, jp_root: Path, jp_dir: Pat
     chapters = split_chapters(paragraphs)
     index = header_index(jp_dir)
     jp_files = sorted(index.items(), key=lambda item: (content_sequence(item[0]) or 0, item[0]))
+    if len(chapters) != len(jp_files):
+        raise PlanError(
+            f"交稿章数 {len(chapters)} 与日文内容文件数 {len(jp_files)} 不一致，不能自动一一对应："
+            + "、".join(path.relative_to(jp_dir).as_posix() for _, path in jp_files)
+            + "；请核对缺章或在显式 --plan 中登记已确认的章节取舍")
     entries = []
     interlude = 0
     for sequence, (chapter, (_, path)) in enumerate(zip(chapters, jp_files), 1):
@@ -574,6 +598,9 @@ def main(argv: list[str] | None = None) -> int:
     if not args.docx.is_file():
         print(f"[阻断] 交稿不存在：{args.docx}", file=sys.stderr)
         return 2
+    if book_id(f"【{args.work}】") != args.work.upper():
+        print(f"[阻断] 作品号形状异常：{args.work}", file=sys.stderr)
+        return 2
     jp_dir = args.jp_dir
     if jp_dir is None:
         if not args.jp_root.is_dir():
@@ -589,8 +616,18 @@ def main(argv: list[str] | None = None) -> int:
             plan = load_plan(args.plan)
         else:
             plan = skeleton(args.docx, args.work, args.book_dir, args.jp_root, jp_dir)
-        report, odd, deltas = build(jp_dir, plan, args.docx, args.report)
-    except PlanError as exc:
+        files, directories = report_inputs(plan, args.docx, jp_dir)
+        if args.plan:
+            files.append(args.plan)
+        outputs = {name: path for name, path in (("out", args.out), ("report", args.report)) if path}
+        targets = {
+            name: require_report_target(
+                path, protected_files=[*files, *(other for key, other in outputs.items() if key != name)],
+                protected_dirs=[*directories, *(other for key, other in outputs.items() if key != name)])
+            for name, path in outputs.items()
+        }
+        report, odd, deltas = build(jp_dir, plan, args.docx, None)
+    except (ValueError, OSError) as exc:
         print(f"[阻断] {exc}", file=sys.stderr)
         return 2
 
@@ -602,8 +639,19 @@ def main(argv: list[str] | None = None) -> int:
     else:
         print("\n".join(report))
 
+    payloads = {}
+    if args.report:
+        payloads[targets["report"]] = ("\n".join(report) + "\n").encode("utf-8")
     if not args.plan and args.out and not args.check:
-        write_plan(args.out, plan)
+        payloads[targets["out"]] = (json.dumps(plan, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
+    try:
+        with rollback_paths(payloads):
+            for path, data in payloads.items():
+                atomic_write_bytes(path, data)
+    except OSError as exc:
+        print(f"[阻断] 计划或报告写入失败，已尝试回滚：{exc}", file=sys.stderr)
+        return 2
+    if not args.plan and args.out and not args.check:
         print(f"计划骨架：{args.out}")
         missing = [chapter["cn_title"] for chapter in plan["chapters"] if not chapter["fname"]]
         if missing:

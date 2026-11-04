@@ -211,16 +211,16 @@ def parse_diff_rows(text: str, label: str) -> list[dict]:
         o_list = [to_text(x) for x, _ in olds]
         n_list = [to_text(x) for x, _ in news]
         if len(o_list) == len(n_list):
-            pairs = [(o, n, nl or ol) for o, n, (_, ol), (_, nl)
+            pairs = [(o, n, nl or ol, markup) for o, n, (_, ol), (markup, nl)
                      in zip(o_list, n_list, olds, news)]
         else:
             pairs = [(" ‖ ".join(o_list), " ‖ ".join(n_list),
-                      news[0][1] if news else olds[0][1])]
-        for old, new, ln in pairs:
+                      news[0][1] if news else olds[0][1], "\n".join(x for x, _ in news))]
+        for old, new, ln, new_markup in pairs:
             if not old and not new:
                 continue
             rows.append({"commit": label, "file": cur_file, "line": str(ln),
-                         "old": old, "new": new})
+                         "old": old, "new": new, "_new_markup": new_markup})
 
     for line in text.split("\n"):
         if line.startswith("diff --git"):
@@ -376,6 +376,11 @@ def enrich_rows(
             # 传给风险审计的日文使用 strip_ruby_markup 快速剥除注音，确保正则匹配不受假名粘连干扰
             fl = audit_risk_flags(r.get("old", ""), r.get("new", ""), strip_ruby_markup(jp_text),
                                   extra_terms=ruling_terms)
+            # 标签风险读取原始新行；其余提示继续使用报告的纯文本口径。
+            if "_new_markup" in r and "bold_punct" not in fl:
+                markup_flags = audit_risk_flags("", r["_new_markup"])
+                if "bold_punct" in markup_flags:
+                    fl.append("bold_punct")
             if fl:
                 flags_str = ",".join(fl)
         r["flags"] = flags_str

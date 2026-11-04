@@ -84,6 +84,27 @@ class WrapImageLineTests(unittest.TestCase):
         self.assertEqual(dropped, 1)
         self.assertEqual(out, [f"<p>{IMG}</p>", '<p><img src="b.jpg"/></p>'])
 
+    def test_wrap_only_leaves_existing_containers_and_attributes_untouched(self):
+        src = ['<div id="figure-1" style="page-break-before:always">' + IMG + '</div>', IMG]
+        out, wrapped, dropped = normalize(src, wrap_only=True)
+        self.assertEqual(out, [src[0], f"<p>{IMG}</p>"])
+        self.assertEqual((wrapped, dropped), (1, 0))
+
+    def test_container_cleanup_rejects_semantic_attributes(self):
+        for attribute in ('id="figure-1"', 'style="page-break-before:always"',
+                          'xml:lang="ja"', 'data-layout="spread"', 'xmlns="urn:custom"'):
+            with self.subTest(attribute=attribute), self.assertRaisesRegex(ValueError, "不可安全迁移"):
+                normalize([f'<div class="fit" {attribute}>' + IMG + '</div>'])
+
+    def test_cleanup_preserves_single_quoted_class_attributes(self):
+        out, wrapped, dropped = normalize(["<div class='center'>" + IMG + "</div>"])
+        self.assertEqual(out, [f'<p class="center">{IMG}</p>'])
+        self.assertEqual((wrapped, dropped), (1, 0))
+
+    def test_cleanup_retains_xml_escaping_in_class_values(self):
+        out, _, _ = normalize(['<div class="a&amp;b">' + IMG + '</div>'])
+        self.assertEqual(out, [f'<p class="a&amp;b">{IMG}</p>'])
+
 
 def page(*body):
     return "\n".join(['<?xml version="1.0"?>', '<!DOCTYPE html>', '<html><head/><body>',
@@ -142,6 +163,27 @@ class ImageReferenceCliTests(unittest.TestCase):
     def test_unknown_book_does_not_report_success(self):
         result = self.run_cli("--book", "S1_99")
         self.assertEqual(result.returncode, 2)
+
+    def test_wrap_only_preserves_anchor_targets_and_pagination(self):
+        source = page('<p><a href="#figure-1">查看图</a></p>',
+                      '<div id="figure-1" style="page-break-before:always">' + IMG + '</div>', IMG)
+        self.cn_file.write_text(source, encoding="utf-8")
+        result = self.run_cli("--wrap-only")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        actual = self.cn_file.read_text(encoding="utf-8")
+        self.assertIn('id="figure-1" style="page-break-before:always"', actual)
+        self.assertIn('href="#figure-1"', actual)
+        self.assertIn(f'<p>{IMG}</p>', actual)
+        self.assertEqual(len(actual.splitlines()), len(source.splitlines()))
+
+    def test_unsafe_container_in_later_file_blocks_all_cleanup(self):
+        sibling = self.cn_file.with_name("S1_01-02.xhtml")
+        sibling.write_text(page('<div id="figure-1">' + IMG + '</div>'), encoding="utf-8")
+        before = {path: path.read_bytes() for path in (self.cn_file, sibling)}
+        result = self.run_cli()
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("不可安全迁移", result.stderr)
+        self.assertEqual({path: path.read_bytes() for path in before}, before)
 
 
 if __name__ == "__main__":

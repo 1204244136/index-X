@@ -215,7 +215,7 @@ B 不是 agent 的常规编辑入口，只用于同步器／导入流程已生�
 
 两者支持 `--cache`、`--epub`、`--pattern`、`--only-books`、`--no-upload`、`--force` 和外部目标路径；B 有 `--side`、`--sync-only`，C 有 `--overwrite-cache`。删除随增量镜像传播；`--no-upload` 只省外部上传，不应被描述为完成分发。`--sync-only` 不打包上传，不创建新的已上传事实。
 
-C 的 `--overwrite-cache` 以归档为准，全量重建本次受影响的缓存书，清除其独有增删改；普通 C 仍按变化文件增量镜像。冲突书未显式覆盖时计入失败，其他正常书可完成，但整批返回 1；只为成功书推进清单。B 按书识别“目录已不存在且检测结果全部为删除”的整本删除，与普通修改同批处理；现存书仍执行完整预检。
+C 的 `--overwrite-cache` 以归档为准，全量重建本次受影响的缓存书，清除其独有增删改；普通 C 仍按变化文件增量镜像。冲突书未显式覆盖时计入失败，其他正常书可完成，但整批返回 1；只为成功书推进清单。B 按书识别“目录已不存在且检测结果全部为删除”的整本删除，与普通修改同批处理；现存书仍执行完整预检。整书删除只在中文侧清理归档；先验证外部目标，再将归档、外部包与 pull-state 纳入同一回滚事务，删除或状态更新失败时恢复这些目标。
 
 `--force` 不表示跳过成品结构门禁；限定书籍时只重做所选书，保留其它书的已发布清单记录。清单中某处理侧全无基线记录时，发布停止并给出重建提示；仅确认缓存即已发布状态后用 `python tools/manifest.py --update-books chinese-text/某书目录` 重建，不用清单更新掩盖未发布变化。
 
@@ -277,9 +277,9 @@ python tools/package_cache_epubs.py --source EPUB --output output/epubs --patter
 | `bw_preprocess.py` | `python tools/bw_preprocess.py 原始.epub --book-id S4_05 --check` | 预览默认；写显式产物／暂存；目录目标在 `EPUB/` 可直接 `--apply` | 分页或合并后契约、映射完整性、资源与 XML【无】 | `test_bw_preprocess.py`、`test_import_output_boundaries.py`、`test_bw_pagebreaks.py` |
 | `merge_bw_pages.py` | `python tools/merge_bw_pages.py 分页目录 --book S4_05 --dry-run` | 预览默认；`--apply` 必须显式 `--out` | 表头、作品号、序号冲突阻断；边界疑点报告人工【无】 | `test_xhtml_and_merge.py`、`test_image_title_merge.py`、`test_import_output_boundaries.py`、`test_bw_pagebreaks.py` |
 | `split_s5_epubs.py` | `python tools/split_s5_epubs.py 源目录 --packed-out … --unpacked-out …` | 预览默认；两个输出路径必填，视作显式暂存 | 全部源、页区间与产物先预检；失败不输出【无】 | `test_split_s5_epubs.py`、`test_bw_preprocess.py` |
-| `import_materials.py` | `python tools/import_materials.py --docx … --images … --info … --intro … --work … --book-dir … --jp-root … --template …` | 只读；终端报告 | 七类材料逐项核对，缺项非零并给索取清单【无】 | `test_import_tools.py`（含缺项反例） |
-| `import_docx_outline.py` | `python tools/import_docx_outline.py 交稿.docx --check` | 只读；写显式 `--out` | 无 Heading 1、段内换行、注音／译注记号未闭合即阻断【无】 | `test_import_tools.py` |
-| `import_align_plan.py` | `python tools/import_align_plan.py 交稿.docx --work S4_04 --book-dir … --out …` | 只读；写显式清单／计划骨架／缺口报告 | 交稿形状门禁；章节一一对应与关系报告【无】 | `test_import_tools.py` |
+| `import_materials.py` | `python tools/import_materials.py --docx … --images … --info … --intro … --work … --book-dir … --jp-root … --template …` | 只读；终端报告 | 七类材料逐项核对，缺项非零并给索取清单【无】 | `test_import_tools.py`、`test_import_review_regressions.py` |
+| `import_docx_outline.py` | `python tools/import_docx_outline.py 交稿.docx --check` | 只读；写显式 `--out`／`--summary` | 交稿形状与全部输出目标预检，写入失败整批回滚【无】 | `test_import_tools.py`、`test_import_review_regressions.py` |
+| `import_align_plan.py` | `python tools/import_align_plan.py 交稿.docx --work S4_04 --book-dir … --out …` | 只读；写显式清单／计划骨架／缺口报告 | 自动骨架章节一一对应；全部输出目标预检，写入失败整批回滚【无】 | `test_import_tools.py`、`test_import_review_regressions.py` |
 | `import_build_text.py` | `python tools/import_build_text.py 计划.json --out "EPUB/…" --apply` | 写 `<书目录>/OEBPS/Text/*.xhtml` | 逐章物理行数必须等于日文，任何一章不齐整批不写【无】 | `test_import_tools.py`（含不写盘反例） |
 | `import_images.py` | `python tools/import_images.py suggest --src 素材目录 --jp-dir … --work S4_04` | 写 `<书目录>/OEBPS/Images/*` | 归档名必须带作品号前缀、源文件可解码；低置信指纹需人工确认。正文插图可为 0（数量是否与计划一致由 `import_build_text.py` 渲染时逐行断言）【无】 | `test_import_tools.py` |
 | `import_build_wrappers.py` | `python tools/import_build_wrappers.py 计划.json --template … --info … --intro … --out … --apply` | 写包装页、`nav.xhtml`／`toc.ncx`／`content.opf`／`mimetype`／`container.xml`／`style.css` | 正文／封面缺失即阻断；彩页为可选项；manifest 与 spine 互指、id 唯一【无】 | `test_import_tools.py` |
@@ -307,9 +307,10 @@ python tools/import_build_wrappers.py .cache/epub-work/import/plan.json --templa
     --info 制作信息.txt --intro 简介.txt --out "EPUB/【S4_04】…" --apply --calibre-id 197
 ```
 
-- `import_materials.py` 是**材料门禁**：交稿、图片素材、制作信息、简介、作品号与书目录名、日文工作源、模板书七项逐项核对。缺项非零退出并输出缺失项；智能体按资料访问与导入流程定位、恢复或说明，齐备前不生成成品，不得自拟封面、简介或制作信息。三副本待发布状态需人工用 `publish_auto.py --dry-run` 确认。
-- `import_docx_outline.py` 只读诊断，写显式 `--out`。阻断项：无 Heading 1、段内换行（`w:br`）、注音／译注记号未闭合；提示项：全角空格、段内制表符、独占成段的译注。
+- `import_materials.py` 是**材料门禁**：交稿、图片素材、制作信息、简介、作品号与书目录名、日文工作源、模板书七项逐项核对。作品号与计划校验共用完整作品号口径，支持 S5 独立作品与 `S6_YY.MM.DD` 日期短篇。缺项非零退出并输出缺失项；智能体按资料访问与导入流程定位、恢复或说明，齐备前不生成成品，不得自拟封面、简介或制作信息。三副本待发布状态需人工用 `publish_auto.py --dry-run` 确认。
+- `import_docx_outline.py` 只读诊断，写显式 `--out` 清单与 `--summary` 汇总。阻断项：无 Heading 1、段内换行（`w:br`）、注音／译注记号未闭合；提示项：全角空格、段内制表符、独占成段的译注。
 - `import_align_plan.py` 按**日文物理行**逐行比对（日文一行＝一个行单元，中文侧允许 1:2），输出 `1:1`／`1:2`／`1:0`／`0:1` 关系与建议改动，并生成计划骨架。改动类型只有 `split`／`merge_prev`／`insert_br_after`／`drop`／`note_to_prev` 五种，`para` 用清单里的段落序号。章标题识别覆盖 `引子／序章／第N章／行间（可带副标题，`行　间` 的排版空格先折叠）／深度N（外典书库的专用后缀，写作 `DepthN`）／终章／后记／尾声`；识别不出的条目骨架留空 `fname`，由人工在计划里补。计划是任务工作产物，放 `.cache/epub-work/import/`，不提交。
+- 自动计划骨架先比较交稿章数与日文内容文件数，存在未匹配章节时阻断，不写出截断的计划；显式 `--plan` 保留人工确认的章节映射，逐项核对其引用。交稿清单、汇总、计划与缺口报告的全部输出目标在首次写入前统一校验：避开输入交稿／计划、素材、日文参考和成品目录，输出之间也不能重叠；路径别名按实际目标检查。接入点：`volume-import` 第 1、2 步。
 - `import_build_text.py` 渲染正文（固定行模板、`<ruby>`、Note 页与脚注引用）。**写盘前逐章断言物理行数与日文一致，任何一章不齐整批不写**；只清段落首尾的 ASCII 空格与不换行空格，段内全角空格（对齐／分字）原样保留。译注正文在正文渲染时已由 `esc_ruby` 转成可安全嵌入的行内 XML（含 `<ruby>`／`<b>`），写 Note 页时**原样写入**，不得二次转义（否则译注里的注音会退化成 `&lt;ruby&gt;` 字面文本）。
 - 计划的章节 `fname` 必须是单个 `.xhtml` 文件名，按不区分大小写判重；绝对路径、目录分隔符及越界输出阻断。正文工具在任何写入前逐项核对实际目标。显式 `--report` 在预览时可写报告，但须避开计划、交稿、素材、日文参考和成品目录；执行模式的报告与正文写入一并回滚。
 - `import_images.py`：`suggest` 用 dHash 把素材对到日文原图给命名建议；`apply` 复制并校验作品号前缀、可解码性与指纹，低置信项必须人工看图。`apply` 子命令与 `import_build_wrappers.py` 的显式 `--report` 在预览时也写计划报告，标明未产出；执行成功的报告标明已写入。两入口在任何写入前检查报告目标，拒绝覆盖计划／制作材料，或落入素材、模板、日文参考及成品目录，路径别名同样检查；报告原子写入，执行模式的报告与本批成品写入一并回滚。
@@ -447,7 +448,7 @@ python tools/wrap_cn_image_lines.py --root EPUB --book S1_01 --wrap-only
 python tools/wrap_cn_image_lines.py --root EPUB --jp-root .cache/epub-work/japanese-text --book S1_01 --apply
 ```
 
-`--wrap-only` 仅包装裸 img、不删结构行；完整模式只接受配平的图片专用 div 区段，普通正文删除结构行前必须找到同表头日文文件，并验证改写后的行数与行类型。缺对应文件、空参考、重复表头或配对不符时整批拒绝；不因日文目录存在就允许删除。普通带语义 div 不处理，中文单有的包装页不要求正文配对。所有候选先预检再写入，写失败回滚本批次；未知选书或无 XHTML 输入非零。输出修改计划与拒绝原因，默认预览。
+`--wrap-only` 仅包装裸 img，现有 div 保留，不删结构行；完整模式只接受配平的图片专用 div 区段，容器只允许可迁移的 class，遇 id、style、命名空间或其它属性时整批拒绝，保全跳转与排版语义。普通正文删除结构行前必须找到同表头日文文件，并验证改写后的行数与行类型。缺对应文件、空参考、重复表头或配对不符时整批拒绝；不因日文目录存在就允许删除。包含正文的 div 不处理，中文单有的包装页不要求正文配对。所有候选先预检再写入，写失败回滚本批次；未知选书或无 XHTML 输入非零。输出修改计划与拒绝原因，默认预览。
 
 ### Note 顺序重排
 
@@ -639,7 +640,9 @@ python tools/check_translation_table.py --table 显式译名表.xlsx --strict
 python tools/check_translation_table.py --table 显式译名表.xlsx --audit-rulings
 ```
 
-读取外部表、日文参考、归档中文与《译名裁定总表》；表路径按翻译规范“外部依赖与核验”动态取得。列名支持 `--sheet`、`--ori-col`、`--trans-col`、`--type-col`、`--debuts-col`、`--ruby-ori-col`／`--ruby-trans-col`。`--epub`、`--jp-dir`、`--out`、重复 `--book` 指定范围。判定顺序为**同形例外 → 裁定表 → 译名表**：先按规范折叠查询和源，再查裁定表（锚点列取反引号内容与裸 `<ruby>…</ruby>` 两类——含注音的锚点按裁定表 §12 格式约定不加反引号，预览才渲染注音；同一锚点多条登记合并为候选集合，裁定列 `／` 分隔多写法，判定列标 `人读` 的条目跳过并在报告里单列），未命中才按译名表 `Base_Trans` 判定；裁定未落地单独成节、不并入 `--strict` 阻断。**注音判定**：裁定条目带注音（`<ruby>基文<rt>注文</rt></ruby>`）且该书日文侧存在带注音的该锚点时，中文侧必须出现裁定的复合串 `基文（注文）`——剥注音的判定分不出 `<rt>Gungnir</rt>` 与 `<rt>冈格尼尔</rt>`。**匹配轴**：判定列还可声明日文侧的认定方式——`匹配基文`（默认，注音不参与）、`严格全文`（日文须写出 `<ruby>基文<rt>注文</rt></ruby>` 复合串，裸写基文不在本行范围，既不判落地也不报未落地）、`匹配注文`（只认注文，基文可以是别的字，同一读音的当て字变体）；同一锚点多行须声明同一轴，混用退回默认。
+读取外部表、日文参考、归档中文与《译名裁定总表》；表路径按翻译规范“外部依赖与核验”动态取得。列名支持 `--sheet`、`--ori-col`、`--trans-col`、`--type-col`、`--debuts-col`、`--ruby-ori-col`／`--ruby-trans-col`。`--epub`、`--jp-dir`、`--out`、重复 `--book` 指定范围。判定顺序为**同形例外 → 裁定表 → 译名表**：先按规范折叠查询和源，再查裁定表（锚点列取反引号内容与裸 `<ruby>…</ruby>` 两类——含注音的锚点按裁定表 §12 格式约定不加反引号，预览才渲染注音；同一锚点多条登记合并为候选集合，裁定列 `／` 分隔多写法，判定列标 `人读` 的条目跳过并在报告里单列），未命中才按译名表 `Base_Trans` 判定；裁定写法未落地仍保留为待判项，按下述 `--strict` 口径处理。**注音判定**：裁定条目带注音（`<ruby>基文<rt>注文</rt></ruby>`）且该书日文侧存在带注音的该锚点时，中文侧必须出现裁定的复合串 `基文（注文）`——剥注音的判定分不出 `<rt>Gungnir</rt>` 与 `<rt>冈格尼尔</rt>`。**匹配轴**：判定列还可声明日文侧的认定方式——`匹配基文`（默认，注音不参与）、`严格全文`（日文须写出 `<ruby>基文<rt>注文</rt></ruby>` 复合串，裸写基文不在本行范围，既不判落地也不报未落地）、`匹配注文`（只认注文，基文可以是别的字，同一读音的当て字变体）；同一锚点多行须声明同一轴，混用退回默认。
+
+注音复合串提取移除 `<rt>`／`<rp>` 后取基文，`<rp>` 的回退括号不组成术语。本书与 `TRANSLATION_HOST` 宿主书使用同一套基文及注音要求；日文原书触发注音核验时，宿主书也须出现正确的复合串，只有基文或错误注音均不算落地。
 
 `--rulings` 指定《译名裁定总表》（默认仓库内路径）；`--no-rulings` 是诊断绕过，不可据此要求回改已登记裁定。`--include-suspect` 展示短串候选、`--limit` 是局部调试，不能称全表验收。`alignment_rules.TRANSLATION_HOST` 和 `SETTLED_ANCHORS` 是已确认跨书归属／同形词事实源。`SETTLED_ANCHORS` 每条含 `note`／`scope`／`status`：**抑制只在该锚点被判定过的那本书内生效**；`status=settled`（已判定同形不同义）始终抑制，`status=待裁定`（两案都成立、尚未定）在裁定表登记该锚点后失效、改按裁定判定。
 
@@ -728,7 +731,7 @@ python tools/audit_risk.py --old "旧句" --new "新句" --jp "日文"
 
 产物为 `changes.tsv`、`semantic.tsv`、`spec.tsv`、`groups.txt`。TSV 使用标准 tab 分隔和 CSV 字段引用，保留字段里的双引号、制表符及换行，读取用 `csv.DictReader`。一物理行合一条记录，用最小差异分级：spec 为确定规范形状，tiny 为 ≤2 字且全属虚词，local 为 ≤12 字局部变化，rewrite 为更大变化或整段增删；spec 仅在整段最小差异都能由规范解释时放行。数字／字母不当标点剥除。
 
-`line` 使用 Git 行级配对的新侧行号，纯删除回旧侧行号；不可用 word-diff 物理行推算。`jp` 是当前参考的同行，不证明历史提交对应关系；行数变动时人工检索上下文。risk 标记包括否定、数字、疑问、字形、加粗标点、嵌套引号、受控术语和明显增删；它们只提示复核优先级。人工处置和抽样范围以 [校对复核 skill](../.agents/skills/proofread-review/SKILL.md) 为准。
+`line` 使用 Git 行级配对的新侧行号，纯删除回旧侧行号；不可用 word-diff 物理行推算。`jp` 是当前参考的同行，不证明历史提交对应关系；行数变动时人工检索上下文。lookup 按完整稳定表头解析普通系列、S5 与 S6 日期文件名，稳定名称文件保留原拼写。risk 标记包括否定、数字、疑问、字形、加粗标点、嵌套引号、受控术语和明显增删；加粗标点使用原始新行标签核验，纯文本分级与 TSV 列保持既有口径。它们只提示复核优先级。人工处置和抽样范围以 [校对复核 skill](../.agents/skills/proofread-review/SKILL.md) 为准。
 
 ### 校对复核会话
 

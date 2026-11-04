@@ -84,6 +84,35 @@ class JapaneseLookupTests(unittest.TestCase):
         self.assertEqual(lookup.resolve_jp_filename("S3_03", "4"), "S3_03-04.xhtml")
         self.assertEqual(lookup.resolve_jp_filename("S5_01_03", "S5_01_03-02_Chapter2.xhtml"), "S5_01_03-02.xhtml")
 
+    def test_resolve_date_headers_and_preserve_stable_named_files(self):
+        lookup = JapaneseSourceLookup()
+        for work, supplied, expected in (
+            ("S6_24.06.07", "S6_24.06.07-01_Prologue.xhtml", "S6_24.06.07-01.xhtml"),
+            ("S6_24.06.07", "S6_24.06.07-12", "S6_24.06.07-12.xhtml"),
+            ("S6_24.06.07", "01", "S6_24.06.07-01.xhtml"),
+            ("S6_24.12.10", "S6_24.12.10-Main.xhtml", "S6_24.12.10-Main.xhtml"),
+            ("S1_25", "S1_25-Uiharu_Kazari.xhtml", "S1_25-Uiharu_Kazari.xhtml"),
+            ("S3_03", "p-toc-001.xhtml", "p-toc-001.xhtml"),
+        ):
+            with self.subTest(supplied=supplied):
+                self.assertEqual(lookup.resolve_jp_filename(work, supplied), expected)
+
+    def test_cli_date_filename_reads_existing_japanese_source(self):
+        with tempfile.TemporaryDirectory() as directory:
+            book = Path(directory) / "【S6_24.06.07】日本語" / "item" / "xhtml"
+            book.mkdir(parents=True)
+            (book / "S6_24.06.07-01.xhtml").write_text("<p>日文本文。</p>\n", encoding="utf-8")
+            lookup = JapaneseSourceLookup(jp_base_dir=directory)
+            self.assertEqual(lookup.get_line("S6_24.06.07", "S6_24.06.07-01_Prologue.xhtml", 1),
+                             "日文本文。")
+            result = subprocess.run(
+                [sys.executable, str(TOOLS / "japanese_lookup.py"), "S6_24.06.07",
+                 "S6_24.06.07-01_Prologue.xhtml", "1", "--jp-base", directory],
+                capture_output=True, text=True, encoding="utf-8", check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(result.stdout.strip(), "日文本文。")
+
 
 if __name__ == "__main__":
     unittest.main()

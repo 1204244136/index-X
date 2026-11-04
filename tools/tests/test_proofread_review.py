@@ -13,6 +13,7 @@ TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 
 from proofread_review import (  # noqa: E402
+    COLUMNS,
     clip,
     collect,
     core_of,
@@ -316,6 +317,59 @@ class MinimalDiffTests(unittest.TestCase):
 
 
 class EnrichRowsTests(unittest.TestCase):
+    def test_date_filename_extracts_existing_japanese_evidence(self):
+        with tempfile.TemporaryDirectory() as directory:
+            book = Path(directory) / "【S6_24.06.07】日本語" / "item" / "xhtml"
+            book.mkdir(parents=True)
+            (book / "S6_24.06.07-01.xhtml").write_text("<p>日文本文。</p>\n", encoding="utf-8")
+            rows = [{"work": "S6_24.06.07", "file": "S6_24.06.07-01_Prologue.xhtml",
+                     "line": "1", "old": "旧译", "new": "新译"}]
+            enrich_rows(rows, jp_base_dir=directory, enable_audit=False)
+            self.assertEqual(rows[0]["jp"], "日文本文。")
+
+    def test_markup_only_change_reports_bold_punctuation_without_changing_text_export(self):
+        diff = ("diff --git a/EPUB/S1_01-01.xhtml b/EPUB/S1_01-01.xhtml\n"
+                "@@ -6 +6 @@\n-<p>正文。</p>\n+<p><b>正文。</b></p>\n")
+        rows = parse_diff_rows(diff, "test")
+        self.assertEqual(len(rows), 1)
+        row = rows[0]
+        row.update(work="S1_01")
+        row["grade"], row["kind"] = grade(row)
+        enrich_rows(rows, enable_jp=False)
+        self.assertEqual((row["old"], row["new"]), ("正文。", "正文。"))
+        self.assertEqual((row["grade"], row["kind"]), ("spec", "quote"))
+        self.assertIn("bold_punct", row["flags"].split(","))
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "changes.tsv"
+            write_tsv(str(output), rows)
+            with output.open(encoding="utf-8", newline="") as stream:
+                reader = csv.DictReader(stream, delimiter="\t")
+                exported = list(reader)
+                self.assertEqual(reader.fieldnames, COLUMNS)
+        self.assertEqual(exported, [{key: row[key] for key in COLUMNS}])
+
+    def test_balanced_hunk_audits_only_the_matching_new_markup(self):
+        diff = ("diff --git a/EPUB/S1_01-01.xhtml b/EPUB/S1_01-01.xhtml\n"
+                "@@ -6,2 +6,2 @@\n-<p>旧甲。</p>\n-<p>旧乙。</p>\n"
+                "+<p><b>新甲</b>。</p>\n+<p><b>新乙。</b></p>\n")
+        rows = parse_diff_rows(diff, "test")
+        enrich_rows(rows, enable_jp=False)
+        self.assertNotIn("bold_punct", rows[0]["flags"].split(","))
+        self.assertIn("bold_punct", rows[1]["flags"].split(","))
+
+    def test_unbalanced_hunks_retain_new_markup_for_risk_audit(self):
+        for hunk, expected in (
+            ("@@ -6,2 +6 @@\n-<p>旧甲。</p>\n-<p>旧乙。</p>\n+<p><b>新译。</b></p>\n", True),
+            ("@@ -6,0 +6 @@\n+<p><b>新增。</b></p>\n", True),
+            ("@@ -6 +6,0 @@\n-<p><b>删去。</b></p>\n", False),
+        ):
+            with self.subTest(hunk=hunk):
+                rows = parse_diff_rows(
+                    "diff --git a/EPUB/S1_01-01.xhtml b/EPUB/S1_01-01.xhtml\n" + hunk, "test")
+                self.assertEqual(len(rows), 1)
+                enrich_rows(rows, enable_jp=False)
+                self.assertEqual("bold_punct" in rows[0]["flags"].split(","), expected)
+
     def test_enrich_adds_jp_and_flags(self):
         # 受控术语规则须落在《译名裁定总表》上：此处用裁定表 §九登记的
         # 「和服裤裙」回退写法（与 test_audit_risk.test_controlled_term 同源）。

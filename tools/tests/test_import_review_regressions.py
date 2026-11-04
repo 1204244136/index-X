@@ -18,6 +18,9 @@ sys.path.insert(0, str(TOOLS))
 import check_note_order
 import docx2epub
 import import_build_text
+import import_align_plan
+import import_docx_outline
+import import_materials
 import import_plan
 
 
@@ -225,6 +228,222 @@ class ImportedNoteTests(unittest.TestCase):
             self.assertEqual(entry.text, "A & B，")
             self.assertEqual(entry.find(namespace + "ruby").text, "基文")
             self.assertEqual(entry.find(f"{namespace}ruby/{namespace}rt").text, "注音")
+
+
+class ImportAnalysisSafetyTests(unittest.TestCase):
+    def run_command(self, command, args):
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            return command(args)
+
+    def align_args(self, docx, jp):
+        return [str(docx), "--work", "S1_01", "--book-dir", "【S1_01】测试", "--jp-dir", str(jp)]
+
+    def test_outline_outputs_cannot_overwrite_docx_or_each_other(self):
+        for option in ("--out", "--summary"):
+            with self.subTest(option=option), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                docx, _, _, _ = make_inputs(root)
+                before = file_bytes(root)
+                self.assertEqual(self.run_command(import_docx_outline.main, [str(docx), option, str(docx)]), 2)
+                self.assertEqual(file_bytes(root), before)
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            docx, _, _, _ = make_inputs(root)
+            target = root / "report.txt"
+            self.assertEqual(self.run_command(import_docx_outline.main,
+                                             [str(docx), "--out", str(target), "--summary", str(target)]), 2)
+            self.assertFalse(target.exists())
+
+    def test_outline_checks_all_targets_before_writing_a_valid_summary(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            docx, _, _, _ = make_inputs(root)
+            report = root / "summary.txt"
+            self.assertEqual(self.run_command(import_docx_outline.main,
+                                             [str(docx), "--summary", str(report), "--out", str(docx)]), 2)
+            self.assertFalse(report.exists())
+
+    def test_analysis_outputs_cannot_enter_repository_book_trees(self):
+        for relative in ("EPUB", ".cache/epub-work/chinese-text", ".cache/epub-work/japanese-text"):
+            with self.subTest(relative=relative), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                docx, jp, _, _ = make_inputs(root)
+                target = TOOLS.parent / relative / "blocked-import-report.txt"
+                self.assertFalse(target.exists())
+                self.assertEqual(self.run_command(import_docx_outline.main,
+                                                 [str(docx), "--out", str(target)]), 2)
+                self.assertEqual(self.run_command(import_align_plan.main,
+                                                 self.align_args(docx, jp) + ["--report", str(target)]), 2)
+                self.assertFalse(target.exists())
+
+    def test_outline_rejects_hardlink_aliases_to_the_source(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            docx, _, _, _ = make_inputs(root)
+            alias = root / "alias.tsv"
+            try:
+                os.link(docx, alias)
+            except OSError as exc:
+                self.skipTest(f"hardlinks unavailable: {exc}")
+            before = file_bytes(root)
+            self.assertEqual(self.run_command(import_docx_outline.main, [str(docx), "--out", str(alias)]), 2)
+            self.assertEqual(file_bytes(root), before)
+
+    def test_outline_rolls_back_both_reports_on_a_later_write_failure(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            docx, _, _, _ = make_inputs(root)
+            summary, output = root / "summary.txt", root / "outline.tsv"
+            summary.write_bytes(b"old summary")
+            output.write_bytes(b"old outline")
+            before = file_bytes(root)
+            original = import_docx_outline.atomic_write_bytes
+
+            def fail_output(path, data):
+                if path == output:
+                    raise OSError("outline failure")
+                original(path, data)
+
+            with patch.object(import_docx_outline, "atomic_write_bytes", side_effect=fail_output):
+                code = self.run_command(import_docx_outline.main,
+                                        [str(docx), "--summary", str(summary), "--out", str(output)])
+            self.assertEqual(code, 2)
+            self.assertEqual(file_bytes(root), before)
+
+    def test_alignment_outputs_protect_sources_materials_and_references(self):
+        for option in ("--out", "--report"):
+            for collision in ("docx", "plan", "japanese", "images"):
+                with self.subTest(option=option, collision=collision), tempfile.TemporaryDirectory() as tmp:
+                    root = Path(tmp)
+                    docx, jp, plan, plan_path = make_inputs(root)
+                    images = root / "images"
+                    images.mkdir()
+                    plan["images_source"] = str(images)
+                    import_plan.write_plan(plan_path, plan)
+                    target = {"docx": docx, "plan": plan_path, "japanese": jp / "report.txt",
+                              "images": images / "report.txt"}[collision]
+                    before = file_bytes(root)
+                    args = self.align_args(docx, jp) + ["--plan", str(plan_path), option, str(target)]
+                    self.assertEqual(self.run_command(import_align_plan.main, args), 2)
+                    self.assertEqual(file_bytes(root), before)
+
+    def test_alignment_output_aliases_and_nested_destinations_are_rejected(self):
+        for nested in (False, True):
+            with self.subTest(nested=nested), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                docx, jp, _, _ = make_inputs(root)
+                out = root / "result"
+                report = out / "gaps.txt" if nested else out
+                args = self.align_args(docx, jp) + ["--out", str(out), "--report", str(report)]
+                self.assertEqual(self.run_command(import_align_plan.main, args), 2)
+                self.assertFalse(out.exists())
+
+    def test_alignment_unsafe_second_output_does_not_write_valid_first_output(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            docx, jp, _, _ = make_inputs(root)
+            output = root / "new-plan.json"
+            self.assertEqual(self.run_command(import_align_plan.main,
+                                             self.align_args(docx, jp)
+                                             + ["--out", str(output), "--report", str(docx)]), 2)
+            self.assertFalse(output.exists())
+
+    def test_alignment_rejects_hardlink_aliases_before_writing_another_output(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            docx, jp, _, _ = make_inputs(root)
+            alias = root / "alias.txt"
+            try:
+                os.link(docx, alias)
+            except OSError as exc:
+                self.skipTest(f"hardlinks unavailable: {exc}")
+            report = root / "gaps.txt"
+            before = file_bytes(root)
+            args = self.align_args(docx, jp) + ["--out", str(alias), "--report", str(report)]
+            self.assertEqual(self.run_command(import_align_plan.main, args), 2)
+            self.assertEqual(file_bytes(root), before)
+
+    def test_direct_alignment_build_protects_the_docx_and_japanese_tree(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            docx, jp, plan, _ = make_inputs(root)
+            before = file_bytes(root)
+            for target in (docx, jp / "gaps.txt"):
+                with self.subTest(target=target), self.assertRaises(ValueError):
+                    import_align_plan.build(jp, plan, docx, target)
+            self.assertEqual(file_bytes(root), before)
+
+    def test_alignment_auto_plan_rejects_extra_japanese_chapters_without_outputs(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            docx, jp, _, _ = make_inputs(root)
+            (jp / "S1_01-02.xhtml").write_bytes((jp / "S1_01-01.xhtml").read_bytes())
+            before = file_bytes(root)
+            args = self.align_args(docx, jp) + ["--check", "--report", str(root / "gaps.txt")]
+            self.assertEqual(self.run_command(import_align_plan.main, args), 2)
+            self.assertEqual(file_bytes(root), before)
+
+    def test_alignment_auto_plan_rejects_extra_chinese_chapters(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            docx, jp, _, _ = make_inputs(root, two_chapters=True)
+            (jp / "S1_01-02.xhtml").unlink()
+            args = self.align_args(docx, jp) + ["--out", str(root / "new-plan.json")]
+            self.assertEqual(self.run_command(import_align_plan.main, args), 2)
+            self.assertFalse((root / "new-plan.json").exists())
+
+    def test_alignment_explicit_plan_can_record_a_deliberate_subset(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            docx, jp, _, plan_path = make_inputs(root)
+            (jp / "S1_01-02.xhtml").write_bytes((jp / "S1_01-01.xhtml").read_bytes())
+            args = self.align_args(docx, jp) + ["--plan", str(plan_path), "--check"]
+            self.assertEqual(self.run_command(import_align_plan.main, args), 0)
+
+    def test_alignment_rolls_back_report_if_plan_write_fails(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            docx, jp, _, _ = make_inputs(root)
+            report, output = root / "gaps.txt", root / "new-plan.json"
+            report.write_bytes(b"old gaps")
+            before = file_bytes(root)
+            original = import_align_plan.atomic_write_bytes
+
+            def fail_plan(path, data):
+                if path == output:
+                    raise OSError("plan failure")
+                original(path, data)
+
+            with patch.object(import_align_plan, "atomic_write_bytes", side_effect=fail_plan):
+                code = self.run_command(import_align_plan.main,
+                                        self.align_args(docx, jp) + ["--report", str(report), "--out", str(output)])
+            self.assertEqual(code, 2)
+            self.assertEqual(file_bytes(root), before)
+
+    def test_date_work_ids_are_accepted_by_materials_and_plan_consumers(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            docx, jp, plan, plan_path = make_inputs(root)
+            identifier = "S6_24.06.07"
+            plan["work_id"] = identifier
+            plan["book_dir"] = f"【{identifier}】短篇"
+            chapter = plan["chapters"][0]
+            old = jp / chapter["jp_file"]
+            chapter["jp_file"] = chapter["fname"] = f"{identifier}-01.xhtml"
+            old.rename(jp / chapter["jp_file"])
+            self.assertEqual(import_plan.validate_plan(plan), [])
+            self.assertTrue(import_materials.check_work(identifier, plan["book_dir"])[0])
+            import_plan.write_plan(plan_path, plan)
+            self.assertEqual(import_plan.load_plan(plan_path)["work_id"], identifier)
+            self.assertEqual(self.run_command(import_build_text.main, [str(plan_path), "--out", str(root / "out")]), 0)
+
+    def test_partial_date_work_ids_remain_invalid(self):
+        for identifier in ("S6_24.06", "S6_24.06.07-extra", "S6_24.06.071"):
+            with self.subTest(identifier=identifier), tempfile.TemporaryDirectory() as tmp:
+                _, _, plan, _ = make_inputs(Path(tmp))
+                plan["work_id"] = identifier
+                self.assertTrue(any("work_id" in item for item in import_plan.validate_plan(plan)))
+                self.assertFalse(import_materials.check_work(identifier, f"【{identifier}】短篇")[0])
 
 
 if __name__ == "__main__":

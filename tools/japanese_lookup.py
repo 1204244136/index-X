@@ -34,6 +34,7 @@ if __package__:
 else:
     from cli_output import configure_output
 from xhtml_text import strip_ruby_annotations  # noqa: E402  注音剥除规则的唯一实现
+from epub_ids import header_of  # noqa: E402
 
 
 _RUBY_PATTERN = re.compile(r"<ruby\b[^>]*>(.*?)</ruby>", re.I | re.S)
@@ -123,15 +124,10 @@ class JapaneseSourceLookup:
 
     def resolve_jp_filename(self, work: str, file_or_seq: str) -> str:
         """根据中文文件名或内容序号，返回对应的日文文件名（如 S3_03-04.xhtml）。"""
-        # 如果直接给了完整文件名如 S3_03-04_Chapter2.xhtml
-        m = re.search(r"(S\d+_\d+-\d+)", file_or_seq)
-        if m:
-            return f"{m.group(1)}.xhtml"
-
-        # 如果给了两段内容序如 S5_01_03-02
-        m5 = re.search(r"(S5_\d+_\d+-\d+)", file_or_seq)
-        if m5:
-            return f"{m5.group(1)}.xhtml"
+        # 数字内容序按共享表头解析；稳定名称文件保留原有大小写与拼写。
+        header = header_of(file_or_seq)
+        if header and header.rsplit("-", 1)[-1].isdigit():
+            return f"{header}.xhtml"
 
         # 如果只给了纯数字如 04 或 4
         m_num = re.match(r"^0*(\d+)$", file_or_seq.strip())
