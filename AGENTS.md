@@ -13,7 +13,7 @@
 ## 目录约定
 
 - `EPUB/`：版本化的 EPUB 解压目录，属于发布源文件。
-- `docs/`：规范、裁定与长期维护记录；各文件职责及新增／改名流程统一在 [文档索引](docs/README.md) 维护。版式规范正文在 `epub-naming-spec.md`／`epub-structure-spec.md`／`epub-css-layout-spec.md`／`epub-artifact-spec.md`；动任何译名前先查 `docs/translation-name-rulings.md`。
+- `docs/`：规范、裁定与维护流程；各文件职责及新增／改名流程统一在 [文档索引](docs/README.md) 维护。版式规范正文在 `epub-naming-spec.md`／`epub-structure-spec.md`／`epub-css-layout-spec.md`／`epub-artifact-spec.md`；动任何译名前先查 `docs/translation-name-rulings.md`。
 - `tools/`：可重复使用、经过验证的维护工具。
 - `.github/workflows/`：发布和自动化流程。
 - `.agents/skills/`：项目级任务流程与配套模板，属于项目规约、应提交。当前日文源导入、新书成品生成、术语统一与校对复核的流程在各 skill 维护；语言／取舍规范按文档索引定位。
@@ -52,7 +52,7 @@
 
 ## 维护流程
 
-修改 EPUB 内容前必须完整读取 [EPUB 内容维护流程](docs/agents/content-maintenance.md)，按运行环境完成同步、写入、验证、留档与本地提交。已配置工作站与普通克隆的执行分支在该文维护；共享工作区与写入边界仍遵守本文件。工具和文档修改按工具合同验证，不执行内容同步；只读问答按资料访问流程处理。
+修改 EPUB 内容前必须完整读取 [EPUB 内容维护流程](docs/agents/content-maintenance.md)，按运行环境完成同步、写入、验证与本地提交。已配置工作站与普通克隆的执行分支在该文维护；共享工作区与写入边界仍遵守本文件。工具和文档修改按工具合同验证，不执行内容同步；只读问答按资料访问流程处理。
 
 ## 共享工作区协调
 
@@ -105,7 +105,7 @@
 
 ## 变更说明
 
-修改工具、测试、CI 脚本或规范说明前，读取 [工具与文档维护流程](docs/agents/tool-maintenance.md)。命令行为写入工具合同，历史验收写入维护记录；版式条文写入对应规范，本文件保留入口和核心边界。
+修改工具、测试、CI 脚本或规范说明前，读取 [工具与文档维护流程](docs/agents/tool-maintenance.md)。命令行为写入工具合同，修改事实与历史验收按 [提交规范](docs/commit-spec.md) 写入提交信息；版式条文写入对应规范，本文件保留入口和核心边界。
 
 ### 脚本说明软门禁
 

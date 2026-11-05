@@ -7,8 +7,7 @@
 写法与误形从 `docs/translation-name-rulings.md` 读取，锚点取该表 §五「机检」列
 标记的行（或用 --anchor 指定）；日文语境例外由 ANCHOR_CONTEXT_EXCEPTIONS 定义。
 
-只读、只报告，不判定改写方案。命令合同见 `tools/README.md`「术语锚点门禁」，
-建立背景与历史回测见 `docs/maintenance-records/term-anchor-gate-2026-10-27.md`。
+只读、只报告，不判定改写方案。命令合同见 `tools/README.md`「术语锚点门禁」。
 
 用法：
     python tools/check_term_anchors.py

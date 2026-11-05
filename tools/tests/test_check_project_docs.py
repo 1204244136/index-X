@@ -20,12 +20,12 @@ def cluster(name: str, rows: str) -> str:
     return f"## {name}\n\n{MEMBER_HEAD}{rows}\n"
 
 
-def readme(*, index: str, router: str, clusters: str, plans: str = "| P1 | 信号 | 判定 | 允许 | 禁止 | C1 | — |\n") -> str:
+def readme(*, index: str, router: str, clusters: str, plans: str = "| P1 | 信号 | 判定 | 允许 | 禁止 | C1 |\n") -> str:
     return (
         "# 工具\n\n"
         "## 路由\n\n| 你要做什么 | 簇 | 入口 |\n| --- | --- | --- |\n" + router + "\n"
-        "## 阻塞与恢复\n\n| # | 触发信号 | 判定 | 允许动作 | 禁止动作 | 簇 | 证据留档 |\n"
-        "| --- | --- | --- | --- | --- | --- | --- |\n" + plans + "\n"
+        "## 阻塞与恢复\n\n| # | 触发信号 | 判定 | 允许动作 | 禁止动作 | 簇 |\n"
+        "| --- | --- | --- | --- | --- | --- |\n" + plans + "\n"
         "## 簇索引\n\n| 簇 | 定位 | 入口数 | 主要门禁 |\n| --- | --- | --- | --- |\n" + index + "\n"
         + clusters
     )
@@ -125,7 +125,7 @@ class ClusterContractTests(unittest.TestCase):
         write_tool(root, "a.py")
         text = "# 工具\n## 路由\n\n| 你要做什么 | 簇 | 入口 |\n| --- | --- | --- |\n| 发布 | C1 | `python tools/a.py` |\n" \
                + cluster("C1 同步与发布", member("a.py")) \
-               + "## 阻塞与恢复\n\n| # | 触发信号 | 判定 | 允许 | 禁止 | 簇 | 证据留档 |\n| --- | --- | --- | --- | --- | --- | --- |\n| P1 | 信号 | 判定 | 允许 | 禁止 | C1 | — |\n"
+               + "## 阻塞与恢复\n\n| # | 触发信号 | 判定 | 允许 | 禁止 | 簇 |\n| --- | --- | --- | --- | --- | --- |\n| P1 | 信号 | 判定 | 允许 | 禁止 | C1 |\n"
         issues = tool_cluster_issues(root, text)
         self.assertTrue(any("缺少「## 簇索引」表" in issue for issue in issues), issues)
 

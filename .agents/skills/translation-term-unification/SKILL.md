@@ -1,6 +1,6 @@
 ---
 name: translation-term-unification
-description: index-X（某系列 EPUB 档案）译名／术语统一工作流。用于收敛同一日文锚点的多种中文异译、统一角色口癖与专有写法、裁定敬称与术语分层：以日文写法为锚逐点定位、显式映射逐条预检、只改 EPUB/ 行内文字、跑门禁并留档。触发词：译名统一、术语统一、译法不一致、异译、口癖统一、译名订正、敬称统一、术语审计、term unification、translation consistency。
+description: index-X（某系列 EPUB 档案）译名／术语统一工作流。用于收敛同一日文锚点的多种中文异译、统一角色口癖与专有写法、裁定敬称与术语分层：以日文写法为锚逐点定位、显式映射逐条预检、只改 EPUB/ 行内文字、跑门禁并提交。触发词：译名统一、术语统一、译法不一致、异译、口癖统一、译名订正、敬称统一、术语审计、term unification、translation consistency。
 ---
 
 # 译名／术语统一工作流（index-X）
@@ -24,12 +24,12 @@ description: index-X（某系列 EPUB 档案）译名／术语统一工作流。
 
 ## 二、六条铁律
 
-1. **以日文写法为锚**，逐点替换。禁止 `科学.?势力 → 科学阵营` 式无锚点全局替换——实测有 6% 命中会误伤真实的「势力」义项（`docs/maintenance-records/science-magic-side-translation-consistency-2026-09-12.md` §6.3）。
+1. **以日文写法为锚**，逐点替换。`科学.?势力 → 科学阵营` 式无锚点全局替换会误伤真实的「势力」义项，必须逐条回日文判断。
 2. **显式映射 + 逐条预检**：每条映射写死「书籍、文件、行号、原串、新串」；预检要求文件唯一、行号有效、**原串在该行恰好出现一次**。任一不满足 → **整批不写盘**，报出来交人工。
 3. **只改行内文字，不增删物理行**，不动标签、属性、注音、资源引用、标题结构；标题语言保护规则见 `docs/translation-spec.md` 五.6；改完中日行数必须不变。
 4. **写入落点只有 `EPUB/`**（内容写入的唯一权威落点）。`.cache/` 一律只读，仅用于分析与中日对照。改完由 `publish_auto.py` 回流 OneDrive 与缓存。
 5. **任务脚本与映射数据不留仓库**：一次性修订属 `AGENTS.md`「工具与记录的边界」，不新增 `tools/fix_*.py`、`tools/*_overrides.json`。定位／替换脚本放在临时目录，跑完删除；复核与回退用 `git show` / `git revert`。
-6. **留档与裁定登记分工**：`docs/maintenance-records/` **只忠实反映本次修改内容**（范围、文件数、统计、验证、样例），不承载翻译方案。「什么算裁定」的判据见 `docs/translation-name-rulings.md` §一，本文件不复述。**新增裁定条目必须经维护者确认；agent 只能提出候选与依据，不得自行写入裁定表**。改动落在两本及以上书籍（中日两侧同一作品算一本）→ 写留档；只落在一本内且裁定已登记 → 不留档。
+6. **提交与裁定登记分工**：本次修改事实统一由提交承载，格式见 [提交规范](../../../docs/commit-spec.md)。「什么算裁定」的判据见 `docs/translation-name-rulings.md` §一，本文件不复述。**新增裁定条目必须经维护者确认；agent 只能提出候选与依据，不得自行写入裁定表**。
 
 ## 三、判定口径
 
@@ -61,7 +61,7 @@ description: index-X（某系列 EPUB 档案）译名／术语统一工作流。
 
 ### S0 读既有裁定，避免重开已决口径
 
-先查 `docs/translation-name-rulings.md`（已裁定总表，§六 为其入口）；同类维护记录只用于追溯修改事实，不用来重开取舍。**已裁定过的锚点不得再换目标译法**；同一锚点二次统一要说明前次结论哪里不适用。
+先查 `docs/translation-name-rulings.md`（已裁定总表，§六 为其入口）；提交历史只用于追溯修改事实，不用来重开取舍。**已裁定过的锚点不得再换目标译法**；同一锚点二次统一要说明前次结论哪里不适用。
 
 ### S1 写前同步
 
@@ -82,7 +82,7 @@ python tools/publish_auto.py --only-books "<同一范围>"
 
 ### S3 裁定目标译法
 
-先沿用已决裁定和当前译名表；缺项时按译名选取规范查证独立来源，再比较候选与原文的所指、义项冲突及作品语域。全库频次只用来发现不一致、测定修改规模，不能替代取舍依据。多个候选都成立时登记裁定；明显错误或规范执行直接订正，留档只记录修改事实。
+先沿用已决裁定和当前译名表；缺项时按译名选取规范查证独立来源，再比较候选与原文的所指、义项冲突及作品语域。全库频次只用来发现不一致、测定修改规模，不能替代取舍依据。多个候选都成立时登记裁定；明显错误或规范执行直接订正，修改事实记入提交。
 
 ### S4 生成显式映射并预检
 
@@ -93,7 +93,7 @@ Copy-Item .agents/skills/translation-term-unification/references/unify_terms_tem
 # 填 MAPPINGS 后：
 python (Join-Path $env:TEMP "unify_terms_task.py")                  # 预检：只打印，不写盘
 python (Join-Path $env:TEMP "unify_terms_task.py") --apply           # 预检全过才写 EPUB/
-python (Join-Path $env:TEMP "unify_terms_task.py") --apply --tsv (Join-Path $env:TEMP "unify_terms_task.tsv")   # 顺带产出可粘进留档的明细表
+python (Join-Path $env:TEMP "unify_terms_task.py") --apply --tsv (Join-Path $env:TEMP "unify_terms_task.tsv")   # 产出本地核验明细，供汇总提交信息
 Remove-Item -LiteralPath (Join-Path $env:TEMP "unify_terms_task.py")             # 用完删除，不提交
 ```
 
@@ -122,23 +122,21 @@ python tools/check_term_anchors.py --book <作品号> --strict        # 裁定�
 python tools/check_alignment.py --strict        # 中日行数 / 模板 / h2 / 图片行
 python tools/check_epub_health.py --strict      # 单侧结构（XML、ruby、加粗、悬空引用等）
 python tools/check_translation_spec.py          # 涉及标点／注音／单位时跑；报告在 .cache/epub-work/
-python tools/check_project_docs.py              # 改过裁定表／说话习惯表／留档后必跑；0 条（含「裁定表不记日期」）
+python tools/check_project_docs.py              # 改过裁定表／说话习惯表后必跑；0 条（含「裁定表不记日期」）
 ```
 
 记录本次选定范围的实际文件数、未配对范围与问题数；数量变化先核对输入范围和收录状态，不能套用历史全库数字。
 
-### S7 写后同步、留档、提交
+### S7 写后同步与提交
 
 ```powershell
 python tools/publish_auto.py --only-books "<写前核定的同一范围>"  # 打包上传并回流缓存
 ```
 
-- 跨作品 → 新建 `docs/maintenance-records/<锚点 slug>-<YYYY-MM-DD>.md`（模板见 §七），只写本次修改内容。
+- 无论单本或跨本，修改事实均按 [提交规范](../../../docs/commit-spec.md) 的术语统一分支写入提交信息。
 - 无论跨本与否，**只要在多个都成立的候选间作出了新选择，先向维护者提出候选与依据，经确认后再登记进 `docs/translation-name-rulings.md`**；未经确认不得自行写入裁定。明显错误直接订正，不算裁定、不登记（判据见该表 §一）。
-- 单作品 → 不留档。
 - 提交与登记的同批关系按 `AGENTS.md`「版本控制边界」执行。
-- 提交按 [提交规范](../../../docs/commit-spec.md) 的术语统一分支执行。
-- 工作区夹杂其他任务的未提交改动时，跨作品留档写明工作区状态与未纳入原因（范例：`benizome-zerifish-catchphrase-translation-consistency-2026-09-16.md` §「工作区状态说明」）。
+- 工作区夹杂其他任务的未提交改动时，提交范围与执行核验按提交规范处理，对话收尾交代剩余改动。
 
 ## 五、常用命令
 
@@ -174,47 +172,9 @@ python tools/proofread_review.py <commit>       # 产物 .cache/epub-work/proofr
 
 本节只留入口，**不重复维护结论表**：新裁定落盘后同步更新 `docs/translation-name-rulings.md`，避免两处漂移。
 
-## 七、留档模板
+## 七、提交信息
 
-```markdown
-# <锚点>翻译统一记录（YYYY-MM-DD）
-
-- 范围：`EPUB/` 中文归档与 `.cache/epub-work/` 中日配对文本
-- 涉及书籍：S3_03、S3_05
-- 修改文件：N 个中文 XHTML
-- 行内替换：M 处
-
-## 本次修改的判定依据
-
-> 留档只忠实反映本次修改内容；**翻译方案以 `docs/translation-name-rulings.md` 的裁定为准**，本节只记本次为何这样改，不重复登记方案。引用规范或裁定条款时只写链接与条款号，不复制条文。
-
-| 日文写法 | 本次改动 |
-| --- | --- |
-| `<日文锚点>` | <目标译法> |
-
-<本次引用的裁定／规范条款或独立权威证据；语料统计只说明修改范围>
-
-## 修订明细
-
-| 文件 | 行 | 修订 |
-| --- | ---: | --- |
-| `S3_05-05_Chapter2.xhtml` | 604 | 别呀 → 可别啦 |
-
-## 保留项
-
-- <逐条列出未改的同类命中及日文依据>
-
-## 统计与验证
-
-- 修订前 / 修订后：<译法分布与残留数>
-- 全部为行内替换，不增删物理行：<各文件 行数/行数 中日一致>
-- `python tools/check_alignment.py --strict`：<本次范围、文件数、问题数、未配对项>
-- `python tools/check_project_docs.py`：<0 条；含裁定表备注无日期、链接与索引检查>
-- `python tools/publish_auto.py --only-books "<实际 side/书目录,...>"`：<哪些书已上传并回流缓存；范围外改动与受阻事实>
-- 回退：`git revert <commit>`
-```
-
-留档只写范围、涉及书籍与文件数、统计、验证与必要样例（**忠实反映本次修改内容**），**不复制完整文本**，也不登记翻译方案（方案见 `docs/translation-name-rulings.md`）；不要写进已冻结的 `docs/archive/legacy-changelog.md`。
+按 [提交规范](../../../docs/commit-spec.md) 的术语统一分支记录本次修改；本地映射与核验明细只作为工作产物，不提交。翻译方案仍以 `docs/translation-name-rulings.md` 为准。
 
 ## 八、坑清单
 

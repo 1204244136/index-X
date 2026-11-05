@@ -13,8 +13,7 @@
   普通词、单纯外来语不注音），机器不做命中判定，只把比值低于
   `RUBY_COVERAGE_FLOOR` 的单元列进报告，供人工回原文复核。
 
-只读、只报告，不修改书籍。命令合同见 `tools/README.md`「中日对照完整性」，
-判据背景见 `docs/maintenance-records/paired-text-gate-2026-10-28.md`。
+只读、只报告，不修改书籍。命令合同见 `tools/README.md`「中日对照完整性」。
 
 用法：
     python tools/check_paired_text.py

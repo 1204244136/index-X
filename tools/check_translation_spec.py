@@ -103,8 +103,7 @@ P15_SIDI_COMPOUND_PREFIX = "类状形近相好恰神酷胜貌疑宛似"
 P15_SIDI_RE = re.compile(r"(?<![%s])似地" % P15_SIDI_COMPOUND_PREFIX)
 
 # P15 拟声词「噼里啪啦」的异形写法：霹／劈／噼 起头、里／哩／雳 承接，末字「啦／拉」
-# 都归到规范词形；标准写法本身用负向前瞻放过。库内曾出现「霹哩啪啦」「劈里啪啦」
-# 跨卷混用（清理记录见 docs/maintenance-records/pala-onomatopoeia-spelling-unification-2026-10-30.md）。
+# 都归到规范词形；标准写法本身用负向前瞻放过。
 P15_PALA_RE = re.compile(r"(?!(?:噼里啪啦))[噼劈霹][里哩雳]啪[啦拉]")
 
 # P11 示例词：翻译规范一.7 的**机械覆盖**部分（正则, re 标志, 报错说明）。

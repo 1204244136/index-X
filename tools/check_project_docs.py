@@ -99,11 +99,11 @@ def audit(root: Path) -> list[str]:
     if doc_index.is_file():
         index_resolved = doc_index.resolve()
         index_text = doc_index.read_text(encoding="utf-8-sig")
-        # 顶层 docs/*.md 必须登记进文档索引；maintenance-records/ 与 archive/ 按目录登记，不逐项要求
+        # 顶层 docs/*.md 必须登记进文档索引；archive/ 按目录登记，不逐项要求
         for path in sorted((root / "docs").glob("*.md")):
             if path.name != "README.md" and path.name not in index_text:
                 issues.append(f"docs/README.md: 缺少文档登记：{path.name}")
-        # 活跃文档开头必须保留回指索引的入口；维护记录与冻结归档不在此列
+        # 活跃文档开头必须保留回指索引的入口；冻结归档不在此列
         active = [root / "README.md", root / "AGENTS.md", root / "tools/README.md"]
         active += [p for p in sorted((root / "docs").glob("*.md")) if p.name != "README.md"]
         active += list((root / ".agents").rglob("*.md"))
@@ -468,7 +468,7 @@ def single_source_issues(root: Path) -> list[str]:
                 if ref not in sections:
                     issues.append(f"{rel}:{number}: 引用的裁定表小节 §{ref} 不存在")
 
-    # ⑤ 裁定表不记过往：备注与候选列只写判据与理由，不写日期（时间归留档与提交）
+    # ⑤ 裁定表不记过往：备注与候选列只写判据与理由，不写日期（时间归提交信息）
     for number, header, cells in ruling_table_rows(root):
         for column, cell in zip(header, cells):
             if column not in RULINGS_HISTORY_COLUMNS or RULINGS_DATE_WHITELIST in cell:
@@ -478,7 +478,7 @@ def single_source_issues(root: Path) -> list[str]:
             if hit:
                 issues.append(
                     f"{RULINGS_DOC}:{number}: 裁定表不记日期（「{column}」列出现「{hit}」），"
-                    f"时间、次数与回滚经过归 docs/maintenance-records/ 与提交")
+                    f"时间、次数与回滚经过归提交信息")
     return issues
 
 

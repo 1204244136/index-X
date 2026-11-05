@@ -1,6 +1,6 @@
 # EPUB 维护工具
 
-文档职责与入口见 [文档索引](../docs/README.md)。本文件是 `tools/` 的**命令合同**：每个工具的入口、参数、读写范围、门禁与失败边界、测试与所属簇。规范与边界（写成什么样、什么不许做）以 [AGENTS.md](../AGENTS.md) 与版式规范四份文档（[EPUB 命名规范](../docs/epub-naming-spec.md)、[EPUB 结构规范](../docs/epub-structure-spec.md)、[EPUB 排版规范](../docs/epub-css-layout-spec.md)、[EPUB 成品构成规范](../docs/epub-artifact-spec.md)）为准，本文件只留指针、不复述条文；成品语言规范以 [翻译规范](../docs/translation-spec.md) 为准；共用流程以文档索引登记的 `docs/agents/` 正文为准，专门任务走 `.agents/skills/`。历史验收与修改统计只在维护记录和提交中保存；修改脚本说明时执行 [脚本说明软门禁](../AGENTS.md#脚本说明软门禁)。
+文档职责与入口见 [文档索引](../docs/README.md)。本文件是 `tools/` 的**命令合同**：每个工具的入口、参数、读写范围、门禁与失败边界、测试与所属簇。规范与边界（写成什么样、什么不许做）以 [AGENTS.md](../AGENTS.md) 与版式规范四份文档（[EPUB 命名规范](../docs/epub-naming-spec.md)、[EPUB 结构规范](../docs/epub-structure-spec.md)、[EPUB 排版规范](../docs/epub-css-layout-spec.md)、[EPUB 成品构成规范](../docs/epub-artifact-spec.md)）为准，本文件只留指针、不复述条文；成品语言规范以 [翻译规范](../docs/translation-spec.md) 为准；共用流程以文档索引登记的 `docs/agents/` 正文为准，专门任务走 `.agents/skills/`。历史验收与修改统计只在提交信息中保存；修改脚本说明时执行 [脚本说明软门禁](../AGENTS.md#脚本说明软门禁)。
 
 ## 三层职责
 
@@ -145,15 +145,15 @@ python tools/check_alignment.py --jp-root .cache/epub-work/japanese-text --requi
 
 工具停下来时的处置预案。每条的「判定」列只写命令，「禁止」列只写不许做的事；规范依据在 [AGENTS.md](../AGENTS.md) 与版式规范三份文档，本条不另立规则。
 
-| # | 触发信号 | 判定 | 允许动作 | 禁止动作 | 簇 | 证据留档 |
-| --- | --- | --- | --- | --- | --- | --- |
-| P1 | `publish_auto.py` 退出 1：OneDrive 外部更新与本地未发布修改同时存在 | `python tools/publish_auto.py --dry-run` | 逐书逐文件比对三方，把合并结果写入 `EPUB/` 后重新发布 | 不得用 `--from`／`--overwrite-cache` 选边；曾直接改 OneDrive 时，未保全并比较双方改动前不得拉取 | C1 | [publish-auto-identical-change-conflict-2026-09-14.md](../docs/maintenance-records/publish-auto-identical-change-conflict-2026-09-14.md) |
-| P2 | 发布停止并给重建提示：某处理侧在清单中全无基线记录 | 侧名取值只有 `chinese-text`／`japanese-text`（`python tools/manifest.py --help`），重建写入 `python tools/manifest.py --update-books <侧>/<书目录>`，例如 `japanese-text/【S5_01】外典书库(1)` | 仅在已确认「缓存即已发布状态」后重建基线 | 不得用清单更新掩盖未发布变化；`--force` 也不跳过成品结构门禁 | C1 | [manifest-baseline-missing-side-2026-09-13.md](../docs/maintenance-records/manifest-baseline-missing-side-2026-09-13.md) |
-| P3 | `publish_preflight.py` 非零（预检失败不推进该书发布与基线） | `python tools/publish_preflight.py --source EPUB`（可加 `--jp-root`、`--only-books`） | 按报错类别转到 C3／C4 修，修完重跑预检 | 不得绕过预检发布；不得临时覆盖缓存来做检查 | C1→C3/C4 | — |
-| P4 | `check_alignment.py --strict` 或 `check_epub_health.py --strict` 非零 | 对齐用 `--root EPUB --jp-root .cache/epub-work/japanese-text --strict`；漂移定位用 `python tools/diff_paired_lines.py` | 按 C3 的对应工具处理：`fix_legacy_pagebreak_br.py`／`restore_cn_scene_breaks.py`／`sync_pb_tags.py`（页边界）、`wrap_cn_image_lines.py`（图片行）、`normalize_single.py`／`normalize_paired.py`（模板）、`migrate_heading_breaks.py`（标题）、`shift_content_sequences.py`／`fix_empty_placeholders.py`（序号与空页）、`reorder_notes.py`（Note） | 不得临时放宽门禁；不得为凑行数增删结构标签；语义未确认先人工确认 | C4 查→C3 修 | — |
-| P5 | 日文根缺失、目录存在但缺书／正文；CI 无日文侧 | 按 [克隆后的运行环境](#克隆后的运行环境) 核对输入与覆盖 | 自行提供工作源或从显式外部目录拉取；无源时使用单侧能力 | 不得据未配对书或零命中宣布「双侧通过」 | C1→C4 | — |
-| P6 | 上传成功但状态写入失败（`OSError`：外部副本已更新、清单未推进） | 比对 OneDrive 实际内容与 `manifest.json`／`pull-state.tsv` | 按 P1 的冲突流程处理（外部副本当作待合并的一方），必要时重跑发布 | 不得假定「上传失败」直接重传覆盖；不得直接编辑 OneDrive 里的 `.epub` | C1 | [tool-responsibility-cleanup-2026-09-19.md](../docs/maintenance-records/tool-responsibility-cleanup-2026-09-19.md) |
-| P7 | CI `normalize-epub-text.yml` 产生了提交（自动规范化／译注自愈／裸图包裹）——非阻塞，属必做后续 | `git log`／`git pull`，比对 CI 提交与本地未发布改动 | 工作站拉取该提交后按 CI 实际作品范围运行 `python tools/publish_auto.py --only-books "<side/书目录,...>"` 回流 | 不得把 CI 提交当作「三副本已同步」；CI 不连 OneDrive | C1 | [AGENTS.md](../AGENTS.md)「CI 例外」 |
+| # | 触发信号 | 判定 | 允许动作 | 禁止动作 | 簇 |
+| --- | --- | --- | --- | --- | --- |
+| P1 | `publish_auto.py` 退出 1：OneDrive 外部更新与本地未发布修改同时存在 | `python tools/publish_auto.py --dry-run` | 逐书逐文件比对三方，把合并结果写入 `EPUB/` 后重新发布 | 不得用 `--from`／`--overwrite-cache` 选边；曾直接改 OneDrive 时，未保全并比较双方改动前不得拉取 | C1 |
+| P2 | 发布停止并给重建提示：某处理侧在清单中全无基线记录 | 侧名取值只有 `chinese-text`／`japanese-text`（`python tools/manifest.py --help`），重建写入 `python tools/manifest.py --update-books <侧>/<书目录>`，例如 `japanese-text/【S5_01】外典书库(1)` | 仅在已确认「缓存即已发布状态」后重建基线 | 不得用清单更新掩盖未发布变化；`--force` 也不跳过成品结构门禁 | C1 |
+| P3 | `publish_preflight.py` 非零（预检失败不推进该书发布与基线） | `python tools/publish_preflight.py --source EPUB`（可加 `--jp-root`、`--only-books`） | 按报错类别转到 C3／C4 修，修完重跑预检 | 不得绕过预检发布；不得临时覆盖缓存来做检查 | C1→C3/C4 |
+| P4 | `check_alignment.py --strict` 或 `check_epub_health.py --strict` 非零 | 对齐用 `--root EPUB --jp-root .cache/epub-work/japanese-text --strict`；漂移定位用 `python tools/diff_paired_lines.py` | 按 C3 的对应工具处理：`fix_legacy_pagebreak_br.py`／`restore_cn_scene_breaks.py`／`sync_pb_tags.py`（页边界）、`wrap_cn_image_lines.py`（图片行）、`normalize_single.py`／`normalize_paired.py`（模板）、`migrate_heading_breaks.py`（标题）、`shift_content_sequences.py`／`fix_empty_placeholders.py`（序号与空页）、`reorder_notes.py`（Note） | 不得临时放宽门禁；不得为凑行数增删结构标签；语义未确认先人工确认 | C4 查→C3 修 |
+| P5 | 日文根缺失、目录存在但缺书／正文；CI 无日文侧 | 按 [克隆后的运行环境](#克隆后的运行环境) 核对输入与覆盖 | 自行提供工作源或从显式外部目录拉取；无源时使用单侧能力 | 不得据未配对书或零命中宣布「双侧通过」 | C1→C4 |
+| P6 | 上传成功但状态写入失败（`OSError`：外部副本已更新、清单未推进） | 比对 OneDrive 实际内容与 `manifest.json`／`pull-state.tsv` | 按 P1 的冲突流程处理（外部副本当作待合并的一方），必要时重跑发布 | 不得假定「上传失败」直接重传覆盖；不得直接编辑 OneDrive 里的 `.epub` | C1 |
+| P7 | CI `normalize-epub-text.yml` 产生了提交（自动规范化／译注自愈／裸图包裹）——非阻塞，属必做后续 | `git log`／`git pull`，比对 CI 提交与本地未发布改动 | 工作站拉取该提交后按 CI 实际作品范围运行 `python tools/publish_auto.py --only-books "<side/书目录,...>"` 回流 | 不得把 CI 提交当作「三副本已同步」；CI 不连 OneDrive | C1 |
 
 ## 簇索引
 
@@ -661,7 +661,7 @@ python tools/check_term_anchors.py --book S5_01_02 --book S5_01_01 --strict
 
 `check_translation_table.py` 用译名表的原始写法当锚：表里的 `【魔術】` 带括号，正文裸写 `魔術` 匹配不到。本工具补这一步：中日逐行配对，**日文出现裁定锚点、中文没有裁定写法却含裁定表登记的误形**时命中。规则只从《译名裁定总表》读——锚点取 §五 表中「机检」列填「是」的行（工具直接读取该列，代码与文档都不另存清单），应作取「裁定」列，误形取「被否决或并存的候选」列；新增锚点只需在裁定表标记该行（或用 `--anchor` 临时指定），不复制第二份映射。**纳入条件见裁定表 §四.8**：误形列要能解析成可机械匹配的短词、且无大量合法并存义项；该条件与「判定」列的匹配轴（`人读`／`匹配基文`／`严格全文`／`匹配注文`，见裁定表 §四.7）是两套独立机制，不要混用。
 
-书名、省略与改写也可能缺少裁定写法，因此只报「误形命中且无裁定写法」。逐行文本提取用 `text_of_without_ruby_compact`：`text_of` 把每个标签换成空格，按字注音的 `<ruby>魔</ruby><ruby>術</ruby>` 会读成「魔 術」，`魔術`／`魔術師` 这类锚点将永远匹配不到。同一锚点有多行登记时，机检只取「机检」列为「是」的行：牌名例外行（`魔術師`→魔术师）只作语境豁免说明，不并进无条件写法，否则该锚点的误形会被当成合规写法。**塔罗牌名是语境例外**：`ANCHOR_CONTEXT_EXCEPTIONS` 对 `魔術師` 命中 `タロット`／`大アルカナ`／`カード` 的日文行跳过（中文通行牌名「魔术师」）。已登记非配对作品、人工／结构特例、仅包装页及双侧纯图范围单列为不适用，不计文字核对数。缺书、缺正文表头、空白或仅元数据文件、行数或行类型错位、重复表头及未知选书属于未完成；普通报告可保留部分结果，`--strict` 返回 2。完整覆盖时误形命中返回 1，无命中返回 0；根目录或锚点缺失、报告写入失败为 2。报告默认 `.cache/epub-work/term-anchor-check.tsv`。库函数 `audit_coverage()` 返回命中和覆盖状态，旧 `audit_roots()` 四元组保留兼容。建立背景与历史回测见 [术语锚点门禁记录](../docs/maintenance-records/term-anchor-gate-2026-10-27.md)。
+书名、省略与改写也可能缺少裁定写法，因此只报「误形命中且无裁定写法」。逐行文本提取用 `text_of_without_ruby_compact`：`text_of` 把每个标签换成空格，按字注音的 `<ruby>魔</ruby><ruby>術</ruby>` 会读成「魔 術」，`魔術`／`魔術師` 这类锚点将永远匹配不到。同一锚点有多行登记时，机检只取「机检」列为「是」的行：牌名例外行（`魔術師`→魔术师）只作语境豁免说明，不并进无条件写法，否则该锚点的误形会被当成合规写法。**塔罗牌名是语境例外**：`ANCHOR_CONTEXT_EXCEPTIONS` 对 `魔術師` 命中 `タロット`／`大アルカナ`／`カード` 的日文行跳过（中文通行牌名「魔术师」）。已登记非配对作品、人工／结构特例、仅包装页及双侧纯图范围单列为不适用，不计文字核对数。缺书、缺正文表头、空白或仅元数据文件、行数或行类型错位、重复表头及未知选书属于未完成；普通报告可保留部分结果，`--strict` 返回 2。完整覆盖时误形命中返回 1，无命中返回 0；根目录或锚点缺失、报告写入失败为 2。报告默认 `.cache/epub-work/term-anchor-check.tsv`。库函数 `audit_coverage()` 返回命中和覆盖状态，旧 `audit_roots()` 四元组保留兼容。
 
 接入点：`publish_preflight.py`（带日文参考的发布预检按书阻断）、`proofread-review` R7、`translation-term-unification` S6。CI 只有中文侧，工作流里仅在日文缓存存在时执行，否则明确跳过。
 
@@ -683,7 +683,7 @@ python tools/check_epub_validity.py --list-categories
 python tools/check_project_docs.py
 ```
 
-只读核验：本地链接与标题锚点；顶层 `docs/*.md` 在 [文档索引](../docs/README.md) 的登记；活跃文档开头回指索引的入口（前 20 行内的相对链接；维护记录与冻结归档不逐项要求）；`tools/*.py`、`*.ps1`、`*.json` 的说明覆盖；**工具簇归属**。缺项非零，供 CI 和后续文档整改复跑。接入点：CI `check-epub-health` 作业的「文档职责与链接检查」，以及 `translation-term-unification` §S6（改裁定表／说话习惯表／留档后必跑）。
+只读核验：本地链接与标题锚点；顶层 `docs/*.md` 在 [文档索引](../docs/README.md) 的登记；活跃文档开头回指索引的入口（前 20 行内的相对链接；冻结归档不逐项要求）；`tools/*.py`、`*.ps1`、`*.json` 的说明覆盖；**工具簇归属**。缺项非零，供 CI 和后续文档整改复跑。接入点：CI `check-epub-health` 作业的「文档职责与链接检查」，以及 `translation-term-unification` §S6（改裁定表／说话习惯表后必跑）。
 
 **工具簇归属**（本文件必须满足的结构合同）：①每个 `tools/` 顶层文件在**恰好一个**簇成员表里出现且只出现一次，成员表的列固定为「工具｜入口命令｜读写范围｜门禁与失败边界｜测试」；②`## 簇索引` 必须覆盖全部簇，且每簇登记的入口数与成员表行数一致；③C1–C6 的行必须给出反引号入口命令，C0 的行必须写「无 CLI」；④「门禁与失败边界」列必须以 `【P<n>】` 指向 [阻塞与恢复](#阻塞与恢复) 的预案或写 `【无】`；⑤`## 路由` 中出现的工具名必须存在于某个成员表；⑥找不到 `## 簇索引` 或任何簇节时报错，不静默跳过。**单一来源检查**（同一规则只在一处写正文，其余处只留指针）：①裁定表主表内「同一锚点 + 相同义项标识」不得重复登记——分层与同词异译以不同义项标识并列属合法；锚点列只写锚点时，义项标识回落到「备注」列（原「理由」列）；②翻译规范与译名选取规范正文不得出现裁定表锚点的取值，同行带 `→`／`＝`／「译作」等映射标记即视为复述，指针行（含裁定表链接）与带 `<!-- single-source-ok -->` 白名单标记的行除外；③规范不得复制 `check_translation_spec.py` 的词表（命中 `P9_EVENT_SUFFIXES` 过半即报）；④规范与裁定表内 `§X` 形式的引用必须指向真实存在的小节。它检查可机械覆盖的合同，不替代对文档语义之间是否重复或冲突的判断。
 

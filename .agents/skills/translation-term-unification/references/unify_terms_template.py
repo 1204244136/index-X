@@ -86,7 +86,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="译名统一：显式映射 + 逐条预检")
     parser.add_argument("--apply", action="store_true", help="预检全过后写盘（默认只预览）")
     parser.add_argument("--epub", default="EPUB", help="EPUB 归档根目录（默认 EPUB/）")
-    parser.add_argument("--tsv", help="把修订明细写成 TSV（可粘进维护记录的修订明细表）")
+    parser.add_argument("--tsv", help="把修订明细写成 TSV，供本地核验与汇总提交信息")
     args = parser.parse_args()
 
     epub_root = Path(args.epub)

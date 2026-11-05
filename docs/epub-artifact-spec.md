@@ -50,7 +50,7 @@
 
 判定实现、检查项名称、参数与失败边界统一见 [工具合同](../tools/README.md)；本文件不复制常量、正则与例外清单，已确认的例外只登记在 `tools/alignment_rules.py`。
 
-级别口径：**必备部件缺失、书目录名与 `dc:title` 不对齐、`docTitle` 与 `dc:title` 不对齐、目录条目口径、`nav.xhtml` 头部结构不合 HTML5 语法、`unique-identifier` 不唯一、`dtb:uid` 与包文档 identifier 不对齐**属阻断项（八项存量已于 2026-10-12 全部清零）。判定实现、库级复核方式与例外清单见 [工具合同](../tools/README.md) 与 `tools/alignment_rules.py`；历史存量与排队情况见 `docs/maintenance-records/`。
+级别口径：**必备部件缺失、书目录名与 `dc:title` 不对齐、`docTitle` 与 `dc:title` 不对齐、目录条目口径、`nav.xhtml` 头部结构不合 HTML5 语法、`unique-identifier` 不唯一、`dtb:uid` 与包文档 identifier 不对齐**属阻断项。判定实现、库级复核方式与例外清单见 [工具合同](../tools/README.md) 与 `tools/alignment_rules.py`。
 
 ## 六、构成变更的执行前置
 

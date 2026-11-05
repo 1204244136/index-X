@@ -155,7 +155,7 @@ python tools/check_epub_validity.py "EPUB/【S4_04】某暗部的少女共栖 4"
 python tools/publish_auto.py --only-books "chinese-text/【S4_04】某暗部的少女共栖 4"  # 仅发布本次导入书
 ```
 
-* 单本修改以提交承载，不留档；一次落在两本及以上作品才在 `docs/maintenance-records/` 留档。
+* 无论单本或跨本，修改范围、依据与验证结果均由提交承载。
 * 同步成功后，按 [提交规范](../../../docs/commit-spec.md) 的成品导入分支完成本地提交。
 * 图片素材、交稿、计划文件等外部输入不进仓库。
 
