@@ -700,6 +700,18 @@ class QuoteLookupTests(unittest.TestCase):
         ]
         self.assertEqual(quote_lookups(rows, min_len=8, cover=0.4), [])
 
+    def test_skips_onomatopoeia_fragment(self):
+        # 拟声／长音串不是「说法」：全库扫描里 S2_01 的「呜啊啊啊…」就是这类噪声
+        rows = [
+            {"file": "a.xhtml", "line": 1,
+             "jp": "「ギャアァァァァァァァァァァァァァァァァァァ」",
+             "cn": "「啊啊啊啊啊啊啊啊啊啊啊啊啊啊！」"},
+            {"file": "a.xhtml", "line": 2,
+             "jp": "『うわ、いやだ、やめて、キャアァァァァァァァァァァァァァァァァァ』",
+             "cn": "『呜哇，不要，住手，哇啊啊啊啊啊啊啊啊啊啊啊！』"},
+        ]
+        self.assertEqual(quote_lookups(rows, min_len=8, cover=0.4), [])
+
     def test_deduplicates_same_position_pair(self):
         # 同一行出现两次相同引文时，位置对只应出现一次
         rows = [

@@ -1129,6 +1129,8 @@ def quote_lookups(rows: list[dict], min_len: int, cover: float,
                     fragment = key[span_start:span_start + span_len]
                     if not _span_has_content(fragment):
                         continue
+                    if _is_onomatopoeia(fragment):
+                        continue
                 ident = (row["file"], row["line"], candidate["file"], candidate["line"], key)
                 if ident in seen:
                     continue
