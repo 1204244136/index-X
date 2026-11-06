@@ -15,7 +15,7 @@
 | --- | --- | --- |
 | 片段多译 | 同一日文片段（引号内或整行）在作品内出现多次，中文译法不一致 | 同一句话被译成多种说法 |
 | 同源复现 | 日文两行高度相似（n-gram 倒排 + 序列相似度） | 原句与其引述/复现形态 |
-| 引述回指 | 日语侧出现 `『…』` 嵌套引述，回全文找出处 | 引述处与被引处须对应 |
+| 引述回指 | 日语侧出现 `『…』` 嵌套引述，回全文找出处；引述整体改写但保留 ≥12 字逐字片段时按片段报 | 引述处与被引处须对应 |
 | 短平行句 | 相邻两行日文只换一个名词、中文量词/结构不一致 | 同一模板的平行句被改断 |
 | 术语多译 | 同一日文术语（片假名/汉字连写）在作品内多次出现，中文用了不同写法 | 同一术语被译成几种（术语嵌在各不相同的长句中，类 1 的片段索引收不到） |
 | 模式复述 | 共享日文段落在**中间**（类 4 只比前后缀的盲区），或**短句谓述出现在长行**（类 2 的 20 字门槛与类 4 的 24 字上限造成的长度断档） | 同一句话被复述/接话两次，中文该处译法不一致 |
@@ -1061,14 +1061,17 @@ def cn_quotes_back(jp: str, cn: str) -> bool:
 
 
 def quote_lookups(rows: list[dict], min_len: int, cover: float,
-                  include_marker: bool = False) -> list[dict]:
+                  include_marker: bool = False, frag_min: int = 12) -> list[dict]:
     """类 3：日语侧 `『…』` 引文 -> 全文出处候选。
 
-    每条候选带两项判定辅助：
+    每条候选带三项判定辅助：
     - `relation`：日语侧 exact／within／wraps／fuzzy（`wraps` 即「引述升级」，
       引述把简写补成了逐字句，被引处措辞必须与引述一致，否则引述指向一个
       并不存在的说法——最难自查的一类断裂）；
-    - `cn_class`：中文侧引文与出处的差异性质（实词／语体／虚词／一致）。
+    - `cn_class`：中文侧引文与出处的差异性质（实词／语体／虚词／一致）；
+    - `fragment`：fuzzy 配对里**逐字照抄**的那一段（≥ `frag_min` 字且含实字）。
+      引述整体改写时覆盖率够不上 fuzzy 门槛，但这一段仍是必须对应的呼应点
+      （回忆／转述常是「前半改口、后半照抄」）；空串表示不适用。
     """
     bodies = [r for r in rows if len(norm_jp(r["jp"])) >= 6]
     inverted: dict[str, set[int]] = defaultdict(set)
@@ -1111,9 +1114,21 @@ def quote_lookups(rows: list[dict], min_len: int, cover: float,
                 if len(norm_jp(candidate["jp"])) < min_len:
                     continue
                 relation = quote_relation(quote, candidate["jp"])
-                # 仅 n-gram 相似而互不包含（fuzzy）的配对误配率高，要求更高覆盖率
+                fragment = ""
+                # 仅 n-gram 相似而互不包含（fuzzy）的配对误配率高，要求更高覆盖率。
+                # 但「引述整体改写、其中一段照抄原文」是回忆／转述的常态：S1_11-06 L484
+                # 回忆雅妮丝原话时前半改口（`結構良い環境でしょ？`→`それほど悪い環境じゃ
+                # ないでしょう？`）、后半 26 字逐字复现，整体覆盖率只有 0.58；旧规则整条
+                # 丢弃，该片段的中文漂移（「维持这样安逸的生活」／「打理好这里的环境」）
+                # 无人核对。覆盖率不足时改看最长公共片段：够长且含实字，那一段就是必须
+                # 对应的呼应点。
                 if relation == "fuzzy" and share < 0.8:
-                    continue
+                    span_len, span_start, _ = _longest_common_span(key, norm_jp(candidate["jp"]))
+                    if span_len < frag_min:
+                        continue
+                    fragment = key[span_start:span_start + span_len]
+                    if not _span_has_content(fragment):
+                        continue
                 ident = (row["file"], row["line"], candidate["file"], candidate["line"], key)
                 if ident in seen:
                     continue
@@ -1138,6 +1153,7 @@ def quote_lookups(rows: list[dict], min_len: int, cover: float,
                     "relation": relation,
                     "cn_class": cn_class,
                     "upgrade": False,
+                    "fragment": fragment,
                 })
             if not matches:
                 # 引述助词类：日文侧找不到出处，但中文译文用引号保留了「这是引述」
@@ -1218,9 +1234,11 @@ def render(work: str, rows: list[dict], report: dict) -> tuple[str, str]:
     n_upgrade = sum(1 for c in quotes if any(m["upgrade"] for m in c["hits"]))
     n_exact = sum(1 for c in quotes if any(m["relation"] == "exact" for m in c["hits"]))
     n_marker = sum(1 for c in quotes if c.get("kind") == "引述助词")
+    n_frag = sum(1 for c in quotes if any(m.get("fragment") for m in c["hits"]))
     lines.append(
         f"## 类 3 引述回指出处候选（{len(quotes)} 条：引用符 {len(quotes) - n_marker}／"
-        f"引述助词 {n_marker}；其中引述升级 {n_upgrade} 条、逐字同形 {n_exact} 条）"
+        f"引述助词 {n_marker}；其中引述升级 {n_upgrade} 条、逐字同形 {n_exact} 条、"
+        f"片段复现 {n_frag} 条）"
     )
     lines.append("")
     lines.append("核对被引处措辞是否与引文对应。「引述助词」类是 `って／とか／と+引用动词` 形态的"
@@ -1232,7 +1250,9 @@ def render(work: str, rows: list[dict], report: dict) -> tuple[str, str]:
     lines.append("- `⤴升级`（`wraps`）：引述把简写补成了逐字句，被引处必须就是引述的那个版本，"
                  "否则引述指向一个并不存在的说法（**最难自查的一类**，本轮 S1_01 第一章的"
                  "「伤不了一根汗毛」即此型）；")
-    lines.append("- `within`／`fuzzy`：引述对被引处做了压缩或改写，措辞可不逐字一致，但要核语义与语气。")
+    lines.append("- `within`／`fuzzy`：引述对被引处做了压缩或改写，措辞可不逐字一致，但要核语义与语气；")
+    lines.append("- `⇄片段复现`：引述整体改写、整体覆盖率不足，但其中一段与出处**逐字相同**——"
+                 "这一段两侧中文必须对应（回忆／转述最常见的断裂形态：前半改口、后半照抄）；")
     lines.append("")
     for i, item in enumerate(quotes, 1):
         src = item["src"]
@@ -1249,6 +1269,11 @@ def render(work: str, rows: list[dict], report: dict) -> tuple[str, str]:
                 f"- 疑似出处 `{m['relation']}`{mark} / 中文差异 `{m['cn_class']}` / cov={m['cover']:.2f}"
                 f"　{hit['file']}:{hit['line']}：{hit['cn'][:200]}"
             )
+            if m.get("fragment"):
+                lines.append(
+                    f"- ⇄片段复现 {len(m['fragment'])} 字：「{m['fragment']}」——"
+                    "引述整体改写，但这段与被引处逐字相同：两侧中文必须对应，只改一侧即断裂"
+                )
         lines.append("")
 
     shorts = report.get("short", [])
@@ -1349,7 +1374,7 @@ def render(work: str, rows: list[dict], report: dict) -> tuple[str, str]:
         f"（量词 {short_count['量词']}／功能词 {short_count['功能词']}／实词 {short_count['实词']}）"
         f"\t术语多译 {len(terms)} 组"
         f"\t引述回指 {len(quotes)} 条"
-        f"（升级 {n_upgrade}／同形 {n_exact}）"
+        f"（升级 {n_upgrade}／同形 {n_exact}／片段 {n_frag}）"
         f"\t模式复述 {len(patterns)} 对"
         f"（类4 中间共享 {pattern_count['类4 中间共享']}／"
         f"类2 长度断档 {pattern_count['类2 长度断档']}）"
@@ -1540,6 +1565,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--term-drift", type=float, default=0.12,
                         help="术语多译：候选词与日文术语的最大平均位置偏差（默认 0.12）")
     parser.add_argument("--cover", type=float, default=0.5, help="引文在出处中的最低覆盖率")
+    parser.add_argument("--quote-frag-min", type=int, default=12,
+                        help="引述整体改写时，仍报出的逐字片段最短字数（默认 12；"
+                             "片段须含汉字或片假名，纯假名语法串不计）")
     parser.add_argument("--include-marker-quotes", action="store_true",
                         help="额外扫描 `って／とか` 引述助词形态的回指（实验性：候选量大、"
                              "需人工筛，默认关闭）")
@@ -1619,7 +1647,8 @@ def run_reports(args: argparse.Namespace, parser: argparse.ArgumentParser) -> in
                 lift_min=args.term_lift, window=args.term_window,
                 union_min=args.term_union, max_drift=args.term_drift,
             ),
-            "quotes": quote_lookups(rows, args.min_quote, args.cover, args.include_marker_quotes),
+            "quotes": quote_lookups(rows, args.min_quote, args.cover, args.include_marker_quotes,
+                                    args.quote_frag_min),
         }
         if not args.no_pattern_pairs:
             report["pattern"] = pattern_echo_pairs(

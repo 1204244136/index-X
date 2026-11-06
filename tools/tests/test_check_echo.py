@@ -667,6 +667,39 @@ class QuoteLookupTests(unittest.TestCase):
         ]
         self.assertEqual(quote_lookups(rows, min_len=8, cover=0.5), [])
 
+    def test_reports_fragment_echo_when_quote_is_rewritten(self):
+        # 引述整体改写：前半换说法（結構良い環境でしょ？→それほど悪い環境じゃないでしょう？），
+        # 后半 26 字逐字照抄。整体覆盖率 0.575 < 0.8，旧规则整条丢弃，这段的中文漂移
+        # （「维持这样安逸的生活」／「打理好这里的环境」）就没人核对（S1_11-06 L206/L484）。
+        rows = [
+            {"file": "a.xhtml", "line": 1,
+             "jp": "結構良い環境でしょ？　ソイツを整えるために皆には働いてもらってんですけどね",
+             "cn": "「环境还算不错吧？为了维持这样的生活，只好请大家工作喽。」"},
+            {"file": "a.xhtml", "line": 2,
+             "jp": "『それほど悪い環境じゃないでしょう？　ま、ソイツを整えるために皆には働いてもらってんですけどね』",
+             "cn": "『环境也没那么糟吧？不过嘛，为了维持这样的环境，才让大家干活的呢。』"},
+        ]
+        found = quote_lookups(rows, min_len=8, cover=0.5)
+        self.assertTrue(found)
+        match = found[0]["hits"][0]
+        self.assertEqual(match["relation"], "fuzzy")
+        self.assertEqual(match["fragment"], "ソイツを整えるために皆には働いてもらってんですけどね")
+
+        # 片段门槛可调：调到 30 字时该候选不再是呼应点
+        self.assertEqual(quote_lookups(rows, min_len=8, cover=0.5, frag_min=30), [])
+
+    def test_skips_kana_only_fragment(self):
+        # 12 字片段全是假名语法串（「そういうことなんですけどね」）不构成呼应
+        rows = [
+            {"file": "a.xhtml", "line": 1,
+             "jp": "ええ、そういうことなんですけどね、たしかにそうですね",
+             "cn": "「嗯，就是这么回事呢，确实如此。」"},
+            {"file": "a.xhtml", "line": 2,
+             "jp": "『まあね、そういうことなんですけどね、はいはい』",
+             "cn": "『是啊，就是这么回事呢，好好好。』"},
+        ]
+        self.assertEqual(quote_lookups(rows, min_len=8, cover=0.4), [])
+
     def test_deduplicates_same_position_pair(self):
         # 同一行出现两次相同引文时，位置对只应出现一次
         rows = [
