@@ -340,6 +340,28 @@ class PacketTests(unittest.TestCase):
             packets.write_new_artifacts({second: b"replace"}, apply=True)
         self.assertEqual(second.read_bytes(), b"concurrent")
 
+    def test_prepare_textual_image_header_exempts_line_count_and_provides_all_jp_lines(self):
+        # S2_14-02 is in TEXTUAL_IMAGE_HEADERS
+        f = Fixture(self.base, [
+            Fixture.row(work="S2_14", file="S2_14-02_Ingredients1.xhtml", line="4", old="旧", new="新第四行")
+        ])
+        cn = f.cn / "S2_14-02_Ingredients1.xhtml"
+        jp = f.jp / "S2_14-02.xhtml"
+        # CN has 5 lines, JP has 3 lines (different line count)
+        cn.write_text("<html>\n<body>\n<p>line3</p>\n<p>新第四行</p>\n<p>line5</p>\n", encoding="utf-8")
+        jp.write_text("<html>\n<body>\n<p>jp_line3</p>\n", encoding="utf-8")
+        f.init()
+        f.plan()
+        session = f.prepare(apply=True)
+        self.assertEqual(len(session["slices"]), 1)
+        packet = json.loads((f.root / session["slices"][0]["packet"]).read_text(encoding="utf-8"))
+        item = packet["items"][0]
+        self.assertEqual(item["item_id"], "C000001")
+        # Evidence should contain all lines of JP
+        self.assertEqual(len(item["evidence"]), 3)
+        self.assertEqual(item["context"], [])
+
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -751,7 +751,7 @@ python tools/proofread_session.py validate --report-root <report-root> --result 
 python tools/proofread_session.py coverage --report-root <report-root> --selection <selection.json>
 ```
 
-- **初始化与冻结**：`init` 按 `changes.tsv` 数据顺序建 `manifest.tsv`；已有清单只核对并复用，不覆盖重分类或 `parent_id`。`prepare` 接受 `slices/ids/*.txt` 或 `--plan` 的 JSON，核对语义 ID 恰归一片，解析完整作品号与内容序，读取 `--jp-base`／`--cn-base`（默认日文缓存／中文归档）。配对缺失、行数不同、输入不匹配或预算超限阻断，不自动重切。HEAD、输入提交／diff 快照、任务授权边界和 R2 放行依据仍由 Lead 记入 `baseline.md`。
+- **初始化与冻结**：`init` 按 `changes.tsv` 数据顺序建 `manifest.tsv`；已有清单只核对并复用，不覆盖重分类或 `parent_id`。`prepare` 接受 `slices/ids/*.txt` 或 `--plan` 的 JSON，核对语义 ID 恰归一片，解析完整作品号与内容序，读取 `--jp-base`／`--cn-base`（默认日文缓存／中文归档）。配对缺失、行数不同（已登记的 `TEXTUAL_IMAGE_HEADERS` 豁免行数对齐并全量封包日文候选）、输入不匹配或预算超限阻断，不自动重切。HEAD、输入提交／diff 快照、任务授权边界和 R2 放行依据仍由 Lead 记入 `baseline.md`。
 - **产物**：`session.json` 保存清单／初始 TSV／源文件及每片取证包的 SHA-256，以 `session.sha256` 封存；`slices/packets/<slice-id>.json` 保存原始行、连续底字、注音记号和默认 N−1/N/N+1 中日上下文。新产物拒绝覆盖；日文缓存、归档和 OneDrive 全程只读。报告放现有 `.cache/epub-work/proofread-review/<run-id>/` 或显式仓库外目录；禁止写书籍目录、其它缓存目录或 OneDrive。跨物理行的 ruby／rt／rp 及无法与单行清单匹配的增删目前阻断，需提供行号稳定且匹配的工作源。
 - **预算**：每片至多 150 条、3 文件、400 行 diff，实际输入字符预算默认 60000，可用 `--max-input-chars` 显式调整并在计划说明依据。工具不凭估计宣布实际 diff 门禁通过；未提供实测值时明确列为 Lead 待核。字节数、输入字符数和 token 数不等价。
 - **阅读**：`read` 支持 `--ids`、单个 `--flag`、`--page`／`--page-size`、`--context 0|1` 和 `--json`。分页和过滤只改变展示，不减少分配分母；越界 ID 直接失败。每次读取核对冻结输入与来源，漂移须另建轮次。

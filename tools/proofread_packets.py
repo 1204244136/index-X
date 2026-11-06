@@ -13,6 +13,7 @@ from collections import Counter
 from pathlib import Path
 
 from epub_ids import book_id, header_of, work_id
+from alignment_rules import TEXTUAL_IMAGE_HEADERS
 from japanese_lookup import strip_rt_and_tags, to_ruby_markup
 from proofread_review import to_text
 
@@ -348,29 +349,38 @@ def prepare_session(report_root: Path | str, *, jp_base: Path | str, cn_base: Pa
             row = by_id[item_id]
             header = header_of(row["file"])
             jp, cn = lines_for("jp", header), lines_for("cn", header)
-            if len(jp) != len(cn):
+            is_textual_image = header in TEXTUAL_IMAGE_HEADERS
+            if len(jp) != len(cn) and not is_textual_image:
                 raise ValueError(f"配对行数不齐 {row['file']} / {Path(sources['jp:' + header]['path']).name}："
                                  f"CN={len(cn)} JP={len(jp)} 差值(CN-JP)={len(cn) - len(jp):+d}")
             try:
                 line = int(row["line"])
             except ValueError as exc:
                 raise ValueError(f"{item_id} 行号无效：{row['line']}") from exc
-            if line < 1 or line > len(jp):
-                raise ValueError(f"{item_id} 行号越界：{line} / {len(jp)}")
+            if line < 1 or line > len(cn):
+                raise ValueError(f"{item_id} 行号越界：{line} / {len(cn)}")
             if to_text(cn[line - 1]) != row["new"]:
                 raise ValueError(f"{item_id} 新译与中文源实际行不符：{row['file']}:{line}；"
                                  "请提供匹配输入版本的 --cn-base；跨行增删须另行对齐")
 
-            neighbors = []
-            for number in range(max(1, line - context), min(len(jp), line + context) + 1):
-                if number != line:
-                    neighbors.append(dict(_evidence(sources[f"jp:{header}"], header, jp, number),
-                                          cn=strip_rt_and_tags(cn[number - 1])))
+            if is_textual_image:
+                evidence_rows = [_evidence(sources[f"jp:{header}"], header, jp, jp_line)
+                                 for jp_line in range(1, len(jp) + 1)]
+                neighbors = []
+            else:
+                if line > len(jp):
+                    raise ValueError(f"{item_id} 行号越界：{line} / {len(jp)}")
+                evidence_rows = [_evidence(sources[f"jp:{header}"], header, jp, line)]
+                neighbors = []
+                for number in range(max(1, line - context), min(len(jp), line + context) + 1):
+                    if number != line:
+                        neighbors.append(dict(_evidence(sources[f"jp:{header}"], header, jp, number),
+                                              cn=strip_rt_and_tags(cn[number - 1])))
             items.append({"item_id": item_id, "file": row["file"], "work": row["work"],
                           "seq": header, "line": line, "grade": row["effective_grade"],
                           "flags": [x for x in changes[item_id].get("flags", "").split(",") if x],
                           "old": row["old"], "new": row["new"],
-                          "evidence": [_evidence(sources[f"jp:{header}"], header, jp, line)],
+                          "evidence": evidence_rows,
                           "context": neighbors})
         packet = {"schema_version": 1, "run_id": root.name, "slice_id": sid, "items": items}
         data = _json_bytes(packet)
