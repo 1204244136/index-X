@@ -154,6 +154,43 @@ class SessionCliTests(unittest.TestCase):
                      "--apply", expected=1)
         self.assertFalse(escaped.exists())
 
+    def test_scaffold_preview_and_apply_blocks_empty_reason_on_assemble(self):
+        self.prepare()
+        preview = self.run_cli("scaffold", "--slice", self.sid)
+        preview_data = json.loads(preview.stdout)
+        self.assertFalse(preview_data["applied"])
+        default_draft = Path(preview_data["output"])
+        self.assertFalse(default_draft.exists())
+
+        applied = self.run_cli("scaffold", "--slice", self.sid, "--apply")
+        applied_data = json.loads(applied.stdout)
+        self.assertTrue(applied_data["applied"])
+        self.assertTrue(default_draft.exists())
+
+        # 未填写 reason 直接传给 assemble 时仍会被正确阻断（不会将空 reason 静默放行）
+        result = self.run_cli("assemble", "--slice", self.sid, "--decisions", default_draft,
+                              "--apply", expected=1)
+        self.assertFalse(self.result.exists())
+        self.assertIn("[阻断]", result.stderr.decode("utf-8"))
+
+        custom_draft = self.root / "slices" / "custom.decisions.json"
+        applied_custom = self.run_cli("scaffold", "--slice", self.sid, "--output", custom_draft, "--apply")
+        self.assertTrue(json.loads(applied_custom.stdout)["applied"])
+        self.assertTrue(custom_draft.exists())
+
+    def test_prepare_max_files_option(self):
+        self.run_cli("init", "--apply")
+        self.run_cli("prepare", "--jp-base", self.jp, "--cn-base", self.cn,
+                     "--plan", self.plan, "--max-files", "5", "--apply")
+        session = json.loads((self.root / "session.json").read_text(encoding="utf-8"))
+        self.assertEqual(session["max_files"], 5)
+
+    def test_read_default_page_size_is_thirty(self):
+        self.prepare()
+        shown = self.run_cli("read", "--slice", self.sid, "--json")
+        data = json.loads(shown.stdout)
+        self.assertEqual(data["page_size"], 30)
+
 
 if __name__ == "__main__":
     unittest.main()

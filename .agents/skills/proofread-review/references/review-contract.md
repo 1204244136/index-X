@@ -26,7 +26,7 @@ item_id  commit  work  file  line  old  new  source_grade  effective_grade  pare
 }
 ```
 
-也可不传 `--plan`，使用 `slices/ids/<slice-id>.txt` 的逐行 ID 清单；此入口同样需要 Lead 核实原 diff 行数。条目、文件、diff 与取证输入量上限按 skill §6.3 执行，超限由 Lead 沿语义单元边界重切，工具不自动装箱。初始上下文默认 N−1／N／N+1。
+也可不传 `--plan`，使用 `slices/ids/<slice-id>.txt` 的逐行 ID 清单；此入口同样需要 Lead 核实原 diff 行数。条目、文件、diff 与取证输入量上限按 skill §6.3 执行（`prepare` 默认单片 ≤3 个文件，可用 `--max-files` 显式调整，如回改验收轮跨多文件小批次放宽；输入字符预算默认 60000），超限由 Lead 沿语义单元边界重切，工具不自动装箱。初始上下文默认 N−1／N／N+1。
 
 ### 共用产物与职责
 
@@ -38,7 +38,7 @@ item_id  commit  work  file  line  old  new  source_grade  effective_grade  pare
 | `manifest.tsv` | `init` 生成；R2 的有效级别在 `prepare` 前定稿 |
 | `session.json`、`session.sha256`、`slices/packets/<slice-id>.json` | `prepare` 冻结输入摘要、来源与本片证据 |
 | `slices/context/<slice-id>/<item-id>.c<N>.json` 及对应 `.sha256` | Lead 用 `context` 为具体依赖补包；不改原 ID、归属与来源版本 |
-| `slices/decisions/<slice-id>.a<attempt>[.r<N>].json` | 子智能体直接写逐条决策草稿，保留旧稿 |
+| `slices/decisions/<slice-id>.a<attempt>[.r<N>].(json\|tsv)` | 子智能体写逐条决策草稿（TSV 或 JSON，可用 `scaffold` 生成骨架），保留旧稿 |
 | `slices/<slice-id>.a<attempt>[.r<N>].json` | 子智能体用 `assemble` 生成正式七字段结果 |
 | `selection.json` | Lead 显式选择已经验收的结果路径 |
 | `coverage.json`、`review-summary.md` | Lead 生成覆盖对账与主报告 |
@@ -48,9 +48,10 @@ item_id  commit  work  file  line  old  new  source_grade  effective_grade  pare
 ```powershell
 python tools/proofread_session.py init --report-root <report-root>
 python tools/proofread_session.py prepare --report-root <report-root> --jp-base <日文参考根目录> --cn-base <中文参考根目录> --plan <计划JSON>
-python tools/proofread_session.py read --report-root <report-root> --slice <slice-id> --page 1 --page-size 10
+python tools/proofread_session.py read --report-root <report-root> --slice <slice-id> --page 1 --page-size 30
 python tools/proofread_session.py context --report-root <report-root> --slice <slice-id> --item-id C000001 --radius 2 --revision 1
-python tools/proofread_session.py assemble --report-root <report-root> --slice <slice-id> --decisions <决策草稿路径> --attempt 1
+python tools/proofread_session.py scaffold --report-root <report-root> --slice <slice-id> --attempt 1
+python tools/proofread_session.py assemble --report-root <report-root> --slice <slice-id> --decisions <决策草稿路径.tsv或.json> --attempt 1
 python tools/proofread_session.py validate --report-root <report-root> --result <正式结果路径> --json
 python tools/proofread_session.py coverage --report-root <report-root> --selection <report-root>/selection.json --output <report-root>/coverage.json
 ```
@@ -81,13 +82,13 @@ Lead 将下列模板填实后派发，每个任务携带相同版本的判据与
 所属 ID：<完整列表；较长时给不可变 ID 清单文件及条数>。
 边界：<作品号、文件、内容序/行号区间、只读共享上下文>。
 基准：<HEAD/输入提交、日文参考目录与版本、行号基准>。
-判据：阅读 <SKILL.md绝对路径> §二、R6、§七及本契约；先查裁定表、译名选取规范与翻译规范。
-取证：逐 ID 用 proofread_session.py read 实际阅读旧/新译、日文及 N±1 上下文；带注音与连续底字均可见，不据旧译反推，不补刻意留白。
+判据：优先阅读 <subagent-guide.md绝对路径>（80 行速查卡），按需查阅裁定表（docs/translation-name-rulings.md）、译名选取规范与翻译规范；无需重复通读完整 SKILL.md 与 review-contract.md 的 Lead 编排章节。
+取证：逐 ID 用 proofread_session.py read --page-size 30 实际阅读旧/新译、日文及 N±1 上下文；带注音与连续底字均可见，禁止手写 python -c 解析取证包或盲搜目录，不据旧译反推，不补刻意留白。
 判断：正确新译保留，即使旧译也成立；错误只提最小修正；证据不足写缺什么，不猜。
 原校对成果：只在本片逐 ID 的既有取证中记录，初始批次保留项若由日文证实旧译有重大错误且原校对新译已改对，填写 original_fix；仅措辞偏好或需 Lead 再修正的条目不填，不扩片或另做旧译通审。
 范围：只读所属条目与给定最小上下文；不通读整章/整本，不自行扩片。
 依赖：给定窗口不足则列出具体 ID、所缺位置及必要性；等 Lead 用 context 补包或安排新输入，不自行扩片。未取得证据据实记待人工/未覆盖。
-输出：直接写 <report-root>/slices/decisions/<slice-id>.a<attempt>.json，再用共用 assemble 生成 <report-root>/slices/<slice-id>.a<attempt>.json；按契约顺序返回全部所属 ID。
+输出：优先写紧凑 <report-root>/slices/decisions/<slice-id>.a<attempt>.tsv 草稿（或用 scaffold 生成 .json 骨架后填写），再用共用 assemble 生成 <report-root>/slices/<slice-id>.a<attempt>.json；保留新译的 reason 采用 15–35 字具体日文锚点说明，按契约顺序返回全部所属 ID。
 权限：仅写本片决策草稿、正式结果及获准的格式修订；读取/装配/验收使用共用入口，能力缺口交 Lead。不自建同类脚本，不写成品、缓存书籍、裁定表或公共报告，不发布、不规范化写盘、不 Git 暂存/提交/推送。
 发现范围外问题：只放 discoveries，不生成所属范围外的条目判定，不计本片覆盖。
 自检：用共用 validate 校验正式结果，引用不符时报告失败；逐条有依据，模式不能代替取证。机械通过不代表语义已由 Lead 接受。
@@ -98,7 +99,12 @@ Lead 将下列模板填实后派发，每个任务携带相同版本的判据与
 
 ### 决策草稿
 
-子智能体先直接填写 UTF-8 JSON 数据，不创建装配脚本。顶层恰为 `items / discoveries`，`items` 按冻结包的分配顺序、每 ID 恰一项，每项固定有五个必填字段：`item_id / decision / reason / proposed_cn / original_fix`。判定和理由必须逐条显式填写；后两字段无值时显式写 `null`，缺项阻断，不自动补成「保留新译」。字段含义与正式结果相同。
+`assemble` 同时支持标准 5 字段 JSON 草稿与紧凑 TSV 草稿，子智能体先直接填写草稿数据，不创建装配脚本：
+
+1. **紧凑 TSV 草稿（推荐，最省 Token）**：直接写 `slices/decisions/<slice-id>.a<attempt>.tsv`。首行为固定表头 `item_id	decision	reason	proposed_cn	original_fix`，每行对应一个 ID。`original_fix` 支持 `category|old_error|new_fix|impact` 四段式（以半角 `|` 分隔）或 JSON 字符串。
+2. **标准 JSON 草稿**：可用 `python tools/proofread_session.py scaffold --report-root <report-root> --slice <slice-id> --attempt <1|2> --apply` 预生成骨架，顶层恰为 `items / discoveries`，`items` 按冻结包分配顺序、每 ID 恰一项，每项固定有五个必填字段：`item_id / decision / reason / proposed_cn / original_fix`。
+
+判定和理由必须逐条显式填写；后两字段无值时在 TSV 中留空、在 JSON 中显式写 `null`，缺项阻断，不自动补成「保留新译」。字段含义与正式结果相同。
 
 ```json
 {

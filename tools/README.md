@@ -746,6 +746,7 @@ python tools/proofread_session.py prepare --report-root <report-root> --plan <pl
 python tools/proofread_session.py prepare --report-root <report-root> --plan <plan.json> --apply
 python tools/proofread_session.py read --report-root <report-root> --slice <slice-id> --page 1
 python tools/proofread_session.py read --report-root <report-root> --slice <slice-id> --ids C000001 --json
+python tools/proofread_session.py scaffold --report-root <report-root> --slice <slice-id> --apply
 python tools/proofread_session.py assemble --report-root <report-root> --slice <slice-id> --decisions <decisions.json> --apply
 python tools/proofread_session.py validate --report-root <report-root> --result <result.json> --json
 python tools/proofread_session.py coverage --report-root <report-root> --selection <selection.json>
@@ -753,13 +754,13 @@ python tools/proofread_session.py coverage --report-root <report-root> --selecti
 
 - **初始化与冻结**：`init` 按 `changes.tsv` 数据顺序建 `manifest.tsv`；已有清单只核对并复用，不覆盖重分类或 `parent_id`。`prepare` 接受 `slices/ids/*.txt` 或 `--plan` 的 JSON，核对语义 ID 恰归一片，解析完整作品号与内容序，读取 `--jp-base`／`--cn-base`（默认日文缓存／中文归档）。配对缺失、行数不同（已登记的 `TEXTUAL_IMAGE_HEADERS` 豁免行数对齐并全量封包日文候选）、输入不匹配或预算超限阻断，不自动重切。HEAD、输入提交／diff 快照、任务授权边界和 R2 放行依据仍由 Lead 记入 `baseline.md`。
 - **产物**：`session.json` 保存清单／初始 TSV／源文件及每片取证包的 SHA-256，以 `session.sha256` 封存；`slices/packets/<slice-id>.json` 保存原始行、连续底字、注音记号和默认 N−1/N/N+1 中日上下文。新产物拒绝覆盖；日文缓存、归档和 OneDrive 全程只读。报告放现有 `.cache/epub-work/proofread-review/<run-id>/` 或显式仓库外目录；禁止写书籍目录、其它缓存目录或 OneDrive。跨物理行的 ruby／rt／rp 及无法与单行清单匹配的增删目前阻断，需提供行号稳定且匹配的工作源。
-- **预算**：每片至多 150 条、3 文件、400 行 diff，实际输入字符预算默认 60000，可用 `--max-input-chars` 显式调整并在计划说明依据。工具不凭估计宣布实际 diff 门禁通过；未提供实测值时明确列为 Lead 待核。字节数、输入字符数和 token 数不等价。
-- **阅读**：`read` 支持 `--ids`、单个 `--flag`、`--page`／`--page-size`、`--context 0|1` 和 `--json`。分页和过滤只改变展示，不减少分配分母；越界 ID 直接失败。每次读取核对冻结输入与来源，漂移须另建轮次。
+- **预算**：每片至多 150 条、3 文件、400 行 diff，实际输入字符预算默认 60000，可用 `--max-input-chars` 显式调整并在计划说明依据；文件数上限可用 `--max-files` 显式调整（默认 3）。工具不凭估计宣布实际 diff 门禁通过；未提供实测值时明确列为 Lead 待核。字节数、输入字符数和 token 数不等价。
+- **阅读**：`read` 支持 `--ids`、单个 `--flag`、`--page`／`--page-size`（默认 30）、`--context 0|1` 和 `--json`；自动去重同页已展示的邻接行、折叠无注音行的重复展示，并为 `tiny/local` 条目展示最小差异。分页和过滤只改变展示，不减少分配分母；越界 ID 直接失败。每次读取核对冻结输入与来源，漂移须另建轮次。
 - **补充上下文**：Lead 用 `context --report-root … --slice … --item-id … --radius 2 --revision 1 [--apply]` 按具体依赖输出该条补包到 `slices/context/<slice-id>/<item-id>.c1.json`；窗口限制 1–10 行，来自同一冻结源，不改变原包和所属 ID。更远或跨文件依赖由 Lead 明确取证并按契约处理，不把整章作为默认窗口。
-- **装配**：子智能体逐条填写决策 JSON，再用 `assemble` 添加身份与冻结原文引用；已有显式引用必须成对提供，工具保留并验证。缺判定、缺理由、漏项、重复或越界都失败，不自动补成保留。`--attempt 1|2` 对应语义取证轮次；`--revision N` 只保存同 attempt 的格式修订 `.rN.json`，不能改已记录的语义判定与证据。
+- **装配**：子智能体编写逐条决策草稿，可用 `scaffold` 生成按分配 ID 排序的决策草稿骨架；`assemble --decisions` 同时支持标准 JSON 草稿或紧凑 TSV 草稿，自动添加身份与冻结原文引用；已有显式引用必须成对提供，工具保留并验证。缺判定、缺理由、漏项、重复或越界都失败，不自动补成保留。`--attempt 1|2` 对应语义取证轮次；`--revision N` 只保存同 attempt 的格式修订 `.rN.json`，不能改已记录的语义判定与证据。
 - **独立验收与覆盖**：`validate` 返回 `structure / evidence / input` 问题及具体 ID，实际对照所引日文位置，允许原始行、连续底字和注音记号的等价表示；位置有效不等于引句通过。`coverage` 按显式 selection 的结果路径、在计划顺序中统计 `T/S/M/K/R/H/U`，失效或缺失结果整片归 U；H/U 阻断完成。`ready_for_lead_acceptance` 只说明可以交 Lead 语义验收，不授权回改、同步或提交，也不自动生成通过结论。回改前的覆盖快照与新验收轮生命周期见复核契约。
 
-`init / prepare / context / assemble / coverage` 默认只预览；显式 `--apply` 才写新报告产物。`coverage --apply` 还须给本轮目录内的 `--output`。`read / validate` 只输出；`validate` 或 `coverage` 有阻断返回 1，成功返回 0。格式修复和语义重审的分支以复核契约为准。
+`init / prepare / context / scaffold / assemble / coverage` 默认只预览；显式 `--apply` 才写新报告产物。`coverage --apply` 还须给本轮目录内的 `--output`。`read / validate` 只输出；`validate` 或 `coverage` 有阻断返回 1，成功返回 0。格式修复和语义重审的分支以复核契约为准。
 
 ## C6 检索与统计
 

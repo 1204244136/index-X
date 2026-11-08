@@ -361,6 +361,121 @@ class PacketTests(unittest.TestCase):
         self.assertEqual(len(item["evidence"]), 3)
         self.assertEqual(item["context"], [])
 
+    def test_prepare_max_files_allows_cross_file_slices_and_validates_parameter(self):
+        rows = [Fixture.row(file=f"S1_01-{i:02d}_Chapter.xhtml") for i in range(1, 5)]
+        f = self.fixture(rows, name="max-files")
+        f.init()
+        f.plan()
+        with self.assertRaisesRegex(ValueError, "超出切片硬边界"):
+            f.prepare()
+        result = f.prepare(max_files=5, apply=True)
+        self.assertEqual(result["max_files"], 5)
+        self.assertTrue((f.root / "session.json").exists())
+        session = packets.load_session(f.root)
+        self.assertEqual(session.get("max_files"), 5)
+        f_bad = self.fixture(name="bad-max-files")
+        f_bad.init()
+        f_bad.plan()
+        for bad_val in (0, -1, True, False, "3", 1.5):
+            with self.subTest(max_files=bad_val), self.assertRaisesRegex(ValueError, "max_files 必须是正整数"):
+                packets.prepare_session(f_bad.root, jp_base=f_bad.jp, cn_base=f_bad.cn,
+                                        plan_path=f_bad.plan_path, max_files=bad_val)
+
+    def test_scaffold_decisions_preview_apply_overwrite_and_escape(self):
+        f = self.fixture([Fixture.row(), Fixture.row(line="4", new="新乙")]).freeze()
+        preview = packets.scaffold_decisions(f.root, "s01", attempt=1)
+        self.assertFalse(preview["applied"])
+        self.assertEqual(preview["items"], 2)
+        target_path = Path(preview["output"])
+        self.assertFalse(target_path.exists())
+
+        applied = packets.scaffold_decisions(f.root, "s01", attempt=1, apply=True)
+        self.assertTrue(applied["applied"])
+        self.assertEqual(applied["items"], 2)
+        self.assertTrue(target_path.is_file())
+        content = json.loads(target_path.read_text(encoding="utf-8"))
+        self.assertEqual(content["discoveries"], [])
+        self.assertEqual(len(content["items"]), 2)
+        self.assertEqual([it["item_id"] for it in content["items"]], ["C000001", "C000002"])
+        for it in content["items"]:
+            self.assertEqual(it["decision"], "保留新译")
+            self.assertEqual(it["reason"], "")
+            self.assertIsNone(it["proposed_cn"])
+            self.assertIsNone(it["original_fix"])
+
+        with self.assertRaisesRegex(ValueError, "禁止覆盖"):
+            packets.scaffold_decisions(f.root, "s01", attempt=1, apply=True)
+
+        for bad_attempt in (0, 3, "1", True, False):
+            with self.subTest(attempt=bad_attempt), self.assertRaisesRegex(ValueError, "attempt 必须为整数 1 或 2"):
+                packets.scaffold_decisions(f.root, "s01", attempt=bad_attempt)
+
+        escape_path = f.root.parent / "escape.json"
+        with self.assertRaisesRegex(ValueError, "草稿输出路径必须位于本轮报告目录"):
+            packets.scaffold_decisions(f.root, "s01", output_path=escape_path)
+
+        custom_path = f.root / "slices" / "decisions" / "custom.json"
+        res = packets.scaffold_decisions(f.root, "s01", output_path=custom_path, apply=True)
+        self.assertTrue(res["applied"])
+        self.assertTrue(custom_path.is_file())
+
+    def test_render_packet_ruby_diff_and_neighbor_deduplication(self):
+        f = self.fixture([
+            Fixture.row(line="3", old="旧甲", new="新甲", grade="local"),
+            Fixture.row(line="4", old="旧乙", new="新乙", grade="tiny")
+        ]).freeze()
+        data = packets.read_packet(f.root, "s01")
+        rendered = packets.render_packet(data)
+
+        # Line 3 evidence has ruby: prints both 底字 and 注音
+        self.assertIn("底字: 不幸だ。", rendered)
+        self.assertIn("注音: |不幸[ふこう]だ。", rendered)
+        # Line 4 evidence has no ruby: prints only 底字, no duplicate 注音
+        self.assertIn("底字: 次の文。", rendered)
+        self.assertNotIn("注音: 次の文。", rendered)
+
+        # local and tiny output minimal diff
+        self.assertIn("差异: [旧] -> [新]", rendered)
+
+        # When adjacent row is on the same page, collapse to reference
+        self.assertIn("邻接 S1_01-01.xhtml:4 -> 见本页 [C000002]", rendered)
+        self.assertIn("邻接 S1_01-01.xhtml:3 -> 见本页 [C000001]", rendered)
+        self.assertNotIn("JP: 次の文。", rendered)
+
+        # rewrite grade does not output minimal diff
+        rewrite_data = {
+            "run_id": "r", "slice_id": "s",
+            "items": [{"item_id": "C000001", "file": "f.xhtml", "line": 1,
+                       "grade": "rewrite", "flags": [], "old": "旧长句子", "new": "新长句子",
+                       "evidence": [], "context": []}]
+        }
+        self.assertNotIn("差异:", packets.render_packet(rewrite_data))
+
+        # Off-page neighbor prints JP/CN and ruby only when present
+        off_page_data = {
+            "run_id": "r", "slice_id": "s",
+            "items": [
+                {
+                    "item_id": "C000001", "file": "f.xhtml", "line": 1,
+                    "grade": "local", "flags": [], "old": "旧", "new": "新",
+                    "evidence": [{"file": "f.xhtml", "line": 1, "plain": "日", "markup": "日"}],
+                    "context": [
+                        {"file": "f.xhtml", "line": 2, "plain": "素文", "markup": "素文", "cn": "中文1"},
+                        {"file": "f.xhtml", "line": 3, "plain": "漢字", "markup": "|漢字[かんじ]", "cn": "中文2"}
+                    ]
+                }
+            ]
+        }
+        rendered_off = packets.render_packet(off_page_data)
+        self.assertIn("邻接 f.xhtml:2", rendered_off)
+        self.assertIn("JP: 素文", rendered_off)
+        self.assertNotIn("ruby: 素文", rendered_off)
+        self.assertIn("CN: 中文1", rendered_off)
+        self.assertIn("邻接 f.xhtml:3", rendered_off)
+        self.assertIn("JP: |漢字[かんじ]", rendered_off)
+        self.assertNotIn("ruby:", rendered_off)
+        self.assertIn("CN: 中文2", rendered_off)
+
 
 
 if __name__ == "__main__":

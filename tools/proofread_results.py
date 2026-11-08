@@ -44,6 +44,81 @@ def _read_json(path: Path | str):
         raise ValueError(f"无法读取 JSON {path}：{exc}") from exc
 
 
+def _read_tsv_decisions(path: Path | str) -> dict:
+    """从 TSV 决策草稿读取判定输入，转换为标准的 items/discoveries 字典。"""
+    required = {"item_id", "decision", "reason"}
+    allowed = {"item_id", "decision", "reason", "proposed_cn", "original_fix", "jp_location", "jp_quote"}
+    try:
+        with Path(path).open(encoding="utf-8-sig", newline="") as stream:
+            reader = csv.DictReader(stream, delimiter="\t")
+            if not reader.fieldnames:
+                raise ValueError("TSV 决策草稿缺失表头")
+            if None in reader.fieldnames:
+                raise ValueError("TSV 决策草稿表头列数不齐或格式无效")
+            if len(reader.fieldnames) != len(set(reader.fieldnames)):
+                raise ValueError("TSV 决策草稿包含重复列")
+            header = set(reader.fieldnames)
+            if not required <= header:
+                raise ValueError(f"TSV 决策草稿缺失必选列：{sorted(required - header)}")
+            if header - allowed:
+                raise ValueError(f"TSV 决策草稿含未知列名：{sorted(header - allowed)}")
+            items = []
+            for row in reader:
+                if None in row or any(row.get(k) is None for k in required):
+                    raise ValueError("TSV 决策草稿行内列数不齐")
+                item_id = row["item_id"].strip()
+                decision = row["decision"].strip()
+                reason = row["reason"].strip()
+
+                proposed_cn = None
+                if "proposed_cn" in row and row["proposed_cn"] and row["proposed_cn"].strip():
+                    proposed_cn = row["proposed_cn"].strip()
+
+                original_fix = None
+                if "original_fix" in row and row["original_fix"] and row["original_fix"].strip():
+                    raw_fix = row["original_fix"].strip()
+                    if raw_fix.startswith("{"):
+                        try:
+                            parsed_fix = json.loads(raw_fix)
+                        except json.JSONDecodeError as exc:
+                            raise ValueError(f"TSV original_fix JSON 解析失败：{exc}") from exc
+                        if not isinstance(parsed_fix, dict):
+                            raise ValueError("TSV original_fix 须为 JSON 对象或 category|old_error|new_fix|impact 四段格式")
+                        original_fix = parsed_fix
+                    else:
+                        parts = [p.strip() for p in raw_fix.split("|", 3)]
+                        if len(parts) == 4:
+                            original_fix = {
+                                "category": parts[0],
+                                "old_error": parts[1],
+                                "new_fix": parts[2],
+                                "impact": parts[3],
+                            }
+                        else:
+                            raise ValueError("TSV original_fix 须为 JSON 对象或 category|old_error|new_fix|impact 四段格式")
+
+                choice = {
+                    "item_id": item_id,
+                    "decision": decision,
+                    "reason": reason,
+                    "proposed_cn": proposed_cn,
+                    "original_fix": original_fix,
+                }
+                loc_str = row["jp_location"].strip() if "jp_location" in row and row["jp_location"] and row["jp_location"].strip() else ""
+                quote_str = row["jp_quote"].strip() if "jp_quote" in row and row["jp_quote"] and row["jp_quote"].strip() else ""
+                if loc_str and quote_str:
+                    choice["jp_location"] = loc_str
+                    choice["jp_quote"] = quote_str
+                elif loc_str and not quote_str:
+                    choice["jp_location"] = loc_str
+                elif not loc_str and quote_str:
+                    choice["jp_quote"] = quote_str
+                items.append(choice)
+            return {"items": items, "discoveries": []}
+    except (OSError, UnicodeError, csv.Error) as exc:
+        raise ValueError(f"无法读取 TSV {path}：{exc}") from exc
+
+
 def _nonempty(value) -> bool:
     return isinstance(value, str) and bool(value.strip())
 
@@ -214,7 +289,11 @@ def _check_original_fix(item: dict, report: dict, manifest: dict) -> list[dict]:
         issues.append(_issue("structure", "original_fix 四字段须非空，category 须为规定类型", item_id))
     for key, frozen_key in (("old_error", "old"), ("new_fix", "new")):
         if _nonempty(fix[key]) and not _quotes_frozen_fragment(fix[key], item[frozen_key]):
-            issues.append(_issue("evidence", f"{key} 须引用冻结 {frozen_key} 的必要片段", item_id))
+            issues.append(_issue(
+                "evidence",
+                f"{key} 须引用冻结 {frozen_key} 的必要片段（请用「…」直接括起长度≥2的原字面子串，如「{item[frozen_key][:15]}」）",
+                item_id,
+            ))
     return issues
 
 
@@ -379,7 +458,10 @@ def assemble_result(report_root: Path | str, slice_id: str, decisions_path: Path
         raise ValueError("attempt 必须为整数 1 或 2")
     if type(revision) is not int or revision < 0:
         raise ValueError("revision 必须为非负整数")
-    decisions = _read_json(decisions_path)
+    if Path(decisions_path).suffix.lower() == ".tsv":
+        decisions = _read_tsv_decisions(decisions_path)
+    else:
+        decisions = _read_json(decisions_path)
     if not isinstance(decisions, dict) or set(decisions) != {"items", "discoveries"}:
         raise ValueError("判定输入须固定为 items/discoveries")
     if not isinstance(decisions["items"], list):

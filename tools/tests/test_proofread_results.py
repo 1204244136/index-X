@@ -346,6 +346,143 @@ class ProofreadResultsTests(unittest.TestCase):
                 self.assertEqual(validate_result(self.root, self.result_path()), [])
                 self.assertTrue(self.selected()["ready_for_lead_acceptance"])
 
+    def test_tsv_draft_assembles_and_validates_successfully(self):
+        tsv_path = self.root / "decisions.tsv"
+        rows = [
+            {
+                "item_id": "C000001",
+                "decision": "保留新译",
+                "reason": "原文使用肯定动词使った，支持新译。",
+                "proposed_cn": "",
+                "original_fix": "否定与逻辑方向|旧译「他没有使用魔法。」颠倒肯定|新译「他使用了魔法。」恢复肯定|改变动作是否发生",
+            },
+            {
+                "item_id": "C000002",
+                "decision": "确认误改",
+                "reason": "新译需微调为两人都没来。",
+                "proposed_cn": "两人都没来。",
+                "original_fix": "",
+            },
+        ]
+        with tsv_path.open("w", encoding="utf-8-sig", newline="") as stream:
+            writer = csv.DictWriter(stream, fieldnames=list(rows[0].keys()), delimiter="\t")
+            writer.writeheader()
+            writer.writerows(rows)
+
+        result = assemble_result(self.root, "risk-01", tsv_path)
+        self.assertEqual(len(result["items"]), 2)
+        self.assertEqual(result["items"][0]["decision"], "保留新译")
+        self.assertEqual(result["items"][0]["original_fix"], {
+            "category": "否定与逻辑方向",
+            "old_error": "旧译「他没有使用魔法。」颠倒肯定",
+            "new_fix": "新译「他使用了魔法。」恢复肯定",
+            "impact": "改变动作是否发生",
+        })
+        self.assertEqual(result["items"][0]["jp_location"], "S3_01-03.xhtml:8")
+        self.assertEqual(result["items"][1]["decision"], "确认误改")
+        self.assertEqual(result["items"][1]["proposed_cn"], "两人都没来。")
+        self.assertIsNone(result["items"][1]["original_fix"])
+        self.assertEqual(validate_data(self.root, result), [])
+
+    def test_tsv_draft_supports_json_original_fix_and_explicit_paired_citations(self):
+        tsv_path = self.root / "decisions.tsv"
+        json_fix = json.dumps({
+            "category": "否定与逻辑方向",
+            "old_error": "旧译「他没有使用魔法。」",
+            "new_fix": "新译「他使用了魔法。」",
+            "impact": "否定颠倒",
+        }, ensure_ascii=False)
+        rows = [
+            {
+                "item_id": "C000001",
+                "decision": "保留新译",
+                "reason": "原文肯定，保留新译。",
+                "proposed_cn": "",
+                "original_fix": json_fix,
+                "jp_location": "S3_01-03.xhtml:8",
+                "jp_quote": "彼は魔術を使った。",
+            },
+            {
+                "item_id": "C000002",
+                "decision": "保留新译",
+                "reason": "原文否定，保留新译。",
+                "proposed_cn": "",
+                "original_fix": "",
+                "jp_location": "",
+                "jp_quote": "",
+            },
+        ]
+        with tsv_path.open("w", encoding="utf-8-sig", newline="") as stream:
+            writer = csv.DictWriter(stream, fieldnames=list(rows[0].keys()), delimiter="\t")
+            writer.writeheader()
+            writer.writerows(rows)
+
+        result = assemble_result(self.root, "risk-01", tsv_path)
+        self.assertEqual(result["items"][0]["original_fix"]["category"], "否定与逻辑方向")
+        self.assertEqual(result["items"][0]["jp_location"], "S3_01-03.xhtml:8")
+        self.assertEqual(result["items"][0]["jp_quote"], "彼は魔術を使った。")
+        self.assertEqual(result["items"][1]["jp_location"], "S3_01-03.xhtml:9")
+        self.assertEqual(validate_data(self.root, result), [])
+
+    def test_tsv_draft_validates_headers_and_row_integrity(self):
+        tsv_path = self.root / "invalid.tsv"
+
+        # 1. 缺失必选列 (缺少 reason)
+        tsv_path.write_text("item_id\tdecision\nC000001\t保留新译\n", encoding="utf-8-sig")
+        with self.assertRaisesRegex(ValueError, "缺失必选列"):
+            assemble_result(self.root, "risk-01", tsv_path)
+
+        # 2. 重复列名
+        tsv_path.write_text("item_id\tdecision\treason\treason\nC000001\t保留新译\ta\tb\n", encoding="utf-8-sig")
+        with self.assertRaisesRegex(ValueError, "重复"):
+            assemble_result(self.root, "risk-01", tsv_path)
+
+        # 3. 未知列名
+        tsv_path.write_text("item_id\tdecision\treason\textra_column\nC000001\t保留新译\t理由\t值\n", encoding="utf-8-sig")
+        with self.assertRaisesRegex(ValueError, "未知列名"):
+            assemble_result(self.root, "risk-01", tsv_path)
+
+        # 4. 行内列数不齐（少必选列或多出未定义列）
+        tsv_path.write_text("item_id\tdecision\treason\tproposed_cn\nC000001\t保留新译\n", encoding="utf-8-sig")
+        with self.assertRaisesRegex(ValueError, "列数不齐"):
+            assemble_result(self.root, "risk-01", tsv_path)
+        tsv_path.write_text("item_id\tdecision\treason\nC000001\t保留新译\t理由\t多余列\n", encoding="utf-8-sig")
+        with self.assertRaisesRegex(ValueError, "列数不齐"):
+            assemble_result(self.root, "risk-01", tsv_path)
+
+        # 5. original_fix 段数不对 (3段)
+        tsv_path.write_text(
+            "item_id\tdecision\treason\tproposed_cn\toriginal_fix\n"
+            "C000001\t保留新译\t理由\t\t否定与逻辑方向|旧译|新译\n",
+            encoding="utf-8-sig",
+        )
+        with self.assertRaisesRegex(ValueError, "TSV original_fix 须为 JSON 对象或 category\\|old_error\\|new_fix\\|impact 四段格式"):
+            assemble_result(self.root, "risk-01", tsv_path)
+
+        # 6. jp_location 与 jp_quote 单独出现报成对错误
+        tsv_path.write_text(
+            "item_id\tdecision\treason\tproposed_cn\toriginal_fix\tjp_location\tjp_quote\n"
+            "C000001\t保留新译\t理由\t\t\tS3_01-03.xhtml:8\t\n"
+            "C000002\t保留新译\t理由\t\t\t\t\n",
+            encoding="utf-8-sig",
+        )
+        with self.assertRaisesRegex(ValueError, "成对提供或同时省略"):
+            assemble_result(self.root, "risk-01", tsv_path)
+
+    def test_original_fix_error_message_hint(self):
+        self.draft["items"][0]["original_fix"] = {
+            "category": "否定与逻辑方向",
+            "old_error": "未包含原句引用的旧译说明",
+            "new_fix": "新译「他使用了魔法。」恢复肯定",
+            "impact": "改变语义",
+        }
+        with self.assertRaises(ValueError) as ctx:
+            self.assemble()
+        message = str(ctx.exception)
+        self.assertIn("须引用冻结 old 的必要片段", message)
+        self.assertIn("请用「…」直接括起长度≥2的原字面子串", message)
+        self.assertIn("如「他没有使用魔法。」", message)
+
 
 if __name__ == "__main__":
     unittest.main()

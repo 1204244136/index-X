@@ -15,7 +15,7 @@ from pathlib import Path
 from epub_ids import book_id, header_of, work_id
 from alignment_rules import TEXTUAL_IMAGE_HEADERS
 from japanese_lookup import strip_rt_and_tags, to_ruby_markup
-from proofread_review import to_text
+from proofread_review import minimal_diff, to_text
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 REPORT_BASE = REPO_ROOT / ".cache" / "epub-work" / "proofread-review"
@@ -280,7 +280,7 @@ def _evidence(source: dict, header: str, lines: list[str], number: int) -> dict:
 
 def prepare_session(report_root: Path | str, *, jp_base: Path | str, cn_base: Path | str,
                     plan_path: Path | str | None = None, max_input_chars: int = 60000,
-                    context: int = 1, apply: bool = False) -> dict:
+                    max_files: int = 3, context: int = 1, apply: bool = False) -> dict:
     """Preflight every slice and freeze actual source hashes and minimal packets.
 
     Slice ownership is supplied by the Lead. Budgets never split semantic units.
@@ -292,6 +292,8 @@ def prepare_session(report_root: Path | str, *, jp_base: Path | str, cn_base: Pa
         raise ValueError("context 只支持 0 或 1")
     if not isinstance(max_input_chars, int) or isinstance(max_input_chars, bool) or max_input_chars < 1:
         raise ValueError("max_input_chars 必须是正整数")
+    if not isinstance(max_files, int) or isinstance(max_files, bool) or max_files < 1:
+        raise ValueError("max_files 必须是正整数")
     if (root / "session.json").exists():
         raise ValueError("session.json 已存在，禁止覆盖；输入变化请建立新轮")
     jp_root, cn_root = Path(jp_base).resolve(), Path(cn_base).resolve()
@@ -338,7 +340,7 @@ def prepare_session(report_root: Path | str, *, jp_base: Path | str, cn_base: Pa
         sid, ids = part["slice_id"], part["item_ids"]
         files = {by_id[item]["file"] for item in ids}
         diff_lines = part.get("diff_lines")
-        if len(ids) > 150 or len(files) > 3 or (diff_lines is not None and diff_lines > 400):
+        if len(ids) > 150 or len(files) > max_files or (diff_lines is not None and diff_lines > 400):
             raise ValueError(f"{sid} 超出切片硬边界：{len(ids)} 条/{len(files)} 文件/"
                              f"{diff_lines if diff_lines is not None else '未实测'} diff 行")
         if diff_lines is None:
@@ -399,7 +401,8 @@ def prepare_session(report_root: Path | str, *, jp_base: Path | str, cn_base: Pa
                "changes_sha256": sha256_file(root / "changes.tsv"), "source_files": sources,
                "slices": frozen_slices,
                "spec_ids": [item["item_id"] for item in manifest if item["effective_grade"] == "spec"],
-               "context": context, "max_input_chars": max_input_chars, "warnings": warnings,
+               "context": context, "max_input_chars": max_input_chars, "max_files": max_files,
+               "warnings": warnings,
                "diff_budget_verified": all(part.get("diff_lines") is not None for part in slices),
                "diff_lines_estimate": "每条按 2 行估计；不代替原始 diff 行数核查"}
     packets[root / "session.json"] = _json_bytes(session)
@@ -557,19 +560,77 @@ def read_packet(report_root: Path | str, slice_id: str, *, item_ids: list[str] |
             "pages": (total + page_size - 1) // page_size}
 
 
+def scaffold_decisions(report_root: Path | str, slice_id: str, *,
+                       output_path: Path | str | None = None,
+                       attempt: int = 1, apply: bool = False) -> dict:
+    """为指定切片生成按分配顺序排列的决策 JSON 草稿骨架（reason 留空待填）。"""
+    if type(attempt) is not int or attempt not in (1, 2):
+        raise ValueError("attempt 必须为整数 1 或 2")
+    root = require_report_target(report_root)
+    packet = load_packet(root, slice_id)
+    if output_path is None:
+        target = root / "slices" / "decisions" / f"{slice_id}.a{attempt}.json"
+    else:
+        target = require_report_target(output_path)
+        if not _inside(target, root):
+            raise ValueError("草稿输出路径必须位于本轮报告目录")
+    template = {
+        "items": [
+            {
+                "item_id": item["item_id"],
+                "decision": "保留新译",
+                "reason": "",
+                "proposed_cn": None,
+                "original_fix": None,
+            }
+            for item in packet["items"]
+        ],
+        "discoveries": [],
+    }
+    write_new_artifacts({target: _json_bytes(template)}, apply=apply)
+    return {"output": str(target), "applied": bool(apply), "items": len(template["items"])}
+
+
 def render_packet(data: dict) -> str:
     """Render a read_packet result without inferring or filling any decisions."""
     lines = [f"run_id={data['run_id']} slice_id={data['slice_id']} "
              f"page={data.get('page', 1)} total={data.get('total', len(data['items']))}"]
+    page_targets: dict[tuple[str, int], str] = {}
+    for item in data["items"]:
+        iid = item["item_id"]
+        line = item["line"]
+        page_targets[(item["file"], line)] = iid
+        if "seq" in item:
+            page_targets[(item["seq"], line)] = iid
+        h = header_of(item.get("file", ""))
+        if h:
+            page_targets[(h, line)] = iid
+        for ev in item.get("evidence", []):
+            if "file" in ev:
+                page_targets[(ev["file"], line)] = iid
+
     for item in data["items"]:
         lines.extend(["", f"[{item['item_id']}] {item['file']}:{item['line']} "
                       f"grade={item['grade']} flags={','.join(item['flags'])}",
                       f"旧译: {item['old']}", f"新译: {item['new']}"])
+        if item.get("grade") in ("tiny", "local") and item.get("old") != item.get("new"):
+            mo, mn = minimal_diff(item["old"], item["new"])
+            lines.append(f"差异: [{mo}] -> [{mn}]")
         for evidence in item["evidence"]:
             lines.extend([f"日文 {evidence['file']}:{evidence['line']}",
-                          f"底字: {evidence['plain']}", f"注音: {evidence['markup']}"])
+                          f"底字: {evidence['plain']}"])
+            if evidence.get("markup") != evidence.get("plain"):
+                lines.append(f"注音: {evidence['markup']}")
         for neighbor in item["context"]:
-            lines.extend([f"邻接 {neighbor['file']}:{neighbor['line']}",
-                          f"JP: {neighbor['plain']}", f"ruby: {neighbor['markup']}",
-                          f"CN: {neighbor['cn']}"])
+            n_file = neighbor.get("file", "")
+            n_line = neighbor.get("line")
+            other_id = (page_targets.get((n_file, n_line))
+                        or page_targets.get((neighbor.get("seq", ""), n_line))
+                        or page_targets.get((header_of(n_file), n_line)))
+            if other_id:
+                lines.append(f"邻接 {n_file}:{n_line} -> 见本页 [{other_id}]")
+            else:
+                lines.extend([f"邻接 {n_file}:{n_line}",
+                              f"JP: {neighbor.get('markup') or neighbor['plain']}",
+                              f"CN: {neighbor['cn']}"])
     return "\n".join(lines) + "\n"

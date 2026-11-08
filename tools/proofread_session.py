@@ -15,6 +15,7 @@ from proofread_packets import (
     read_packet,
     render_packet,
     require_report_target,
+    scaffold_decisions,
     source_context,
     write_new_artifacts,
 )
@@ -57,6 +58,8 @@ def build_parser() -> argparse.ArgumentParser:
     prepare.add_argument("--plan", type=Path, help="显式 JSON 归属；省略则读 slices/ids/*.txt")
     prepare.add_argument("--max-input-chars", type=int, default=60000,
                          help="每片输入字符预算，超出提示调整，保留语义单元")
+    prepare.add_argument("--max-files", type=int, default=3,
+                         help="每片最大文件数上限（默认 3；小批次验收可显式放宽）")
     _write_mode(prepare)
 
     read = commands.add_parser("read", help="按 ID、风险标签分页阅读冻结输入")
@@ -65,7 +68,7 @@ def build_parser() -> argparse.ArgumentParser:
     read.add_argument("--ids", nargs="+")
     read.add_argument("--flag")
     read.add_argument("--page", type=int, default=1)
-    read.add_argument("--page-size", type=int, default=10)
+    read.add_argument("--page-size", type=int, default=30)
     read.add_argument("--context", type=int, choices=(0, 1), default=1)
     read.add_argument("--json", action="store_true")
 
@@ -76,6 +79,13 @@ def build_parser() -> argparse.ArgumentParser:
     context.add_argument("--radius", type=int, default=2, choices=range(1, 11))
     context.add_argument("--revision", type=int, default=1)
     _write_mode(context)
+
+    scaffold = commands.add_parser("scaffold", help="生成按分配 ID 顺序排列的决策草稿骨架")
+    scaffold.add_argument("--report-root", type=Path, required=True)
+    scaffold.add_argument("--slice", required=True)
+    scaffold.add_argument("--attempt", type=int, choices=(1, 2), default=1)
+    scaffold.add_argument("--output", type=Path, help="显式草稿输出路径，限本轮报告目录")
+    _write_mode(scaffold)
 
     assemble = commands.add_parser("assemble", help="装配逐条决策，缺项失败，不预设判定")
     assemble.add_argument("--report-root", type=Path, required=True)
@@ -112,7 +122,7 @@ def main(argv: list[str] | None = None) -> int:
             result = prepare_session(
                 root, jp_base=args.jp_base, cn_base=args.cn_base,
                 plan_path=args.plan, max_input_chars=args.max_input_chars,
-                apply=args.apply,
+                max_files=args.max_files, apply=args.apply,
             )
             print(json.dumps(result, ensure_ascii=False, indent=2))
         elif args.command == "read":
@@ -133,6 +143,12 @@ def main(argv: list[str] | None = None) -> int:
                 write_artifact(output, data, seal=True)
             print(json.dumps({"output": str(output), "applied": args.apply,
                               "context": data}, ensure_ascii=False, indent=2))
+        elif args.command == "scaffold":
+            result = scaffold_decisions(
+                root, args.slice, output_path=args.output,
+                attempt=args.attempt, apply=args.apply,
+            )
+            print(json.dumps(result, ensure_ascii=False, indent=2))
         elif args.command == "assemble":
             if args.revision < 0:
                 raise ValueError("revision 不能为负数")
