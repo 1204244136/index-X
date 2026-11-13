@@ -271,6 +271,26 @@ def _check_line_ruby(lines: list[str], path: Path) -> None:
                 raise ValueError(f"暂不支持跨物理行 {tag}：{path}:{number}；请提供保持行号的工作源")
 
 
+def _match_new_span(cn: list[str], line: int, row: dict) -> int:
+    """Verify frozen `new` against the CN source and return its physical line span.
+
+    Accepts merged multi-line additions joined by ` ‖ ` and shifted pure-deletion
+    hunks (`new == ""`) left when line reordering preserves overall alignment.
+    """
+    actual = to_text(cn[line - 1])
+    if actual == row["new"]:
+        return 1
+    if " ‖ " in row["new"]:
+        parts = row["new"].split(" ‖ ")
+        end = line - 1 + len(parts)
+        if end <= len(cn) and [to_text(cn[idx]) for idx in range(line - 1, end)] == parts:
+            return len(parts)
+    elif row["new"] == "" and row["old"] and actual != row["old"]:
+        return 1
+    raise ValueError(f"{row['item_id']} 新译与中文源实际行不符：{row['file']}:{line}；"
+                     "请提供匹配输入版本的 --cn-base；跨行增删须另行对齐")
+
+
 def _evidence(source: dict, header: str, lines: list[str], number: int) -> dict:
     raw = lines[number - 1]
     return {"source_id": f"jp:{header}", "file": Path(source["path"]).name,
@@ -361,21 +381,23 @@ def prepare_session(report_root: Path | str, *, jp_base: Path | str, cn_base: Pa
                 raise ValueError(f"{item_id} 行号无效：{row['line']}") from exc
             if line < 1 or line > len(cn):
                 raise ValueError(f"{item_id} 行号越界：{line} / {len(cn)}")
-            if to_text(cn[line - 1]) != row["new"]:
-                raise ValueError(f"{item_id} 新译与中文源实际行不符：{row['file']}:{line}；"
-                                 "请提供匹配输入版本的 --cn-base；跨行增删须另行对齐")
+            span = _match_new_span(cn, line, row)
 
             if is_textual_image:
                 evidence_rows = [_evidence(sources[f"jp:{header}"], header, jp, jp_line)
                                  for jp_line in range(1, len(jp) + 1)]
                 neighbors = []
             else:
-                if line > len(jp):
-                    raise ValueError(f"{item_id} 行号越界：{line} / {len(jp)}")
-                evidence_rows = [_evidence(sources[f"jp:{header}"], header, jp, line)]
+                if line + span - 1 > len(jp):
+                    raise ValueError(f"{item_id} 行号越界：{line + span - 1} / {len(jp)}")
+                evidence_rows = [_evidence(sources[f"jp:{header}"], header, jp, number)
+                                 for number in range(line, line + span)]
+                if row["new"] == "" and row["old"] and to_text(cn[line - 1]) != "":
+                    evidence_rows[0]["cn"] = strip_rt_and_tags(cn[line - 1])
                 neighbors = []
-                for number in range(max(1, line - context), min(len(jp), line + context) + 1):
-                    if number != line:
+                covered = set(range(line, line + span))
+                for number in range(max(1, line - context), min(len(jp), line + span - 1 + context) + 1):
+                    if number not in covered:
                         neighbors.append(dict(_evidence(sources[f"jp:{header}"], header, jp, number),
                                               cn=strip_rt_and_tags(cn[number - 1])))
             items.append({"item_id": item_id, "file": row["file"], "work": row["work"],
@@ -621,6 +643,8 @@ def render_packet(data: dict) -> str:
                           f"底字: {evidence['plain']}"])
             if evidence.get("markup") != evidence.get("plain"):
                 lines.append(f"注音: {evidence['markup']}")
+            if "cn" in evidence:
+                lines.append(f"当前中文: {evidence['cn']}")
         for neighbor in item["context"]:
             n_file = neighbor.get("file", "")
             n_line = neighbor.get("line")

@@ -476,6 +476,42 @@ class PacketTests(unittest.TestCase):
         self.assertNotIn("ruby:", rendered_off)
         self.assertIn("CN: 中文2", rendered_off)
 
+    def test_joined_multiline_new_and_shifted_pure_deletion(self):
+        rows = [
+            Fixture.row(line="3", old="旧甲", new="新甲 ‖ 新乙"),
+            Fixture.row(line="5", old="被调换的旧行", new=""),
+        ]
+        f = self.fixture(rows, name="reordered")
+        cn_path = next(f.cn.glob("*.xhtml"))
+        jp_path = next(f.jp.glob("*.xhtml"))
+        cn_path.write_text(
+            "<html>\n<body>\n<p>新甲</p>\n<p>新乙</p>\n<p>移位行</p>\n</body>\n</html>\n",
+            encoding="utf-8",
+        )
+        jp_path.write_text(
+            "<html>\n<body>\n<p>日甲</p>\n<p>日乙</p>\n<p>日丙</p>\n</body>\n</html>\n",
+            encoding="utf-8",
+        )
+        f.freeze()
+        items = packets.load_packet(f.root, "s01")["items"]
+        self.assertEqual([ev["line"] for ev in items[0]["evidence"]], [3, 4])
+        self.assertEqual([row["line"] for row in items[0]["context"]], [2, 5])
+        self.assertEqual([ev["line"] for ev in items[1]["evidence"]], [5])
+        self.assertEqual(items[1]["evidence"][0]["cn"], "移位行")
+        rendered = packets.render_packet(packets.read_packet(f.root, "s01"))
+        self.assertIn("当前中文: 移位行", rendered)
+
+        mismatch = self.fixture([Fixture.row(line="3", old="旧甲", new="新甲 ‖ 错行")], name="badspan")
+        mismatch.init()
+        mismatch.plan()
+        with self.assertRaisesRegex(ValueError, "新译与中文源实际行不符"):
+            mismatch.prepare()
+
+        stale = self.fixture([Fixture.row(line="3", old="新甲", new="")], name="stalepuredel")
+        stale.init()
+        stale.plan()
+        with self.assertRaisesRegex(ValueError, "新译与中文源实际行不符"):
+            stale.prepare()
 
 
 if __name__ == "__main__":
