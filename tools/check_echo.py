@@ -216,7 +216,7 @@ def load_pairs(work: str, cn_root: Path, jp_root: Path) -> tuple[list[dict], lis
             jp = text_of_without_ruby(jp_raw.encode("utf-8"))
             if not cn and not jp:
                 continue
-            rows.append({"seq": seq, "file": cn_file.name, "line": i + 1, "cn": cn, "jp": jp})
+            rows.append({"work": work, "seq": seq, "file": cn_file.name, "line": i + 1, "cn": cn, "jp": jp})
     return rows, notes
 
 
@@ -1060,9 +1060,47 @@ def cn_quotes_back(jp: str, cn: str) -> bool:
     return any(w in cn for w in ("说什么", "说过", "不记得", "明明说", "什么来着", "什么话", "所谓"))
 
 
+def _is_top_level_quote(jp_line: str) -> bool:
+    """行首即为『…』的独立闪回/通信台词行（跨卷回指的高信噪比形态）。"""
+    s = jp_line.strip()
+    return s.startswith("『") and s.endswith("』")
+
+
+def default_prior_works(work: str, all_works: list[str]) -> list[str]:
+    """默认跨卷前序范围：S1/S2/S3 主线取全库早于当前作品的主线卷，其余系列取同系列前序卷。"""
+    w = work.upper()
+    m = re.match(r"^(S\d+)_", w)
+    if not m:
+        return []
+    series = m.group(1)
+    mainline = {"S1", "S2", "S3"}
+    priors: list[str] = []
+    for cand in sorted(all_works):
+        cu = cand.upper()
+        if cu >= w:
+            continue
+        cm = re.match(r"^(S\d+)_", cu)
+        if not cm:
+            continue
+        cseries = cm.group(1)
+        if (series in mainline and cseries in mainline) or cseries == series:
+            priors.append(cand)
+    return priors
+
+
+def _index_quote_bodies(rows: list[dict]) -> tuple[list[dict], dict[str, set[int]]]:
+    bodies = [r for r in rows if len(norm_jp(r["jp"])) >= 6]
+    inverted: dict[str, set[int]] = defaultdict(set)
+    for idx, row in enumerate(bodies):
+        for k in grams(norm_jp(row["jp"]), 4):
+            inverted[k].add(idx)
+    return bodies, inverted
+
+
 def quote_lookups(rows: list[dict], min_len: int, cover: float,
-                  include_marker: bool = False, frag_min: int = 12) -> list[dict]:
-    """类 3：日语侧 `『…』` 引文 -> 全文出处候选。
+                  include_marker: bool = False, frag_min: int = 12,
+                  prior_rows: list[dict] | None = None) -> list[dict]:
+    """类 3：日语侧 `『…』` 引文 -> 全文及可选跨卷出处候选。
 
     每条候选带三项判定辅助：
     - `relation`：日语侧 exact／within／wraps／fuzzy（`wraps` 即「引述升级」，
@@ -1073,13 +1111,89 @@ def quote_lookups(rows: list[dict], min_len: int, cover: float,
       引述整体改写时覆盖率够不上 fuzzy 门槛，但这一段仍是必须对应的呼应点
       （回忆／转述常是「前半改口、后半照抄」）；空串表示不适用。
     """
-    bodies = [r for r in rows if len(norm_jp(r["jp"])) >= 6]
-    inverted: dict[str, set[int]] = defaultdict(set)
-    for idx, row in enumerate(bodies):
-        for k in grams(norm_jp(row["jp"]), 4):
-            inverted[k].add(idx)
+    bodies, inverted = _index_quote_bodies(rows)
+    prior_bodies, prior_inverted = _index_quote_bodies(prior_rows) if prior_rows else ([], {})
     out: list[dict] = []
-    seen: set[tuple[str, int, str, int, str]] = set()
+    seen: set[tuple[str, str, int, str, str, int, str]] = set()
+
+    def _collect_matches(
+        row: dict,
+        quote: str,
+        key: str,
+        qgrams: list[str],
+        cand_bodies: list[dict],
+        cand_inverted: dict[str, set[int]],
+        min_cover: float,
+        cross_book: bool,
+    ) -> list[dict]:
+        score: dict[int, int] = defaultdict(int)
+        for k in qgrams:
+            for idx in cand_inverted.get(k, ()):
+                score[idx] += 1
+        found: list[dict] = []
+        row_pos = (row.get("seq", ""), row["line"])
+        has_hiragana = bool(HIRAGANA.search(key.replace("の", "")))
+        for idx, shared in score.items():
+            candidate = cand_bodies[idx]
+            if candidate is row:
+                continue
+            if cross_book:
+                if candidate.get("work", "") == row.get("work", ""):
+                    continue
+            elif (candidate.get("seq", ""), candidate["line"]) >= row_pos:
+                # 出处必须在引述处之前：引述是「回指前文」，出处在后的配对多为误配
+                # （实测 S5_03_02 的 6/7 误配、S5_04_01 的 27/31 否决多属此类）。
+                continue
+            share = shared / max(1, len(qgrams))
+            if share < min_cover:
+                continue
+            # 出处行本身过短（如被省略号截断的术语 `（ニコラウスの……）`）不足以构成
+            # 「被引述的说法」；实测 S3_03 的 11 条「升级」全属此类误判。
+            if len(norm_jp(candidate["jp"])) < min_len:
+                continue
+            relation = quote_relation(quote, candidate["jp"])
+            fragment = ""
+            # 仅 n-gram 相似而互不包含（fuzzy）的配对误配率高，要求更高覆盖率。
+            # 但「引述整体改写、其中一段照抄原文」是回忆／转述的常态。
+            if relation == "fuzzy" and share < 0.8:
+                span_len, span_start, _ = _longest_common_span(key, norm_jp(candidate["jp"]))
+                if span_len < frag_min:
+                    continue
+                fragment = key[span_start:span_start + span_len]
+                if not _span_has_content(fragment) or _is_onomatopoeia(fragment):
+                    continue
+            ident = (
+                row.get("work", ""), row["file"], row["line"],
+                candidate.get("work", ""), candidate["file"], candidate["line"],
+                key,
+            )
+            if ident in seen:
+                continue
+            seen.add(ident)
+            cn_class = classify_cn_differences([
+                {"cn": inner_cn(row["cn"])},
+                {"cn": inner_cn(candidate["cn"])},
+            ])
+            # 跨卷仅报告中文存在差异的候选；卷内短引文 + 同形一致多为术语名复现。
+            if cross_book and cn_class == "并列":
+                continue
+            if not cross_book and relation == "exact" and len(key) < 12 and cn_class == "并列":
+                continue
+            # 引文不含平假名 = 纯专名或名词短语，不承载「引述某处说法」的呼应；
+            # `の` 是名词短语的连体助词，去掉它后仍无平假名的也归入此类。
+            if not has_hiragana:
+                continue
+            found.append({
+                "cover": share,
+                "row": candidate,
+                "relation": relation,
+                "cn_class": cn_class,
+                "upgrade": False,
+                "fragment": fragment,
+                "cross_book": cross_book,
+            })
+        return found
+
     for row in bodies:
         # 两类引文来源：显式 `『…』`，以及引述助词标记（って／とか／と+引用动词）
         pending: list[tuple[str, str]] = [
@@ -1092,71 +1206,14 @@ def quote_lookups(rows: list[dict], min_len: int, cover: float,
             if len(key) < min_len:
                 continue
             qgrams = grams(key, 4)
-            score: dict[int, int] = defaultdict(int)
-            for k in qgrams:
-                for idx in inverted.get(k, ()):
-                    score[idx] += 1
-            matches = []
-            row_pos = (row.get("seq", ""), row["line"])
-            for idx, shared in score.items():
-                candidate = bodies[idx]
-                if candidate is row:
-                    continue
-                # 出处必须在引述处之前：引述是「回指前文」，出处在后的配对多为误配
-                # （实测 S5_03_02 的 6/7 误配、S5_04_01 的 27/31 否决多属此类）。
-                if (candidate.get("seq", ""), candidate["line"]) >= row_pos:
-                    continue
-                share = shared / max(1, len(qgrams))
-                if share < cover:
-                    continue
-                # 出处行本身过短（如被省略号截断的术语 `（ニコラウスの……）`）不足以构成
-                # 「被引述的说法」；实测 S3_03 的 11 条「升级」全属此类误判。
-                if len(norm_jp(candidate["jp"])) < min_len:
-                    continue
-                relation = quote_relation(quote, candidate["jp"])
-                fragment = ""
-                # 仅 n-gram 相似而互不包含（fuzzy）的配对误配率高，要求更高覆盖率。
-                # 但「引述整体改写、其中一段照抄原文」是回忆／转述的常态：S1_11-06 L484
-                # 回忆雅妮丝原话时前半改口（`結構良い環境でしょ？`→`それほど悪い環境じゃ
-                # ないでしょう？`）、后半 26 字逐字复现，整体覆盖率只有 0.58；旧规则整条
-                # 丢弃，该片段的中文漂移（「维持这样安逸的生活」／「打理好这里的环境」）
-                # 无人核对。覆盖率不足时改看最长公共片段：够长且含实字，那一段就是必须
-                # 对应的呼应点。
-                if relation == "fuzzy" and share < 0.8:
-                    span_len, span_start, _ = _longest_common_span(key, norm_jp(candidate["jp"]))
-                    if span_len < frag_min:
-                        continue
-                    fragment = key[span_start:span_start + span_len]
-                    if not _span_has_content(fragment):
-                        continue
-                    if _is_onomatopoeia(fragment):
-                        continue
-                ident = (row["file"], row["line"], candidate["file"], candidate["line"], key)
-                if ident in seen:
-                    continue
-                seen.add(ident)
-                cn_class = classify_cn_differences([
-                    {"cn": inner_cn(row["cn"])},
-                    {"cn": inner_cn(candidate["cn"])},
-                ])
-                # 短引文 + 日语逐字同形 + 中文两侧一致 → 多为术语名复现，无断裂风险
-                # （实测 S5_01_03 的 86 条里 79 条是『ブラフマーアストラ』这类专名引文）。
-                if (relation == "exact" and len(key) < 12 and cn_class == "并列"):
-                    continue
-                # 引文不含平假名 = 纯专名或名词短语（如『ブラフマーアストラ』『破壊学園都市』），
-                # 不承载「引述某处说法」的呼应；带语法成分的引文（如『簡単には殺さない』）才留。
-                # `の` 是名词短语的连体助词，去掉它后仍无平假名的也归入此类
-                # （如『ニコラウスの金貨』）。
-                if not HIRAGANA.search(key.replace("の", "")):
-                    continue
-                matches.append({
-                    "cover": share,
-                    "row": candidate,
-                    "relation": relation,
-                    "cn_class": cn_class,
-                    "upgrade": False,
-                    "fragment": fragment,
-                })
+            matches = _collect_matches(row, quote, key, qgrams, bodies, inverted, cover, cross_book=False)
+            if prior_bodies and kind == "引用符" and _is_top_level_quote(row["jp"]) and len(key) >= max(min_len, 10):
+                matches.extend(
+                    _collect_matches(
+                        row, quote, key, qgrams, prior_bodies, prior_inverted,
+                        max(cover, 0.65), cross_book=True,
+                    )
+                )
             if not matches:
                 # 引述助词类：日文侧找不到出处，但中文译文用引号保留了「这是引述」
                 # 的标记——正是「改写式引述」的高风险点（被引处措辞与引述不同）。
@@ -1267,9 +1324,11 @@ def render(work: str, rows: list[dict], report: dict) -> tuple[str, str]:
         for m in item["hits"]:
             hit = m["row"]
             mark = "　**⤴升级**" if m["upgrade"] else ""
+            cross = " `[跨卷]`" if m.get("cross_book") else ""
+            hit_loc = f"{hit['work']}/{hit['file']}:{hit['line']}" if m.get("cross_book") and hit.get("work") else f"{hit['file']}:{hit['line']}"
             lines.append(
-                f"- 疑似出处 `{m['relation']}`{mark} / 中文差异 `{m['cn_class']}` / cov={m['cover']:.2f}"
-                f"　{hit['file']}:{hit['line']}：{hit['cn'][:200]}"
+                f"- 疑似出处 `{m['relation']}`{cross}{mark} / 中文差异 `{m['cn_class']}` / cov={m['cover']:.2f}"
+                f"　{hit_loc}：{hit['cn'][:200]}"
             )
             if m.get("fragment"):
                 lines.append(
@@ -1573,6 +1632,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--include-marker-quotes", action="store_true",
                         help="额外扫描 `って／とか` 引述助词形态的回指（实验性：候选量大、"
                              "需人工筛，默认关闭）")
+    parser.add_argument("--cross-book", action="store_true",
+                        help="类 3 额外在同系列/主线前序卷中检索整行『…』引文的跨卷出处（只报中文存在差异的候选）")
+    parser.add_argument("--cross-books", default="",
+                        help="指定类 3 跨卷出处检索的前序作品号，逗号分隔（如 S2_18,S2_20；隐含开启 --cross-book）")
     parser.add_argument("--convention", action="append", default=[], metavar="REGEX",
                         help="惯例统计：给出日文正则（按连续文本写，行内空白会被忽略），"
                              "统计全库匹配行与中文侧词表分布；可重复，按给出顺序取首个命中。"
@@ -1627,8 +1690,19 @@ def run_reports(args: argparse.Namespace, parser: argparse.ArgumentParser) -> in
     skipped_works: list[str] = []
     partial_works: list[str] = []
     paired_rows = 0
+    rows_cache: dict[str, tuple[list[dict], list[str]]] = {}
+    explicit_priors = [b.strip().upper() for b in args.cross_books.split(",") if b.strip()]
+    use_cross = bool(args.cross_book or explicit_priors)
+    all_available_works = iter_works(args.root, args.jp_root) if (args.cross_book and not explicit_priors) else []
+
+    def get_work_pairs(target_work: str) -> tuple[list[dict], list[str]]:
+        w = target_work.upper()
+        if w not in rows_cache:
+            rows_cache[w] = load_pairs(w, args.root, args.jp_root)
+        return rows_cache[w]
+
     for work in works:
-        rows, notes = load_pairs(work, args.root, args.jp_root)
+        rows, notes = get_work_pairs(work)
         all_notes.extend(notes)
         if not rows:
             print(f"{work}: 未取到配对行，跳过", file=sys.stderr)
@@ -1637,6 +1711,15 @@ def run_reports(args: argparse.Namespace, parser: argparse.ArgumentParser) -> in
         paired_rows += len(rows)
         if notes:
             partial_works.append(work)
+        prior_rows: list[dict] = []
+        if use_cross:
+            prior_work_ids = [
+                pw for pw in (explicit_priors or default_prior_works(work, all_available_works))
+                if pw != work
+            ]
+            for pw in prior_work_ids:
+                prows, _ = get_work_pairs(pw)
+                prior_rows.extend(prows)
         report = {
             "frag": frag_groups(rows, args.min_frag),
             "pairs": sim_pairs(rows, 8, args.pair_threshold),
@@ -1650,7 +1733,7 @@ def run_reports(args: argparse.Namespace, parser: argparse.ArgumentParser) -> in
                 union_min=args.term_union, max_drift=args.term_drift,
             ),
             "quotes": quote_lookups(rows, args.min_quote, args.cover, args.include_marker_quotes,
-                                    args.quote_frag_min),
+                                    args.quote_frag_min, prior_rows=prior_rows or None),
         }
         if not args.no_pattern_pairs:
             report["pattern"] = pattern_echo_pairs(

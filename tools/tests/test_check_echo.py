@@ -12,11 +12,13 @@ sys.path.insert(0, str(TOOLS))
 from check_echo import (  # noqa: E402
     _longest_common_span,
     convention_stats,
+    default_prior_works,
     find_book_dir,
     frag_groups,
     grams,
     iter_works,
     load_pairs,
+    main as echo_main,
     norm_cn,
     norm_jp,
     pattern_echo_pairs,
@@ -725,6 +727,71 @@ class QuoteLookupTests(unittest.TestCase):
         pairs = {(c["src"]["line"], h["row"]["line"]) for c in found for h in c["hits"]}
         self.assertEqual(len(pairs), len(found))
         self.assertEqual(pairs, {(2, 1)})
+
+    def test_finds_cross_book_top_level_quote_source(self):
+        prior_rows = [
+            {
+                "work": "S2_18", "seq": "S2_18-02", "file": "S2_18-02_Chapter1.xhtml", "line": 10,
+                "jp": "「魔法名を名乗る前に彼女を保護したいのですが」",
+                "cn": "「在报上魔法名之前，我想保护她。」",
+            },
+            {
+                "work": "S2_18", "seq": "S2_18-03", "file": "S2_18-03_Chapter2.xhtml", "line": 20,
+                "jp": "「私と一緒に地獄の底までついてきてくれる？」",
+                "cn": "「你愿意陪我一起走到地狱之底吗？」",
+            },
+        ]
+        rows = [
+            {
+                "work": "S2_19", "seq": "S2_19-01", "file": "S2_19-01_Before_the_Prologue.xhtml", "line": 6,
+                "jp": "『魔法名を名乗る前に彼女を保護したいのですが』",
+                "cn": "『报名之前我先保护她吧。』",
+            },
+            {
+                "work": "S2_19", "seq": "S2_19-01", "file": "S2_19-01_Before_the_Prologue.xhtml", "line": 10,
+                "jp": "『私と一緒に地獄の底までついてきてくれる？』",
+                "cn": "『你愿意陪我一起走到地狱之底吗？』",
+            },
+        ]
+        found = quote_lookups(rows, min_len=8, cover=0.5, prior_rows=prior_rows)
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0]["src"]["line"], 6)
+        hit = found[0]["hits"][0]
+        self.assertTrue(hit["cross_book"])
+        self.assertEqual(hit["row"]["work"], "S2_18")
+        self.assertEqual(hit["row"]["line"], 10)
+
+    def test_default_prior_works_respects_series_and_order(self):
+        all_works = ["S1_01", "S1_02", "S2_18", "S2_19", "S2_20", "S3_01", "S4_01", "S4_02"]
+        self.assertEqual(default_prior_works("S2_19", all_works), ["S1_01", "S1_02", "S2_18"])
+        self.assertEqual(default_prior_works("S4_02", all_works), ["S4_01"])
+
+    def test_cli_cross_books_option(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            cn_root = root / "EPUB"
+            jp_root = root / "jp"
+            for work, cn_line, jp_line in (
+                ("S1_01", "<p>「在报上魔法名之前，我想保护她。」</p>\n",
+                 "<p>「魔法名を名乗る前に彼女を保護したいのですが」</p>\n"),
+                ("S1_02", "<p>『报上魔法名之前我想先救下她。』</p>\n",
+                 "<p>『魔法名を名乗る前に彼女を保護したいのですが』</p>\n"),
+            ):
+                cn_dir = cn_root / f"【{work}】测试书" / "OEBPS" / "Text"
+                jp_dir = jp_root / f"【{work}】テスト本" / "item" / "xhtml"
+                cn_dir.mkdir(parents=True)
+                jp_dir.mkdir(parents=True)
+                (cn_dir / f"{work}-01_Prologue.xhtml").write_text(cn_line, encoding="utf-8")
+                (jp_dir / f"{work}-01.xhtml").write_text(jp_line, encoding="utf-8")
+            out = root / "out"
+            rc = echo_main([
+                "--book", "S1_02", "--cross-books", "S1_01",
+                "--root", str(cn_root), "--jp-root", str(jp_root), "--out", str(out),
+            ])
+            self.assertEqual(rc, 0)
+            report_text = (out / "S1_02-呼应候选.md").read_text(encoding="utf-8")
+            self.assertIn("[跨卷]", report_text)
+            self.assertIn("S1_01/S1_01-01_Prologue.xhtml:1", report_text)
 
 
 class IterWorksTests(unittest.TestCase):
