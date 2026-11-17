@@ -74,7 +74,7 @@ def validate_publication(cn_root: Path, jp_root: Path | None = None,
                             _entry, issues = check_book(book.name, str(text), note.name)
                             problems.extend(f"{key}: {note.name} {issue}" for issue in issues)
                         # 翻译规范 error 级接入阻断（`docs/translation-spec.md` 七的
-                        # P1–P25）。warning／info 只报告、不阻断：P7／P9／P15／P16 一类
+                        # P1–P26）。warning／info 只报告、不阻断：P7／P9／P15／P16 一类
                         # 属提示级，P23（译注起句）等存量批次项也在此列。
                         for fn, ln, cat, sev, msg, ex in audit_translation_spec(text):
                             if sev == "error":

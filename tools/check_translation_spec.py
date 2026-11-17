@@ -70,10 +70,12 @@ def strip_to_text(line):
 CJKX = r"\u3400-\u4dbf\u4e00-\u9fff\uff00-\uffef\u3000-\u303f"
 KANA = r"\u3041-\u3096\u30a1-\u30fa\u30fc"
 
-# 文件分类：Afterwords/Note/Information 允许引用日文原文，不做假名检查
-AFTER_RE = re.compile(r"_Afterwords")
+# 文件分类：Afterwords/Note/Information/Introduction/图片页与故事体分流；包装页不套用正文假名与中文数字日期规则
+AFTER_RE = re.compile(r"[_-]Afterwords\.xhtml$")
 NOTE_RE = re.compile(r"-Note\.xhtml$")
 INFO_RE = re.compile(r"-Information\.xhtml$")
+INTRO_RE = re.compile(r"-Introduction\.xhtml$")
+IMG_PAGE_RE = re.compile(r"-(?:Cover|Back_cover|Illustrations|Manga)\.xhtml$", re.I)
 def classify(fn):
     if AFTER_RE.search(fn):
         return "after"
@@ -81,6 +83,10 @@ def classify(fn):
         return "note"
     if INFO_RE.search(fn):
         return "info"
+    if INTRO_RE.search(fn):
+        return "intro"
+    if IMG_PAGE_RE.search(fn):
+        return "img"
     if content_sequence(fn) is not None:
         return "content"
     return "other"
@@ -366,6 +372,26 @@ CHECK_TEXT = [
      "正文出现繁体字，X 版一律用简体（汉化组的繁简混杂不保留；日文原文引用可忽略），"),
 ]
 
+# P26：日期写法与数字域合规，规则正文见 `docs/translation-spec.md` 一.6 与七。
+# 故事体（含无内容序短篇与特典 `other`）统一用汉字数字＋占位零「〇」；功能页／图页仅拦截数字与单位间夹空格。
+P26_STORY_KINDS = frozenset({"content", "after", "other"})
+P26_DATE_RULES = (
+    (re.compile(r"[一二](?=[〇零一二三四五六七八九]{3}年)[〇零一二三四五六七八九]*零[〇零一二三四五六七八九]*年"),
+     True, "error", "四位汉字纪年占位零混用「零」，应使用「〇」（U+3007），"),
+    (re.compile(r"(?<![A-Za-z0-9.\-])(?:1[1-9]\d{2}|20\d{2})年代?|(?<![A-Za-z0-9.\-])[1-9]0年代|(?:公元前?|西历|公历|纪元前?)\d{1,4}年代?"),
+     True, "error", "故事体历法年份／年代应使用汉字数字（四位年份用〇），"),
+    (re.compile(r"(?<![A-Za-z0-9.])(?:[1-9]|1\d|2[0-9])(?:[～~至\-](?:[1-9]|1\d|2[0-9]))?\s*世纪"),
+     True, "error", "故事体世纪表达应使用汉字数字，"),
+    (re.compile(r"(?<![A-Za-z0-9.\-])(?:1[0-2]|[1-9])\s*月\s*(?:3[01]|[12]?\d)\s*[日号]"),
+     True, "error", "故事体日期应使用汉字数字与「日」，"),
+    (re.compile(r"(?<![A-Za-z0-9.\-])(?:1[0-2]|[1-9])月(?!(?:\s*(?:3[01]|[12]?\d)\s*[日号])|[份\d])"),
+     True, "error", "故事体月份应使用汉字数字，"),
+    (re.compile(r"(?<![A-Za-z0-9.\-月第0-9])(?:[1-9]|[12]\d|3[01])日(?![前后内里间多来元币本常文语记志期历游])"),
+     True, "warning", "故事体疑似使用阿拉伯纯日期，若非时长应改为汉字数字，"),
+    (re.compile(r"(?<![A-Za-z0-9.\-])[0-9]+\s+(?:年|年代|月|日|世纪)"),
+     False, "error", "数字与时间单位之间不应保留空格（如 1872 年 应写作 1872年），"),
+)
+
 # 假名残留（仅 content 文件）
 KANA_RE = re.compile(r"[%s]" % KANA)
 # ruby 注音检查（逐行原始文本）
@@ -510,6 +536,14 @@ def check_note(text):
     return hits
 
 
+def _append_regex_hits(hits, text, rx, cat, sev, msg):
+    """按匹配收集命中条目，截取前后 12 字作样例。"""
+    for m in rx.finditer(text):
+        s = max(0, m.start() - 12)
+        example = text[s:m.end() + 12]
+        hits.append((cat, sev, msg, short(example, 72)))
+
+
 def check_text(line, fkind):
     """对剥离标签的文本跑 TEXT 检查，返回 (category, severity, message, example) 列表。
 
@@ -517,7 +551,7 @@ def check_text(line, fkind):
     类别级豁免：
     - P7 日文点号・：Note 页引用日文原文属合法，跳过；
     - P13 连续空格：仅对正文内容文件判定，且跳过 h1/h2 标题行。
-    Note 页另跑 check_note（P17–P25），因此不重复实现 Note 专属判据。
+    Note 页另跑 check_note（P17–P25），P26 按故事体与功能页分域判定。
     """
     text = strip_to_text(line)
     hits = []
@@ -530,10 +564,12 @@ def check_text(line, fkind):
             continue
         if cat == "P16" and (fkind != "content" or KANA_RE.search(text)):
             continue
-        for m in rx.finditer(text):
-            s = max(0, m.start() - 12)
-            example = text[s:m.end() + 12]
-            hits.append((cat, sev, msg, short(example, 72)))
+        _append_regex_hits(hits, text, rx, cat, sev, msg)
+    is_story = fkind in P26_STORY_KINDS
+    for rx, story_only, sev, msg in P26_DATE_RULES:
+        if story_only and not is_story:
+            continue
+        _append_regex_hits(hits, text, rx, "P26", sev, msg)
     if fkind == "note":
         hits.extend(check_note(text))
     return hits
@@ -721,6 +757,7 @@ def _run():
         "P23": "译注·起句（须属三类白名单：甲 复现被注词／乙 无主语界说／丙 引证）",
         "P24": "译注·谓语词未收敛（即／意为／原指 三族刻意保留，不报）",
         "P25": "译注·互参用数字注号或顺序指代（重排后会指错）",
+        "P26": "日期写法与数字域合规（故事体汉字数字／占位零〇，数字与时间单位无空格）",
     }
     for cat in sorted(cat_desc, key=lambda x: int(x[1:])):
         lines.append("| %s | %s | %d |" % (cat, cat_desc[cat], category_counts.get(cat, 0)))

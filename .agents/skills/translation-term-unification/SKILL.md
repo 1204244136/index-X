@@ -121,7 +121,7 @@ python tools/text_norm.py --pattern "<本任务书名匹配式>" --dry-run  # �
 python tools/check_term_anchors.py --book <作品号> --strict        # 裁定表锚点误形，0 命中；无日文参考的作品单列
 python tools/check_alignment.py --strict        # 中日行数 / 模板 / h2 / 图片行
 python tools/check_epub_health.py --strict      # 单侧结构（XML、ruby、加粗、悬空引用等）
-python tools/check_translation_spec.py          # 涉及标点／注音／单位时跑；报告在 .cache/epub-work/
+python tools/check_translation_spec.py          # 涉及标点／注音／单位／日期时跑；报告在 .cache/epub-work/
 python tools/check_project_docs.py              # 改过裁定表／说话习惯表后必跑；0 条（含「裁定表不记日期」）
 ```
 

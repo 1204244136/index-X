@@ -182,7 +182,7 @@ python tools/check_alignment.py --jp-root .cache/epub-work/japanese-text --requi
 | `package_cache_epubs.py` | `python tools/package_cache_epubs.py --source … --output …` | 只读输入；写显式构建目录 | 容器、XML、资源引用；`mimetype` 首项不压缩【无】 | `test_package_cache_epubs.py` |
 | `manifest.py` | `python tools/manifest.py --update-books chinese-text/某书目录` | 写 `manifest.json` 基线；与同步入口共用缓存锁 | 只按已确认状态更新，不得掩盖未发布变化【P2】 | `test_publish_auto.py`、`test_sync_and_rename.py`、`test_sync_lock.py` |
 | `sync_lock.py` | `python tools/sync_lock.py --cache <缓存根> -- <命令及参数...>` | 缓存级互斥；包装子命令，受控继承同一锁 | 锁忙时退出 1；退出后自动释放；不判断内容取舍【无】 | `test_sync_lock.py` |
-| `publish_preflight.py` | `python tools/publish_preflight.py --source EPUB [--jp-root …]` | 只读；写显式报告 | 任一硬错误非零，不推进该书发布与基线；**含 `check_translation_spec.audit_book` 的 error 级**（P1–P25）与 `check_epub_health` 的 `note-structure`【P3】 | `test_publish_preflight.py` |
+| `publish_preflight.py` | `python tools/publish_preflight.py --source EPUB [--jp-root …]` | 只读；写显式报告 | 任一硬错误非零，不推进该书发布与基线；**含 `check_translation_spec.audit_book` 的 error 级**（P1–P26）与 `check_epub_health` 的 `note-structure`【P3】 | `test_publish_preflight.py` |
 
 ### 统一入口
 
@@ -470,7 +470,7 @@ python tools/reorder_notes.py --root EPUB --pattern "*S1_01*" --apply --no-backu
 | `check_semantic_alignment.py` | `python tools/check_semantic_alignment.py --work S3_01 --strict` | 只读；写语义诊断报告；L2 模型运行时只读 | strict 全范围 L2；环境失败及未通过结果非零【P4】 | `test_check_semantic_alignment.py`、`test_diff_paired_lines.py` |
 | `check_note_order.py` | `python tools/check_note_order.py --root EPUB` | 只读；写 TSV／JSON／Markdown | 未定义／重复／未引用与阅读顺序问题【无】 | `test_check_note_order.py`；共享规则：`test_docx_and_notes.py` |
 | `check_epub_health.py` | `python tools/check_epub_health.py --root EPUB --strict` | 只读；写显式 TSV／JSON | 单侧项目规约；strict 遇 error 非零【P4】 | `test_check_epub_health.py`（每项含负例） |
-| `check_translation_spec.py` | `python tools/check_translation_spec.py --root EPUB --output 显式报告目录` | 只读；写 TSV／JSON／Markdown | P1–P25 规则报告；**error 级由 `publish_preflight.py` 接入发布阻断**【P3】，warning／info 不自动当缺陷 | `test_translation_spec.py` |
+| `check_translation_spec.py` | `python tools/check_translation_spec.py --root EPUB --output 显式报告目录` | 只读；写 TSV／JSON／Markdown | P1–P26 规则报告；**error 级由 `publish_preflight.py` 接入发布阻断**【P3】，warning／info 不自动当缺陷 | `test_translation_spec.py` |
 | `check_translation_table.py` | `python tools/check_translation_table.py --table 显式译名表.xlsx --strict` | 只读外部 xlsx＋日文缓存＋中文归档＋译名裁定总表；写本地核对报告 | 折叠 → 同形例外 → 裁定表（含注音判定）→ 译名表；strict 存在待判未落地项非零【无】 | `test_check_translation_table.py` |
 | `check_term_anchors.py` | `python tools/check_term_anchors.py --strict`／`--book S5_01_02` | 只读中文归档＋日文缓存＋译名裁定总表；写 `--out` TSV | 日文裁定锚点出现、中文却用裁定表登记的误形时命中；塔罗牌名等语境例外；strict 命中非零【P3】 | `test_check_term_anchors.py` |
 | `check_paired_text.py` | `python tools/check_paired_text.py --book S5_01_02 --strict` | 只读中文归档＋日文缓存；写 `--out` TSV | 对话行「中文只剩短语、日文是完整长句」判整句截断，strict 命中非零【P3】；注音覆盖比值只进报告、不阻断 | `test_paired_text.py` |
@@ -621,13 +621,13 @@ python tools/check_illustration_mapping.py
 python tools/check_translation_spec.py --cache EPUB --output 显式报告目录
 ```
 
-P1–P25 与规范条款的完整对应表唯一维护于 [翻译规范](../docs/translation-spec.md) 七。检查器只发现可机械形状，warning／info 与例外须人工判断，不自动改正文。`--pattern` 限定书名，`--top` 只控制样例显示；输出 TSV／JSON／Markdown。
+P1–P26 与规范条款的完整对应表唯一维护于 [翻译规范](../docs/translation-spec.md) 七。检查器只发现可机械形状，warning／info 与例外须人工判断，不自动改正文。`--pattern` 限定书名，`--top` 只控制样例显示；输出 TSV／JSON／Markdown。
 
 默认检查 `EPUB/`；`--root` 与兼容参数 `--cache` 可指定中文输入，二者互斥。根目录不存在、选书没有 XHTML 输入或报告写入失败返回 2；正常产生规范报告仍返回 0，error 级是否阻断由发布预检统一判断。
 
 `audit_book(text_dir)` 是 `main()` 与 `publish_preflight.py` 共用的入口，返回 `(file, line, category, severity, message, example)`；发布预检只取 `severity == "error"`。**注意两处计数粒度不同**：`main()` 的 `emit` 按「行×类别」去重，`audit_book` 不去重、按命中逐条返回——引用计数时须注明粒度。
 
-**P17–P25 只对 `*-Note.xhtml` 判定**（口径见 [翻译规范](../docs/translation-spec.md) 三.2）。其中只有 **`P17`（中文语境半角括号）与 `P20`（括号不配对）是 error 级**并接入发布阻断——这两条在 Note 页回测为零误报。其余七项为 warning／info：`P23`（译注起句）存量 349 条、`P24`（谓语词收敛）81 条，属按批次收敛的存量项，**接入阻断会挡住全部 73 本**，故刻意留在报告级。
+**P17–P25 只对 `*-Note.xhtml` 判定**（口径见 [翻译规范](../docs/translation-spec.md) 三.2）。其中只有 **`P17`（中文语境半角括号）与 `P20`（括号不配对）是 error 级**并接入发布阻断——这两条在 Note 页回测为零误报。其余七项为 warning／info：`P23`（译注起句）存量 349 条、`P24`（谓语词收敛）81 条，属按批次收敛的存量项，**接入阻断会挡住全部 73 本**，故刻意留在报告级。**`P26`（日期写法与数字域）**对故事体（正文、`Afterwords`、无内容序短篇与特典）四位汉字年份混用「零」、阿拉伯年份／年代／世纪／月日／单月以及全域数字＋空格＋时间单位按 error 级接入发布阻断，故事体单写阿拉伯纯日期以 warning 级报告。
 
 词表与判据常量的唯一来源都在本文件：`P9_EVENT_SUFFIXES`（赛事项目名例外）、`P16_TRADITIONAL`（繁体字表，由 OpenCC `TSCharacters` 生成）、`NOTE_LANG_LABELS`（译注语言标签，取规范译名而非库内多数派）、`NOTE_PREDICATE_CONVERGENCE`（译注同义谓语词收敛）、`NOTE_PREDICATE_GUARD`（词表里的复合词陷阱豁免）、`NOTE_LEAD_PATTERNS`（译注起句三类白名单）、`NOTE_METADISCOURSE_LEAD`（元话语起句黑名单）、`NOTE_INVIS_BAD`／`NOTE_INVIS_KEEP`（不可见字符）。只改集合不复制到文档；改变规则语义才更新规范与合同，并运行 `test_translation_spec.py`。
 

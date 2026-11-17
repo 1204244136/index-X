@@ -258,5 +258,133 @@ class P15PalaTests(unittest.TestCase):
                 self.assertFalse(self.p15(s), "规范词形不应命中 P15：%s" % s)
 
 
+class P26DateExpressionTests(unittest.TestCase):
+    """P26 按故事体与功能页分域校验日期数字、占位零与单位间距。"""
+
+    def p26(self, line, fkind="content"):
+        return [h for h in cts.check_text(line, fkind) if h[0] == "P26"]
+
+    def test_classify_splits_story_intro_afterwords_and_image_pages(self):
+        self.assertEqual(cts.classify("S2_22-02_Prologue.xhtml"), "content")
+        self.assertEqual(cts.classify("S1_03-07_Afterwords.xhtml"), "after")
+        self.assertEqual(cts.classify("S1_25-Afterwords.xhtml"), "after")
+        self.assertEqual(cts.classify("S1_01-Note.xhtml"), "note")
+        self.assertEqual(cts.classify("S1_01-Information.xhtml"), "info")
+        self.assertEqual(cts.classify("S1_01-Introduction.xhtml"), "intro")
+        self.assertEqual(cts.classify("S1_01-Illustrations.xhtml"), "img")
+        self.assertEqual(cts.classify("S6_10.06.26-Manga.xhtml"), "img")
+        self.assertEqual(cts.classify("S2_20-Special.xhtml"), "other")
+
+    def test_story_ling_year_and_arabic_calendar_dates_are_errors(self):
+        bad_story = (
+            "<p>「一六零二年？这家伙十五岁的时候？」</p>",
+            "<p>「大女儿莉莉丝明明是1904年出生的。」</p>",
+            "<p>这个人在1170年12月29日被暗杀了。</p>",
+            "<p>第一次得到正式确认是在1750年代，巴黎的社交界。</p>",
+            "<p>他生活在80年代。</p>",
+            "<p>传说起源于公历1378年。</p>",
+            "<p>智慧的大女神的知识停留在19世纪。</p>",
+            "<p>打捞在17～18世纪集中沉没的古商船。</p>",
+            "<p>在12月25日发生的「暗部」清除。</p>",
+            "<p>ATM恢复运行要等到明年1月4号。</p>",
+            "<p>看着倾泻下来的阳光，真的快要忘记现在是9月的事情了。</p>",
+        )
+        for kind in ("content", "after", "other"):
+            for s in bad_story:
+                with self.subTest(kind=kind, s=s):
+                    hits = self.p26(s, kind)
+                    self.assertTrue(hits, "故事体违规日期应命中 P26 (%s)：%s" % (kind, s))
+                    self.assertTrue(any(h[1] == "error" for h in hits),
+                                    "应为 error 级：%s" % (hits,))
+
+    def test_story_standalone_arabic_day_is_warning(self):
+        for s in ("<p>『生日是28日。可是因为放寒假谁都聚不起来。』</p>",
+                  "<p>（在29日的事件中一次都没出现过的地方。）</p>"):
+            with self.subTest(s=s):
+                hits = self.p26(s, "content")
+                self.assertTrue(hits, "故事体单写阿拉伯日期应提示 P26：%s" % s)
+                self.assertEqual(hits[0][1], "warning")
+
+    def test_unit_space_is_error_in_both_story_and_packaging(self):
+        for kind in ("content", "note", "info", "intro"):
+            for s in ('<li epub:type="footnote" id="note1">1872 年，在大西洋被发现。</li>',
+                      '<li epub:type="footnote" id="note8">颁布前（1868 年～1947 年）存在。</li>',
+                      "<p>收录于 2018 年 4 月 10 日发售的杂志。</p>"):
+                with self.subTest(kind=kind, s=s):
+                    hits = self.p26(s, kind)
+                    self.assertTrue(hits, "数字与时间单位间空格应命中 P26 (%s)：%s" % (kind, s))
+                    self.assertTrue(all(h[1] == "error" for h in hits))
+
+    def test_story_clean_and_exemptions_not_flagged(self):
+        clean_story = (
+            "<p>「大女儿莉莉丝明明是一九〇四年出生的。」</p>",
+            "<p>「一六〇二年？传说起源于公历一三七八年，生活在一六〇〇年代。」</p>",
+            "<p>这个人在一一七〇年十二月二十九日被暗杀了。</p>",
+            "<p>智慧的大女神的知识停留在十九世纪。</p>",
+            "<p>打捞在十七～十八世纪集中沉没的古商船。</p>",
+            "<p>束缚1000年的封印，维持1000年的安定，跨越100年的计划。</p>",
+            "<p>大概需要3个月时间，过了10日后或3日内再看第3日。</p>",
+            "<p>钱包里只剩30日元，买不到5号电池、7号电池或12号弹，生菜3号也是。</p>",
+            "<p>「Soror,Kingsford,1888。」使用F2000R与Nu-AD1967武装。</p>",
+            '<h1 class="heading-lines"><span class="heading-main">第三章</span>'
+            '<span class="heading-code font06">A.D.1900_Invisible_War.</span></h1>',
+            '<h2 id="toc_1">1（<span>Aug.31_AM00:00</span>）</h2>',
+        )
+        for s in clean_story:
+            with self.subTest(s=s):
+                self.assertFalse(self.p26(s, "content"), "合规正文与豁免写法不应命中 P26：%s" % s)
+
+    def test_packaging_and_image_pages_allow_arabic_and_quoted_kanji_dates(self):
+        for kind in ("note", "info", "intro", "img"):
+            for s in (
+                '<li epub:type="footnote" id="note1">1872年在大西洋发现，15～17世纪流行。</li>',
+                '<li epub:type="footnote" id="note2">朔勒姆（1897-1982），19世纪人物。</li>',
+                '<li epub:type="footnote" id="note3">原文为：一九九三年就禁止贩卖。</li>',
+                '<li epub:type="footnote" id="note4">嘉永六年（1853年）黑船来航。</li>',
+                '<li epub:type="footnote" id="note5">「二十日鼠」或者「廿日鼠」。</li>',
+                "<p>2018年4月10日发售，8月31日的学园都市，10月。100年前。</p>",
+            ):
+                with self.subTest(kind=kind, s=s):
+                    self.assertFalse(self.p26(s, kind), "功能/图片页合法写法不应命中 P26 (%s)：%s" % (kind, s))
+
+    def test_audit_book_applies_file_classification_for_p26(self):
+        with tempfile.TemporaryDirectory() as td:
+            text_dir = Path(td)
+            (text_dir / "S2_22-02_Prologue.xhtml").write_text(
+                "\n".join([HEAD, DOCT, BODY_OPEN, "<h1>序章</h1>",
+                           "<p>大女儿莉莉丝明明是1904年出生的。</p>",
+                           "</body></html>"]),
+                encoding="utf-8",
+            )
+            (text_dir / "S1_25-Afterwords.xhtml").write_text(
+                "\n".join([HEAD, DOCT, BODY_OPEN, "<h1>后记</h1>",
+                           "<p>写于2008年10月。</p>",
+                           "</body></html>"]),
+                encoding="utf-8",
+            )
+            (text_dir / "S1_01-Note.xhtml").write_text(
+                "\n".join([HEAD, DOCT, BODY_OPEN, "<h1>译注</h1>", "<ul>",
+                           '<li epub:type="footnote" id="note1">玛丽号是1872 年被发现的船。</li>',
+                           '<li epub:type="footnote" id="note2">原文为：一九九三年禁止贩卖。</li>',
+                           "</ul></body></html>"]),
+                encoding="utf-8",
+            )
+            (text_dir / "S1_01-Introduction.xhtml").write_text(
+                "\n".join([HEAD, DOCT, BODY_OPEN, "<h1>简介</h1>",
+                           "<p>8月31日的学园都市。</p>",
+                           "</body></html>"]),
+                encoding="utf-8",
+            )
+            p26_hits = [h for h in cts.audit_book(text_dir) if h[2] == "P26"]
+            self.assertEqual(len(p26_hits), 4)
+            hit_files = [(h[0], h[1], h[3]) for h in p26_hits]
+            self.assertEqual(hit_files, [
+                ("S1_01-Note.xhtml", 6, "error"),
+                ("S1_25-Afterwords.xhtml", 5, "error"),
+                ("S1_25-Afterwords.xhtml", 5, "error"),
+                ("S2_22-02_Prologue.xhtml", 5, "error"),
+            ])
+
+
 if __name__ == "__main__":
     unittest.main()
