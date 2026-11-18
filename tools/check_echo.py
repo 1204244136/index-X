@@ -9,7 +9,7 @@
 读者看到的是前后不一致，严重时后文引述的内容与前文原句矛盾。
 这类断裂**不违反任何既有门禁**：行数对齐、XML、加粗、术语裁定都查不出来。
 
-## 六类候选
+## 七类候选
 
 | 类 | 信号 | 含义 |
 | --- | --- | --- |
@@ -19,6 +19,7 @@
 | 短平行句 | 相邻两行日文只换一个名词、中文量词/结构不一致 | 同一模板的平行句被改断 |
 | 术语多译 | 同一日文术语（片假名/汉字连写）在作品内多次出现，中文用了不同写法 | 同一术语被译成几种（术语嵌在各不相同的长句中，类 1 的片段索引收不到） |
 | 模式复述 | 共享日文段落在**中间**（类 4 只比前后缀的盲区），或**短句谓述出现在长行**（类 2 的 20 字门槛与类 4 的 24 字上限造成的长度断档） | 同一句话被复述/接话两次，中文该处译法不一致 |
+| 子句跨缝 | 剥除引号与 `。！？!?` 切句后跨行复用同一子句（含 ≤2 字纯假名助词微差：`ヤキが回った`／`ヤキでも回った`），而中文对应句几乎无重叠 | 长对话内嵌句、跨距离复现与跨助词微变被前几类漏掉 |
 
 ## 边界
 
@@ -49,6 +50,7 @@
     python tools/check_echo.py --book S1_01 --book S1_02
     python tools/check_echo.py --book S1_01 --out .cache/epub-work/echo-check
     python tools/check_echo.py --book S1_01 --no-pattern-pairs     # 关掉类 6
+    python tools/check_echo.py --book S1_01 --no-clause-pairs      # 关掉类 7
     python tools/check_echo.py --convention "そっと息を吐" --convention-words "叹气,吐气"
 """
 from __future__ import annotations
@@ -109,6 +111,9 @@ HONORIFICS = ("ちゃん", "さん", "さま", "くん", "どの", "君", "た�
 QUOTATIVE = re.compile(r"と[^。！？]{0,6}(?:言|思|叫|呟|訊|答|問|繰り返|続け|尋ね|告げ|漏ら|喚)")
 # 引号对话行：真呼应的常见载体（类 6 要求至少一侧有它）。
 DIALOGUE = re.compile(r"[「『]")
+# ---- 类 7「子句跨缝」用的判据常量（见 clause_echo_pairs）----
+# 中文侧按整句／引号边界切分，用来判断该句在两侧是否已成立对照，避免同句复用重复报出。
+CLAUSE_SPLIT_CN = re.compile(r"[。！？!?「」『』“”]+")
 
 DEFAULT_OUT = Path(".cache/epub-work/echo-check")
 # 书目录名形如 `【作品号】标题`（兼容历史半角 `[]`）。惯例统计要按目录反查作品号。
@@ -766,6 +771,235 @@ def pattern_echo_pairs(rows: list[dict], *, window: int = 6, min_span: int = 5,
         blind_order.get(item["blind"], 9), evidence_order.get(item["evidence"], 9),
         -item["span_len"], -item["span_share"],
         int(item["left"]["line"]), int(item["right"]["line"])))
+    return out
+
+
+def _split_jp_clauses(jp: str) -> list[tuple[str, bool, int]]:
+    """把一行日文按引号与句末标点切为子句列表：[(归一串, 是否在引号内, 在整行归一串的起点)]。"""
+    raw_parts: list[tuple[str, bool]] = []
+    cur: list[str] = []
+    in_quote = 0
+    for ch in jp:
+        if ch in "「『":
+            if cur:
+                raw_parts.append(("".join(cur), in_quote > 0))
+                cur = []
+            in_quote += 1
+        elif ch in "」』":
+            if cur:
+                raw_parts.append(("".join(cur), True))
+                cur = []
+            in_quote = max(0, in_quote - 1)
+        elif ch in "。！？!?":
+            cur.append(ch)
+            raw_parts.append(("".join(cur), in_quote > 0))
+            cur = []
+        else:
+            cur.append(ch)
+    if cur:
+        raw_parts.append(("".join(cur), in_quote > 0))
+
+    clauses: list[tuple[str, bool, int]] = []
+    offset = 0
+    for raw, quoted in raw_parts:
+        seg = norm_jp(raw)
+        if len(seg) >= 6 and not _is_onomatopoeia(seg):
+            clauses.append((seg, quoted, offset))
+        offset += len(seg)
+    return clauses
+
+
+def _gap_extend(tail_a: str, tail_b: str, *, max_gap: int,
+                min_ext: int = 3) -> tuple[int, int, int]:
+    """在共享片段单侧跳过至多 `max_gap` 个纯假名字符后继续做最长公共前缀扩展。
+
+    要求跳过的缝隙字符完全不含汉字与片假名，只吸收助词交替或轻微活用差
+    （如 `ヤキが回った` ↔ `ヤキでも回った` 的 `[が/でも]`），避免把不同名词
+    （「右手」↔「左手」）误拼成同一呼应。返回 `(续接长度, A 缝宽, B 缝宽)`。
+    """
+    best = (0, 0, 0)
+    best_gap = max_gap * 2 + 1
+    for da in range(max_gap + 1):
+        for db in range(max_gap + 1):
+            if da == 0 and db == 0:
+                continue
+            gap = tail_a[:da] + tail_b[:db]
+            if HAN_TEXT.search(gap) or KATAKANA.search(gap):
+                continue
+            ext = 0
+            for ch_a, ch_b in zip(tail_a[da:], tail_b[db:]):
+                if ch_a != ch_b:
+                    break
+                ext += 1
+            if ext >= min_ext and (ext > best[0] or (ext == best[0] and da + db < best_gap)):
+                best = (ext, da, db)
+                best_gap = da + db
+    return best
+
+
+def _clause_display(sa: str, sb: str, ia: int, ib: int, length: int,
+                    best_l: tuple[int, int, int],
+                    best_r: tuple[int, int, int]) -> tuple[str, str, bool]:
+    """合成供判定的去缝连续串 `combined` 与报告展示串 `display`（标记 `[gap_a/gap_b]`）。"""
+    l_ext, lda, ldb = best_l
+    r_ext, rda, rdb = best_r
+    core_l = sa[ia - lda - l_ext:ia - lda] if l_ext else ""
+    core_m = sa[ia:ia + length]
+    core_r = sa[ia + length + rda:ia + length + rda + r_ext] if r_ext else ""
+    combined = core_l + core_m + core_r
+
+    parts: list[str] = []
+    if l_ext:
+        gap_a = sa[ia - lda:ia] or "∅"
+        gap_b = sb[ib - ldb:ib] or "∅"
+        parts.append(f"{core_l}[{gap_a}/{gap_b}]")
+    parts.append(core_m)
+    if r_ext:
+        gap_a = sa[ia + length:ia + length + rda] or "∅"
+        gap_b = sb[ib + length:ib + length + rdb] or "∅"
+        parts.append(f"[{gap_a}/{gap_b}]{core_r}")
+    return combined, "".join(parts), bool(l_ext or r_ext)
+
+
+def _cn_clauses_consistent(row_a: dict, row_b: dict, cn_a_win: str, cn_b_win: str) -> bool:
+    """判定两侧中文在该子句处是否已形成显著对应（对应则不再作为断裂候选报出）。"""
+    def non_func(text: str) -> str:
+        return "".join(ch for ch in text if ch not in CN_FUNCTION_CHARS)
+
+    def pair_overlaps(text_a: str, text_b: str, *, use_bigrams: bool) -> bool:
+        if len(text_a) >= 4 and len(text_b) >= 4:
+            if _longest_common_span(text_a, text_b)[0] >= 4:
+                return True
+        real_a, real_b = non_func(text_a), non_func(text_b)
+        if len(real_a) >= 3 and len(real_b) >= 3:
+            if _longest_common_span(real_a, real_b)[0] >= 3:
+                return True
+            if use_bigrams and len(_content_bigrams(real_a) & _content_bigrams(real_b)) >= 3:
+                return True
+        return False
+
+    if pair_overlaps(norm_cn(cn_a_win), norm_cn(cn_b_win), use_bigrams=False):
+        return True
+    sents_a = [norm_cn(s) for s in CLAUSE_SPLIT_CN.split(row_a["cn"])]
+    sents_b = [norm_cn(s) for s in CLAUSE_SPLIT_CN.split(row_b["cn"])]
+    sents_a = [s for s in sents_a if len(s) >= 3]
+    sents_b = [s for s in sents_b if len(s) >= 3]
+    return any(pair_overlaps(sa, sb, use_bigrams=True) for sa in sents_a for sb in sents_b)
+
+
+def clause_echo_pairs(rows: list[dict], *, min_span: int = 10, min_share: float = 0.45,
+                      max_gap: int = 2, max_bucket: int = 30, min_frag: int = 12,
+                      pair_threshold: float = 0.5, short_window: int = 1,
+                      short_min: int = 6, max_short: int = 24, short_affix: int = 4,
+                      short_ratio: float = 0.5,
+                      excluded_pairs: set[tuple[tuple[str, int], tuple[str, int]]] | None = None
+                      ) -> list[dict]:
+    """类 7：子句跨缝（长对话内嵌子句、跨距离复现与助词微差，补前六类盲区）。
+
+    类 1／类 2 按整句引号或整行匹配，类 4／类 6 只扫临近短行；像多句长对话中嵌套的一句
+    （如 S1_13-01 L413 `お前みたいな平和ボケしてヤキでも回ったにわか仕込みじゃ…` ↔
+    L501 `多分、平和ボケしてヤキが回ったんだろ`）既跨了引号内部句界，又带 `[でも/が]` 助词
+    切换且行距较远，前六类均收不到。
+
+    判据：
+    1. 将日文按 `「」『』。！？!?` 切成子句，建 5-gram 倒排（跳过频次超 `max_bucket` 的常见词段）；
+    2. 对候选子句对求最长公共子串，并向左右各做至多 `max_gap`（默认 2）字**纯假名**缝隙桥接；
+    3. 要求至少一侧位于对话引号内、总共享字数 ≥ `min_span`（默认 10）且占较短子句 ≥ `min_share`
+       （默认 0.45）、含汉字且带谓述成分（实字总长 ≥ 2）；
+    4. 排除已被类 1／类 2／类 4（及可选 `excluded_pairs`）覆盖的整行对，再对照中文映射窗与分句，
+       已成立逐词对应的过滤掉，只报出译法不一致的候选供逐条回原文判定。
+    """
+    segs: list[tuple[int, str, bool, int, int]] = []
+    full_norms = [norm_jp(row["jp"]) for row in rows]
+    for r_idx, row in enumerate(rows):
+        if LONG_VOWEL.search(row["jp"]):
+            continue
+        full_len = max(1, len(full_norms[r_idx]))
+        for seg, in_quote, offset in _split_jp_clauses(row["jp"]):
+            segs.append((r_idx, seg, in_quote, offset, full_len))
+
+    inv: dict[str, list[int]] = defaultdict(list)
+    for s_idx, (_, seg, _, _, _) in enumerate(segs):
+        for pos in range(len(seg) - PATTERN_GRAM + 1):
+            inv[seg[pos:pos + PATTERN_GRAM]].append(s_idx)
+
+    cand_pairs: set[tuple[int, int]] = set()
+    for bucket in inv.values():
+        s_ids = sorted(set(bucket))
+        if not 2 <= len(s_ids) <= max_bucket:
+            continue
+        for i, si in enumerate(s_ids):
+            for sj in s_ids[i + 1:]:
+                cand_pairs.add((si, sj))
+
+    best_by_pair: dict[tuple[int, int], dict] = {}
+    for si, sj in sorted(cand_pairs):
+        ra, sa, qa, off_a, flen_a = segs[si]
+        rb, sb, qb, off_b, flen_b = segs[sj]
+        if ra == rb or not (qa or qb):
+            continue
+        row_a, row_b = rows[ra], rows[rb]
+        if norm_cn(row_a["cn"]) == norm_cn(row_b["cn"]):
+            continue
+        row_pair = tuple(sorted(((row_a["file"], int(row_a["line"])),
+                                 (row_b["file"], int(row_b["line"])))))
+        if excluded_pairs and row_pair in excluded_pairs:
+            continue
+        length, ia, ib = _longest_common_span(sa, sb)
+        if length < PATTERN_GRAM:
+            continue
+        best_r = _gap_extend(sa[ia + length:], sb[ib + length:], max_gap=max_gap)
+        best_l = _gap_extend(sa[:ia][::-1], sb[:ib][::-1], max_gap=max_gap)
+        total = best_l[0] + length + best_r[0]
+        if total < min_span:
+            continue
+        share = total / min(len(sa), len(sb))
+        if share < min_share:
+            continue
+        combined, display, gapped = _clause_display(sa, sb, ia, ib, length, best_l, best_r)
+        if not HAN_TEXT.search(combined) or not _has_predicate(combined):
+            continue
+        if len(HAN_TEXT.findall(combined)) + len(KATAKANA.findall(combined)) < 2:
+            continue
+        if _covered_by_class1(row_a["jp"], row_b["jp"], min_frag):
+            continue
+        if _covered_by_class2(full_norms[ra], full_norms[rb], pair_threshold):
+            continue
+        line_gap = (abs(int(row_a["line"]) - int(row_b["line"]))
+                    if row_a["file"] == row_b["file"] else short_window + 1)
+        if line_gap <= short_window and _covered_by_class4(
+            full_norms[ra], full_norms[rb], line_gap,
+            window=short_window, min_len=short_min, max_len=max_short,
+            affix=short_affix, ratio=short_ratio,
+        ):
+            continue
+        span_a_start = off_a + (ia - best_l[1] - best_l[0] if best_l[0] else ia)
+        span_b_start = off_b + (ib - best_l[2] - best_l[0] if best_l[0] else ib)
+        span_a_len = total + best_l[1] + best_r[1]
+        span_b_len = total + best_l[2] + best_r[2]
+        cn_w_a = _mapped_cn(norm_cn(row_a["cn"]), flen_a, span_a_start, span_a_len, pad=4)
+        cn_w_b = _mapped_cn(norm_cn(row_b["cn"]), flen_b, span_b_start, span_b_len, pad=4)
+        if _cn_clauses_consistent(row_a, row_b, cn_w_a, cn_w_b):
+            continue
+        key = (min(ra, rb), max(ra, rb))
+        prev = best_by_pair.get(key)
+        if prev is not None and (total, share) <= (prev["span_len"], prev["span_share"]):
+            continue
+        best_by_pair[key] = {
+            "left": row_a, "right": row_b,
+            "span": combined, "display": display,
+            "span_len": total, "span_share": share,
+            "gapped": gapped, "both_dialogue": bool(qa and qb),
+            "cn_a_span": cn_w_a, "cn_b_span": cn_w_b,
+        }
+
+    out = list(best_by_pair.values())
+    out.sort(key=lambda item: (
+        -int(item["both_dialogue"]), -int(item["gapped"]),
+        -item["span_len"], -item["span_share"],
+        item["left"]["file"], int(item["left"]["line"]),
+        item["right"]["file"], int(item["right"]["line"]),
+    ))
     return out
 
 
@@ -1427,6 +1661,33 @@ def render(work: str, rows: list[dict], report: dict) -> tuple[str, str]:
             lines.append(f"- 该处中文：`{item['cn_a_span']}` ↔ `{item['cn_b_span']}`")
         lines.append("")
 
+    clauses = report.get("clause", [])
+    n_both = sum(1 for item in clauses if item["both_dialogue"])
+    n_gap = sum(1 for item in clauses if item["gapped"])
+    lines.append(f"## 类 7 子句跨缝（{len(clauses)} 对：双引号 {n_both} 对／跨助词 {n_gap} 对）")
+    lines.append("")
+    lines.append("按引号与 `。！？!?` 切句后跨行复用同一子句（含 ≤2 字纯假名助词微差，如 `[でも/が]`），"
+                 "且两侧中文映射窗及分句尚未形成明显对应：补长对话内嵌句、跨距离复现与助词微变的盲区。")
+    lines.append("")
+    lines.append("按「双侧均在引号内 → 含助词微差 → 共享字数」排序；刻意复用或正常变调仍须回原文排除。")
+    lines.append("")
+    for i, item in enumerate(clauses, 1):
+        left, right = item["left"], item["right"]
+        tags = ["双引号" if item["both_dialogue"] else "单侧引号"]
+        if item["gapped"]:
+            tags.append("跨助词")
+        lines.append(
+            f"### 7.{i}　〔{'·'.join(tags)}〕 共享 `{item['display']}`"
+            f"（{item['span_len']} 字，占短子句 {item['span_share']:.2f}）　"
+            f"{left['file']}:{left['line']} ↔ {right['file']}:{right['line']}"
+        )
+        lines.append(f"- 日文A：{left['jp'][:180]}")
+        lines.append(f"- 日文B：{right['jp'][:180]}")
+        lines.append(f"- 中文A：{left['cn'][:180]}")
+        lines.append(f"- 中文B：{right['cn'][:180]}")
+        lines.append(f"- 映射窗：`{item['cn_a_span']}` ↔ `{item['cn_b_span']}`")
+        lines.append("")
+
     summary = (
         f"{work}\t片段多译 {len(frags)} 组"
         f"（实词 {klass_count['实词']}／语体 {klass_count['语体']}／虚词 {klass_count['虚词']}）"
@@ -1439,6 +1700,8 @@ def render(work: str, rows: list[dict], report: dict) -> tuple[str, str]:
         f"\t模式复述 {len(patterns)} 对"
         f"（类4 中间共享 {pattern_count['类4 中间共享']}／"
         f"类2 长度断档 {pattern_count['类2 长度断档']}）"
+        f"\t子句跨缝 {len(clauses)} 对"
+        f"（双引号 {n_both}／跨助词 {n_gap}）"
     )
     return "\n".join(lines) + "\n", summary
 
@@ -1613,6 +1876,14 @@ def main(argv: list[str] | None = None) -> int:
                         help="关闭类 6「模式复述」（默认开启）。其两个形态默认并入候选："
                              "共享段落在中间（类 4 只比前后缀的盲区）与短行谓述出现在长行"
                              "（类 2 的 20 字门槛造成的长度断档）")
+    parser.add_argument("--clause-min-span", type=int, default=10,
+                        help="子句跨缝（类 7）的最短共享日文字数（默认 10，含跨助词拼接两端）")
+    parser.add_argument("--clause-min-share", type=float, default=0.45,
+                        help="子句跨缝（类 7）的共享字数占较短子句长度的最小比例（默认 0.45）")
+    parser.add_argument("--clause-max-gap", type=int, default=2,
+                        help="子句跨缝（类 7）单侧桥接允许的纯假名助词/活用差字数上限（默认 2）")
+    parser.add_argument("--no-clause-pairs", action="store_true",
+                        help="关闭类 7「子句跨缝」（默认开启：切句并桥接 ≤2 字助词差，补前六类盲区）")
     parser.add_argument("--term-min-lines", type=int, default=3,
                         help="术语多译：日文术语最少出现行数（默认 3）")
     parser.add_argument("--term-max-lines", type=int, default=60,
@@ -1742,6 +2013,25 @@ def run_reports(args: argparse.Namespace, parser: argparse.ArgumentParser) -> in
                 max_short=args.short_max, pair_threshold=args.pair_threshold,
                 min_frag=args.min_frag, short_window=args.short_window,
                 short_min=args.short_min, short_ratio=args.short_ratio,
+            )
+        if not args.no_clause_pairs:
+            excluded = {
+                tuple(sorted(((left["file"], int(left["line"])),
+                              (right["file"], int(right["line"])))))
+                for left, right, _ in report["pairs"]
+            }
+            excluded.update(
+                tuple(sorted(((item["left"]["file"], int(item["left"]["line"])),
+                              (item["right"]["file"], int(item["right"]["line"])))))
+                for item in (*report["short"], *report.get("pattern", []))
+            )
+            report["clause"] = clause_echo_pairs(
+                rows, min_span=args.clause_min_span, min_share=args.clause_min_share,
+                max_gap=args.clause_max_gap, min_frag=args.min_frag,
+                pair_threshold=args.pair_threshold, short_window=args.short_window,
+                short_min=args.short_min, max_short=args.short_max,
+                short_affix=args.short_affix, short_ratio=args.short_ratio,
+                excluded_pairs=excluded,
             )
         text, summary = render(work, rows, report)
         target = args.out / f"{work}-呼应候选.md"

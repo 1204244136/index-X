@@ -11,6 +11,7 @@ sys.path.insert(0, str(TOOLS))
 
 from check_echo import (  # noqa: E402
     _longest_common_span,
+    clause_echo_pairs,
     convention_stats,
     default_prior_works,
     find_book_dir,
@@ -524,6 +525,165 @@ class PatternCliTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         for flag in ("--pattern-window", "--pattern-min-span", "--pattern-min-share",
                      "--pattern-affix", "--no-pattern-pairs"):
+            self.assertIn(flag, result.stdout)
+
+
+class ClauseEchoTests(unittest.TestCase):
+    """类 7「子句跨缝」：多句长对话内嵌句、跨距离复现与纯假名助词桥接（S1_13 真实形态）。"""
+
+    @staticmethod
+    def _seed_particle_gap(*, fixed: bool = False) -> list[dict]:
+        cn_a = (
+            "「……你要是当面见过那个人，应该就会明白吧。木原先生是『绝对』。"
+            "像你这种过惯了太平日子、身手都变钝的家伙，光凭现学现卖是根本奈何不了他的。」"
+            if fixed else
+            "「……你要是当面见过那个人，应该就会明白吧。木原先生是『绝对』。"
+            "像你这种不中用的和平白痴，光凭现学现卖是根本奈何不了他的。」"
+        )
+        return [
+            {
+                "file": "S1_13-01_Chapter6.xhtml", "line": 413,
+                "jp": "「……ま、実際にあの人と顔を合わせりゃ分かるだろ。"
+                      "木原ってのは『絶対』だ。お前みたいな平和ボケしてヤキでも回ったか、"
+                      "にわか仕込みじゃ対抗できねぇよ」",
+                "cn": cn_a,
+            },
+            {
+                "file": "S1_13-01_Chapter6.xhtml", "line": 501,
+                "jp": "「多分、平和ボケしてヤキが回ったんだろ」",
+                "cn": "「大概是过惯了太平日子，连身手都变钝了吧。」",
+            },
+        ]
+
+    def test_flags_sub_sentence_echo_across_particle_swap(self):
+        # S1_13-01 L413/L501：跨引号内部句界 + [でも/が] 助词差异 + 远行距 + 长对话低整行相似度，
+        # 前六类全部收不到；类 7 切句后桥接纯假名助词差命中。
+        pairs = clause_echo_pairs(self._seed_particle_gap(fixed=False))
+        self.assertEqual(len(pairs), 1)
+        item = pairs[0]
+        self.assertTrue(item["gapped"])
+        self.assertTrue(item["both_dialogue"])
+        self.assertEqual(item["display"], "平和ボケしてヤキ[でも/が]回った")
+        self.assertEqual(item["span"], "平和ボケしてヤキ回った")
+        self.assertEqual(item["span_len"], 11)
+
+    def test_ignores_when_chinese_already_translates_consistently(self):
+        # 修正后两处中文共享「过惯了太平日子」「身手都变钝」，不再作为断裂候选报出。
+        self.assertEqual(clause_echo_pairs(self._seed_particle_gap(fixed=True)), [])
+
+    def test_flags_ungapped_embedded_clause_inside_long_dialogue(self):
+        rows = [
+            {
+                "file": "a.xhtml", "line": 10,
+                "jp": "「別に関心はないさ。今さらお箸の持ち方が分からないなんて言われてもね。"
+                      "そんな基本的なことは子供の頃に誰だって身に着けているものだろう」",
+                "cn": "「我又没什么兴趣。事到如今才说什么不知道怎么用筷子。那种基本常识谁小时候不都该学会了吗。」",
+            },
+            {
+                "file": "b.xhtml", "line": 99,
+                "jp": "「お箸の持ち方が分からない自分のことは棚に上げて、よく言うわね」",
+                "cn": "「把自己连竹签都抓不稳的事搁在一旁，倒挺会说的嘛。」",
+            },
+        ]
+        pairs = clause_echo_pairs(rows)
+        self.assertEqual(len(pairs), 1)
+        self.assertFalse(pairs[0]["gapped"])
+        self.assertEqual(pairs[0]["display"], "お箸の持ち方が分からない")
+
+    def test_does_not_bridge_kanji_or_katakana_gaps(self):
+        # 缝隙含汉字/片假名（「右」↔「左」）属于不同实词，不得桥接成同一呼应（各自仅 5 字 < min_span=10）。
+        rows = [
+            {"file": "a.xhtml", "line": 1,
+             "jp": "「本当にそれしか道はないのか。彼は聖剣を右手で握ったよ」",
+             "cn": "「真的没有别的路了吗？他用右手握住了圣剑。」"},
+            {"file": "a.xhtml", "line": 50,
+             "jp": "「無駄な抵抗はよせ、油断するな。彼は聖剣を左手で握った」",
+             "cn": "「别做无谓抵抗，别大意。那家伙换左手抄起神器。」"},
+        ]
+        self.assertEqual(clause_echo_pairs(rows, min_span=10), [])
+
+    def test_excludes_narration_covered_classes_and_explicit_pairs(self):
+        narration = [
+            {"file": "a.xhtml", "line": 1,
+             "jp": "上条は教室の窓の外を眺めていた。平和ボケしてヤキが回ったのかもしれない。",
+             "cn": "上条看着教室窗外。大概是太安逸而荒废了吧。"},
+            {"file": "a.xhtml", "line": 20,
+             "jp": "別の部屋の廊下で誰かが歩いた。平和ボケしてヤキが回ったのだと結論した。",
+             "cn": "另一房间走廊有人走过。得出了安乐使人迟钝的结论。"},
+        ]
+        self.assertEqual(clause_echo_pairs(narration), [])
+
+        covered_c1 = [
+            {"file": "a.xhtml", "line": 1, "jp": "「私と一緒に地獄の底までついてきてくれる？」", "cn": "「跟着我吗？」"},
+            {"file": "a.xhtml", "line": 50, "jp": "『私と一緒に地獄の底までついてきてくれる？』", "cn": "『陪我下地狱吗？』"},
+        ]
+        self.assertEqual(clause_echo_pairs(covered_c1), [])
+
+        seed = self._seed_particle_gap(fixed=False)
+        explicit = {tuple(sorted((("S1_13-01_Chapter6.xhtml", 413), ("S1_13-01_Chapter6.xhtml", 501))))}
+        self.assertEqual(clause_echo_pairs(seed, excluded_pairs=explicit), [])
+
+    def test_render_includes_clause_section_and_defaults_to_zero(self):
+        rows = self._seed_particle_gap(fixed=False)
+        report = {"frag": [], "pairs": [], "short": [], "quotes": [],
+                  "clause": clause_echo_pairs(rows)}
+        text, summary = render("S1_13", rows, report)
+        self.assertIn("## 类 7 子句跨缝（1 对：双引号 1 对／跨助词 1 对）", text)
+        self.assertIn("子句跨缝 1 对", summary)
+
+        compat_text, compat_summary = render(
+            "S1_01", [], {"frag": [], "pairs": [], "short": [], "quotes": []},
+        )
+        self.assertIn("## 类 7 子句跨缝（0 对", compat_text)
+        self.assertIn("子句跨缝 0 对", compat_summary)
+
+
+class ClauseCliTests(unittest.TestCase):
+    """类 7 的命令行接线：默认开启、`--no-clause-pairs` 可关、`--help` 有说明。"""
+
+    @staticmethod
+    def _fixture(root: Path) -> tuple[Path, Path]:
+        work = "S1_13"
+        cn_dir = root / "EPUB" / f"【{work}】测试书" / "OEBPS" / "Text"
+        cn_dir.mkdir(parents=True)
+        (cn_dir / f"{work}-01_Chapter6.xhtml").write_text(
+            "<p>「木原先生是『绝对』。像你这种不中用的和平白痴，现学现卖奈何不了他。」</p>\n"
+            "<p>「大概是过惯了太平日子，连身手都变钝了吧。」</p>\n",
+            encoding="utf-8",
+        )
+        jp_dir = root / "jp" / f"【{work}】テスト本" / "item" / "xhtml"
+        jp_dir.mkdir(parents=True)
+        (jp_dir / f"{work}-01.xhtml").write_text(
+            "<p>「木原ってのは『絶対』だ。お前みたいな平和ボケしてヤキでも回ったか、にわか仕込みじゃ対抗できねぇよ」</p>\n"
+            "<p>「多分、平和ボケしてヤキが回ったんだろ」</p>\n",
+            encoding="utf-8",
+        )
+        return root / "EPUB", root / "jp"
+
+    def test_cli_enables_clause_pairs_by_default_and_can_disable(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            cn_root, jp_root = self._fixture(root)
+            base = [sys.executable, str(TOOLS / "check_echo.py"), "--root", str(cn_root),
+                    "--jp-root", str(jp_root), "--book", "S1_13"]
+            enabled = subprocess.run([*base, "--out", str(root / "on")],
+                                     capture_output=True, text=True, encoding="utf-8")
+            self.assertEqual(enabled.returncode, 0, enabled.stderr)
+            report = (root / "on" / "S1_13-呼应候选.md").read_text(encoding="utf-8")
+            self.assertIn("## 类 7 子句跨缝（1 对", report)
+
+            disabled = subprocess.run([*base, "--out", str(root / "off"), "--no-clause-pairs"],
+                                      capture_output=True, text=True, encoding="utf-8")
+            self.assertEqual(disabled.returncode, 0, disabled.stderr)
+            report_off = (root / "off" / "S1_13-呼应候选.md").read_text(encoding="utf-8")
+            self.assertIn("## 类 7 子句跨缝（0 对", report_off)
+
+    def test_cli_help_documents_clause_options(self):
+        result = subprocess.run([sys.executable, str(TOOLS / "check_echo.py"), "--help"],
+                                capture_output=True, text=True, encoding="utf-8")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        for flag in ("--clause-min-span", "--clause-min-share",
+                     "--clause-max-gap", "--no-clause-pairs"):
             self.assertIn(flag, result.stdout)
 
 
