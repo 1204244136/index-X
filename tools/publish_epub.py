@@ -224,17 +224,39 @@ def _publish(args: argparse.Namespace) -> int:
             return 1
 
     # Scan EPUB/ as the current (user-edited) state.
+    wanted = (
+        {item.strip() for item in args.only_books.split(",") if item.strip()}
+        if args.only_books
+        else None
+    )
+    scoped = args.pattern != "*" or wanted is not None
     print("扫描 EPUB/ ...")
-    cache_current = scan_cache(cache)
-    current = scan_epub(epub_root)
-    print(f"  缓存: {len(cache_current)} 个文件")
+    current = (
+        scan_epub(epub_root, pattern=args.pattern, only_books=wanted)
+        if scoped
+        else scan_epub(epub_root)
+    )
     print(f"  EPUB/: {len(current)} 个文件")
     print(f"  清单基线: {len(baseline)} 个文件")
 
     # Detect changes; EPUB/ only mirrors chinese-text, so drop anything else
     # (e.g. japanese-text entries from the baseline must not be treated as
     # deletions).
-    changes = detect_changes(current, baseline)
+    pattern = args.pattern.casefold()
+    scoped_baseline: dict[str, str] = {}
+    for path, digest in baseline.items():
+        if not path.startswith("chinese-text/"):
+            continue
+        rest = path.removeprefix("chinese-text/")
+        if "/" not in rest:
+            continue
+        book_name = rest.split("/", 1)[0]
+        if args.pattern != "*" and not fnmatch.fnmatch(book_name.casefold(), pattern):
+            continue
+        if wanted is not None and f"chinese-text/{book_name}" not in wanted:
+            continue
+        scoped_baseline[path] = digest
+    changes = detect_changes(current, scoped_baseline)
     changes = {k: v for k, v in changes.items() if k.startswith("chinese-text/")}
 
     if not changes:
@@ -242,7 +264,6 @@ def _publish(args: argparse.Namespace) -> int:
         return 0
 
     # Filter by pattern (book name = second path component).
-    pattern = args.pattern.casefold()
     changes = {
         k: v
         for k, v in changes.items()
@@ -251,8 +272,7 @@ def _publish(args: argparse.Namespace) -> int:
 
     # Restrict to explicitly listed books.
     if args.only_books:
-        wanted = {item.strip() for item in args.only_books.split(",") if item.strip()}
-        changes = {k: v for k, v in changes.items() if k in wanted}
+        changes = {k: v for k, v in changes.items() if k in (wanted or set())}
         if not changes:
             print("\n没有检测到变更（--only-books 范围内）。")
             return 0
@@ -265,6 +285,10 @@ def _publish(args: argparse.Namespace) -> int:
     # un-published edits, unless the user explicitly opts in.
     conflicted: dict[str, list[str]] = {}
     if not args.force and not args.overwrite_cache:
+        cache_current = scan_cache(
+            cache, sides=("chinese-text",), only_books=set(changes)
+        )
+        print(f"  缓存: {len(cache_current)} 个文件")
         for book_key in sorted(changes):
             conflicts = find_conflicts(
                 book_key, cache_current, current, baseline

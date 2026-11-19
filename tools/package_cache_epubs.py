@@ -8,6 +8,7 @@ import fnmatch
 import os
 import sys
 import zipfile
+from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
 if __package__:
@@ -15,8 +16,8 @@ if __package__:
 else:
     from cli_output import configure_output
 from epub_ids import book_id
-from epub_structure import artifact_contract_issues, container_contract_issues
-from path_safety import is_extract_artifact
+from epub_structure import XML_SUFFIXES, artifact_contract_issues, container_contract_issues
+from path_safety import EXTRACT_DIR_PREFIX
 
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -26,6 +27,8 @@ SOURCE_DIRECTORIES = {
     "chinese": "chinese-text",
 }
 EPUB_MIMETYPE = b"application/epub+zip"
+# 已自带压缩格式的位图资源不再二次 DEFLATE，避免纯烧 CPU 且几乎无压缩收益。
+_STORED_SUFFIXES = frozenset({".jpg", ".jpeg", ".png", ".gif", ".webp", ".avif"})
 
 
 class PackageError(RuntimeError):
@@ -40,51 +43,95 @@ def is_within(path: Path, parent: Path) -> bool:
         return False
 
 
-def validate_book(book: Path) -> None:
-    mimetype = book / "mimetype"
-    container = book / "META-INF" / "container.xml"
-    if not mimetype.is_file():
-        raise PackageError("missing root mimetype file")
-    if mimetype.read_bytes() != EPUB_MIMETYPE:
-        raise PackageError("mimetype must contain exactly application/epub+zip")
-    if not container.is_file():
-        raise PackageError("missing META-INF/container.xml")
-    entries = {}
-    for path in book.rglob("*"):
-        if not path.is_file() or is_extract_artifact(path, root=book):
-            continue
-        if not path.resolve().is_relative_to(book.resolve()):
-            raise PackageError(f"resource escapes book directory: {path}")
-        entries[path.relative_to(book).as_posix()] = path.read_bytes()
+def _collect_book_entries(book: Path) -> dict[str, bytes]:
+    """收集书目录内条目；仅读取文本类 XML/CSS 与 mimetype，二进制资源只登记键名。"""
+    book_root = book.resolve()
+    entries: dict[str, bytes] = {}
+    stack: list[tuple[Path, str]] = [(book, "")]
+    while stack:
+        current_dir, rel_prefix = stack.pop()
+        with os.scandir(current_dir) as it:
+            for entry in it:
+                name = entry.name
+                if name.casefold().startswith(EXTRACT_DIR_PREFIX):
+                    continue
+                rel = f"{rel_prefix}{name}"
+                is_link = entry.is_symlink()
+                is_junction = entry.is_junction() if hasattr(entry, "is_junction") else False
+                if entry.is_dir(follow_symlinks=False):
+                    if is_link or is_junction:
+                        resolved = Path(entry.path).resolve()
+                        if not resolved.is_relative_to(book_root):
+                            raise PackageError(f"resource escapes book directory: {entry.path}")
+                    stack.append((Path(entry.path), f"{rel}/"))
+                    continue
+                if is_link or is_junction:
+                    resolved = Path(entry.path).resolve()
+                    if not resolved.is_relative_to(book_root):
+                        raise PackageError(f"resource escapes book directory: {entry.path}")
+                if not entry.is_file():
+                    continue
+                lower = name.lower()
+                if rel == "mimetype" or lower.endswith(XML_SUFFIXES) or lower.endswith(".css"):
+                    entries[rel] = Path(entry.path).read_bytes()
+                else:
+                    entries[rel] = b""
+    return entries
+
+
+def validate_book(book: Path, *, entries: dict[str, bytes] | None = None) -> None:
+    if entries is None:
+        mimetype = book / "mimetype"
+        container = book / "META-INF" / "container.xml"
+        if not mimetype.is_file():
+            raise PackageError("missing root mimetype file")
+        if mimetype.read_bytes() != EPUB_MIMETYPE:
+            raise PackageError("mimetype must contain exactly application/epub+zip")
+        if not container.is_file():
+            raise PackageError("missing META-INF/container.xml")
+        entries = _collect_book_entries(book)
+    else:
+        if "mimetype" not in entries:
+            raise PackageError("missing root mimetype file")
+        if entries["mimetype"] != EPUB_MIMETYPE:
+            raise PackageError("mimetype must contain exactly application/epub+zip")
+        if "META-INF/container.xml" not in entries:
+            raise PackageError("missing META-INF/container.xml")
     issues = container_contract_issues(entries) + artifact_contract_issues(entries, book_id(book.name))
     if issues:
         raise PackageError("; ".join(f"{name}: {message}" for name, message in issues[:10]))
 
 
 def package_book(book: Path, destination: Path) -> int:
-    validate_book(book)
+    entries = _collect_book_entries(book)
+    validate_book(book, entries=entries)
     destination.parent.mkdir(parents=True, exist_ok=True)
     temporary = destination.with_suffix(destination.suffix + ".tmp")
 
     try:
         with zipfile.ZipFile(temporary, "w") as archive:
             archive.write(book / "mimetype", "mimetype", compress_type=zipfile.ZIP_STORED)
-            files = sorted(
-                (path for path in book.rglob("*") if path.is_file()
-                 and path != book / "mimetype" and not is_extract_artifact(path, root=book)),
-                key=lambda path: path.relative_to(book).as_posix().casefold(),
-            )
-            for path in files:
-                archive.write(
-                    path,
-                    path.relative_to(book).as_posix(),
-                    compress_type=zipfile.ZIP_DEFLATED,
+            for rel in sorted((name for name in entries if name != "mimetype"), key=str.casefold):
+                path = book / rel
+                compress = (
+                    zipfile.ZIP_STORED
+                    if path.suffix.lower() in _STORED_SUFFIXES
+                    else zipfile.ZIP_DEFLATED
                 )
+                archive.write(path, rel, compress_type=compress)
         os.replace(temporary, destination)
     finally:
         temporary.unlink(missing_ok=True)
 
     return destination.stat().st_size
+
+
+def _package_book_worker(task: tuple[Path, Path]) -> tuple[str, Path, int | None, str | None]:
+    book, destination = task
+    try:
+        return book.name, destination, package_book(book, destination), None
+    except (OSError, PackageError, zipfile.BadZipFile) as exc:
+        return book.name, destination, None, str(exc)
 
 
 def parse_args() -> argparse.Namespace:
@@ -113,8 +160,16 @@ def parse_args() -> argparse.Namespace:
         default="*",
         help="按书目录名筛选（不区分大小写的通配符）",
     )
+    parser.add_argument(
+        "--jobs",
+        type=int,
+        default=0,
+        help="并发进程数（0 表示自动，1 表示单进程）",
+    )
     parser.add_argument("--dry-run", action="store_true", help="只预览输出，不生成文件")
     args = parser.parse_args()
+    if args.jobs < 0:
+        parser.error("--jobs 不能为负数")
     if args.source is not None and args.output is None:
         parser.error("使用 --source 时必须指定 --output")
     if args.source is not None and args.side != "all":
@@ -147,6 +202,7 @@ def main() -> int:
     failed = 0
     total_bytes = 0
     pattern = args.pattern.casefold()
+    jobs = args.jobs if args.jobs > 0 else min(os.cpu_count() or 1, 8)
 
     for output_directory, source in selected:
         if not source.is_dir():
@@ -159,20 +215,27 @@ def main() -> int:
             (
                 path
                 for path in source.iterdir()
-                if path.is_dir() and not path.name.startswith(".extract-") and fnmatch.fnmatch(path.name.casefold(), pattern)
+                if path.is_dir() and not path.name.startswith(EXTRACT_DIR_PREFIX) and fnmatch.fnmatch(path.name.casefold(), pattern)
             ),
             key=lambda path: path.name.casefold(),
         )
-        for book in books:
-            destination = destination_root / f"{book.name}.epub"
-            if args.dry_run:
+        if args.dry_run:
+            for book in books:
+                destination = destination_root / f"{book.name}.epub"
                 print(f"[预览] {book} -> {destination}")
                 packaged += 1
-                continue
-            try:
-                size = package_book(book, destination)
-            except (OSError, PackageError, zipfile.BadZipFile) as exc:
-                print(f"[失败] {book.name}：{exc}", file=sys.stderr)
+            continue
+
+        tasks = [(book, destination_root / f"{book.name}.epub") for book in books]
+        if jobs > 1 and len(tasks) >= 4:
+            with ProcessPoolExecutor(max_workers=min(jobs, len(tasks))) as executor:
+                results = list(executor.map(_package_book_worker, tasks))
+        else:
+            results = [_package_book_worker(task) for task in tasks]
+
+        for book_name, destination, size, error in results:
+            if error is not None or size is None:
+                print(f"[失败] {book_name}：{error}", file=sys.stderr)
                 failed += 1
                 continue
             packaged += 1

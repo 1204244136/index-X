@@ -236,16 +236,13 @@ def body_markup(raw: str, *, preserve_lines: bool = False) -> str:
     return COMMENT_BLOCK.sub(lambda match: blank(match.group(0)), raw)
 
 
-def collect_books(root: Path, text_subdir: str, only: set[str],
-                  ruby: bool = False, *, titles: bool = False) -> dict[str, str]:
-    """收集 {作品号: 全书纯文本}。目录名形如 `【S3_06】…`。
-
-    `ruby=True` 时输出**带注音的复合串文本**（`基文（注文）`），供注音判定使用。
-    """
-    books: dict[str, str] = {}
+def _iter_selected_book_dirs(root: Path, text_subdir: str,
+                             only: set[str]) -> list[tuple[str, Path]]:
+    """返回 [(作品号, 文本子目录)]；同时校验同侧不得出现重复作品号。"""
+    selected: list[tuple[str, Path]] = []
     sources: dict[str, Path] = {}
     if not root.is_dir():
-        return books
+        return selected
     for child in sorted(root.iterdir()):
         if not child.is_dir():
             continue
@@ -256,8 +253,19 @@ def collect_books(root: Path, text_subdir: str, only: set[str],
             raise ToolError(f"同侧重复作品号 {bid}: {sources[bid]} / {child}")
         sources[bid] = child
         text_dir = child / text_subdir
-        if not text_dir.is_dir():
-            continue
+        if text_dir.is_dir():
+            selected.append((bid, text_dir))
+    return selected
+
+
+def collect_books(root: Path, text_subdir: str, only: set[str],
+                  ruby: bool = False, *, titles: bool = False) -> dict[str, str]:
+    """收集 {作品号: 全书纯文本}。目录名形如 `【S3_06】…`。
+
+    `ruby=True` 时输出**带注音的复合串文本**（`基文（注文）`），供注音判定使用。
+    """
+    books: dict[str, str] = {}
+    for bid, text_dir in _iter_selected_book_dirs(root, text_subdir, only):
         chunks: list[str] = []
         for f in sorted(text_dir.iterdir()):
             if f.suffix.lower() == ".xhtml":
@@ -268,6 +276,46 @@ def collect_books(root: Path, text_subdir: str, only: set[str],
         if any(chunk.strip() for chunk in chunks):
             books[bid] = "\n".join(chunks)
     return books
+
+
+def collect_book_bundles(
+    root: Path,
+    text_subdir: str,
+    only: set[str],
+    *,
+    need_ruby: bool = False,
+) -> tuple[dict[str, str], dict[str, str] | None, dict[str, str], dict[str, str] | None]:
+    """单次扫描同时收集 (正文纯文本, 正文复合串|None, 标题纯文本, 标题复合串|None)。"""
+    body_plain: dict[str, str] = {}
+    body_ruby: dict[str, str] | None = {} if need_ruby else None
+    title_plain: dict[str, str] = {}
+    title_ruby: dict[str, str] | None = {} if need_ruby else None
+    for bid, text_dir in _iter_selected_book_dirs(root, text_subdir, only):
+        bp_chunks: list[str] = []
+        tp_chunks: list[str] = []
+        br_chunks: list[str] = []
+        tr_chunks: list[str] = []
+        for f in sorted(text_dir.iterdir()):
+            if f.suffix.lower() != ".xhtml":
+                continue
+            raw = f.read_text(encoding="utf-8-sig")
+            body, heading = split_heading_markup(body_markup(raw))
+            bp_chunks.append(strip_markup(body))
+            tp_chunks.append(strip_markup(heading))
+            if need_ruby:
+                br_chunks.append(to_ruby_text(body))
+                tr_chunks.append(to_ruby_text(heading))
+        if any(chunk.strip() for chunk in bp_chunks):
+            body_plain[bid] = "\n".join(bp_chunks)
+        if any(chunk.strip() for chunk in tp_chunks):
+            title_plain[bid] = "\n".join(tp_chunks)
+        if need_ruby:
+            assert body_ruby is not None and title_ruby is not None
+            if any(chunk.strip() for chunk in br_chunks):
+                body_ruby[bid] = "\n".join(br_chunks)
+            if any(chunk.strip() for chunk in tr_chunks):
+                title_ruby[bid] = "\n".join(tr_chunks)
+    return body_plain, body_ruby, title_plain, title_ruby
 
 
 def context_of(text: str, idx: int, anchor: str, width: int = 30) -> str:
@@ -641,6 +689,7 @@ def compare(entries: list[dict[str, str]], jp_books: dict[str, str],
     # 只按 shared 建表会让 TRANSLATION_HOST 永远查不到归属书。
     cn_norm = {b: norm_anchor(t) for b, t in cn_texts.items()}
     jp_charsets = {b: set(jp_norm[b]) for b in shared}
+    jp_bigrams = {b: {t[i:i + 2] for i in range(len(t) - 1)} for b, t in jp_norm.items()}
     records: list[dict[str, str]] = []
     skipped_empty_trans = 0
 
@@ -653,9 +702,13 @@ def compare(entries: list[dict[str, str]], jp_books: dict[str, str],
             # 表内该条目的译名尚未定（Base_Trans 为空），无从核对
             skipped_empty_trans += 1
             continue
+        ori_chars = set(ori)
+        ori_first2 = ori[:2]
+        ori_last2 = ori[-2:]
         rd = rulings.get(ori)
         forms = [norm_anchor(v) for v in (rd["forms"] if rd else [])]
         forms = [v for v in forms if v]
+        sorted_forms = sorted(forms, key=len, reverse=True) if forms else []
         ruby_forms = [norm_anchor(v) for v in (rd.get("ruby_forms", []) if rd else [])]
         ruby_forms = [v for v in ruby_forms if v]
         human_only = bool(rd["human_only"]) if rd else False
@@ -668,9 +721,9 @@ def compare(entries: list[dict[str, str]], jp_books: dict[str, str],
             if require_ruby and not any(rf in cn_ruby_norm.get(book, "") for rf in ruby_forms):
                 return False, ""
             text = cn_norm[book]
-            if forms:
+            if sorted_forms:
                 # 长写法优先：否则「妹妹」会因是「妹妹们」的子串而误判
-                for form_text in sorted(forms, key=len, reverse=True):
+                for form_text in sorted_forms:
                     if form_text in text:
                         return True, "ruling"
                 return False, ""
@@ -687,8 +740,10 @@ def compare(entries: list[dict[str, str]], jp_books: dict[str, str],
                     continue
                 ctx_text, ctx_anchor, idx = ruby_text, probe, ruby_text.find(probe)
             else:
-                # 字符集预筛：锚点全部字符都在该书字符集内，才做子串查找
-                if not set(ori) <= jp_charsets[bid]:
+                # 字符集与首尾二字预筛：全部字符与首尾二字片都在该书内，才做子串查找
+                if (ori_first2 not in jp_bigrams[bid]
+                        or ori_last2 not in jp_bigrams[bid]
+                        or not ori_chars <= jp_charsets[bid]):
                     continue
                 if match_axis == MATCH_FULL and anchor_rts:
                     # 严格全文：日文侧须有「基文（注文）」复合串；裸写基文不在本行范围，
@@ -828,11 +883,20 @@ def _run(argv: list[str] | None = None) -> int:
         TRANSLATION_HOST = {}
         SETTLED_ANCHORS = {}
 
+    rulings = {} if args.no_rulings else load_rulings(Path(args.rulings).expanduser())
+    # 注音判定：只有裁定表里存在带注音写法时才收集复合串文本（内存约翻倍，按需启用）
+    need_ruby = any(rd.get("ruby_forms") or rd.get("match_axis", MATCH_BASE) != MATCH_BASE
+                    for rd in rulings.values())
     only = {b.strip().upper() for b in args.book if b.strip()}
     host_ids = {TRANSLATION_HOST[b] for b in only if b in TRANSLATION_HOST}
     cn_filter = only | host_ids
-    jp_books = collect_books(Path(args.jp_dir), "item/xhtml", only)
-    cn_books = collect_books(Path(args.epub), "OEBPS/Text", cn_filter)
+    jp_books, jp_ruby, jp_titles, jp_title_ruby = collect_book_bundles(
+        Path(args.jp_dir), "item/xhtml", only, need_ruby=need_ruby)
+    cn_books, cn_ruby, cn_titles_all, cn_title_ruby_all = collect_book_bundles(
+        Path(args.epub), "OEBPS/Text", cn_filter, need_ruby=need_ruby)
+    cn_titles = {b: t for b, t in cn_titles_all.items() if not only or b in only}
+    cn_title_ruby = ({b: t for b, t in cn_title_ruby_all.items() if not only or b in only}
+                     if cn_title_ruby_all is not None else None)
 
     if not cn_books:
         print(f"[错误] 中文成品侧没有可用书籍：{args.epub}", file=sys.stderr)
@@ -880,12 +944,6 @@ def _run(argv: list[str] | None = None) -> int:
     # 字符集预筛：锚点全部字符都在该书字符集内，才做子串查找（大幅减少全库扫描）。
     # 传**全部**中文书：译文归属书（TRANSLATION_HOST 的值）可能只存在于中文侧。
     cn_texts = dict(cn_books)
-    rulings = {} if args.no_rulings else load_rulings(Path(args.rulings).expanduser())
-    # 注音判定：只有裁定表里存在带注音写法时才收集复合串文本（内存约翻倍，按需启用）
-    need_ruby = any(rd.get("ruby_forms") or rd.get("match_axis", MATCH_BASE) != MATCH_BASE
-                    for rd in rulings.values())
-    jp_ruby = collect_books(Path(args.jp_dir), "item/xhtml", only, ruby=True) if need_ruby else None
-    cn_ruby = collect_books(Path(args.epub), "OEBPS/Text", cn_filter, ruby=True) if need_ruby else None
     if args.no_rulings:
         print("[提示] 已按 --no-rulings 跳过 裁定表门禁。", file=sys.stderr)
     elif not rulings:
@@ -906,10 +964,6 @@ def _run(argv: list[str] | None = None) -> int:
     del jp_books
 
     # 标题只形成独立人工核对报告；不能为正文补足译名命中，也不影响 strict。
-    jp_titles = collect_books(Path(args.jp_dir), "item/xhtml", only, titles=True)
-    cn_titles = collect_books(Path(args.epub), "OEBPS/Text", only, titles=True)
-    jp_title_ruby = collect_books(Path(args.jp_dir), "item/xhtml", only, ruby=True, titles=True) if need_ruby else None
-    cn_title_ruby = collect_books(Path(args.epub), "OEBPS/Text", only, ruby=True, titles=True) if need_ruby else None
     title_records, _, _ = compare(entries, jp_titles, cn_titles, rulings, {}, SETTLED_ANCHORS,
                                   jp_title_ruby, cn_title_ruby)
     for record in title_records:

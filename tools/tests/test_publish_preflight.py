@@ -205,6 +205,32 @@ class PreflightTests(unittest.TestCase):
             self.assertEqual(main(["--source", str(self.root), "--calibre"]), 2)
             self.assertIn("--strict", run.call_args.args[0])
 
+    def test_parallel_jobs_matches_single_process_preflight(self):
+        cn = self.root / "EPUB"
+        for wid in ("S1_01", "S1_02"):
+            book = cn / f"【{wid}】中文X"
+            chapter = make_book(book, layout=True)
+            if wid != "S1_01":
+                chapter.rename(chapter.with_name(f"{wid}-01_Chapter.xhtml"))
+                opf = book / "OEBPS/content.opf"
+                opf.write_text(
+                    opf.read_text(encoding="utf-8").replace(
+                        "Text/S1_01-01_Chapter.xhtml", f"Text/{wid}-01_Chapter.xhtml"
+                    ),
+                    encoding="utf-8",
+                )
+        (cn / "【S1_02】中文X" / "OEBPS/Text/S1_02-01_Chapter.xhtml").write_text(
+            "<html>", encoding="utf-8"
+        )
+        outputs = []
+        for jobs in ("1", "2"):
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                code = main(["--source", str(cn), "--jobs", jobs])
+            outputs.append((code, out.getvalue(), err.getvalue()))
+        self.assertEqual(outputs[0], outputs[1])
+        self.assertEqual(outputs[0][0], 1)
+
 
 if __name__ == "__main__":
     unittest.main()

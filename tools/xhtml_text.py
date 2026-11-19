@@ -24,6 +24,8 @@ import xml.etree.ElementTree as ET
 RUBY_ELEMENT = re.compile(r"<(?:rt|rp)\b[^>]*>.*?</(?:rt|rp)>", re.I | re.S)
 # 只移除 `<rt>`：可见文本比较保留 `<rp>` 的括号
 RT_ELEMENT = re.compile(r"<rt\b[^>]*>.*?</rt\s*>", re.I | re.S)
+SCRIPT_STYLE_RE = re.compile(r"<(script|style)\b[^>]*>.*?</\1>", re.I | re.S)
+WS_RE = re.compile(r"\s+")
 TAG = re.compile(r"<[^>]+>")
 
 
@@ -44,7 +46,11 @@ def element_text_without_ruby(element: ET.Element) -> str:
 
 def visible_text_of(html_text: str) -> str:
     """移除 `<rt>` 与全部标签后的可见文本（保留基文，`<rp>` 括号保留）。"""
-    return TAG.sub("", RT_ELEMENT.sub("", html_text)).strip()
+    if "<" not in html_text:
+        return html_text.strip()
+    if "<r" in html_text or "<R" in html_text:
+        html_text = RT_ELEMENT.sub("", html_text)
+    return TAG.sub("", html_text).strip()
 
 
 def text_of(data: bytes) -> str:
@@ -62,6 +68,20 @@ def text_of_without_ruby(data: bytes) -> str:
     return _flatten(strip_ruby_annotations(data.decode("utf-8", errors="ignore")))
 
 
+def text_of_without_ruby_compact_str(text: str, *, strip_script_style: bool = True) -> str:
+    """`text_of_without_ruby_compact` 的字符串入口；按需跳过已知无 script/style 的正文行。"""
+    if "<" in text:
+        if "<r" in text or "<R" in text:
+            text = RUBY_ELEMENT.sub("", text)
+        if strip_script_style and ("<s" in text or "<S" in text):
+            text = SCRIPT_STYLE_RE.sub(" ", text)
+        text = TAG.sub("", text)
+    text = WS_RE.sub(" ", text)
+    if "&" in text:
+        text = html.unescape(text)
+    return text.strip()
+
+
 def text_of_without_ruby_compact(data: bytes) -> str:
     """与 `text_of_without_ruby` 同口径，但标签直接删除、不插入空格。
 
@@ -69,12 +89,15 @@ def text_of_without_ruby_compact(data: bytes) -> str:
     `<ruby>魔</ruby><ruby>術</ruby>` 会被读成「魔 術」，`魔術`／`魔術師` 这类锚点
     因此永远匹配不到（2026-11-04 查出的门禁漏检即此）。
     """
-    text = strip_ruby_annotations(data.decode("utf-8", errors="ignore"))
-    text = re.sub(r"<(script|style)\b[^>]*>.*?</\1>", " ", text, flags=re.I | re.S)
-    return html.unescape(re.sub(r"\s+", " ", TAG.sub("", text))).strip()
+    return text_of_without_ruby_compact_str(data.decode("utf-8", errors="ignore"))
 
 
 def _flatten(text: str) -> str:
-    text = re.sub(r"<(script|style)\b[^>]*>.*?</\1>", " ", text, flags=re.I | re.S)
-    text = TAG.sub(" ", text)
-    return html.unescape(re.sub(r"\s+", " ", text)).strip()
+    if "<" in text:
+        if "<s" in text or "<S" in text:
+            text = SCRIPT_STYLE_RE.sub(" ", text)
+        text = TAG.sub(" ", text)
+    text = WS_RE.sub(" ", text)
+    if "&" in text:
+        text = html.unescape(text)
+    return text.strip()

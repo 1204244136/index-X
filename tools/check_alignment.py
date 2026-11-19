@@ -74,8 +74,40 @@ HEADING_CONTENT_RE = re.compile(
 HEADING_BR_RE = re.compile(r"<br\s*/?>", re.I)
 HEADING_BLOCK_WRAP_RE = re.compile(r"<(?:div|p)\b", re.I)
 
+_L4_H1_OPEN_RE = re.compile(r"^\s*<h1\b")
+_L4_H1_CLOSE_RE = re.compile(r"</h1>\s*$")
+_L4_IMG_RE = re.compile(r"<(?:img|svg)\b", re.I)
+_L5_H2_OPEN_RE = re.compile(r"^\s*<h2\b")
+_L5_H2_CLOSE_RE = re.compile(r"</h2>\s*$")
+_L6_P_RE = re.compile(r"^\s*<p\b[^>]*>.*</p>\s*$", re.I)
+_L6_LI_RE = re.compile(r"^\s*<li\b[^>]*>.*</li>\s*$", re.I)
+_L6_WRAPPED_P_RE = re.compile(
+    r"^\s*(?:<div\b[^>]*>\s*)+<p\b[^>]*>.*</p>\s*(?:</div>\s*)*$", re.I
+)
+_H12_OPEN_LINE_RE = re.compile(r"^\s*<h[12]\b")
+_H1_SEARCH_RE = re.compile(r"<h1\b", re.I)
+_H2_SEARCH_RE = re.compile(r"<h2\b")
+_BODY_CLOSE_LINE_RE = re.compile(r"^\s*</body", re.I)
+
 def read_lines(path: Path) -> list[str]:
     return path.read_text(encoding="utf-8", errors="ignore").splitlines()
+
+
+def _read_lines_cached(path: Path, lines_cache: dict[Path, list[str]] | None) -> list[str]:
+    if lines_cache is None:
+        return read_lines(path)
+    cached = lines_cache.get(path)
+    if cached is not None:
+        return cached
+    raw = path.read_bytes()
+    if not raw.startswith(b"\xef\xbb\xbf"):
+        try:
+            lines = raw.decode("utf-8").splitlines()
+            lines_cache[path] = lines
+            return lines
+        except UnicodeDecodeError:
+            pass
+    return raw.decode("utf-8", errors="ignore").splitlines()
 
 
 def has_body(lines: list[str]) -> bool:
@@ -108,51 +140,55 @@ def check_file(lines: list[str], allow_list_wrap_slot: bool = False) -> list[str
         errs.append("L3 非头部合并行")
     l4, l5, l6 = lines[LINE_H1 - 1], lines[LINE_H2 - 1], lines[LINE_BODY_FIRST - 1]
     if l4.strip():
-        if not re.match(r"^\s*<h1\b", l4) or not re.search(r"</h1>\s*$", l4):
+        if not _L4_H1_OPEN_RE.match(l4) or not _L4_H1_CLOSE_RE.search(l4):
             errs.append("L4 非 h1 独占行")
-        if re.search(r"<(?:img|svg)\b", l4, re.I) and "gaiji" not in l4.lower():
+        if _L4_IMG_RE.search(l4) and "gaiji" not in l4.lower():
             errs.append("L4 含图片")
     if l5.strip():
-        is_h2 = re.match(r"^\s*<h2\b", l5) and re.search(r"</h2>\s*$", l5)
+        is_h2 = _L5_H2_OPEN_RE.match(l5) and _L5_H2_CLOSE_RE.search(l5)
         is_list_wrap = allow_list_wrap_slot and bool(LIST_WRAP_RE.match(l5))
         if not is_h2 and not is_list_wrap:
             errs.append("L5 非 h2/列表包装独占行")
     if not l6.strip():
         errs.append("L6 为空")
-    elif not re.match(r"^\s*<p\b[^>]*>.*</p>\s*$", l6, re.I):
-        list_item = LIST_WRAP_RE.match(l5) and re.match(r"^\s*<li\b[^>]*>.*</li>\s*$", l6, re.I)
+    elif not _L6_P_RE.match(l6):
+        list_item = LIST_WRAP_RE.match(l5) and _L6_LI_RE.match(l6)
         # Chinese packaging pages may retain a multi-paragraph display container.
         # Its opening tag shares L6 with a complete first paragraph; a bare
         # container, text or image is still rejected.
-        wrapped_paragraph = re.match(r"^\s*(?:<div\b[^>]*>\s*)+<p\b[^>]*>.*</p>\s*(?:</div>\s*)*$", l6, re.I)
+        wrapped_paragraph = _L6_WRAPPED_P_RE.match(l6)
         if not (allow_list_wrap_slot and (list_item or wrapped_paragraph)):
             errs.append("L6 非独占 p 正文行/列表项")
     for idx, line in ((4, l4), (5, l5)):
-        if line.strip() and not re.match(r"^\s*<h[12]\b", line):
+        if line.strip() and not _H12_OPEN_LINE_RE.match(line):
             if idx == 5 and allow_list_wrap_slot and LIST_WRAP_RE.match(line):
                 continue
             errs.append(f"L{idx} 非标题行却有内容")
-    for lineno, line in enumerate(lines[LINE_BODY_FIRST - 1:], LINE_BODY_FIRST):
-        if FLOW_SIBLING_RE.search(line):
-            errs.append(f"L{lineno} 同一物理行包含多个正文块")
-        if CONTENT_BODY_CLOSE_RE.search(line):
-            errs.append(f"L{lineno} 正文与 body 闭标签同行")
+    body_errs: list[str] = []
+    heading_errs: list[str] = []
     for lineno, line in enumerate(lines, 1):
+        if lineno >= LINE_BODY_FIRST and "<" in line:
+            if FLOW_SIBLING_RE.search(line):
+                body_errs.append(f"L{lineno} 同一物理行包含多个正文块")
+            if ("</b" in line or "</B" in line) and CONTENT_BODY_CLOSE_RE.search(line):
+                body_errs.append(f"L{lineno} 正文与 body 闭标签同行")
+        if "<h" not in line and "<H" not in line:
+            continue
         opening = HEADING_OPEN_RE.search(line)
         if not opening:
             continue
         heading = HEADING_CONTENT_RE.search(line)
         if not heading:
-            errs.append(f"L{lineno} h1/h2 未独占一个物理行")
+            heading_errs.append(f"L{lineno} h1/h2 未独占一个物理行")
             continue
         if line.strip() != heading.group(0):
-            errs.append(f"L{lineno} h1/h2 未独占一个物理行")
+            heading_errs.append(f"L{lineno} h1/h2 未独占一个物理行")
         inner = heading.group("inner")
         if HEADING_BR_RE.search(inner):
-            errs.append(f"L{lineno} h1/h2 内嵌 <br/>")
+            heading_errs.append(f"L{lineno} h1/h2 内嵌 <br/>")
         if HEADING_BLOCK_WRAP_RE.search(inner):
-            errs.append(f"L{lineno} h1/h2 含 div/p 块级包装")
-    return errs
+            heading_errs.append(f"L{lineno} h1/h2 含 div/p 块级包装")
+    return errs + body_errs + heading_errs
 
 
 def img_lines(lines: list[str]) -> list[int]:
@@ -166,11 +202,38 @@ def img_lines(lines: list[str]) -> list[int]:
 
 
 def h2_lines(lines: list[str]) -> list[int]:
-    return [i + 1 for i, line in enumerate(lines) if re.search(r"<h2\b", line)]
+    return [i + 1 for i, line in enumerate(lines) if "<h2" in line and _H2_SEARCH_RE.search(line)]
 
 
 def standalone_br_lines(lines: list[str]) -> list[int]:
-    return [i + 1 for i, line in enumerate(lines) if BR_LINE_RE.match(line)]
+    return [i + 1 for i, line in enumerate(lines) if ("<br" in line or "<BR" in line) and BR_LINE_RE.match(line)]
+
+
+def _scan_anchors(lines: list[str]) -> tuple[list[int], list[int], list[int], list[int], list[int]]:
+    """单趟采集 pair_problems_raw 所需的 5 类行号，保持与独立辅助函数完全同口径。"""
+    h2s: list[int] = []
+    imgs: list[int] = []
+    brs: list[int] = []
+    h1s: list[int] = []
+    pbs: list[int] = []
+    for i, line in enumerate(lines, 1):
+        has_lt = "<" in line
+        if not has_lt and "data-image-continuation=" not in line and "pb" not in line:
+            continue
+        if has_lt:
+            if "<h2" in line and _H2_SEARCH_RE.search(line):
+                h2s.append(i)
+            if ("<br" in line or "<BR" in line) and BR_LINE_RE.match(line):
+                brs.append(i)
+            if ("<h1" in line or "<H1" in line) and _H1_SEARCH_RE.search(line):
+                h1s.append(i)
+        if (has_lt or "data-image-continuation=" in line) and IMG_RE.search(line):
+            low = line.lower()
+            if "gaiji" not in low and "height-2em" not in low:
+                imgs.append(i)
+        if "pb" in line and PB_RE.search(line):
+            pbs.append(i)
+    return h2s, imgs, brs, h1s, pbs
 
 
 PAIR_RULE_LABELS = {
@@ -193,7 +256,7 @@ def afterword_offset(japanese: list[str], chinese: list[str]) -> int | None:
     （`S5_01_03-Information.xhtml` 明写「（后记在【S5_01_01】…神裂火织篇 中）」）。
     """
     def without_closing(lines: list[str]) -> list[str]:
-        return lines[:-1] if lines and re.match(r"^\s*</body", lines[-1], re.I) else lines
+        return lines[:-1] if lines and _BODY_CLOSE_LINE_RE.match(lines[-1]) else lines
 
     cn_head = without_closing(chinese)
     for index, line in enumerate(japanese, 1):
@@ -286,32 +349,36 @@ def pair_problems_raw(header: str, japanese: list[str], chinese: list[str]) -> l
     problems: list[str] = []
     if len(japanese) != len(chinese):
         problems.append(f"行数 {len(japanese)} vs {len(chinese)}")
-    japanese_h2, chinese_h2 = h2_lines(japanese), h2_lines(chinese)
+    japanese_h2, japanese_images, japanese_br, jp_h1, jp_pb = _scan_anchors(japanese)
+    chinese_h2, chinese_images, chinese_br, cn_h1, cn_pb = _scan_anchors(chinese)
     if japanese_h2 != chinese_h2:
         problems.append(f"h2 位置 JP{japanese_h2} vs CN{chinese_h2}")
-    japanese_images, chinese_images = img_lines(japanese), img_lines(chinese)
     if japanese_images != chinese_images:
         problems.append(f"图片行 JP{japanese_images} vs CN{chinese_images}")
-    japanese_br = standalone_br_lines(japanese)
-    chinese_br = standalone_br_lines(chinese)
     if japanese_br != chinese_br:
         problems.append(f"<br/> 位置 JP{japanese_br} vs CN{chinese_br}")
     # Evaluate new anchors over the reviewed common range/order, so exceptions
     # cannot hide unrelated differences or report intentional moved backmatter.
-    jp_common, cn_common = japanese, chinese
     rules = allowed_pair_differences(header, japanese, chinese) or ()
-    if "afterword-moved" in rules:
-        offset = afterword_offset(japanese, chinese)
-        jp_common = japanese[:offset - 1] + japanese[-1:]
-    if "section-order" in rules:
-        offset = order_swap_offset(japanese, chinese)
-        cn_common = list(chinese)
-        cn_common[offset - 1], cn_common[offset] = cn_common[offset], cn_common[offset - 1]
-    for label, matcher in (("h1 位置", re.compile(r"<h1\b", re.I)), ("pb 位置", PB_RE)):
-        jp_positions = [i for i, line in enumerate(jp_common, 1) if matcher.search(line)]
-        cn_positions = [i for i, line in enumerate(cn_common, 1) if matcher.search(line)]
-        if jp_positions != cn_positions:
-            problems.append(f"{label} JP{jp_positions} vs CN{cn_positions}")
+    if rules:
+        jp_common, cn_common = japanese, chinese
+        if "afterword-moved" in rules:
+            offset = afterword_offset(japanese, chinese)
+            jp_common = japanese[:offset - 1] + japanese[-1:]
+        if "section-order" in rules:
+            offset = order_swap_offset(japanese, chinese)
+            cn_common = list(chinese)
+            cn_common[offset - 1], cn_common[offset] = cn_common[offset], cn_common[offset - 1]
+        for label, matcher in (("h1 位置", _H1_SEARCH_RE), ("pb 位置", PB_RE)):
+            jp_positions = [i for i, line in enumerate(jp_common, 1) if matcher.search(line)]
+            cn_positions = [i for i, line in enumerate(cn_common, 1) if matcher.search(line)]
+            if jp_positions != cn_positions:
+                problems.append(f"{label} JP{jp_positions} vs CN{cn_positions}")
+    else:
+        if jp_h1 != cn_h1:
+            problems.append(f"h1 位置 JP{jp_h1} vs CN{cn_h1}")
+        if jp_pb != cn_pb:
+            problems.append(f"pb 位置 JP{jp_pb} vs CN{cn_pb}")
     return problems
 
 
@@ -322,8 +389,16 @@ def pair_problems(header: str, japanese: list[str], chinese: list[str]) -> list[
     return remaining
 
 
-def audit_roots(cn_root: Path, jp_root: Path, work_ids: set[str] | None = None):
+def audit_roots(
+    cn_root: Path,
+    jp_root: Path,
+    work_ids: set[str] | None = None,
+    *,
+    lines_cache: dict[Path, list[str]] | None = None,
+    pair_struct_cache: dict[tuple[Path, Path], list[str]] | None = None,
+):
     """Read current Chinese/Japanese roots without copying or updating either."""
+    _ = pair_struct_cache
     cache = cn_root.parent
 
     def relative(path: Path) -> str:
@@ -413,7 +488,7 @@ def audit_roots(cn_root: Path, jp_root: Path, work_ids: set[str] | None = None):
             header = pairing_header_of(path.name)
             if header is None or JP_WRAPPER_RE.match(path.name):
                 continue
-            lines = read_lines(path)
+            lines = _read_lines_cached(path, lines_cache)
             if not any(line.strip() for line in lines):
                 seen.add(path)
                 add(side, book, relative(path), header, False,
@@ -442,7 +517,7 @@ def audit_roots(cn_root: Path, jp_root: Path, work_ids: set[str] | None = None):
                 add("对", cn_id, "", h, True, [], "特例待判断（人工处理中）")
                 continue
             jp_p, cn_p = jp_by[h], cn_by[h]
-            jl, cl = read_lines(jp_p), read_lines(cn_p)
+            jl, cl = _read_lines_cached(jp_p, lines_cache), _read_lines_cached(cn_p, lines_cache)
             if not has_body(jl) and not has_body(cl):
                 continue  # 两侧都是纯图片页/无正文页：不适用
             if has_body(jl) != has_body(cl) and h not in TEXTUAL_IMAGE_HEADERS:

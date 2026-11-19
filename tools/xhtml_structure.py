@@ -13,38 +13,55 @@ BLANK = re.compile(r"^\s*$")
 BODY_RE = re.compile(r"<body\b", re.I)
 PB_RE = re.compile(r"\bclass\s*=\s*(['\"])(?:[^'\"]*\s)?pb(?:\s[^'\"]*)?\1")
 
+_BR_STRIPPED_RE = re.compile(r"^<br\s*/?>$", re.I)
+_CLOSE_RE = re.compile(r"^</(?:body|html)\b", re.I)
+_H1_RE = re.compile(r"<h1\b", re.I)
+_H2_RE = re.compile(r"<h2\b", re.I)
+_IMG_RE = re.compile(r"<(?:img|svg)\b|data-image-continuation=", re.I)
+_INLINE_GLYPH_RE = re.compile(r"gaiji|height-2em", re.I)
+_SPECIAL_INLINE_RE = re.compile(r"<(?:body|h1|h2|img|svg)\b|data-image-continuation=", re.I)
+_BLOCK_TAG_RE = re.compile(r"^</?(div|ul|ol|li|p|hr|table|blockquote)\b", re.I)
+
 
 def body_start(lines: list[str]) -> int:
     return next((i for i, line in enumerate(lines) if BODY_RE.search(line)), 2)
 
 
 def line_kind(line: str) -> str:
-    if BR_ONLY.match(line):
-        return "br"
-    if BLANK.match(line):
+    stripped = line.strip()
+    if not stripped:
         return "blank"
-    if BODY_RE.search(line):
-        return "head"
-    if re.match(r"^\s*</(?:body|html)\b", line, re.I):
+    if stripped[0] == "<" and stripped[1:2] in ("b", "B") and _BR_STRIPPED_RE.match(stripped):
+        return "br"
+    if _SPECIAL_INLINE_RE.search(stripped):
+        if BODY_RE.search(stripped):
+            return "head"
+        if stripped.startswith("</") and _CLOSE_RE.match(stripped):
+            return "close"
+        if _H1_RE.search(stripped):
+            return "h1"
+        if _H2_RE.search(stripped):
+            return "h2"
+        if _IMG_RE.search(stripped) and not _INLINE_GLYPH_RE.search(stripped):
+            return "img"
+    elif stripped.startswith("</") and _CLOSE_RE.match(stripped):
         return "close"
-    for tag in ("h1", "h2"):
-        if re.search(rf"<{tag}\b", line, re.I):
-            return tag
-    if re.search(r"<(?:img|svg)\b|data-image-continuation=", line, re.I) and not re.search(
-            r"gaiji|height-2em", line, re.I):
-        return "img"
-    for tag in ("div", "ul", "ol", "li", "p", "hr", "table", "blockquote"):
-        if re.match(rf"^\s*</?{tag}\b", line, re.I):
-            return tag
+    match = _BLOCK_TAG_RE.match(stripped)
+    if match:
+        return match.group(1).lower()
     return "other"
 
 
 def pair_structure_problems(japanese: list[str], chinese: list[str]) -> list[str]:
     if len(japanese) != len(chinese):
         return [f"行数不同：JP {len(japanese)} / CN {len(chinese)}"]
-    return [f"L{i} 行类型错位：JP {line_kind(j)} / CN {line_kind(c)}"
-            for i, (j, c) in enumerate(zip(japanese, chinese), 1)
-            if line_kind(j) != line_kind(c)]
+    problems: list[str] = []
+    for i, (j, c) in enumerate(zip(japanese, chinese), 1):
+        jk = line_kind(j)
+        ck = line_kind(c)
+        if jk != ck:
+            problems.append(f"L{i} 行类型错位：JP {jk} / CN {ck}")
+    return problems
 
 
 def header_index(directory: Path, *, include_packaging: bool = False) -> dict[str, Path]:

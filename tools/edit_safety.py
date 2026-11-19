@@ -2,11 +2,17 @@
 from __future__ import annotations
 
 import argparse
+import functools
 import os
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_EPUB = REPO_ROOT / "EPUB"
+
+
+@functools.lru_cache(maxsize=32)
+def _resolved_cached(raw: str) -> Path:
+    return Path(raw).resolve()
 
 
 class EditSafetyError(ValueError):
@@ -18,7 +24,8 @@ def _inside(path: Path, root: Path) -> bool:
 
 
 def _forbidden(path: Path) -> bool:
-    if _inside(path, REPO_ROOT / ".cache") or _inside(path, (REPO_ROOT / ".cache").resolve()):
+    cache_raw = str(REPO_ROOT / ".cache")
+    if _inside(path, REPO_ROOT / ".cache") or _inside(path, _resolved_cached(cache_raw)):
         return True
     # Check both configured locations and folder names, including OneDrive - Org.
     if any(part.casefold() == "onedrive" or part.casefold().startswith("onedrive - ")
@@ -26,7 +33,7 @@ def _forbidden(path: Path) -> bool:
         return True
     for name in ("OneDrive", "OneDriveConsumer", "OneDriveCommercial"):
         location = os.environ.get(name)
-        if location and _inside(path, Path(location).resolve()):
+        if location and _inside(path, _resolved_cached(location)):
             return True
     return False
 
@@ -43,7 +50,7 @@ def require_edit_target(path: Path | str, staging: bool = False,
     resolved = supplied.resolve()
     if _forbidden(supplied) or _forbidden(resolved):
         raise EditSafetyError(f"禁止写入缓存或 OneDrive：{path}")
-    allowed = Path(epub_root).resolve() if epub_root is not None else DEFAULT_EPUB.resolve()
+    allowed = _resolved_cached(str(epub_root)) if epub_root is not None else _resolved_cached(str(DEFAULT_EPUB))
     if not staging and not _inside(resolved, allowed):
         raise EditSafetyError(f"内容写入必须位于 {allowed}；临时处理请显式使用 --staging：{path}")
     if staging and resolved == REPO_ROOT:

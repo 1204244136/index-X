@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import copy
 import csv
+import functools
 import hashlib
 import io
 import json
@@ -29,11 +30,16 @@ def _inside(path: Path, root: Path) -> bool:
     return path == root or root in path.parents
 
 
+@functools.lru_cache(maxsize=32)
+def _resolved_cached(raw: str) -> Path:
+    return Path(raw).resolve()
+
+
 def _one_drive(path: Path) -> bool:
     if any(p.casefold() == "onedrive" or p.casefold().startswith("onedrive - ")
            for p in path.parts):
         return True
-    return any(value and _inside(path, Path(value).resolve()) for value in
+    return any(value and _inside(path, _resolved_cached(value)) for value in
                (os.environ.get(name) for name in
                 ("OneDrive", "OneDriveConsumer", "OneDriveCommercial")))
 

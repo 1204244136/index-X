@@ -11,6 +11,7 @@ Run directly to (re)generate the manifest:
 from __future__ import annotations
 
 import argparse
+import fnmatch
 import hashlib
 import json
 import sys
@@ -32,39 +33,91 @@ SIDE_DIRECTORIES = ("chinese-text", "japanese-text")
 
 
 def compute_hash(path: Path) -> str:
-    h = hashlib.sha256()
     with open(path, "rb") as f:
-        for chunk in iter(lambda: f.read(65536), b""):
-            h.update(chunk)
-    return h.hexdigest()
+        return hashlib.file_digest(f, "sha256").hexdigest()
 
 
-def scan_cache(cache_root: Path) -> dict[str, str]:
+def _has_book_files(directory: Path, extract_root: Path) -> bool:
+    if not directory.is_dir() or is_extract_artifact(directory, root=extract_root):
+        return False
+    for path in directory.rglob("*"):
+        if path.is_file() and not is_extract_artifact(path, root=extract_root):
+            return True
+    return False
+
+
+def existing_book_keys(
+    cache_root: Path, epub_root: Path, candidates: set[str]
+) -> set[str]:
+    """Return subset of candidate 'side/book' keys present in cache or EPUB/."""
+    found: set[str] = set()
+    for key in candidates:
+        side, _, book = key.partition("/")
+        if not book or side not in SIDE_DIRECTORIES:
+            continue
+        if _has_book_files(cache_root / side / book, cache_root / side):
+            found.add(key)
+            continue
+        if side == "chinese-text" and _has_book_files(epub_root / book, epub_root):
+            found.add(key)
+    return found
+
+
+def scan_cache(
+    cache_root: Path,
+    *,
+    sides: tuple[str, ...] | None = None,
+    pattern: str = "*",
+    only_books: set[str] | None = None,
+) -> dict[str, str]:
     """Walk chinese-text/ and japanese-text/, return {posix_rel_path: sha256}."""
     files: dict[str, str] = {}
-    for side in SIDE_DIRECTORIES:
+    target_sides = SIDE_DIRECTORIES if sides is None else sides
+    pattern_cf = pattern.casefold()
+    for side in target_sides:
         side_root = cache_root / side
         if not side_root.is_dir():
             continue
-        for path in side_root.rglob("*"):
-            if not path.is_file():
+        for book_dir in side_root.iterdir():
+            if not book_dir.is_dir():
                 continue
-            if is_extract_artifact(path, root=side_root):
+            if is_extract_artifact(book_dir, root=side_root):
                 continue
-            rel = path.relative_to(cache_root).as_posix()
-            files[rel] = compute_hash(path)
+            book_name = book_dir.name
+            if only_books is not None and f"{side}/{book_name}" not in only_books:
+                continue
+            if pattern != "*" and not fnmatch.fnmatch(book_name.casefold(), pattern_cf):
+                continue
+            for path in book_dir.rglob("*"):
+                if not path.is_file():
+                    continue
+                if is_extract_artifact(path, root=side_root):
+                    continue
+                rel = path.relative_to(cache_root).as_posix()
+                files[rel] = compute_hash(path)
     return files
 
 
-def scan_epub(epub_root: Path) -> dict[str, str]:
+def scan_epub(
+    epub_root: Path,
+    *,
+    pattern: str = "*",
+    only_books: set[str] | None = None,
+) -> dict[str, str]:
     """Walk EPUB/ and return {manifest-style key: sha256}.
 
     EPUB/ stores one directory per (Chinese) book, so every file maps to the
     'chinese-text/<book>/<rel>' key used by manifest.json / publish.py.
     """
     files: dict[str, str] = {}
+    pattern_cf = pattern.casefold()
     for book_dir in sorted(p for p in epub_root.iterdir() if p.is_dir()):
         if is_extract_artifact(book_dir, root=epub_root):
+            continue
+        book_name = book_dir.name
+        if only_books is not None and f"chinese-text/{book_name}" not in only_books:
+            continue
+        if pattern != "*" and not fnmatch.fnmatch(book_name.casefold(), pattern_cf):
             continue
         for path in book_dir.rglob("*"):
             if not path.is_file():

@@ -80,11 +80,19 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import posixpath
 import sys
 import re
 import xml.etree.ElementTree as ET
 from collections import Counter, defaultdict
+from concurrent.futures import ProcessPoolExecutor
+from dataclasses import dataclass, field
 from pathlib import Path
+
+TOOLS_DIR = Path(__file__).resolve().parent
+if str(TOOLS_DIR) not in sys.path:
+    sys.path.insert(0, str(TOOLS_DIR))
 
 if __package__:
     from .cli_output import configure_output
@@ -98,7 +106,7 @@ from epub_ids import book_id, content_sequence, header_of, is_list_packaging_hea
 from text_norm import split_bold_punct
 from xhtml_slots import NOTE_H1
 from title_rules import audit_title_contract
-from epub_structure import css_references, opf_relations, resolve_reference, xml_references
+from epub_structure import XML_SUFFIXES, css_references, opf_relations, resolve_reference, xml_references
 from urllib.parse import unquote, urlsplit
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -110,8 +118,35 @@ DEFAULT_ROOT = REPO_ROOT / "EPUB"
 
 IMG_REF_RE = re.compile(r'(?:src|href)\s*=\s*["\']([^"\']+)["\']', re.I)
 IMG_TAG_RE = re.compile(r"<img\b[^>]*>", re.I)
+IMG_SRC_ATTR_RE = re.compile(r"\bsrc\s*=", re.I)
 IMAGE_EXT_RE = re.compile(r"\.(?:jpe?g|png|gif|svg|webp)$", re.I)
 RUBY_BLOCK_RE = re.compile(r"<ruby\b[^>]*>(.*?)</ruby\s*>", re.S | re.I)
+RUBY_OPEN_RE = re.compile(r"<ruby\b", re.I)
+RUBY_CLOSE_RE = re.compile(r"</ruby\s*>", re.I)
+RT_OPEN_RE = re.compile(r"<rt\b", re.I)
+WHITESPACE_RE = re.compile(r"\s+")
+B_OPEN_RE = re.compile(r"<b\b", re.I)
+B_CLOSE_RE = re.compile(r"</b\s*>", re.I)
+B_BLOCK_RE = re.compile(r"<b\b[^>]*>(.*?)</b\s*>", re.S | re.I)
+HTML_TAG_RE = re.compile(r"<[^>]*>")
+EXTERNAL_URL_RE = re.compile(r"^(?:[a-z][a-z0-9+.-]*:|//)", re.I)
+SVG_BYTES_RE = re.compile(rb"<svg", re.I)
+CSS_COMMENT_RE = re.compile(r"/\*.*?\*/", re.S)
+CSS_BLOCK_RE = re.compile(r"([^{}]+)\{([^{}]*)\}")
+CSS_IMPORTANT_RE = re.compile(r"\s*!important\s*$")
+CSS_ZERO_RE = re.compile(r"[-+]?0+(?:\.0+)?(?:%|px|em|rem|pt)?")
+HTML_BODY_SELECTOR_RE = re.compile(r"(?:^|\s)(?:html|body)(?:$|[.:#\s])")
+NOTE_HEAD_SPACE_RE = re.compile(r"<head>\s+<link")
+NOTE_LINK_SPACE_RE = re.compile(r"/>\s+<title")
+NOTE_TITLE_RE = re.compile(r"<title>(.*?)</title>")
+NOTE_OL_RE = re.compile(r"^\s*<ol\b")
+NOTE_UL_RE = re.compile(r"^\s*<ul\b")
+NOTE_LI_RE = re.compile(r"^(\s*)<li\b([^>]*)>")
+NOTE_ID_RE = re.compile(r'\bid\s*=\s*"note\d+"')
+NOTE_ANY_TAG_RE = re.compile(r"<(/?)([a-zA-Z][\w:.-]*)")
+DANGLING_SOURCE_SUFFIXES = frozenset({".xhtml", ".html", ".opf", ".ncx", ".xml", ".svg", ".css"})
+DANGLING_FRAGMENT_SUFFIXES = frozenset({".xhtml", ".html", ".svg"})
+XML_PARSE_SUFFIXES = frozenset({".xhtml", ".html", ".opf", ".ncx", ".xml", ".svg"})
 
 CHECK_ORDER = (
     "XML", "template", "bold-punct", "bold-empty", "bold-pair",
@@ -173,13 +208,106 @@ def read_lines(path: Path) -> list[str]:
     return read_text(path).splitlines()
 
 
+@dataclass
+class BookSnapshot:
+    """Single-pass book file index with lazy text/XML decoding shared across checks."""
+
+    book_dir: Path
+    files_rel: set[str]
+    entries: dict[str, bytes]
+    escaped_paths: tuple[str, ...]
+    xhtml_rels: list[str]
+    all_xhtml_rels: list[str]
+    css_rels: list[str]
+    image_rels: list[str]
+    parsed_xml: dict[str, ET.Element] = field(default_factory=dict)
+    parse_errors: dict[str, str] = field(default_factory=dict)
+    decoded_text: dict[str, str] = field(default_factory=dict)
+
+    def get_text(self, rel: str) -> str:
+        text = self.decoded_text.get(rel)
+        if text is None:
+            text = self.entries[rel].decode("utf-8-sig", errors="replace")
+            self.decoded_text[rel] = text
+        return text
+
+    def get_xml(self, rel: str) -> ET.Element | None:
+        if rel in self.parsed_xml:
+            return self.parsed_xml[rel]
+        if rel in self.parse_errors or rel not in self.entries:
+            return None
+        try:
+            root = ET.fromstring(self.entries[rel])
+        except ET.ParseError as exc:
+            self.parse_errors[rel] = str(exc)
+            return None
+        self.parsed_xml[rel] = root
+        return root
+
+
+def load_book_snapshot(book_dir: Path) -> BookSnapshot:
+    """Walk a book directory once, reading XML/CSS/mimetype bytes and indexing assets."""
+    book_root = book_dir.resolve()
+    files_rel: set[str] = set()
+    entries: dict[str, bytes] = {}
+    escaped_paths: list[str] = []
+    stack: list[tuple[Path, str]] = [(book_dir, "")]
+    while stack:
+        current_dir, rel_prefix = stack.pop()
+        with os.scandir(current_dir) as it:
+            for entry in it:
+                name = entry.name
+                if name.casefold().startswith(".extract-"):
+                    continue
+                rel = f"{rel_prefix}{name}"
+                is_link = entry.is_symlink()
+                is_junction = entry.is_junction() if hasattr(entry, "is_junction") else False
+                if entry.is_dir(follow_symlinks=False):
+                    if is_link or is_junction:
+                        resolved = Path(entry.path).resolve()
+                        if not resolved.is_relative_to(book_root):
+                            escaped_paths.append(entry.path)
+                            continue
+                    stack.append((Path(entry.path), f"{rel}/"))
+                    continue
+                if is_link or is_junction:
+                    resolved = Path(entry.path).resolve()
+                    if not resolved.is_relative_to(book_root):
+                        escaped_paths.append(entry.path)
+                        continue
+                if not entry.is_file():
+                    continue
+                files_rel.add(rel)
+                lower = name.lower()
+                if rel == "mimetype" or lower.endswith(XML_SUFFIXES) or lower.endswith(".css"):
+                    entries[rel] = Path(entry.path).read_bytes()
+                else:
+                    entries[rel] = b""
+
+    sorted_rels = sorted(files_rel)
+    all_xhtml_rels = [rel for rel in sorted_rels if rel.endswith(".xhtml")]
+    xhtml_rels = [rel for rel in all_xhtml_rels if posixpath.basename(rel).lower() != "nav.xhtml"]
+    css_rels = [rel for rel in sorted_rels if rel.endswith(".css")]
+    image_rels = [rel for rel in sorted_rels if IMAGE_EXT_RE.search(posixpath.basename(rel))]
+    return BookSnapshot(
+        book_dir=book_dir,
+        files_rel=files_rel,
+        entries=entries,
+        escaped_paths=tuple(escaped_paths),
+        xhtml_rels=xhtml_rels,
+        all_xhtml_rels=all_xhtml_rels,
+        css_rels=css_rels,
+        image_rels=image_rels,
+    )
+
+
 def check_xml_refs(path: Path, lines: list[str]) -> str | None:
     """`<img>` 必须带 src 属性；缺 src 的图片标签在阅读器里是空洞。"""
     for line in lines:
-        if "<img" not in line.lower():
+        if "<img" not in line and "<IMG" not in line and "<img" not in line.lower():
             continue
         for tag in IMG_TAG_RE.findall(line):
-            if not re.search(r"\bsrc\s*=", tag, re.I):
+            if not IMG_SRC_ATTR_RE.search(tag):
                 return "`<img>` 缺 src 属性：%s" % tag[:80]
     return None
 
@@ -193,12 +321,14 @@ def find_ruby_problems(lines: list[str]) -> list[tuple[int, str]]:
     out: list[tuple[int, str]] = []
     opens = closes = 0
     for lineno, line in enumerate(lines, 1):
-        opens += len(re.findall(r"<ruby\b", line, re.I))
-        closes += len(re.findall(r"</ruby\s*>", line, re.I))
+        if "<r" not in line and "<R" not in line and "</r" not in line and "</R" not in line:
+            continue
+        opens += len(RUBY_OPEN_RE.findall(line))
+        closes += len(RUBY_CLOSE_RE.findall(line))
         for m in RUBY_BLOCK_RE.finditer(line):
-            if not re.search(r"<rt\b", m.group(1), re.I):
+            if not RT_OPEN_RE.search(m.group(1)):
                 out.append((lineno, "`<ruby>` 缺 `<rt>` 注音：%s"
-                            % re.sub(r"\s+", " ", m.group(0))[:80]))
+                            % WHITESPACE_RE.sub(" ", m.group(0))[:80]))
     if opens != closes:
         out.append((0, "`<ruby>` %d 个 / `</ruby>` %d 个" % (opens, closes)))
     return out
@@ -208,7 +338,7 @@ def find_bold_punct(lines: list[str]) -> list[tuple[int, str]]:
     """`<b>` 段内标点：与每日 CI（`text_norm.py`）同判定，命中即为 CI 会改的内容。"""
     hits: list[tuple[int, str]] = []
     for lineno, line in enumerate(lines, 1):
-        if "<b" not in line.lower():
+        if "<b" not in line and "<B" not in line:
             continue
         _new, block_hits = split_bold_punct(line)
         for _rid, matched, _ctx in block_hits:
@@ -217,9 +347,11 @@ def find_bold_punct(lines: list[str]) -> list[tuple[int, str]]:
 
 
 def find_bold_pairing(lines: list[str]) -> str | None:
+    if not any("<b" in line or "<B" in line or "</b" in line or "</B" in line for line in lines):
+        return None
     text = "\n".join(lines)
-    opens = len(re.findall(r"<b\b", text, re.I))
-    closes = len(re.findall(r"</b\s*>", text, re.I))
+    opens = len(B_OPEN_RE.findall(text))
+    closes = len(B_CLOSE_RE.findall(text))
     if opens != closes:
         return "`<b>` %d 个 / `</b>` %d 个" % (opens, closes)
     return None
@@ -228,8 +360,10 @@ def find_bold_pairing(lines: list[str]) -> str | None:
 def find_bold_empty(lines: list[str]) -> list[tuple[int, str]]:
     hits: list[tuple[int, str]] = []
     for lineno, line in enumerate(lines, 1):
-        for m in re.finditer(r"<b\b[^>]*>(.*?)</b\s*>", line, re.S | re.I):
-            if not re.sub(r"<[^>]*>", "", m.group(1)).strip():
+        if "<b" not in line and "<B" not in line:
+            continue
+        for m in B_BLOCK_RE.finditer(line):
+            if not HTML_TAG_RE.sub("", m.group(1)).strip():
                 hits.append((lineno, m.group(0)))
     return hits
 
@@ -242,24 +376,25 @@ def collect_xhtml(book_dir: Path) -> list[Path]:
     return sorted(p for p in book_dir.rglob("*.xhtml") if p.name.lower() != "nav.xhtml")
 
 
-def find_sequence_problems(xhtmls: list[Path]) -> list[tuple[str, str]]:
+def find_sequence_problems(xhtmls: list[Path] | list[str]) -> list[tuple[str, str]]:
     """`-00` / 重复表头 / 内容序缺号。返回 (检查项, 说明) 列表。"""
     out: list[tuple[str, str]] = []
-    by_header: dict[str, list[Path]] = defaultdict(list)
+    by_header: dict[str, list[str]] = defaultdict(list)
     by_work: dict[str, set[int]] = defaultdict(set)
-    for path in xhtmls:
-        seq = content_sequence(path.name)
+    for item in xhtmls:
+        name = posixpath.basename(item) if isinstance(item, str) else item.name
+        seq = content_sequence(name)
         if seq == 0:
-            out.append(("seq-00", "`%s` 使用非法内容序 -00" % path.name))
-        header = header_of(path.name)
+            out.append(("seq-00", "`%s` 使用非法内容序 -00" % name))
+        header = header_of(name)
         if header:
-            by_header[header].append(path)
-    for header, paths in sorted(by_header.items()):
-        if len(paths) > 1:
+            by_header[header].append(name)
+    for header, names in sorted(by_header.items()):
+        if len(names) > 1:
             out.append(("dup-header", "表头 `%s` 出现 %d 次：%s"
-                        % (header, len(paths), "、".join(p.name for p in paths))))
-        seq = content_sequence(paths[0].name)
-        wid = work_id(paths[0].name)
+                        % (header, len(names), "、".join(names))))
+        seq = content_sequence(names[0])
+        wid = work_id(names[0])
         if seq and wid:
             by_work[wid].add(seq)
     for wid, seqs in sorted(by_work.items()):
@@ -275,82 +410,108 @@ def find_sequence_problems(xhtmls: list[Path]) -> list[tuple[str, str]]:
     return out
 
 
-def find_image_prefix_problems(book_dir: Path, wid: str | None) -> list[tuple[str, str]]:
+def find_image_prefix_problems(
+    book_dir: Path, wid: str | None, *, image_rels: list[str] | None = None
+) -> list[tuple[str, str]]:
     if not wid:
         return []
     out: list[tuple[str, str]] = []
-    for path in sorted(book_dir.rglob("*")):
-        if not path.is_file() or not IMAGE_EXT_RE.search(path.name):
-            continue
-        if not path.name.upper().startswith(wid.upper() + "-"):
-            out.append(("img-prefix", "`%s` 缺作品号前缀 `%s-`"
-                        % (path.relative_to(book_dir).as_posix(), wid)))
+    prefix_upper = wid.upper() + "-"
+    if image_rels is None:
+        rels = [
+            path.relative_to(book_dir).as_posix()
+            for path in sorted(book_dir.rglob("*"))
+            if path.is_file() and IMAGE_EXT_RE.search(path.name)
+        ]
+    else:
+        rels = image_rels
+    for rel in rels:
+        name = posixpath.basename(rel)
+        if not name.upper().startswith(prefix_upper):
+            out.append(("img-prefix", "`%s` 缺作品号前缀 `%s-`" % (rel, wid)))
     return out
 
 
-def find_dangling(book_dir: Path, xhtmls: list[Path]) -> list[tuple[str, str]]:
+def find_dangling(
+    book_dir: Path, xhtmls: list[Path], *, snapshot: BookSnapshot | None = None
+) -> list[tuple[str, str]]:
     """Check XML attributes, CSS url()/@import and destination anchors."""
+    if snapshot is None:
+        snapshot = load_book_snapshot(book_dir)
     out: list[tuple[str, str]] = []
-    sources = sorted(p for p in book_dir.rglob("*") if p.is_file()
-                     and p.suffix.lower() in {".xhtml", ".html", ".opf", ".ncx", ".xml", ".svg", ".css"})
-    anchors: dict[Path, set[str]] = {}
-    refs: list[tuple[Path, str, bool]] = []
-    for path in sources:
-        if path.suffix.lower() == ".css":
-            refs.extend((path, reference.value, reference.root_relative)
-                        for reference in css_references(path.read_bytes()))
+    sources = sorted(
+        rel for rel in snapshot.files_rel
+        if posixpath.splitext(rel)[1].lower() in DANGLING_SOURCE_SUFFIXES
+    )
+    anchors: dict[str, set[str]] = {}
+    refs: list[tuple[str, str, str, bool]] = []
+    for rel in sources:
+        name = posixpath.basename(rel)
+        if rel.lower().endswith(".css"):
+            refs.extend((rel, name, reference.value, reference.root_relative)
+                        for reference in css_references(snapshot.entries[rel]))
             continue
-        try:
-            doc = ET.parse(path)
-        except ET.ParseError:
+        root = snapshot.get_xml(rel)
+        if root is None:
             continue  # XML/OCF validation reports syntax failures separately.
-        anchors[path.resolve()] = {e.get("id") for e in doc.iter() if e.get("id")}
-        refs.extend((path, reference.value, reference.root_relative)
-                    for reference in xml_references(doc.getroot(), attribute_case="lower"))
-    for path, value, root_relative in refs:
-        if re.match(r"^(?:[a-z][a-z0-9+.-]*:|//)", value, re.I):
+        anchors[rel] = {e.get("id") for e in root.iter() if e.get("id")}
+        refs.extend((rel, name, reference.value, reference.root_relative)
+                    for reference in xml_references(root, attribute_case="lower"))
+    for rel, path_name, value, root_relative in refs:
+        if EXTERNAL_URL_RE.match(value):
             continue
         parsed = urlsplit(value)
-        target = resolve_reference(path.relative_to(book_dir).as_posix(), value,
-                                   root_relative=root_relative)
-        resolved = (book_dir / target).resolve() if target else path.resolve()
-        if not resolved.is_relative_to(book_dir.resolve()) or not resolved.is_file():
-            out.append(("dangling", f"`{path.name}` 引用不存在或越界的 `{value}`"))
-        elif parsed.fragment and resolved.suffix.lower() in {".xhtml", ".html", ".svg"}:
-            if unquote(parsed.fragment) not in anchors.get(resolved, set()):
-                out.append(("dangling", f"`{path.name}` 锚点 `#{parsed.fragment}` 不存在"))
+        target = resolve_reference(rel, value, root_relative=root_relative)
+        dest_rel = target if target else rel
+        if dest_rel == ".." or dest_rel.startswith("../") or dest_rel not in snapshot.files_rel:
+            out.append(("dangling", f"`{path_name}` 引用不存在或越界的 `{value}`"))
+        elif parsed.fragment and posixpath.splitext(dest_rel)[1].lower() in DANGLING_FRAGMENT_SUFFIXES:
+            if unquote(parsed.fragment) not in anchors.get(dest_rel, set()):
+                out.append(("dangling", f"`{path_name}` 锚点 `#{parsed.fragment}` 不存在"))
     return out
 
 
 def css_rules(text: str) -> dict[str, dict[str, str]]:
     """Read ordinary declaration blocks; syntax validation remains calibre's job."""
-    text = re.sub(r"/\*.*?\*/", "", text, flags=re.S)
+    text = CSS_COMMENT_RE.sub("", text)
     rules: dict[str, dict[str, str]] = {}
-    for match in re.finditer(r"([^{}]+)\{([^{}]*)\}", text):
+    for match in CSS_BLOCK_RE.finditer(text):
         declarations = {}
         for declaration in match.group(2).split(";"):
             key, separator, value = declaration.partition(":")
             if separator:
-                declarations[key.strip().lower()] = re.sub(r"\s*!important\s*$", "", value.strip().lower())
+                declarations[key.strip().lower()] = CSS_IMPORTANT_RE.sub("", value.strip().lower())
         for selector in match.group(1).split(","):
-            selector = re.sub(r"\s+", " ", selector.strip())
+            selector = WHITESPACE_RE.sub(" ", selector.strip())
             rules.setdefault(selector, {}).update(declarations)
     return rules
 
 
-def find_css_layout_problems(book_dir: Path) -> list[tuple[str, str]]:
+def find_css_layout_problems(
+    book_dir: Path, *, snapshot: BookSnapshot | None = None
+) -> list[tuple[str, str]]:
     """Validate the main layout contract and overrides in every stylesheet."""
     out: list[tuple[str, str]] = []
-    paths = sorted(book_dir.rglob("*.css"))
-    main_paths = [p for p in paths if p.name.lower() == "style.css"]
-    if not paths:
+    if snapshot is not None:
+        css_rels = snapshot.css_rels
+        main_rels = {rel for rel in css_rels if posixpath.basename(rel).lower() == "style.css"}
+        has_svg = any(SVG_BYTES_RE.search(snapshot.entries[rel]) for rel in snapshot.all_xhtml_rels)
+        css_entries = [(rel, snapshot.get_text(rel)) for rel in css_rels]
+    else:
+        paths = sorted(book_dir.rglob("*.css"))
+        css_rels = [p.relative_to(book_dir).as_posix() for p in paths]
+        main_rels = {rel for rel in css_rels if posixpath.basename(rel).lower() == "style.css"}
+        has_svg = any(SVG_BYTES_RE.search(p.read_bytes()) for p in book_dir.rglob("*.xhtml"))
+        css_entries = [(rel, read_text(p)) for rel, p in zip(css_rels, paths)]
+
+    if not css_entries:
         return [("css-layout", "缺少主样式表 style.css，无法验证移动分页布局保护")]
     # Only the main stylesheet owns required layout declarations. Auxiliary font
     # and colour sheets may omit them, but may never override html/body margins.
-    if not main_paths:
+    if not main_rels:
         out.append(("css-layout", "缺少主样式表 style.css；未将任意辅助 CSS 当作主样式表"))
     def zero(value):
-        return bool(re.fullmatch(r"[-+]?0+(?:\.0+)?(?:%|px|em|rem|pt)?", value))
+        return bool(CSS_ZERO_RE.fullmatch(value))
 
     required = {
         "*": {"box-sizing": "border-box"},
@@ -368,16 +529,15 @@ def find_css_layout_problems(book_dir: Path) -> list[tuple[str, str]]:
         "p.center": {"text-indent": "0", "text-align": "center"},
     }
     # SVG pagination is required only for books using an SVG frontispiece.
-    if any("<svg" in read_text(p).lower() for p in book_dir.rglob("*.xhtml")):
+    if has_svg:
         required["svg"] = {"display": "block", "margin": "0 auto", "break-after": "column",
                            "-webkit-column-break-after": "always", "page-break-after": "always"}
-    for path in paths:
-        rel = path.relative_to(book_dir).as_posix()
-        rules = css_rules(read_text(path))
+    for rel, css_text in css_entries:
+        rules = css_rules(css_text)
         for selector, declarations in rules.items():
             if "box-sizing" in declarations and declarations["box-sizing"] != "border-box":
                 out.append(("css-layout", f"`{rel}` 的 `{selector}` 改回非标准盒模型 box-sizing"))
-            if not re.search(r"(?:^|\s)(?:html|body)(?:$|[.:#\s])", selector):
+            if not HTML_BODY_SELECTOR_RE.search(selector):
                 continue
             for prop in ("margin-left", "margin-right", "padding-left", "padding-right", "margin-inline", "padding-inline", "margin-inline-start", "margin-inline-end", "padding-inline-start", "padding-inline-end"):
                 if prop in declarations and any(not zero(value) for value in declarations[prop].split()):
@@ -390,7 +550,7 @@ def find_css_layout_problems(book_dir: Path) -> list[tuple[str, str]]:
                         out.append(("css-layout", f"`{rel}` 的 `{selector}` 含非零左右边距：{prop}"))
         for selector, declarations in required.items():
             actual = rules.get(selector, {})
-            if path not in main_paths:
+            if rel not in main_rels:
                 # Auxiliary sheets may omit the main contract, but explicit
                 # overrides of its protected declarations must retain values.
                 declarations = {p: v for p, v in declarations.items() if p in actual}
@@ -444,7 +604,9 @@ def opf_spine_hrefs(text: str) -> list[str]:
     return [hrefs.get(ref.idref, "") for ref in relations.itemrefs if ref.idref]
 
 
-def find_artifact_problems(book_dir: Path) -> list[tuple[str, str]]:
+def find_artifact_problems(
+    book_dir: Path, *, snapshot: BookSnapshot | None = None
+) -> list[tuple[str, str]]:
     """目录名、`dc:title` 对齐与必备部件；返回 (检查项, 说明) 列表。
 
     规范见 `docs/epub-artifact-spec.md`。
@@ -455,25 +617,46 @@ def find_artifact_problems(book_dir: Path) -> list[tuple[str, str]]:
     if not BOOK_ID_PREFIX_RE.match(name):
         out.append(("dir-name", "书目录名缺少 `【作品号】` 前缀：%s" % name))
 
-    opf = book_dir / "OEBPS" / "content.opf"
-    if not opf.is_file():
-        out.append(("packaging-required", "缺少包文档 `OEBPS/content.opf`"))
-        return out
-    text = read_text(opf)
-    title = opf_title(opf)
+    opf_rel = "OEBPS/content.opf"
+    if snapshot is not None:
+        if opf_rel not in snapshot.files_rel:
+            out.append(("packaging-required", "缺少包文档 `OEBPS/content.opf`"))
+            return out
+        text = snapshot.get_text(opf_rel)
+        m_title = DC_TITLE_RE.search(text)
+        title = m_title.group(1) if m_title else None
+    else:
+        opf = book_dir / "OEBPS" / "content.opf"
+        if not opf.is_file():
+            out.append(("packaging-required", "缺少包文档 `OEBPS/content.opf`"))
+            return out
+        text = read_text(opf)
+        title = opf_title(opf)
     if title is None:
         out.append(("metadata-title", "`OEBPS/content.opf` 缺少 `<dc:title>`"))
     elif title != name:
         out.append(("metadata-title", "`dc:title` 与书目录名不一致：%r ≠ %r" % (title, name)))
     for rel, label in (("nav.xhtml", "导航文档"), ("toc.ncx", "NCX 目录")):
-        if not (book_dir / rel).is_file():
+        exists = rel in snapshot.files_rel if snapshot is not None else (book_dir / rel).is_file()
+        if not exists:
             out.append(("packaging-required", "缺少%s `%s`" % (label, rel)))
 
+    if snapshot is not None:
+        opf_root = snapshot.get_xml(opf_rel)
+        if opf_root is None:
+            spine: list[str] = []
+        else:
+            relations = opf_relations(opf_root, scope="descendants", tag_case="exact")
+            hrefs = {item.id: item.href for item in relations.items if item.id and item.href}
+            spine = [hrefs.get(ref.idref, "") for ref in relations.itemrefs if ref.idref]
+    else:
+        spine = opf_spine_hrefs(text)
     text_dir = book_dir / "OEBPS" / "Text"
-    spine = opf_spine_hrefs(text)
     for suffix, label in (("Cover", "封面"), ("Information", "制作信息")):
         fname = "%s-%s.xhtml" % (bid, suffix) if bid else ""
-        if not fname or not (text_dir / fname).is_file():
+        page_rel = f"OEBPS/Text/{fname}"
+        exists = (page_rel in snapshot.files_rel) if snapshot is not None else bool(fname and (text_dir / fname).is_file())
+        if not fname or not exists:
             out.append(("packaging-required",
                         "缺少必备包装页 `%s`（%s）" % (fname or "<作品号>-%s.xhtml" % suffix, label)))
             continue
@@ -484,20 +667,32 @@ def find_artifact_problems(book_dir: Path) -> list[tuple[str, str]]:
     return out
 
 
-def find_toc_problems(book_dir: Path) -> list[tuple[str, str]]:
+def find_toc_problems(
+    book_dir: Path, *, snapshot: BookSnapshot | None = None
+) -> list[tuple[str, str]]:
     """采集目录条目、`docTitle` 与 `dtb:uid` 问题；级别由 SEVERITY 定义。"""
     out: list[tuple[str, str]] = []
-    ncx = book_dir / "toc.ncx"
-    nav = book_dir / "nav.xhtml"
-    ncx_text = read_text(ncx) if ncx.is_file() else ""
-    nav_text = read_text(nav) if nav.is_file() else ""
-    opf = book_dir / "OEBPS" / "content.opf"
-    title = opf_title(opf) if opf.is_file() else None
+    if snapshot is not None:
+        ncx_text = snapshot.get_text("toc.ncx") if "toc.ncx" in snapshot.files_rel else ""
+        nav_text = snapshot.get_text("nav.xhtml") if "nav.xhtml" in snapshot.files_rel else ""
+        opf_text = snapshot.get_text("OEBPS/content.opf") if "OEBPS/content.opf" in snapshot.files_rel else ""
+        m_title = DC_TITLE_RE.search(opf_text) if opf_text else None
+        title = m_title.group(1) if m_title else None
+        book_id_meta = BOOK_ID_META_RE.search(opf_text) if opf_text else None
+    else:
+        ncx = book_dir / "toc.ncx"
+        nav = book_dir / "nav.xhtml"
+        ncx_text = read_text(ncx) if ncx.is_file() else ""
+        nav_text = read_text(nav) if nav.is_file() else ""
+        opf = book_dir / "OEBPS" / "content.opf"
+        opf_text = read_text(opf) if opf.is_file() else ""
+        m_title = DC_TITLE_RE.search(opf_text) if opf_text else None
+        title = m_title.group(1) if m_title else None
+        book_id_meta = BOOK_ID_META_RE.search(opf_text) if opf_text else None
     doc = NCX_DOCTITLE_RE.search(ncx_text)
     if title and doc and doc.group(1) != title:
         out.append(("ncx-doctitle", "`docTitle` 与 `dc:title` 不一致：%r ≠ %r" % (doc.group(1), title)))
     # `dtb:uid` 应与包文档的 unique-identifier 同值（成品构成规范第三节）。
-    book_id_meta = BOOK_ID_META_RE.search(read_text(opf)) if opf.is_file() else None
     uid = NCX_UID_RE.search(ncx_text)
     if uid and book_id_meta and uid.group(1) != book_id_meta.group(1):
         out.append(("ncx-uid", "`dtb:uid` 与包文档 `unique-identifier` 不一致：%r ≠ %r"
@@ -516,19 +711,28 @@ NAV_ALLOWED_HEAD_TAGS = frozenset({
 })
 
 
-def find_nav_structure_problems(book_dir: Path) -> list[tuple[str, str]]:
+def find_nav_structure_problems(
+    book_dir: Path, *, snapshot: BookSnapshot | None = None
+) -> list[tuple[str, str]]:
     """`nav.xhtml` 的头部结构（error）。
 
     HTML5 的 XHTML 语法下，`<html>` 的直接子元素只有 `head` 与 `body`，`<head>` 内只放
     元数据类元素，裸 `<br/>` 不能作为 head 或 html 的直接子元素。
     """
-    nav = book_dir / "nav.xhtml"
-    if not nav.is_file():
-        return []  # 缺文件由 packaging-required 报，这里不重复
-    try:
-        root = ET.fromstring(read_text(nav))
-    except ET.ParseError as exc:
-        return [("nav-structure", "`nav.xhtml` 不是合法 XML：%s" % exc)]
+    if snapshot is not None:
+        if "nav.xhtml" not in snapshot.files_rel:
+            return []
+        root = snapshot.get_xml("nav.xhtml")
+        if root is None:
+            return [("nav-structure", "`nav.xhtml` 不是合法 XML：%s" % snapshot.parse_errors.get("nav.xhtml", ""))]
+    else:
+        nav = book_dir / "nav.xhtml"
+        if not nav.is_file():
+            return []  # 缺文件由 packaging-required 报，这里不重复
+        try:
+            root = ET.fromstring(read_text(nav))
+        except ET.ParseError as exc:
+            return [("nav-structure", "`nav.xhtml` 不是合法 XML：%s" % exc)]
     tag = lambda element: element.tag.split("}")[-1].casefold()  # noqa: E731
     out: list[tuple[str, str]] = []
     kids = [tag(child) for child in root]
@@ -593,25 +797,25 @@ def find_note_structure_problems(lines: list[str], name: str) -> list[tuple[int,
     if lines[0] != "<?xml version='1.0' encoding='utf-8'?>":
         problems.append((1, "XML 声明应为单引号形式 `<?xml version='1.0' encoding='utf-8'?>`"))
     head = lines[2]
-    if re.search(r"<head>\s+<link", head):
+    if NOTE_HEAD_SPACE_RE.search(head):
         problems.append((3, "`<head>` 与 `<link>` 之间有多余空格"))
-    if re.search(r"/>\s+<title", head):
+    if NOTE_LINK_SPACE_RE.search(head):
         problems.append((3, "`<link>` 与 `<title>` 之间有多余空格"))
-    m = re.search(r"<title>(.*?)</title>", head)
+    m = NOTE_TITLE_RE.search(head)
     if m and m.group(1):
         problems.append((3, "`<title>` 应为空，实为 %r" % m.group(1)[:30]))
     if lines[3] != NOTE_H1:
         problems.append((4, "L4 应为 `%s`，实为 `%s`" % (NOTE_H1, lines[3][:60])))
-    if re.match(r"^\s*<ol\b", lines[4]):
+    if NOTE_OL_RE.match(lines[4]):
         problems.append((5, "容器是 `<ol>`；规范要求 `<ul>`（`reorder_notes.py` 依赖 `<ul>` 定位条目）"))
-    elif not re.match(r"^\s*<ul\b", lines[4]):
+    elif not NOTE_UL_RE.match(lines[4]):
         problems.append((5, "L5 不是 `<ul>` 列表容器：`%s`" % lines[4][:60]))
 
     # 说明型条目：`docs/epub-structure-spec.md` 登记的唯一合法实例——S0_00-Note.xhtml 第 7 行
     # 「阅读器不支持弹注」提示，无 id、无 epub:type、不参与注释引用与重排。
     bare_ok = name == "S0_00-Note.xhtml"
     for i, line in enumerate(lines[5:], start=6):
-        m = re.match(r"^(\s*)<li\b([^>]*)>", line)
+        m = NOTE_LI_RE.match(line)
         if not m:
             continue
         indent, attrs = m.group(1), m.group(2).strip()
@@ -625,11 +829,11 @@ def find_note_structure_problems(lines: list[str], name: str) -> list[tuple[int,
             problems.append((i, "`<li>` 属性顺序为 `id` 在前，规范要求 `epub:type=\"footnote\"` 在前"))
         if 'epub:type="footnote"' not in attrs:
             problems.append((i, "`<li>` 缺 `epub:type=\"footnote\"`"))
-        if not re.search(r'\bid\s*=\s*"note\d+"', attrs):
+        if not NOTE_ID_RE.search(attrs):
             problems.append((i, "`<li>` 缺 `id=\"noteN\"`"))
 
     for i, line in enumerate(lines, start=1):
-        for _slash, tag in re.findall(r"<(/?)([a-zA-Z][\w:.-]*)", line):
+        for _slash, tag in NOTE_ANY_TAG_RE.findall(line):
             base = tag.split(":")[-1].casefold()
             if base in NOTE_TAG_WHITELIST:
                 continue
@@ -638,7 +842,12 @@ def find_note_structure_problems(lines: list[str], name: str) -> list[tuple[int,
     return problems
 
 
-def audit_book(book_dir: Path, only: set[str] | None) -> tuple[list[tuple], Counter, Counter, Counter]:
+def audit_book(
+    book_dir: Path,
+    only: set[str] | None,
+    *,
+    snapshot: BookSnapshot | None = None,
+) -> tuple[list[tuple], Counter, Counter, Counter]:
     """返回 (findings, 命中计数, 豁免计数, 覆盖文件计数)。
 
     findings 每项：``(check, book_id, rel_path, line, severity, message)``；
@@ -660,80 +869,105 @@ def audit_book(book_dir: Path, only: set[str] | None) -> tuple[list[tuple], Coun
         counts[check] += 1
         findings.append((check, bid or book_dir.name, rel, line, SEVERITY[check], msg))
 
-    xhtmls = collect_xhtml(book_dir)
+    if snapshot is None:
+        snapshot = load_book_snapshot(book_dir)
+
     if want("title-style") or want("title-catalog"):
-        entries = {p.relative_to(book_dir).as_posix(): p.read_bytes()
-                   for p in book_dir.rglob("*") if p.is_file() and p.suffix in {".xhtml", ".ncx", ".css"}}
-        for check, rel, line, msg in audit_title_contract(entries):
+        entries = {
+            rel: snapshot.entries[rel]
+            for rel in sorted(snapshot.files_rel)
+            if posixpath.splitext(rel)[1] in {".xhtml", ".ncx", ".css"}
+        }
+        for rel in entries:
+            if rel.endswith((".xhtml", ".ncx")):
+                snapshot.get_xml(rel)
+        for check, rel, line, msg in audit_title_contract(
+            entries, documents=snapshot.parsed_xml, parse_errors=snapshot.parse_errors
+        ):
             if want(check):
                 add(check, rel, line, msg)
 
     if want("seq-00") or want("dup-header") or want("seq-gap"):
-        for check, msg in find_sequence_problems(xhtmls):
+        for check, msg in find_sequence_problems(snapshot.xhtml_rels):
             if want(check):
                 add(check, "-", 0, msg)
     if want("img-prefix"):
-        for check, msg in find_image_prefix_problems(book_dir, wid):
+        for check, msg in find_image_prefix_problems(book_dir, wid, image_rels=snapshot.image_rels):
             add(check, "-", 0, msg)
     if want("dangling"):
-        for check, msg in find_dangling(book_dir, xhtmls):
+        for check, msg in find_dangling(book_dir, [], snapshot=snapshot):
             add(check, "-", 0, msg)
     if want("css-layout"):
-        for check, msg in find_css_layout_problems(book_dir):
+        for check, msg in find_css_layout_problems(book_dir, snapshot=snapshot):
             add(check, "-", 0, msg)
     if want("dir-name") or want("metadata-title") or want("packaging-required"):
-        for check, msg in find_artifact_problems(book_dir):
+        for check, msg in find_artifact_problems(book_dir, snapshot=snapshot):
             if want(check):
                 add(check, "-", 0, msg)
     if want("nav-structure"):
-        for check, msg in find_nav_structure_problems(book_dir):
+        for check, msg in find_nav_structure_problems(book_dir, snapshot=snapshot):
             add(check, "-", 0, msg)
     if want("toc-entry") or want("ncx-doctitle") or want("ncx-uid"):
-        for check, msg in find_toc_problems(book_dir):
+        for check, msg in find_toc_problems(book_dir, snapshot=snapshot):
             if want(check):
                 add(check, "-", 0, msg)
 
-    for path in xhtmls:
-        covered["files"] += 1
-        rel = path.relative_to(book_dir).as_posix()
-        # 先解析一次：解析结果同时用于 XML 检查和行级检查的输入。
-        # 解析失败时行级检查没有可信输入，只报 XML 并跳过该文件。
-        try:
-            ET.parse(str(path))
-            parse_error = None
-        except ET.ParseError as exc:
-            parse_error = "XML 解析失败：%s" % exc
-        lines = read_lines(path)
-        if parse_error:
+    need_line_checks = any(
+        want(c) for c in ("XML", "template", "bold-punct", "bold-pair", "bold-empty", "ruby", "note-structure")
+    )
+    if need_line_checks:
+        for rel in snapshot.xhtml_rels:
+            covered["files"] += 1
+            # 先解析一次：解析结果同时用于 XML 检查和行级检查的输入。
+            # 解析失败时行级检查没有可信输入，只报 XML 并跳过该文件。
+            root = snapshot.get_xml(rel)
+            if root is None:
+                if want("XML"):
+                    add("XML", rel, 0, "XML 解析失败：%s" % snapshot.parse_errors.get(rel, ""))
+                continue
+            lines = snapshot.get_text(rel).splitlines()
+            name = posixpath.basename(rel)
+            path = book_dir / rel
             if want("XML"):
-                add("XML", rel, 0, parse_error)
-            continue
-        if want("XML"):
-            err = check_xml_refs(path, lines)
-            if err:
-                add("XML", rel, 0, err)
+                err = check_xml_refs(path, lines)
+                if err:
+                    add("XML", rel, 0, err)
 
-        allow_list = is_list_packaging_header(header_of(path.name))
-        if want("template"):
-            for err in check_template(lines, allow_list):
-                add("template", rel, 0, err)
-        if want("bold-punct"):
-            for lineno, matched in find_bold_punct(lines):
-                add("bold-punct", rel, lineno, "`<b>` 段内含标点：%s" % matched[:80])
-        if want("bold-pair"):
-            msg = find_bold_pairing(lines)
-            if msg:
-                add("bold-pair", rel, 0, msg)
-        if want("bold-empty"):
-            for lineno, matched in find_bold_empty(lines):
-                add("bold-empty", rel, lineno, "空 `<b>` 段：%s" % matched[:80])
-        if want("ruby"):
-            for lineno, msg in find_ruby_problems(lines):
-                add("ruby", rel, lineno, msg)
-        if want("note-structure") and path.name.endswith("-Note.xhtml"):
-            for lineno, msg in find_note_structure_problems(lines, path.name):
-                add("note-structure", rel, lineno, msg)
+            allow_list = is_list_packaging_header(header_of(name))
+            if want("template"):
+                for err in check_template(lines, allow_list):
+                    add("template", rel, 0, err)
+            if want("bold-punct"):
+                for lineno, matched in find_bold_punct(lines):
+                    add("bold-punct", rel, lineno, "`<b>` 段内含标点：%s" % matched[:80])
+            if want("bold-pair"):
+                msg = find_bold_pairing(lines)
+                if msg:
+                    add("bold-pair", rel, 0, msg)
+            if want("bold-empty"):
+                for lineno, matched in find_bold_empty(lines):
+                    add("bold-empty", rel, lineno, "空 `<b>` 段：%s" % matched[:80])
+            if want("ruby"):
+                for lineno, msg in find_ruby_problems(lines):
+                    add("ruby", rel, lineno, msg)
+            if want("note-structure") and name.endswith("-Note.xhtml"):
+                for lineno, msg in find_note_structure_problems(lines, name):
+                    add("note-structure", rel, lineno, msg)
+    else:
+        covered["files"] += len(snapshot.xhtml_rels)
     return findings, counts, exempted, covered
+
+
+def _audit_book_worker(task: tuple[Path, set[str] | None]) -> tuple[list[tuple], Counter, Counter, Counter]:
+    book_dir, only = task
+    return audit_book(book_dir, only)
+
+
+def _positive_int(value: str) -> int:
+    parsed = int(value)
+    if parsed < 1:
+        raise argparse.ArgumentTypeError("必须是 ≥1 的整数")
+    return parsed
 
 
 def _run() -> int:
@@ -746,6 +980,8 @@ def _run() -> int:
     ap.add_argument("--only", default=None, help="只跑指定检查项（逗号分隔）")
     ap.add_argument("--strict", action="store_true", help="有 error 级问题时返回非零（CI 门禁）")
     ap.add_argument("--top", type=int, default=5, help="每类最多列出的样例数")
+    ap.add_argument("--jobs", type=_positive_int, default=None,
+                    help="并行进程数（默认自动：至少 8 本书时启用多进程）")
     ap.add_argument("--tsv", type=Path, default=None, help="TSV 报告输出路径")
     ap.add_argument("--json", type=Path, default=None, help="JSON 报告输出路径")
     args = ap.parse_args()
@@ -762,21 +998,27 @@ def _run() -> int:
     findings: list[tuple] = []
     counts: Counter = Counter()
     exempted: Counter = Counter()
-    books = 0
+    book_dirs = list(iter_books(root, args.pattern))
+    books = len(book_dirs)
     files = 0
-    book_dirs: list[Path] = []
-    for book_dir in iter_books(root, args.pattern):
-        books += 1
-        book_dirs.append(book_dir)
-        book_findings, book_counts, book_exempted, covered = audit_book(book_dir, only)
-        findings.extend(book_findings)
-        counts.update(book_counts)
-        exempted.update(book_exempted)
-        files += covered["files"]
 
     if not books:
         print("[错误] 没有匹配的书籍，未执行单侧体检", file=sys.stderr)
         return 2
+
+    jobs = args.jobs if args.jobs is not None else (min(os.cpu_count() or 1, 8) if books >= 8 else 1)
+    jobs = min(jobs, books)
+    if jobs > 1:
+        with ProcessPoolExecutor(max_workers=jobs) as pool:
+            results = list(pool.map(_audit_book_worker, [(book_dir, only) for book_dir in book_dirs]))
+    else:
+        results = [audit_book(book_dir, only) for book_dir in book_dirs]
+
+    for book_findings, book_counts, book_exempted, covered in results:
+        findings.extend(book_findings)
+        counts.update(book_counts)
+        exempted.update(book_exempted)
+        files += covered["files"]
 
     # `unique-identifier` 唯一性需要汇总所选书籍。
     if only is None or "identifier-unique" in only:

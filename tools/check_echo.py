@@ -79,6 +79,8 @@ from xhtml_structure import header_index, pair_structure_problems  # noqa: E402
 
 KANA = r"\u3040-\u30ff"
 HAN = r"\u4e00-\u9fff"
+WS_COMPACT_RE = re.compile(r"\s+")
+HAN_RUN_RE = re.compile(rf"[{HAN}]{{2,}}")
 NORM_JP = re.compile(rf"[^{KANA}{HAN}A-Za-z0-9]")
 NORM_CN = re.compile(rf"[^{HAN}A-Za-z0-9]")
 QUOTE_PAIR = re.compile(r"[「『]([^「」『』]{2,120})[」』]")
@@ -1018,17 +1020,23 @@ def clause_echo_pairs(rows: list[dict], *, min_span: int = 10, min_share: float 
 
 def _compact(text: str) -> str:
     """去掉注音剥除留下的空白；位置比较按连续文本。"""
-    return re.sub(r"\s+", "", text)
+    return WS_COMPACT_RE.sub("", text)
 
 
 def _han_grams(text: str, lo: int, hi: int) -> set[tuple[str, int]]:
     """取 [lo, hi) 内所有 2–6 字纯汉字片段及其起始位置。"""
+    hi_limit = min(hi, len(text))
+    if lo >= hi_limit:
+        return set()
+    start_bound = max(0, lo)
+    end_bound = min(len(text), hi_limit + 5)
     out: set[tuple[str, int]] = set()
-    for start in range(lo, min(hi, len(text))):
-        for length in range(2, 7):
-            gram = text[start:start + length]
-            if len(gram) == length and all("\u4e00" <= c <= "\u9fff" for c in gram):
-                out.add((gram, start))
+    for match in HAN_RUN_RE.finditer(text, start_bound, end_bound):
+        run_start, run_end = match.span()
+        for start in range(run_start, min(hi_limit, run_end - 1)):
+            max_len = min(6, run_end - start)
+            for length in range(2, max_len + 1):
+                out.add((text[start:start + length], start))
     return out
 
 
@@ -1086,21 +1094,22 @@ def term_groups(rows: list[dict], *, min_lines: int = 3, max_lines: int = 60,
     total = len(rows)
     if total == 0:
         return []
+    comp_cn = [_compact(row["cn"]) for row in rows]
+    comp_jp = [_compact(row["jp"]) for row in rows]
     # 全卷中文词的出现行数：用于计算提升倍数，压掉场景词/人名。
     global_counts: Counter[str] = Counter()
-    for row in rows:
-        cn = _compact(row["cn"])
+    for cn in comp_cn:
         seen: set[str] = set()
-        for start in range(len(cn)):
-            for length in range(2, 7):
-                gram = cn[start:start + length]
-                if len(gram) == length and all("\u4e00" <= c <= "\u9fff" for c in gram):
-                    seen.add(gram)
+        for match in HAN_RUN_RE.finditer(cn):
+            run_start, run_end = match.span()
+            for start in range(run_start, run_end - 1):
+                max_len = min(6, run_end - start)
+                for length in range(2, max_len + 1):
+                    seen.add(cn[start:start + length])
         global_counts.update(seen)
 
     term_lines: dict[str, list[int]] = defaultdict(list)
-    for idx, row in enumerate(rows):
-        jp = _compact(row["jp"])
+    for idx, jp in enumerate(comp_jp):
         for term in set(JP_TERM_RE.findall(jp)):
             if 3 <= len(term) <= 12:
                 term_lines[term].append(idx)
@@ -1111,16 +1120,17 @@ def term_groups(rows: list[dict], *, min_lines: int = 3, max_lines: int = 60,
         n = len(idxs)
         if not (min_lines <= n <= max_lines):
             continue
+        term_len = len(term)
         # 片段 -> {行号: (中文相对位置, 日文相对位置)}；同一行取离术语最近的一次。
         spots: dict[str, dict[int, tuple[float, float]]] = defaultdict(dict)
         for idx in idxs:
-            row = rows[idx]
-            jp = _compact(row["jp"])
-            cn = _compact(row["cn"])
+            jp = comp_jp[idx]
+            cn = comp_cn[idx]
             if len(cn) < 2:
                 continue
-            for pos in (m.start() for m in re.finditer(re.escape(term), jp)):
-                p_jp = (pos + len(term) / 2) / max(1, len(jp))
+            pos = jp.find(term)
+            while pos >= 0:
+                p_jp = (pos + term_len / 2) / max(1, len(jp))
                 center = int(p_jp * len(cn))
                 width = max(6, int(window * len(cn)))
                 lo, hi = max(0, center - width), min(len(cn), center + width)
@@ -1133,6 +1143,7 @@ def term_groups(rows: list[dict], *, min_lines: int = 3, max_lines: int = 60,
                     current = spots[gram].get(idx)
                     if current is None or abs(p_cn - p_jp) < abs(current[0] - current[1]):
                         spots[gram][idx] = (p_cn, p_jp)
+                pos = jp.find(term, pos + term_len)
 
         candidates: list[dict] = []
         for gram, by_line in sorted(spots.items()):
@@ -1198,7 +1209,7 @@ def term_groups(rows: list[dict], *, min_lines: int = 3, max_lines: int = 60,
                     **item,
                     "rows": [rows[i] for i in sorted(item["lines"])],
                     "context": _term_context(
-                        _compact(rows[sorted(item["lines"])[0]]["cn"]), item["cn"]),
+                        comp_cn[sorted(item["lines"])[0]], item["cn"]),
                 }
                 for item in picked
             ],

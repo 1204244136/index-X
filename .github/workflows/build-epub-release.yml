@@ -83,7 +83,7 @@ jobs:
         if: steps.published.outputs.skip != 'true'
         run: |
           set -euo pipefail
-          python -m unittest discover -s tools/tests -p "test_*.py"
+          python tools/tests/run_tests.py
           python tools/check_project_docs.py
           python tools/publish_preflight.py --source EPUB
 
@@ -125,7 +125,7 @@ jobs:
               exit 1
             fi
 
-            zip -r "../${ARCHIVE_NAME}.${RELEASE_DATE}.zip" "${FILES[@]}"
+            zip -0 -r "../${ARCHIVE_NAME}.${RELEASE_DATE}.zip" "${FILES[@]}"
           done
 
       - name: Generate Release Notes and Rename EPUB files

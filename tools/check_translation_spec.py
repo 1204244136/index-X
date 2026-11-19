@@ -52,6 +52,8 @@ TAG_RE = re.compile(r"<[^>]*>")
 # 不属于正文，若不整段移除会被误判为半角标点。属性 style="..." 已由 TAG_RE 剥掉。
 STYLE_FULL_RE = re.compile(r"<style\b[^>]*>.*?</style>", re.S | re.I)
 SCRIPT_FULL_RE = re.compile(r"<script\b[^>]*>.*?</script>", re.S | re.I)
+_STYLE_OR_SCRIPT_OPEN_RE = re.compile(r"<(?:style|script)\b", re.I)
+_RUBY_CHILD_OPEN_RE = re.compile(r"<(?:rt|rp)\b", re.I)
 
 def strip_to_text(line):
     """把一行原始 XHTML 转成纯正文文本：先整段移除 <style>/<script> 与 ruby 注音块，
@@ -61,10 +63,16 @@ def strip_to_text(line):
     此前只剥 `<rt>`，会把 `<rp>（</rp>` 这类全角括号留在正文文本里（如 `驱动铠（）`）；
     当前规则集对该残留没有命中，但剥离口径应与其它入口一致，不留第二份实现。
     """
-    t = STYLE_FULL_RE.sub("", line)
-    t = SCRIPT_FULL_RE.sub("", t)
-    t = strip_ruby_annotations(t)
-    return unescape(strip_tags(t))
+    if "<" not in line:
+        return html.unescape(line) if "&" in line else line
+    t = line
+    if ("<s" in t or "<S" in t) and _STYLE_OR_SCRIPT_OPEN_RE.search(t):
+        t = STYLE_FULL_RE.sub("", t)
+        t = SCRIPT_FULL_RE.sub("", t)
+    if ("<r" in t or "<R" in t) and _RUBY_CHILD_OPEN_RE.search(t):
+        t = strip_ruby_annotations(t)
+    t = strip_tags(t)
+    return html.unescape(t) if "&" in t else t
 
 # CJK 表意文字 + 全角标点（用于判断“中文语境”）
 CJKX = r"\u3400-\u4dbf\u4e00-\u9fff\uff00-\uffef\u3000-\u303f"
@@ -187,6 +195,7 @@ P16_TRADITIONAL = (
     "黷黽黿鼂鼉鼕鼴齊齋齎齏齒齔齕齗齘齙齜齟齠齡齣齦齧齪齬齮齯齲齶齷齼龍龎龐龑龔龕龜鿁鿓"
 )
 P16_RE = re.compile("[%s]" % P16_TRADITIONAL)
+P16_SET = frozenset(P16_TRADITIONAL)
 
 # ---------------------------------------------------------------------------
 # 译注页（Note）检查：词表与判定口径的唯一来源
@@ -414,9 +423,23 @@ def short(text, n=60):
 
 
 CJKX_RE = re.compile("[%s]" % CJKX)
+_NOTE_PAREN_PAIR_RE = re.compile(r"\(([^()]*)\)")
+_NOTE_PAREN_CHAR_RE = re.compile(r"[()]")
+_NOTE_WORK_ID_RE = re.compile(r"【S\d+_[0-9A-Za-z_.]*】")
+_NOTE_RARE_BRACKET_RE = re.compile(r"[【】〈〉［］]")
+
+_CHECK_TEXT_ERROR = tuple(item for item in CHECK_TEXT if item[2] == "error")
+_CHECK_TEXT_WARN = tuple(item for item in CHECK_TEXT if item[2] != "error" and item[1] != "P16")
+_P16_ITEM = next(item for item in CHECK_TEXT if item[1] == "P16")
+_ERROR_TEXT_TRIGGER = re.compile(r"[,;.?!:~“”‘’]|！？|。。|…[。・.]|[〇零一二三四五六七八九][.．・·]")
+_WARN_INFO_TRIGGER = re.compile(
+    r"・|公[斤里]|切！|啊啦|呀嘞呀嘞|[呀雅压][吼呵呼嗬嚯轰]|yahoo|吥|bubu|…|   |想像|似地|[噼劈霹][里哩雳]啪[啦拉]",
+    re.I,
+)
+_P26_TRIGGER = re.compile(r"[0-9]|零[〇零一二三四五六七八九]*年")
 
 
-def check_note(text):
+def check_note(text, *, errors_only=False):
     """译注页（Note）条目检查；只在 fkind == 'note' 时由 check_text 调用。
 
     判定口径的唯一来源见本模块的 NOTE_* 常量与 `docs/translation-spec.md` 三.2。
@@ -440,32 +463,33 @@ def check_note(text):
     # 未配对的孤立半角括号（`（endorphins)` 的 `)`、`(Sir … Frazer）` 的 `(`）用
     # ±12 字窗口取片段——孤立括号必与全角括号混用，窗口内必含 CJK。
     # 全库回测：Note 页 8 处半角括号 → 违规 6、合法 2，零误报零漏报。
-    paired = [(m.start(), m.end() - 1) for m in re.finditer(r"\(([^()]*)\)", body)]
-    covered = {k for a, b in paired for k in range(a, b + 1)}
-    targets = [(a, b, body[a:b + 1]) for a, b in paired]
-    for m in re.finditer(r"[()]", body):
-        k = m.start()
-        if k not in covered:
-            targets.append((k, k, body[max(0, k - 12):k + 13]))
-    for i, j, seg in targets:
-        # 颜文字豁免：(╯‵□′)╯︵┻━┻ 一类由半角 ASCII 符号构成，括号是组成部分
-        if KAOMOJI_RE.search(seg) or KAOMOJI_RE.search(body[max(0, i - 3):j + 4]):
-            continue
-        if CJKX_RE.search(seg):
-            bad = True
-        else:
-            k = i - 1
-            while k >= 0 and body[k] == " ":
-                k -= 1
-            n = j + 1
-            while n < len(body) and body[n] == " ":
-                n += 1
-            prev_ch = body[k] if k >= 0 else ""
-            next_ch = body[n] if n < len(body) else ""
-            bad = bool(prev_ch and CJKX_RE.match(prev_ch) and not LATIN_RE.match(next_ch))
-        if bad:
-            add("P17", "error",
-                "中文语境半角括号，应改为全角（）（纯外文串与颜文字内的半角括号合法），", seg)
+    if "(" in body or ")" in body:
+        paired = [(m.start(), m.end() - 1) for m in _NOTE_PAREN_PAIR_RE.finditer(body)]
+        covered = {k for a, b in paired for k in range(a, b + 1)}
+        targets = [(a, b, body[a:b + 1]) for a, b in paired]
+        for m in _NOTE_PAREN_CHAR_RE.finditer(body):
+            k = m.start()
+            if k not in covered:
+                targets.append((k, k, body[max(0, k - 12):k + 13]))
+        for i, j, seg in targets:
+            # 颜文字豁免：(╯‵□′)╯︵┻━┻ 一类由半角 ASCII 符号构成，括号是组成部分
+            if KAOMOJI_RE.search(seg) or KAOMOJI_RE.search(body[max(0, i - 3):j + 4]):
+                continue
+            if CJKX_RE.search(seg):
+                bad = True
+            else:
+                k = i - 1
+                while k >= 0 and body[k] == " ":
+                    k -= 1
+                n = j + 1
+                while n < len(body) and body[n] == " ":
+                    n += 1
+                prev_ch = body[k] if k >= 0 else ""
+                next_ch = body[n] if n < len(body) else ""
+                bad = bool(prev_ch and CJKX_RE.match(prev_ch) and not LATIN_RE.match(next_ch))
+            if bad:
+                add("P17", "error",
+                    "中文语境半角括号，应改为全角（）（纯外文串与颜文字内的半角括号合法），", seg)
 
     # P20 括号配对：全角、半角各自的开闭数量必须相等。**分域判据**——Note 页的
     # `<li>` 是自足单元，可用严格判据；正文存在跨段整段括注，不得套用本判据。
@@ -474,11 +498,14 @@ def check_note(text):
             add("P20", "error",
                 "%s括号不配对（开 %d / 闭 %d），" % (name, body.count(op), body.count(cl)), body)
 
+    if errors_only:
+        return hits
+
     # P18 括号字符白名单：`【】``〈〉``［］` 各有合法用途（标题式标记／国标单书名号），
     # 只报告不自动改；`〔〕` 作补充说明时已由 text_norm.py 自动改为圆括号。
     # 作品号定界符 `【S…】`（书目录名与跨书引用用）是标识符而非标点，按 span 跳过。
-    id_spans = [(m.start(), m.end()) for m in re.finditer(r"【S\d+_[0-9A-Za-z_.]*】", body)]
-    for m in re.finditer(r"[【】〈〉［］]", body):
+    id_spans = [(m.start(), m.end()) for m in _NOTE_WORK_ID_RE.finditer(body)]
+    for m in _NOTE_RARE_BRACKET_RE.finditer(body):
         if any(start <= m.start() < end for start, end in id_spans):
             continue
         add("P18", "warning",
@@ -544,7 +571,64 @@ def _append_regex_hits(hits, text, rx, cat, sev, msg):
         hits.append((cat, sev, msg, short(example, 72)))
 
 
-def check_text(line, fkind):
+def _check_text_from_stripped(text, line, fkind, *, errors_only=False, has_kana=None):
+    hits = []
+    if not text.strip():
+        return hits
+
+    def get_has_kana():
+        nonlocal has_kana
+        if has_kana is None:
+            has_kana = bool(KANA_RE.search(text))
+        return has_kana
+
+    has_err = _ERROR_TEXT_TRIGGER.search(text) is not None
+    if errors_only:
+        if has_err:
+            for rx, cat, sev, msg in _CHECK_TEXT_ERROR:
+                _append_regex_hits(hits, text, rx, cat, sev, msg)
+    else:
+        has_warn = _WARN_INFO_TRIGGER.search(text) is not None
+        if has_err and has_warn:
+            for rx, cat, sev, msg in CHECK_TEXT:
+                if cat == "P7" and fkind == "note":
+                    continue
+                if cat == "P13" and (fkind != "content" or "<h1" in line or "<h2" in line):
+                    continue
+                if cat == "P16" and (fkind != "content" or P16_SET.isdisjoint(text) or get_has_kana()):
+                    continue
+                _append_regex_hits(hits, text, rx, cat, sev, msg)
+        elif has_err:
+            for rx, cat, sev, msg in _CHECK_TEXT_ERROR:
+                _append_regex_hits(hits, text, rx, cat, sev, msg)
+            if fkind == "content" and not P16_SET.isdisjoint(text) and not get_has_kana():
+                _append_regex_hits(hits, text, *_P16_ITEM)
+        elif has_warn:
+            for rx, cat, sev, msg in _CHECK_TEXT_WARN:
+                if cat == "P7" and fkind == "note":
+                    continue
+                if cat == "P13" and (fkind != "content" or "<h1" in line or "<h2" in line):
+                    continue
+                _append_regex_hits(hits, text, rx, cat, sev, msg)
+            if fkind == "content" and not P16_SET.isdisjoint(text) and not get_has_kana():
+                _append_regex_hits(hits, text, *_P16_ITEM)
+        elif fkind == "content" and not P16_SET.isdisjoint(text) and not get_has_kana():
+            _append_regex_hits(hits, text, *_P16_ITEM)
+
+    if _P26_TRIGGER.search(text):
+        is_story = fkind in P26_STORY_KINDS
+        for rx, story_only, sev, msg in P26_DATE_RULES:
+            if story_only and not is_story:
+                continue
+            if errors_only and sev != "error":
+                continue
+            _append_regex_hits(hits, text, rx, "P26", sev, msg)
+    if fkind == "note":
+        hits.extend(check_note(text, errors_only=errors_only))
+    return hits
+
+
+def check_text(line, fkind, *, errors_only=False):
     """对剥离标签的文本跑 TEXT 检查，返回 (category, severity, message, example) 列表。
 
     先整段移除 <style>/<script>/<rt> 块避免 CSS、JS、注音泄漏，再剥标签、反转义。
@@ -553,30 +637,13 @@ def check_text(line, fkind):
     - P13 连续空格：仅对正文内容文件判定，且跳过 h1/h2 标题行。
     Note 页另跑 check_note（P17–P25），P26 按故事体与功能页分域判定。
     """
-    text = strip_to_text(line)
-    hits = []
-    if not text.strip():
-        return hits
-    for rx, cat, sev, msg in CHECK_TEXT:
-        if cat == "P7" and fkind == "note":
-            continue
-        if cat == "P13" and (fkind != "content" or "<h1" in line or "<h2" in line):
-            continue
-        if cat == "P16" and (fkind != "content" or KANA_RE.search(text)):
-            continue
-        _append_regex_hits(hits, text, rx, cat, sev, msg)
-    is_story = fkind in P26_STORY_KINDS
-    for rx, story_only, sev, msg in P26_DATE_RULES:
-        if story_only and not is_story:
-            continue
-        _append_regex_hits(hits, text, rx, "P26", sev, msg)
-    if fkind == "note":
-        hits.extend(check_note(text))
-    return hits
+    return _check_text_from_stripped(strip_to_text(line), line, fkind, errors_only=errors_only)
 
 
 def check_ruby(line, fkind):
     """ruby 注音检查（基于原始行）。"""
+    if "<r" not in line:
+        return []
     hits = []
     rt_opens = len(RT_OPEN_RE.findall(line))
     ruby_opens = len(RUBY_OPEN_RE.findall(line))
@@ -605,7 +672,7 @@ def check_kana(text, line_no, fn):
     return hits
 
 
-def audit_book(text_dir) -> list[tuple[str, int, str, str, str, str]]:
+def audit_book(text_dir, *, errors_only=False) -> list[tuple[str, int, str, str, str, str]]:
     """检查一本书的 `OEBPS/Text/` 目录，返回全部命中；只读，不写任何文件。
 
     返回 (file, line, category, severity, message, example) 列表，供本文件的
@@ -624,16 +691,32 @@ def audit_book(text_dir) -> list[tuple[str, int, str, str, str, str]]:
         except Exception:
             continue
         for ln, line in enumerate(lines, 1):
-            # ruby 检查（原始行）
-            for cat, sev, msg, ex in check_ruby(line, fkind):
-                findings.append((fn, ln, cat, sev, msg, ex))
+            if not errors_only:
+                # ruby 检查（原始行）
+                for cat, sev, msg, ex in check_ruby(line, fkind):
+                    findings.append((fn, ln, cat, sev, msg, ex))
+            text = strip_to_text(line)
+            if not text.strip():
+                continue
+            kana_match = None
+            has_kana = None
+            if fkind == "content" and not errors_only:
+                kana_match = KANA_RE.search(text)
+                has_kana = kana_match is not None
             # 文本检查（先移除 <style>/<script>/<rt> 块再剥标签）
-            for cat, sev, msg, ex in check_text(line, fkind):
+            for cat, sev, msg, ex in _check_text_from_stripped(
+                text, line, fkind, errors_only=errors_only, has_kana=has_kana
+            ):
                 findings.append((fn, ln, cat, sev, msg, ex))
             # 假名残留（仅正文内容文件）
-            if fkind == "content":
-                for cat, sev, msg, ex in check_kana(strip_to_text(line), ln, fn):
-                    findings.append((fn, ln, cat, sev, msg, ex))
+            if kana_match is not None:
+                s = max(0, kana_match.start() - 10)
+                example = text[s:kana_match.end() + 20]
+                findings.append((
+                    fn, ln, "P8", "warning",
+                    "正文出现日文假名，疑似漏翻；若为形状描述（コ字形/く字形）、原文引用或特殊效果可忽略。",
+                    short(example, 60),
+                ))
     return findings
 
 

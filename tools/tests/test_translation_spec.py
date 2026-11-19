@@ -385,6 +385,36 @@ class P26DateExpressionTests(unittest.TestCase):
                 ("S2_22-02_Prologue.xhtml", 5, "error"),
             ])
 
+    def test_errors_only_matches_filtered_full_audit_exactly(self):
+        with tempfile.TemporaryDirectory() as td:
+            text_dir = Path(td)
+            (text_dir / "S1_01-01_Chapter1.xhtml").write_text(
+                "\n".join([
+                    HEAD, DOCT, BODY_OPEN, "<h1>第一章</h1>", "",
+                    "<p>半角,标点和 ~ 波浪号，还有！？与。。和……。及〇.七。</p>",
+                    "<p>“弯引号”与十公里和呀吼还有カタカナ与繁體字，二零〇一年1月2日。</p>",
+                    "<p>   三个空格，还有<ruby>魔<rt>ま</rt></ruby>。</p>",
+                    "</body></html>",
+                ]),
+                encoding="utf-8",
+            )
+            (text_dir / "S1_01-Note.xhtml").write_text(
+                "\n".join([
+                    HEAD, DOCT, BODY_OPEN, "<h1>译注</h1>", "<ul>",
+                    '<li epub:type="footnote" id="note1">（半角)与（不配对和（英语：test）1872 年。</li>',
+                    '<li epub:type="footnote" id="note2">这里指【标记】1至3米，详见注释1。</li>',
+                    "</ul></body></html>",
+                ]),
+                encoding="utf-8",
+            )
+            full_errors = [h for h in cts.audit_book(text_dir) if h[3] == "error"]
+            fast_errors = cts.audit_book(text_dir, errors_only=True)
+            self.assertEqual(fast_errors, full_errors)
+            self.assertTrue(any(h[2] == "P1" for h in fast_errors))
+            self.assertTrue(any(h[2] == "P17" for h in fast_errors))
+            self.assertTrue(any(h[2] == "P20" for h in fast_errors))
+            self.assertTrue(any(h[2] == "P26" for h in fast_errors))
+
 
 if __name__ == "__main__":
     unittest.main()

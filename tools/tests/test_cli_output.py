@@ -1,6 +1,7 @@
 """Exercise the public CLI output contract, including Windows pipe encoding."""
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 import importlib.util
 import io
 import os
@@ -60,13 +61,17 @@ class CliOutputTests(unittest.TestCase):
         )
 
     def test_every_tool_help_is_utf8_even_with_gbk_pipes(self):
-        for script in sorted(TOOLS.glob("*.py")):
-            if "__main__" not in script.read_text(encoding="utf-8-sig"):
-                continue
-            if script.name == "compare_epub_images.py" and importlib.util.find_spec("PIL") is None:
-                continue
+        pil_missing = importlib.util.find_spec("PIL") is None
+        scripts = [
+            script for script in sorted(TOOLS.glob("*.py"))
+            if "__main__" in script.read_text(encoding="utf-8-sig")
+            and not (script.name == "compare_epub_images.py" and pil_missing)
+        ]
+        workers = min(8, os.cpu_count() or 4, max(1, len(scripts)))
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            results = list(pool.map(lambda s: (s, self.run_cli(s, "--help")), scripts))
+        for script, result in results:
             with self.subTest(tool=script.name):
-                result = self.run_cli(script, "--help")
                 self.assertEqual(result.returncode, 0, result.stderr.decode("utf-8", "replace"))
                 self.assertIn("usage:", result.stdout.decode("utf-8"))
                 self.assertEqual(result.stderr, b"")

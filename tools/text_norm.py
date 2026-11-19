@@ -143,6 +143,7 @@ TAG_SPLIT = re.compile(r"(<[^>]*>)")
 SKIP_OPEN_RE = re.compile(r"<\s*(rt|style|script)\b", re.I)
 SKIP_CLOSE_RE = re.compile(r"<\s*/\s*(rt|style|script)\s*>", re.I)
 EXTRA_SEPARATORS = "\u2028\u2029\x0b\x0c\x85"
+_RULES_TRIGGER = re.compile(r"[\uFF06\u2500\u00a0〔〕,:~]|！[？?]|…[。.]|。。|[前后]文")
 
 # ---------------------------------------------------------------------------
 # 加粗规则：`<b>` 段内不得含标点（translation-spec 一.8「加粗落在标点上」）。
@@ -189,6 +190,8 @@ def split_bold_punct(line: str):
     标点一到即在该处闭合 `</b>`、写出标点、另起 `<b>`；`<rt>` 注音内容与
     XML 实体、作品号、缩写点整体保留，不参与切分。
     """
+    if "<b" not in line and "<B" not in line:
+        return line, []
     prot: list[str] = []
 
     def _stash(m):
@@ -287,16 +290,18 @@ def transform_line(line: str, skip: str | None):
             skip = _skip_state_after(part, skip)
             out.append(part)
             continue
-        if skip is not None:
+        if skip is not None or _RULES_TRIGGER.search(part) is None:
             out.append(part)
             continue
         new = part
         for rid, rx, rep, _spec, _disp in RULES:
+            matched = False
             for m in rx.finditer(new):
+                matched = True
                 s = max(0, m.start() - 24)
                 e = min(len(new), m.end() + 24)
                 hits.append((rid, m.group(0), new[s:e]))
-            if rx.search(new):
+            if matched:
                 new = rx.sub(rep, new)
         out.append(new)
     return "".join(out), hits, skip
@@ -315,15 +320,16 @@ def split_lines(text: str):
     return out
 
 
-def unsupported_structure(text: str) -> str | None:
+def unsupported_structure(text: str, lines: list[tuple[str, str]] | None = None) -> str | None:
     """fail-safe：遇到没有把握的跨行结构就拒绝处理该文件，不猜测、不部分替换。"""
     if any(ch in text for ch in EXTRA_SEPARATORS):
         return "含额外行分隔符（U+2028/U+2029/\\x0b/\\x0c/\\x85）"
     if "<![CDATA[" in text:
         return "含 CDATA 段"
-    for lineno, (body, _eol) in enumerate(split_lines(text), 1):
-        if body.count("<!--") != body.count("-->"):
-            return "第 %d 行含跨行注释" % lineno
+    if "<!--" in text or "-->" in text:
+        for lineno, (body, _eol) in enumerate(lines if lines is not None else split_lines(text), 1):
+            if body.count("<!--") != body.count("-->"):
+                return "第 %d 行含跨行注释" % lineno
     return None
 
 
@@ -334,14 +340,15 @@ def process_file(path: Path, apply_changes: bool):
     text = raw.decode("utf-8-sig")
     if not text:
         return [], False, None
-    reason = unsupported_structure(text)
+    lines = split_lines(text)
+    reason = unsupported_structure(text, lines)
     if reason:
         return [], False, reason
 
     skip: str | None = None
     out_lines: list[str] = []
     file_hits: list[tuple[int, str, str, str]] = []
-    for lineno, (body, eol) in enumerate(split_lines(text), 1):
+    for lineno, (body, eol) in enumerate(lines, 1):
         new_body, hits, skip = transform_line(body, skip)
         new_body, b_hits = split_bold_punct(new_body)
         for rid, matched, ctx in hits + b_hits:

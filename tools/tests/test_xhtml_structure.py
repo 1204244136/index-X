@@ -21,11 +21,23 @@ def xhtml(*body):
 
 class SharedStructureTests(unittest.TestCase):
     def test_line_types_distinguish_structure_and_ignore_inline_gaiji(self):
-        for line, kind in (('<br/>', 'br'), ('', 'blank'), ('<h2>节</h2>', 'h2'),
+        for line, kind in (('<br/>', 'br'), ('  <BR  />  ', 'br'), ('', 'blank'), ('  \t ', 'blank'),
+                           ('<html><head/><body class="x"><img src="i.jpg"/>', 'head'),
+                           ('</body></html><img src="i.jpg"/>', 'close'),
+                           ('</HTML>', 'close'),
+                           ('<h1><img src="t.jpg"/></h1>', 'h1'),
+                           ('<h1>标题</h1><h2>副标</h2>', 'h1'),
+                           ('<h2>节</h2>', 'h2'),
                            ('<p><img src="i.jpg"/></p>', 'img'),
+                           ('<p data-image-continuation="1">x</p>', 'img'),
                            ('<p>字<img class="gaiji" src="g.jpg"/></p>', 'p'),
-                           ('</body></html>', 'close')):
-            self.assertEqual(line_kind(line), kind)
+                           ('<p>字<img class="height-2em" src="g.jpg"/></p>', 'p'),
+                           ('<P>大写</P>', 'p'),
+                           ('<DIV>块</DIV>', 'div'),
+                           ('</body></html>', 'close'),
+                           ('plain text', 'other')):
+            with self.subTest(line=line):
+                self.assertEqual(line_kind(line), kind)
 
     def test_equal_counts_with_shifted_image_slot_are_rejected(self):
         japanese = xhtml('<p class="pb">A</p>', '<p><img src="i.jpg"/></p>')

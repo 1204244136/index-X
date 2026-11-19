@@ -2,16 +2,28 @@
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 import subprocess
+from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
+
+TOOLS_DIR = Path(__file__).resolve().parent
+if str(TOOLS_DIR) not in sys.path:
+    sys.path.insert(0, str(TOOLS_DIR))
 
 if __package__:
     from .cli_output import configure_output
 else:
     from cli_output import configure_output
 from check_alignment import audit_roots
-from check_epub_health import audit_book, CHECK_ORDER, exempt, find_identifier_duplicates
+from check_epub_health import (
+    CHECK_ORDER,
+    audit_book,
+    exempt,
+    find_identifier_duplicates,
+    load_book_snapshot,
+)
 from check_note_order import check_book
 from check_paired_text import audit_coverage as audit_paired_text
 from check_term_anchors import audit_coverage as audit_term_coverage
@@ -21,9 +33,37 @@ from notes_core import NOTEFILE_RE
 from package_cache_epubs import PackageError, validate_book
 
 
+def _validate_single_book(task: tuple[str, str, Path, bool]) -> list[str]:
+    side, key, book, has_jp_root = task
+    book_problems: list[str] = []
+    try:
+        snapshot = load_book_snapshot(book)
+        if snapshot.escaped_paths:
+            raise PackageError(f"resource escapes book directory: {snapshot.escaped_paths[0]}")
+        validate_book(book, entries=snapshot.entries)
+        if side == "chinese-text":
+            checks = set(CHECK_ORDER) - {"template"} if has_jp_root else None
+            findings, _counts, _exempt, _covered = audit_book(book, checks, snapshot=snapshot)
+            book_problems.extend(f"{key}: {f[0]} {f[2]} {f[5]}" for f in findings if f[4] == "error")
+            text = book / "OEBPS" / "Text"
+            if text.is_dir():
+                for note in sorted(p for p in text.iterdir() if p.is_file() and NOTEFILE_RE.match(p.name)):
+                    _entry, issues = check_book(book.name, str(text), note.name)
+                    book_problems.extend(f"{key}: {note.name} {issue}" for issue in issues)
+                # 翻译规范 error 级接入阻断（`docs/translation-spec.md` 七的
+                # P1–P26）。warning／info 只报告、不阻断：P7／P9／P15／P16 一类
+                # 属提示级，P23（译注起句）等存量批次项也在此列。
+                for fn, ln, cat, sev, msg, ex in audit_translation_spec(text, errors_only=True):
+                    if sev == "error":
+                        book_problems.append(f"{key}: {fn}:{ln} {cat} {msg}{ex}")
+    except (OSError, UnicodeError, PackageError, ValueError) as exc:
+        book_problems.append(f"{key}: {exc}")
+    return book_problems
+
+
 def validate_publication(cn_root: Path, jp_root: Path | None = None,
                          book_keys: list[str] | None = None, *, allow_removed: bool = False,
-                         require_reference: bool = False) -> bool:
+                         require_reference: bool = False, jobs: int | None = None) -> bool:
     """Validate the selected current copies before any mirror/upload mutation.
 
     book_keys use side/book identities. Deleted books have no container to check;
@@ -41,6 +81,8 @@ def validate_publication(cn_root: Path, jp_root: Path | None = None,
     cn_books: list[Path] = []
     all_cn_books: list[Path] = []
     found_selected: set[str] = set()
+    book_tasks: list[tuple[str, str, Path, bool]] = []
+    has_jp_root = jp_root is not None
     for side, root in roots.items():
         if root is None or not root.is_dir():
             continue
@@ -61,26 +103,19 @@ def validate_publication(cn_root: Path, jp_root: Path | None = None,
             seen.add(wid)
             work_ids.add(wid)
             checked += 1
-            try:
-                validate_book(book)
-                if side == "chinese-text":
-                    cn_books.append(book)
-                    checks = set(CHECK_ORDER) - {"template"} if jp_root is not None else None
-                    findings, _counts, _exempt, _covered = audit_book(book, checks)
-                    problems.extend(f"{key}: {f[0]} {f[2]} {f[5]}" for f in findings if f[4] == "error")
-                    text = book / "OEBPS" / "Text"
-                    if text.is_dir():
-                        for note in sorted(p for p in text.iterdir() if p.is_file() and NOTEFILE_RE.match(p.name)):
-                            _entry, issues = check_book(book.name, str(text), note.name)
-                            problems.extend(f"{key}: {note.name} {issue}" for issue in issues)
-                        # 翻译规范 error 级接入阻断（`docs/translation-spec.md` 七的
-                        # P1–P26）。warning／info 只报告、不阻断：P7／P9／P15／P16 一类
-                        # 属提示级，P23（译注起句）等存量批次项也在此列。
-                        for fn, ln, cat, sev, msg, ex in audit_translation_spec(text):
-                            if sev == "error":
-                                problems.append(f"{key}: {fn}:{ln} {cat} {msg}{ex}")
-            except (OSError, UnicodeError, PackageError, ValueError) as exc:
-                problems.append(f"{key}: {exc}")
+            if side == "chinese-text":
+                cn_books.append(book)
+            book_tasks.append((side, key, book, has_jp_root))
+    if book_tasks:
+        workers = jobs if jobs is not None else (min(os.cpu_count() or 1, 8) if len(book_tasks) >= 8 else 1)
+        workers = min(workers, len(book_tasks))
+        if workers > 1:
+            with ProcessPoolExecutor(max_workers=workers) as pool:
+                for book_problems in pool.map(_validate_single_book, book_tasks):
+                    problems.extend(book_problems)
+        else:
+            for task in book_tasks:
+                problems.extend(_validate_single_book(task))
     if checked == 0 and not allow_removed:
         problems.append("没有匹配的书籍，未执行发布验证")
     if selected is not None and not allow_removed:
@@ -101,8 +136,16 @@ def validate_publication(cn_root: Path, jp_root: Path | None = None,
         if not jp_root.is_dir():
             problems.append(f"日文参考目录不存在：{jp_root}")
         else:
+            lines_cache: dict[Path, list[str]] = {}
+            pair_struct_cache: dict[tuple[Path, Path], list[str]] = {}
             try:
-                _rows, bad, _checked = audit_roots(cn_root, jp_root, work_ids if selected is not None else None)
+                _rows, bad, _checked = audit_roots(
+                    cn_root,
+                    jp_root,
+                    work_ids if selected is not None else None,
+                    lines_cache=lines_cache,
+                    pair_struct_cache=pair_struct_cache,
+                )
                 problems.extend(f"{r[1]} {r[2]}: {r[5]}" for r in bad)
             except (OSError, UnicodeError, ValueError) as exc:
                 problems.append(f"中日对齐检查失败：{exc}")
@@ -110,7 +153,13 @@ def validate_publication(cn_root: Path, jp_root: Path | None = None,
             try:
                 cn_ids = {book_id(book.name) for book in cn_books}
                 if cn_ids:
-                    term_result = audit_term_coverage(cn_root, jp_root, cn_ids)
+                    term_result = audit_term_coverage(
+                        cn_root,
+                        jp_root,
+                        cn_ids,
+                        lines_cache=lines_cache,
+                        pair_struct_cache=pair_struct_cache,
+                    )
                 term_rows = term_result.rows if term_result is not None else []
                 problems.extend(
                     f"{r['book']} {r['file']}:{r['line']} 术语锚点 {r['anchor']} "
@@ -124,7 +173,13 @@ def validate_publication(cn_root: Path, jp_root: Path | None = None,
             try:
                 cn_ids = {book_id(book.name) for book in cn_books}
                 if cn_ids:
-                    paired_result = audit_paired_text(cn_root, jp_root, cn_ids)
+                    paired_result = audit_paired_text(
+                        cn_root,
+                        jp_root,
+                        cn_ids,
+                        lines_cache=lines_cache,
+                        pair_struct_cache=pair_struct_cache,
+                    )
                     problems.extend(
                         f"{r['book']} {r['file']}:{r['line']} 疑似整句截断（{r['detail']}）"
                         for r in paired_result.rows)
@@ -148,12 +203,21 @@ def validate_publication(cn_root: Path, jp_root: Path | None = None,
     return not problems
 
 
+def _positive_int(value: str) -> int:
+    parsed = int(value)
+    if parsed < 1:
+        raise argparse.ArgumentTypeError("必须是 ≥1 的整数")
+    return parsed
+
+
 def main(argv: list[str] | None = None) -> int:
     configure_output()
     parser = argparse.ArgumentParser(description="发布前只读预检，任一硬失败即阻断")
     parser.add_argument("--source", type=Path, default=Path(__file__).resolve().parents[1] / "EPUB")
     parser.add_argument("--jp-root", type=Path, help="完整双语预检的日文参考；缺省仅检查中文成品")
     parser.add_argument("--only-books", help="逗号分隔 side/book，同步入口内部使用")
+    parser.add_argument("--jobs", type=_positive_int, default=None,
+                        help="单侧单本检查并行进程数（默认自动：至少 8 本书时启用多进程）")
     parser.add_argument("--calibre", action="store_true", help="追加 calibre 完整结构校验，需要本机安装")
     args = parser.parse_args(argv)
     if not args.source.is_dir():
@@ -163,7 +227,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"日文参考目录不存在：{args.jp_root}；请指定已解包的日文工作源。", file=sys.stderr)
         return 2
     keys = args.only_books.split(",") if args.only_books else None
-    if not validate_publication(args.source, args.jp_root, keys, require_reference=args.jp_root is not None):
+    if not validate_publication(args.source, args.jp_root, keys, require_reference=args.jp_root is not None, jobs=args.jobs):
         return 1
     if args.calibre:
         if keys:

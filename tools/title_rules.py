@@ -14,6 +14,7 @@ from epub_structure import resolve_reference
 from xhtml_text import TAG, element_text_without_ruby
 
 HEADING_TAGS = frozenset({"h1", "h2", "h3"})
+HEADING_START_RE = re.compile(r"<(?:[\w.-]+:)?h[123]\b")
 HEADING_BLOCK = re.compile(r"<((?:[\w.-]+:)?h[123])\b[^>]*>.*?</\1\s*>", re.S | re.I)
 NON_PROSE_BLOCK = re.compile(
     r"<!--.*?-->"
@@ -67,6 +68,8 @@ def split_heading_markup(raw: str) -> tuple[str, str]:
 
 def prose_chapter_space_problems(text: str) -> list[tuple[int, str]]:
     """标题外的叙述／包装文本不得混入「序　章／终　章」排版空格，散字排版除外。"""
+    if "序" not in text and "终" not in text:
+        return []
     problems: list[tuple[int, str]] = []
     cleaned = NON_PROSE_BLOCK.sub(lambda m: "\n" * m.group(0).count("\n"), text)
     for lineno, raw_line in enumerate(cleaned.splitlines(), 1):
@@ -156,26 +159,36 @@ def _css_problems(css: str, need_code: bool) -> list[str]:
     return problems
 
 
-def audit_title_contract(entries: dict[str, bytes]) -> list[tuple[str, str, int, str]]:
+def audit_title_contract(
+    entries: dict[str, bytes],
+    *,
+    documents: dict[str, ET.Element] | None = None,
+    parse_errors: dict[str, str] | None = None,
+) -> list[tuple[str, str, int, str]]:
     """返回 (检查项, 书内路径, 行号, 说明)，无需日文或逐标题预期清单。"""
     problems: list[tuple[str, str, int, str]] = []
-    documents: dict[str, ET.Element] = {}
+    parsed_docs: dict[str, ET.Element] = {}
     headings: dict[str, list[ET.Element]] = {}
     for name, data in entries.items():
         if not name.endswith((".xhtml", ".ncx")):
             continue
-        try:
-            documents[name] = ET.fromstring(data)
-        except ET.ParseError as exc:
-            problems.append(("title-style", name, 0, f"无法检查标题／目录：XML 解析失败：{exc}"))
+        if documents is not None and name in documents:
+            parsed_docs[name] = documents[name]
+        elif parse_errors is not None and name in parse_errors:
+            problems.append(("title-style", name, 0, f"无法检查标题／目录：XML 解析失败：{parse_errors[name]}"))
             continue
+        else:
+            try:
+                parsed_docs[name] = ET.fromstring(data)
+            except ET.ParseError as exc:
+                problems.append(("title-style", name, 0, f"无法检查标题／目录：XML 解析失败：{exc}"))
+                continue
         if name == "nav.xhtml" or name.endswith(".ncx"):
             continue
-        nodes = [e for e in documents[name].iter() if local_tag(e) in HEADING_TAGS]
+        nodes = [e for e in parsed_docs[name].iter() if local_tag(e) in HEADING_TAGS]
         headings[name] = nodes
         text = data.decode("utf-8-sig")
-        starts = [text.count("\n", 0, m.start()) + 1 for m in
-                  re.finditer(r"<(?:[\w.-]+:)?h[123]\b", text)]
+        starts = [text.count("\n", 0, m.start()) + 1 for m in HEADING_START_RE.finditer(text)]
         for index, node in enumerate(nodes):
             line = starts[index] if index < len(starts) else 0
             for message in heading_problems(node):
@@ -203,7 +216,7 @@ def audit_title_contract(entries: dict[str, bytes]) -> list[tuple[str, str, int,
         layered = [e for e in nodes if "heading-lines" in e.get("class", "").split()]
         if layered:
             # 只检查该文档实际引用的样式表，不用未引用 CSS 抵消缺失。
-            css_names = [resolve_reference(name, e.get("href", "")) for e in documents[name].iter()
+            css_names = [resolve_reference(name, e.get("href", "")) for e in parsed_docs[name].iter()
                          if local_tag(e) == "link" and e.get("rel") == "stylesheet"]
             css = "\n".join(entries.get(n, b"").decode("utf-8-sig") for n in css_names if n)
             code = any("heading-code" in e.get("class", "").split() for h in layered for e in h)
@@ -211,7 +224,7 @@ def audit_title_contract(entries: dict[str, bytes]) -> list[tuple[str, str, int,
                 problems.append(("title-style", name, 0, message))
     catalog: dict[str, list[tuple[str, str]]] = {}
     for name in ("nav.xhtml", "toc.ncx"):
-        root = documents.get(name)
+        root = parsed_docs.get(name)
         if root is None:
             continue
         rows: list[tuple[str, ET.Element]] = []
@@ -237,10 +250,10 @@ def audit_title_contract(entries: dict[str, bytes]) -> list[tuple[str, str, int,
             catalog[name].append((f"{target}#{fragment}" if target is not None else href, plain))
             if list(label):
                 problems.append(("title-catalog", name, 0, f"{href}：目录标签必须为纯文本，不能嵌入 ruby／样式标签"))
-            if target not in documents:
+            if target not in parsed_docs:
                 # 跳转存在性由 container/dangling 门禁负责。
                 continue
-            candidates = ([e for e in documents[target].iter() if e.get("id") == fragment]
+            candidates = ([e for e in parsed_docs[target].iter() if e.get("id") == fragment]
                           if fragment else [e for e in headings.get(target, []) if local_tag(e) == "h1"][:1])
             for node in candidates:
                 if local_tag(node) not in HEADING_TAGS:

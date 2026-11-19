@@ -94,6 +94,17 @@ def read_lines(path: Path) -> list[str]:
     return path.read_text(encoding="utf-8-sig").splitlines()
 
 
+def _read_lines_cached(path: Path, lines_cache: dict[Path, list[str]] | None) -> list[str]:
+    if lines_cache is None:
+        return read_lines(path)
+    cached = lines_cache.get(path)
+    if cached is not None:
+        return cached
+    lines = read_lines(path)
+    lines_cache[path] = lines
+    return lines
+
+
 def term_ruby_base(match: re.Match) -> tuple[str, str]:
     """返回 (基文, 读音)，基文已剥离内层标签。"""
     return TAG_RE.sub("", match.group(1)), TAG_RE.sub("", match.group(2))
@@ -105,14 +116,16 @@ def scan_pair(jp_lines: list[str], cn_lines: list[str]) -> tuple[list[tuple[int,
     jp_term_lines = 0
     cn_ruby_lines = 0
     for line_no, (jp, cn) in enumerate(zip(jp_lines, cn_lines), 1):
-        if RUBY_OPEN_RE.search(cn):
+        if ("<r" in cn or "<R" in cn) and RUBY_OPEN_RE.search(cn):
             cn_ruby_lines += 1
-        if any(
+        if ("<r" in jp or "<R" in jp) and any(
             KATA_RE.match(rt) and HAN_RE.search(base)
             for base, rt in (term_ruby_base(m) for m in RUBY_RE.finditer(jp))
         ):
             jp_term_lines += 1
 
+        if ("「" not in cn and "『" not in cn) or ("」" not in cn and "』" not in cn):
+            continue
         cn_text = visible_text_of(cn)
         quoted = QUOTE_RE.match(cn_text)
         if not quoted:
@@ -126,7 +139,14 @@ def scan_pair(jp_lines: list[str], cn_lines: list[str]) -> tuple[list[tuple[int,
     return truncations, jp_term_lines, cn_ruby_lines
 
 
-def audit_coverage(cn_root: Path, jp_root: Path, work_ids: set[str] | None = None) -> PairedTextAudit:
+def audit_coverage(
+    cn_root: Path,
+    jp_root: Path,
+    work_ids: set[str] | None = None,
+    *,
+    lines_cache: dict[Path, list[str]] | None = None,
+    pair_struct_cache: dict[tuple[Path, Path], list[str]] | None = None,
+) -> PairedTextAudit:
     """遍历配对单元，返回截断命中与注音覆盖统计；只读。"""
     jp_ids = {japanese_book_id(wid) for wid in work_ids} if work_ids is not None else None
     cn_books = books_by_id(cn_root, work_ids)
@@ -175,15 +195,22 @@ def audit_coverage(cn_root: Path, jp_root: Path, work_ids: set[str] | None = Non
             if jp_path is None:
                 result.miss(f"{wid}/{header}: 缺日文表头，未核对", 1)
                 continue
-            cn_lines = read_lines(cn_path)
-            jp_lines = read_lines(jp_path)
+            cn_lines = _read_lines_cached(cn_path, lines_cache)
+            jp_lines = _read_lines_cached(jp_path, lines_cache)
             if not cn_lines or not jp_lines:
                 result.miss(f"{wid}/{header}: 配对文件为空，未核对", 1)
                 continue
             if len(cn_lines) != len(jp_lines):
                 result.miss(f"{wid}/{header}: 行数不等（cn={len(cn_lines)} jp={len(jp_lines)}），未核对", 1)
                 continue
-            structure = pair_structure_problems(jp_lines, cn_lines)
+            if pair_struct_cache is not None:
+                pair_key = (jp_path, cn_path)
+                structure = pair_struct_cache.get(pair_key)
+                if structure is None:
+                    structure = pair_structure_problems(jp_lines, cn_lines)
+                    pair_struct_cache[pair_key] = structure
+            else:
+                structure = pair_structure_problems(jp_lines, cn_lines)
             if structure:
                 result.miss(f"{wid}/{header}: {'；'.join(structure)}，未核对", 1)
                 continue

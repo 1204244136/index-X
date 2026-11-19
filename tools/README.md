@@ -42,6 +42,8 @@ python tools/check_environment.py --profile core
 # 需要图片、Excel 工具时安装；基础检查可跳过此步
 python -m pip install -r requirements.txt
 python tools/check_environment.py --profile maintenance
+python tools/tests/run_tests.py
+# 需要按标准库单进程发现器逐一运行全部测试时：
 python -m unittest discover -s tools/tests -p "test_*.py"
 ```
 
@@ -179,7 +181,7 @@ python tools/check_alignment.py --jp-root .cache/epub-work/japanese-text --requi
 | `pull.ps1` | `./tools/pull.ps1 [-WhatIf] [-Side …] [-OnlyBooks …] [-SyncToEpub]` | 仅处理筛选书；写缓存，`-SyncToEpub` 时写归档 | 写前整批检测选中书的未发布缓存／归档变化，冲突非零且不解包；增量更新基线【P1】 | `test_pull.py`、`test_sync_lock.py`；共享能力：`test_sync_and_rename.py`／`test_path_safety.py` |
 | `publish.py` | `python tools/publish.py [--dry-run] [--sync-only]` | 流程 B：缓存 → 归档中文＋打包上传 | 共享发布前检查、基线缺失与冲突阻断【P2】 | `test_sync_and_rename.py`、`test_publish_preflight.py` |
 | `publish_epub.py` | `python tools/publish_epub.py [--dry-run]` | 流程 C：归档中文 → 打包上传＋缓存增量镜像；日文只读 | 共享发布前检查、容器／XML／资源【P3】 | `test_sync_and_rename.py`、`test_publish_auto.py` |
-| `package_cache_epubs.py` | `python tools/package_cache_epubs.py --source … --output …` | 只读输入；写显式构建目录 | 容器、XML、资源引用；`mimetype` 首项不压缩【无】 | `test_package_cache_epubs.py` |
+| `package_cache_epubs.py` | `python tools/package_cache_epubs.py --source … --output …` | 只读输入；写显式构建目录 | 容器、XML、资源引用；`mimetype` 首项不压缩，已压缩位图资源直存【无】 | `test_package_cache_epubs.py` |
 | `manifest.py` | `python tools/manifest.py --update-books chinese-text/某书目录` | 写 `manifest.json` 基线；与同步入口共用缓存锁 | 只按已确认状态更新，不得掩盖未发布变化【P2】 | `test_publish_auto.py`、`test_sync_and_rename.py`、`test_sync_lock.py` |
 | `sync_lock.py` | `python tools/sync_lock.py --cache <缓存根> -- <命令及参数...>` | 缓存级互斥；包装子命令，受控继承同一锁 | 锁忙时退出 1；退出后自动释放；不判断内容取舍【无】 | `test_sync_lock.py` |
 | `publish_preflight.py` | `python tools/publish_preflight.py --source EPUB [--jp-root …]` | 只读；写显式报告 | 任一硬错误非零，不推进该书发布与基线；**含 `check_translation_spec.audit_book` 的 error 级**（P1–P26）与 `check_epub_health` 的 `note-structure`【P3】 | `test_publish_preflight.py` |
@@ -228,7 +230,7 @@ python tools/publish_preflight.py --source EPUB --only-books chinese-text/某书
 python tools/publish_preflight.py --source EPUB --calibre
 ```
 
-`--source` 为中文候选根；`--jp-root` 是可选只读日文参考，省略时仅检查中文。CLI 显式指定日文根时要求所选适用范围的参考完整，缺目录为 2，缺书／正文或无法可靠配对为 1。输出实际覆盖与未核验原因，不把空目录记作双语通过。`--only-books` 以逗号分隔的 `side/book` 限定书籍，逐项核对请求范围，不存在项不能被其它已找到的书掩盖；内部 `allow_removed=True` 保留同步器的删除路径。`--calibre` 显式启用全 source 的补充校验，不与 `--only-books` 合用；任一硬错误非零。内部 `validate_publication(cn_root, jp_root=None, book_keys=None, *, allow_removed=False, require_reference=False)` 返回 bool；同步器默认允许合法的单侧作品，但须报告仅单侧／部分／完整覆盖，调用方可用 `require_reference=True` 要求参考完整。
+`--source` 为中文候选根；`--jp-root` 是可选只读日文参考，省略时仅检查中文。CLI 显式指定日文根时要求所选适用范围的参考完整，缺目录为 2，缺书／正文或无法可靠配对为 1。输出实际覆盖与未核验原因，不把空目录记作双语通过。`--only-books` 以逗号分隔的 `side/book` 限定书籍，逐项核对请求范围，不存在项不能被其它已找到的书掩盖；内部 `allow_removed=True` 保留同步器的删除路径。`--jobs` 控制单本检查的并发进程数（`0` 为自动并发，`1` 为单进程）。`--calibre` 显式启用全 source 的补充校验，不与 `--only-books` 合用；任一硬错误非零。内部 `validate_publication(cn_root, jp_root=None, book_keys=None, *, allow_removed=False, require_reference=False)` 返回 bool；同步器默认允许合法的单侧作品，但须报告仅单侧／部分／完整覆盖，调用方可用 `require_reference=True` 要求参考完整。
 
 跨书 UUID 唯一性将所选中文候选与整个中文根比较；所选书与范围外书重复也阻断，范围外书相互重复不阻断无关选书。
 
@@ -262,7 +264,7 @@ python tools/package_cache_epubs.py --source EPUB --output output/epubs --dry-ru
 python tools/package_cache_epubs.py --source EPUB --output output/epubs --pattern "*S3_11*"
 ```
 
-`--source` 直接指定书目录集合；省略时使用 `--cache` 与 `--side` 选择缓存。`--pattern` 按书目录名筛选，`--output` 指定构建目录。打包验证容器、XML 和书内资源，ZIP 的 `mimetype` 必须首项且未压缩；产物保留书目录名。输入不修改，输出不进入书籍内部或版本化档案。
+`--source` 直接指定书目录集合；省略时使用 `--cache` 与 `--side` 选择缓存。`--pattern` 按书目录名筛选，`--output` 指定构建目录，`--jobs` 控制多书打包并发进程数（`0` 为自动并发，`1` 为单进程）。打包验证容器、XML 和书内资源，ZIP 的 `mimetype` 必须首项且未压缩；已压缩位图格式（`.jpg`／`.jpeg`／`.png`／`.gif`／`.webp`／`.avif`）以 `ZIP_STORED` 直存，其余文本／XML／CSS 等条目使用 `ZIP_DEFLATED`；产物保留书目录名。输入不修改，输出不进入书籍内部或版本化档案。
 
 发布工作流 `.github/workflows/build-epub-release.yml` 每日北京时间 23:00（UTC 15:00，`0 15 * * *`）在默认分支定时运行，也支持 `workflow_dispatch` 手动运行；提交推送不触发发布。每次运行均打包，tag 与发布名称取运行时北京时间日期 `YYYY.MM.DD`，tag 指向本次构建提交；同日重跑会更新该 tag 与 Release 资产。GitHub 定时任务可能排队延迟，实际发布完成时间取决于调度与构建耗时。
 
@@ -588,7 +590,7 @@ python tools/check_epub_health.py --root EPUB --strict
 python tools/check_epub_health.py --only css-layout --tsv 显式报告.tsv
 ```
 
-汇总既有项目规则，检查 XML、ruby、正文原子块、标题、加粗、悬空引用、图片资源、CSS 分页保护、**译注页结构**与**成品构成**；资源检查覆盖全部 CSS url／@import、SVG 和导航引用。主 `style.css` 检查完整布局声明，辅助 CSS 只阻断 html／body 非零左右边距，不能要求每份字体 CSS 重复主样式，不另立规则。`--pattern` 筛书、`--only` 选项、`--top` 控制样例、`--json`／`--tsv` 显式报告。strict 有 error 非零；每项必须有负向测试。
+汇总既有项目规则，检查 XML、ruby、正文原子块、标题、加粗、悬空引用、图片资源、CSS 分页保护、**译注页结构**与**成品构成**；资源检查覆盖全部 CSS url／@import、SVG 和导航引用。主 `style.css` 检查完整布局声明，辅助 CSS 只阻断 html／body 非零左右边距，不能要求每份字体 CSS 重复主样式，不另立规则。`--pattern` 筛书、`--only` 选项、`--top` 控制样例、`--jobs` 控制多书并发进程数（`0` 为自动并发，`1` 为单进程）、`--json`／`--tsv` 显式报告。strict 有 error 非零；每项必须有负向测试。
 
 默认中文输入为 `EPUB/`。输入根无效、筛选无匹配书籍、读取或报告写入失败返回 2；真实检查得到的 error 级发现仍按 strict 返回 1。
 

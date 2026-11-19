@@ -754,6 +754,34 @@ class ConfiguredTargetIntegrationTests(unittest.TestCase):
         self.assertTrue((fx.onedrive_cn / f"{BOOK_CN}.epub").is_file())
         self.assertFalse(any(key.startswith("japanese-text/") for key in load_manifest(fx.cache)))
 
+    def test_scoped_pushdown_preserves_unselected_baseline_and_detects_in_scope_deletion(self):
+        import shutil
+        from manifest import load_manifest
+        fx = Fixture(Path(self._tmp.name) / "scoped")
+        fx.onedrive_cn.mkdir()
+        fx.onedrive_jp.mkdir()
+        before = load_manifest(fx.cache)
+        self.assertTrue(any(k.startswith(f"chinese-text/{BOOK_CN2}/") for k in before))
+        # Out-of-scope book changed on disk must NOT be scanned or treated as deleted.
+        fx.write_cache_book("chinese-text", BOOK_CN2, "<p>范围外未发布</p>")
+        # In-scope book retired from cache must be detected as deleted and cleaned up.
+        shutil.rmtree(fx.cache / "chinese-text" / BOOK_CN)
+        plan = publish_auto.prepare_plan(publish_auto.parse_args(fx.argv(
+            "--only-books", f"chinese-text/{BOOK_CN}", "--no-upload",
+        )))
+        self.assertEqual(plan.status, "ready")
+        self.assertEqual([step.direction for step in plan.steps], ["B"])
+        self.assertEqual(self.run_local_plan(
+            fx, "--only-books", f"chinese-text/{BOOK_CN}", "--no-upload",
+        ), 0)
+        self.assertFalse((fx.epub / BOOK_CN).exists())
+        after = load_manifest(fx.cache)
+        self.assertFalse(any(k.startswith(f"chinese-text/{BOOK_CN}/") for k in after))
+        self.assertEqual(
+            {k: v for k, v in before.items() if k.startswith(f"chinese-text/{BOOK_CN2}/")},
+            {k: v for k, v in after.items() if k.startswith(f"chinese-text/{BOOK_CN2}/")},
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

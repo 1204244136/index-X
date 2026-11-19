@@ -91,6 +91,10 @@ KANJI_CHAR_RE = re.compile(r"[\u4e00-\u9fff0-9A-Za-z]")
 TEMPLATE_XML_RE = re.compile(r"^\s*<\?xml\b", re.I)
 TEMPLATE_DOCTYPE_RE = re.compile(r"^\s*<!DOCTYPE\b", re.I)
 TEMPLATE_HTML_RE = re.compile(r"<html\b", re.I)
+IMG_RE = re.compile(r"<(?:img|svg)\b|data-image-continuation=", re.I)
+H1_RE = re.compile(r"<h1\b", re.I)
+H2_RE = re.compile(r"<h2\b", re.I)
+BR_LINE_RE = re.compile(r"^\s*<br\s*/?>\s*$", re.I)
 
 
 @dataclass
@@ -109,16 +113,33 @@ class LineData:
 
 def parse_line(raw_line: str) -> LineData:
     stripped = raw_line.strip()
+    if not stripped:
+        return LineData(
+            raw="",
+            text="",
+            char_set=set(),
+            length=0,
+            is_img=False,
+            is_h1=False,
+            is_h2=False,
+            is_br=True,
+            is_dialogue=False,
+            is_template=False,
+        )
     lowered = stripped.lower()
     is_inline_glyph = "gaiji" in lowered or "height-2em" in lowered
-    is_img = bool(re.search(r"<(?:img|svg)\b|data-image-continuation=", stripped, re.I)) and not is_inline_glyph
-    is_h1 = bool(re.search(r"<h1\b", stripped, re.I))
-    is_h2 = bool(re.search(r"<h2\b", stripped, re.I))
-    is_br = bool(re.search(r"^\s*<br\s*/?>\s*$", stripped, re.I)) or stripped == ""
-    is_template = bool(
-        TEMPLATE_XML_RE.match(stripped)
-        or TEMPLATE_DOCTYPE_RE.match(stripped)
-        or TEMPLATE_HTML_RE.search(stripped)
+    is_img = (
+        not is_inline_glyph
+        and ("<img" in lowered or "<svg" in lowered or "data-image-continuation=" in lowered)
+        and bool(IMG_RE.search(stripped))
+    )
+    is_h1 = "<h1" in lowered and bool(H1_RE.search(stripped))
+    is_h2 = "<h2" in lowered and bool(H2_RE.search(stripped))
+    is_br = "<br" in lowered and bool(BR_LINE_RE.match(stripped))
+    is_template = "<" in stripped and (
+        ("<?xml" in lowered and bool(TEMPLATE_XML_RE.match(stripped)))
+        or ("<!doctype" in lowered and bool(TEMPLATE_DOCTYPE_RE.match(stripped)))
+        or ("<html" in lowered and bool(TEMPLATE_HTML_RE.search(stripped)))
     )
     # 先剥离 <rt> 注音再取可见文本（实现见 xhtml_text.visible_text_of，与 diff_paired_lines 共用）
     visible_text = visible_text_of(stripped)
@@ -292,8 +313,15 @@ def run_vector_analysis(
     jp_texts = [p[1].text for p in jp_paras]
     cn_texts = [p[1].text for p in cn_paras]
 
-    v_jp = model.encode(jp_texts, batch_size=64, normalize_embeddings=True, show_progress_bar=False)
-    v_cn = model.encode(cn_texts, batch_size=64, normalize_embeddings=True, show_progress_bar=False)
+    all_embeddings = model.encode(
+        jp_texts + cn_texts,
+        batch_size=64,
+        normalize_embeddings=True,
+        show_progress_bar=False,
+    )
+    split_at = len(jp_texts)
+    v_jp = all_embeddings[:split_at]
+    v_cn = all_embeddings[split_at:]
 
     # 相似度矩阵 (len_jp, len_cn)
     sim_matrix = np.dot(v_jp, v_cn.T)

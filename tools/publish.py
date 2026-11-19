@@ -340,13 +340,43 @@ def _publish(args: argparse.Namespace) -> int:
             return 1
 
     # Scan current cache state
+    sides = SIDE_DIRECTORIES if args.side == "all" else (SIDE_MAP[args.side],)
+    wanted = (
+        {item.strip() for item in args.only_books.split(",") if item.strip()}
+        if args.only_books
+        else None
+    )
+    scoped = args.side != "all" or args.pattern != "*" or wanted is not None
     print("扫描缓存...")
-    current = scan_cache(cache)
+    current = (
+        scan_cache(cache, sides=sides, pattern=args.pattern, only_books=wanted)
+        if scoped
+        else scan_cache(cache)
+    )
     print(f"  当前缓存: {len(current)} 个文件")
     print(f"  清单基线: {len(baseline)} 个文件")
 
+    pattern = args.pattern.casefold()
+    if scoped:
+        scoped_baseline: dict[str, str] = {}
+        for path, digest in baseline.items():
+            side_prefix, sep, rest = path.partition("/")
+            if not sep or "/" not in rest:
+                continue
+            book_name = rest.split("/", 1)[0]
+            book_key = f"{side_prefix}/{book_name}"
+            if args.side != "all" and side_prefix != SIDE_MAP[args.side]:
+                continue
+            if args.pattern != "*" and not fnmatch.fnmatch(book_name.casefold(), pattern):
+                continue
+            if wanted is not None and book_key not in wanted:
+                continue
+            scoped_baseline[path] = digest
+    else:
+        scoped_baseline = baseline
+
     # Detect changes
-    changes = detect_changes(current, baseline)
+    changes = detect_changes(current, scoped_baseline)
 
     if not changes:
         print("\n没有检测到变更。")
@@ -360,7 +390,6 @@ def _publish(args: argparse.Namespace) -> int:
         }
 
     # Filter by pattern (match book name = second path component)
-    pattern = args.pattern.casefold()
     changes = {
         k: v
         for k, v in changes.items()
@@ -369,8 +398,7 @@ def _publish(args: argparse.Namespace) -> int:
 
     # Restrict to explicitly listed books (pull.ps1 -SyncToEpub uses this)
     if args.only_books:
-        wanted = {item.strip() for item in args.only_books.split(",") if item.strip()}
-        changes = {k: v for k, v in changes.items() if k in wanted}
+        changes = {k: v for k, v in changes.items() if k in (wanted or set())}
         if not changes:
             print("\n没有检测到变更（--only-books 范围内）。")
             return 0

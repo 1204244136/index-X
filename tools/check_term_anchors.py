@@ -39,7 +39,7 @@ from alignment_rules import (  # noqa: E402
 from check_translation_table import body_markup, load_rulings, norm_anchor  # noqa: E402
 from epub_ids import book_id, japanese_book_id  # noqa: E402
 from xhtml_structure import books_by_id, header_index, pair_structure_problems  # noqa: E402
-from xhtml_text import text_of_without_ruby_compact  # noqa: E402
+from xhtml_text import text_of_without_ruby_compact, text_of_without_ruby_compact_str  # noqa: E402
 
 DEFAULT_EPUB = REPO_ROOT / "EPUB"
 DEFAULT_JP = REPO_ROOT / ".cache" / "epub-work" / "japanese-text"
@@ -163,6 +163,17 @@ def read_lines(path: Path) -> list[str]:
     return path.read_text(encoding="utf-8-sig").splitlines()
 
 
+def _read_lines_cached(path: Path, lines_cache: dict[Path, list[str]] | None) -> list[str]:
+    if lines_cache is None:
+        return read_lines(path)
+    cached = lines_cache.get(path)
+    if cached is not None:
+        return cached
+    lines = read_lines(path)
+    lines_cache[path] = lines
+    return lines
+
+
 @dataclass
 class TermAnchorAudit:
     """Findings and coverage are independent: no findings do not prove coverage."""
@@ -189,7 +200,9 @@ class TermAnchorAudit:
 
 def audit_coverage(cn_root: Path, jp_root: Path, work_ids: set[str] | None = None,
                    *, anchors: tuple[str, ...] | None = None,
-                   rulings_path: Path = DEFAULT_RULINGS) -> TermAnchorAudit:
+                   rulings_path: Path = DEFAULT_RULINGS,
+                   lines_cache: dict[Path, list[str]] | None = None,
+                   pair_struct_cache: dict[tuple[Path, Path], list[str]] | None = None) -> TermAnchorAudit:
     """Audit Chinese content units and retain every reason for missing coverage.
 
     Packaging is outside the line-pair scan. Reviewed structural exceptions are
@@ -205,6 +218,7 @@ def audit_coverage(cn_root: Path, jp_root: Path, work_ids: set[str] | None = Non
     if not anchors:
         raise ValueError("裁定表没有标记「机检」的锚点")
     rules = load_rules(rulings_path, anchors)
+    any_anchor_re = re.compile("|".join(re.escape(rule["anchor"]) for rule in rules))
 
     jp_ids = {japanese_book_id(wid) for wid in work_ids} if work_ids is not None else None
     cn_books = books_by_id(cn_root, work_ids)
@@ -253,15 +267,15 @@ def audit_coverage(cn_root: Path, jp_root: Path, work_ids: set[str] | None = Non
             if jp_path is None:
                 result.miss(f"{wid}/{header}: 缺日文表头，未核对", 1)
                 continue
-            cn_lines = read_lines(cn_path)
-            jp_lines = read_lines(jp_path)
+            cn_lines = _read_lines_cached(cn_path, lines_cache)
+            jp_lines = _read_lines_cached(jp_path, lines_cache)
             if not cn_lines or not jp_lines:
                 result.miss(f"{wid}/{header}: 配对文件为空，未核对", 1)
                 continue
             cn_body = body_markup("\n".join(cn_lines), preserve_lines=True)
             jp_body = body_markup("\n".join(jp_lines), preserve_lines=True)
-            cn_text = text_of_without_ruby_compact(cn_body.encode())
-            jp_text = text_of_without_ruby_compact(jp_body.encode())
+            cn_text = text_of_without_ruby_compact_str(cn_body, strip_script_style=False)
+            jp_text = text_of_without_ruby_compact_str(jp_body, strip_script_style=False)
             if not cn_text and not jp_text and all(
                     re.search(r"<(?:[\w.-]+:)?(?:img|svg)\b", markup, re.I)
                     for markup in (cn_body, jp_body)):
@@ -274,16 +288,23 @@ def audit_coverage(cn_root: Path, jp_root: Path, work_ids: set[str] | None = Non
             if len(cn_lines) != len(jp_lines):
                 result.miss(f"{wid}/{header}: 行数不等（cn={len(cn_lines)} jp={len(jp_lines)}），未核对", 1)
                 continue
-            structure = pair_structure_problems(jp_lines, cn_lines)
+            if pair_struct_cache is not None:
+                pair_key = (jp_path, cn_path)
+                structure = pair_struct_cache.get(pair_key)
+                if structure is None:
+                    structure = pair_structure_problems(jp_lines, cn_lines)
+                    pair_struct_cache[pair_key] = structure
+            else:
+                structure = pair_structure_problems(jp_lines, cn_lines)
             if structure:
                 result.miss(f"{wid}/{header}: {'；'.join(structure)}，未核对", 1)
                 continue
             result.checked += 1
             for line_no, (cn_line, jp_line) in enumerate(zip(cn_body.split("\n"), jp_body.split("\n")), 1):
-                jp_text = text_of_without_ruby_compact(jp_line.encode())
-                if not jp_text:
+                jp_text = text_of_without_ruby_compact_str(jp_line, strip_script_style=False)
+                if not jp_text or any_anchor_re.search(jp_text) is None:
                     continue
-                cn_text = text_of_without_ruby_compact(cn_line.encode())
+                cn_text = text_of_without_ruby_compact_str(cn_line, strip_script_style=False)
                 for hit in match_line(jp_text, cn_text, rules):
                     result.rows.append({
                         "book": wid,

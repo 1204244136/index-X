@@ -49,9 +49,10 @@ jobs:
           python-version: "3.12"
 
       - name: 工具测试
-        run: python -m unittest discover -s tools/tests -p "test_*.py"
+        run: python tools/tests/run_tests.py
 
       - name: 只读预检
+        if: ${{ inputs.dry_run == true }}
         run: python tools/text_norm.py --report /tmp/text-norm-report.md
 
       - name: 应用文本规范化

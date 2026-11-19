@@ -51,7 +51,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  health:
+  tool-tests:
     runs-on: ubuntu-latest
 
     steps:
@@ -66,10 +66,9 @@ jobs:
           python-version: "3.12"
 
       # 先验工具本身：体检类工具最大的风险是判定写错却永远报 0，
-      # 所以每次跑真体检之前先跑一遍测试（含 check_epub_health 的负向自检：
-      # 对每个检查项注入一个能触发它的最小反例）。
+      # 每次并发运行全量单元测试与文档／模板回归测试（与体检作业并行）。
       - name: 工具测试
-        run: python -m unittest discover -s tools/tests -p "test_*.py"
+        run: python tools/tests/run_tests.py
 
       # 技能侧模板的回归测试是自定义 check() 的纯函数脚本，不是 unittest.TestCase，
       # `unittest discover` 采集不到，只能显式运行。
@@ -78,6 +77,20 @@ jobs:
 
       - name: 文档职责与链接检查
         run: python tools/check_project_docs.py
+
+  health:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          show-progress: false
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
 
       - name: EPUB/ 单侧体检
         run: |

@@ -597,6 +597,31 @@ class HealthCheckNegativeTests(unittest.TestCase):
             with self.assertRaises(SystemExit):
                 check_epub_health.main()
 
+    def test_parallel_jobs_matches_single_process_results(self):
+        self.build("S1_01", {"OEBPS/Text/S1_01-01_Chapter1.xhtml": body("<p><b>住手，你</b></p>")})
+        self.build("S1_02", {"OEBPS/Text/S1_02-01_Chapter1.xhtml": body('<p><a href="../missing.xhtml#x">x</a></p>')})
+        reports = []
+        for jobs in ("1", "2"):
+            out = self.tmp / f"health-{jobs}.json"
+            with patch.object(sys, "argv", [
+                "check_epub_health.py", "--root", str(self.tmp),
+                "--jobs", jobs, "--json", str(out),
+            ]):
+                with redirect_stdout(io.StringIO()):
+                    self.assertEqual(check_epub_health.main(), 0)
+            reports.append(out.read_text(encoding="utf-8"))
+        self.assertEqual(reports[0], reports[1])
+
+    def test_dangling_rejects_parent_escape_and_missing_fragment(self):
+        book = self.build("S1_01", {
+            "OEBPS/Text/S1_01-01_Chapter1.xhtml": body(
+                '<p><a href="../../../escape.xhtml"/><a href="#missing-id"/></p>'),
+        })
+        hits = check_epub_health.find_dangling(book, [])
+        self.assertEqual(len(hits), 2)
+        self.assertTrue(any("越界" in msg for _c, msg in hits))
+        self.assertTrue(any("#missing-id" in msg for _c, msg in hits))
+
 
 class OpfSpineReadingTests(unittest.TestCase):
     def test_xml_quotes_namespaces_entities_and_attribute_spacing(self):

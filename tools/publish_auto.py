@@ -41,7 +41,7 @@ if __package__:
     from .cli_output import configure_output
 else:
     from cli_output import configure_output
-from manifest import load_manifest, scan_cache, scan_epub  # noqa: E402
+from manifest import existing_book_keys, load_manifest, scan_cache, scan_epub  # noqa: E402
 from sync_lock import SyncLockBusy, cache_lock, lock_environment  # noqa: E402
 from sync_core import (  # noqa: E402
     ONEDRIVE_DEFAULTS,
@@ -520,14 +520,8 @@ def prepare_plan(args: argparse.Namespace) -> PublicationPlan:
             builder.emit("  若确实要整侧重发，使用 --force --from cache。", error=True)
             return builder.finish('blocked')
 
-    builder.emit("扫描缓存与 EPUB/ ...")
-    cache_current = scan_cache(cache)
-    epub_current = scan_epub(epub_root)
-    builder.emit(f"  缓存 {len(cache_current)} 个文件 | EPUB/ {len(epub_current)} 个文件"
-          f" | 清单基线 {len(baseline)} 个文件")
-
     if requested:
-        known = book_keys(cache_current) | book_keys(epub_current)
+        known = existing_book_keys(cache, epub_root, requested)
         missing_books = sorted(requested - known)
         if missing_books:
             builder.emit(
@@ -543,18 +537,53 @@ def prepare_plan(args: argparse.Namespace) -> PublicationPlan:
             return builder.finish('blocked')
         builder.emit(f"  范围限定：--only-books 命中 {len(requested)} 本")
 
+    only_books = requested or None
+    scoped = args.side != "all" or args.pattern != "*" or only_books is not None
+    builder.emit("扫描缓存与 EPUB/ ...")
+    if scoped:
+        cache_current = scan_cache(
+            cache, sides=scope_sides, pattern=args.pattern, only_books=only_books
+        )
+        epub_current = (
+            {}
+            if args.side == "japanese"
+            else scan_epub(epub_root, pattern=args.pattern, only_books=only_books)
+        )
+    else:
+        cache_current = scan_cache(cache)
+        epub_current = scan_epub(epub_root)
+    builder.emit(f"  缓存 {len(cache_current)} 个文件 | EPUB/ {len(epub_current)} 个文件"
+          f" | 清单基线 {len(baseline)} 个文件")
+
     if args.force:
         return _prepare_forced(args, cache, epub_root, cache_current, epub_current, builder)
 
+    if scoped:
+        cache_baseline: dict[str, str] = {}
+        epub_baseline: dict[str, str] = {}
+        for path, digest in baseline.items():
+            parts = path.split("/", 2)
+            if len(parts) < 3:
+                continue
+            book_key = f"{parts[0]}/{parts[1]}"
+            if not in_scope(book_key, args):
+                continue
+            cache_baseline[path] = digest
+            if parts[0] == "chinese-text":
+                epub_baseline[path] = digest
+    else:
+        cache_baseline = baseline
+        epub_baseline = baseline
+
     cache_changes = {
         key: value
-        for key, value in detect_changes(cache_current, baseline).items()
+        for key, value in detect_changes(cache_current, cache_baseline).items()
         if in_scope(key, args)
     }
     # EPUB/ 只镜像中文书；日文条目不在反向发布范围内。
     epub_changes = {
         key: value
-        for key, value in detect_changes(epub_current, baseline).items()
+        for key, value in detect_changes(epub_current, epub_baseline).items()
         if key.startswith("chinese-text/") and in_scope(key, args)
     }
 
