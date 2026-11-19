@@ -134,7 +134,7 @@ CHECK_DESC = {
     "dangling": "悬空资源/锚点引用",
     "css-layout": "样式表缺盒模型/分页类或含破坏性边距",
     "note-structure": "译注页外壳/槽位/容器/属性/行内标签不合规",
-    "title-style": "标题默认样式/分层角色与字号/彩页及特典标题/序终章间距",
+    "title-style": "标题默认样式/分层角色与字号/彩页及特典标题/序终章间距（含非标题误用）",
     "title-catalog": "目录纯文本与实际标题投影/nav 与 NCX 一致性",
     "dir-name": "书目录名的 `【作品号】` 前缀",
     "metadata-title": "`dc:title` 逐字节等于书目录名",

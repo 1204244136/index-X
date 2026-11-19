@@ -5,15 +5,22 @@
 """
 from __future__ import annotations
 
+import html
 import re
 import xml.etree.ElementTree as ET
 from urllib.parse import unquote, urlsplit
 
 from epub_structure import resolve_reference
-from xhtml_text import element_text_without_ruby
+from xhtml_text import TAG, element_text_without_ruby
 
 HEADING_TAGS = frozenset({"h1", "h2", "h3"})
 HEADING_BLOCK = re.compile(r"<((?:[\w.-]+:)?h[123])\b[^>]*>.*?</\1\s*>", re.S | re.I)
+NON_PROSE_BLOCK = re.compile(
+    r"<!--.*?-->"
+    r"|<((?:[\w.-]+:)?(?:head|h[123]|style|script|rt|rp))"
+    r"(?:\s+(?:[^>\"'/]|\"[^\"]*\"|'[^']*'|/(?!>))*)?>.*?</\1\s*>",
+    re.S | re.I,
+)
 INLINE_TAGS = frozenset({"span", "ruby", "rb", "rt", "rp", "sup", "sub", "em", "b", "i", "strong", "a"})
 FUNCTION_ATTRS = frozenset({"id", "lang", "{http://www.w3.org/XML/1998/namespace}lang",
                             "{http://www.idpf.org/2007/ops}type"})
@@ -28,6 +35,7 @@ LAYER_ORDERS = {
     ("heading-main", "heading-subtitle", "heading-code"),
 }
 CHAPTER_PREFIX = re.compile(r"^(序|终)([ \t\u3000]*)章(?=$|[\s（(])")
+PROSE_CHAPTER_SPACE = re.compile(r"(?<!\u3000)([序终])[ \t\u00a0\u3000]+章(?!\u3000)")
 
 
 def normalize_chapter_main(text: str) -> str:
@@ -55,6 +63,20 @@ def split_heading_markup(raw: str) -> tuple[str, str]:
     """按元素边界分开正文与 h1/h2/h3，保留 ruby，避免标题参与正文译名门禁。"""
     headings = [match.group(0) for match in HEADING_BLOCK.finditer(raw)]
     return HEADING_BLOCK.sub("\n", raw), "\n".join(headings)
+
+
+def prose_chapter_space_problems(text: str) -> list[tuple[int, str]]:
+    """标题外的叙述／包装文本不得混入「序　章／终　章」排版空格，散字排版除外。"""
+    problems: list[tuple[int, str]] = []
+    cleaned = NON_PROSE_BLOCK.sub(lambda m: "\n" * m.group(0).count("\n"), text)
+    for lineno, raw_line in enumerate(cleaned.splitlines(), 1):
+        plain = html.unescape(TAG.sub("", raw_line))
+        for match in PROSE_CHAPTER_SPACE.finditer(plain):
+            problems.append((
+                lineno,
+                f"序／终章排版空格「{match.group(0)}」只能用于标题与目录，非标题行应写作「{match.group(1)}章」",
+            ))
+    return problems
 
 
 def heading_problems(element: ET.Element) -> list[str]:
@@ -158,6 +180,8 @@ def audit_title_contract(entries: dict[str, bytes]) -> list[tuple[str, str, int,
             line = starts[index] if index < len(starts) else 0
             for message in heading_problems(node):
                 problems.append(("title-style", name, line, message))
+        for lineno, message in prose_chapter_space_problems(text):
+            problems.append(("title-style", name, lineno, message))
         packaging = name.endswith(("-Information.xhtml", "-Introduction.xhtml", "_Introduction.xhtml",
                                    "-Note.xhtml", "-Illustrations.xhtml", "-Special.xhtml"))
         first_h1 = next((e for e in nodes if local_tag(e) == "h1"), None)

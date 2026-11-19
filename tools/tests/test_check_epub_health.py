@@ -360,6 +360,13 @@ class HealthCheckNegativeTests(unittest.TestCase):
         })
         self.assertIn("缺 `<rt>`", hit[5])
 
+    def test_prose_chapter_space_fails_title_style_gate(self):
+        hit = self.assert_detects("title-style", "S1_01", {
+            "OEBPS/Text/S1_01-01_Chapter1.xhtml": body("<p>他在终\u3000章所说的台词。</p>"),
+        })
+        self.assertEqual(hit[3], 7)
+        self.assertIn("非标题行应写作「终章」", hit[5])
+
     def test_zero_content_sequence(self):
         hit = self.assert_detects("seq-00", "S1_01", {
             "OEBPS/Text/S1_01-00_Prologue.xhtml": GOOD,

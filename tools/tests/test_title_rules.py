@@ -5,7 +5,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from title_rules import audit_title_contract, heading_label, heading_problems
+from title_rules import (
+    audit_title_contract, heading_label, heading_problems, prose_chapter_space_problems,
+)
 
 
 CSS = b""".heading-lines > .heading-main, .heading-lines > .heading-subtitle,
@@ -119,6 +121,47 @@ class TitleRulesTests(unittest.TestCase):
         book = entries()
         book["OEBPS/Text/S1_01-Introduction.xhtml"] = book["OEBPS/Text/S1_01-01.xhtml"]
         self.assertTrue(any("首标题必须" in f[3] for f in audit_title_contract(book)))
+
+    def test_prose_rejects_chapter_spacing_while_keeping_headings_and_scatter(self):
+        for bad_line in (
+            "<p>他在终\u3000章所说的台词。</p>",
+            "<p>序\u3000章的伏笔。</p>",
+            "<p>他在终 章所说的台词。</p>",
+            "<p>终&#x3000;章与序\u00a0章。</p>",
+            "<p><b>终</b>\u3000<b>章</b>与<ruby>终\u3000章<rt>epilogue</rt></ruby>。</p>",
+            "<li>终\u3000章注释。</li>",
+        ):
+            with self.subTest(bad_line=bad_line):
+                xhtml = (
+                    "<html><head><title>终\u3000章</title></head><body>\n"
+                    "<!-- 终\u3000章 -->\n"
+                    "<h1>\n终\u3000章\n</h1>\n"
+                    f"{bad_line}\n"
+                    "</body></html>"
+                )
+                hits = [f for f in audit_title_contract({"OEBPS/Text/S1_01-01.xhtml": xhtml.encode()})
+                        if f[0] == "title-style" and "非标题行应写作" in f[3]]
+                self.assertTrue(hits, bad_line)
+                self.assertEqual(hits[0][2], 6)
+
+        clean_xhtml = (
+            "<html><head><title>终\u3000章</title></head><body>\n"
+            "<h1>终\u3000章</h1>\n"
+            "<h2>序\u3000章</h2>\n"
+            "<h3>终\u3000章</h3>\n"
+            "<p>他在终章所说的台词，还有序章与最终章。</p>\n"
+            "<p>「这\u3000是\u3000终\u3000章\u3000吗\u3000？」</p>\n"
+            "<p>「这\u3000是\u3000终\u3000章」</p>\n"
+            "<p>「终\u3000章\u3000结\u3000束」</p>\n"
+            "</body></html>"
+        )
+        self.assertEqual(
+            audit_title_contract({"OEBPS/Text/S1_01-01.xhtml": clean_xhtml.encode()}),
+            [],
+        )
+        # 自闭合标题标签不得吞掉后续正文：之后的 <h1> 后仍能报出正文误用
+        self_closing = "<h1 id='a'/>\n<p>他在终\u3000章所说的台词。</p>\n<h1>终\u3000章</h1>\n"
+        self.assertEqual([ln for ln, _ in prose_chapter_space_problems(self_closing)], [2])
 
 
 if __name__ == "__main__":
