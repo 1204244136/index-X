@@ -15,7 +15,7 @@
 | --- | --- | --- |
 | 片段多译 | 同一日文片段（引号内或整行）在作品内出现多次，中文译法不一致 | 同一句话被译成多种说法 |
 | 同源复现 | 日文两行高度相似（n-gram 倒排 + 序列相似度） | 原句与其引述/复现形态 |
-| 引述回指 | 日语侧出现 `『…』` 嵌套引述，回全文找出处；引述整体改写但保留 ≥12 字逐字片段时按片段报 | 引述处与被引处须对应 |
+| 引述回指 | 日语侧出现 `『…』` 嵌套引述或近距局部反问引述（`だって／だと／って` 等收尾及短反问句），回前文找出处；引述整体改写但保留 ≥12 字逐字片段时按片段报 | 引述处与被引处须对应 |
 | 短平行句 | 相邻两行日文只换一个名词、中文量词/结构不一致 | 同一模板的平行句被改断 |
 | 术语多译 | 同一日文术语（片假名/汉字连写）在作品内多次出现，中文用了不同写法 | 同一术语被译成几种（术语嵌在各不相同的长句中，类 1 的片段索引收不到） |
 | 模式复述 | 共享日文段落在**中间**（类 4 只比前后缀的盲区），或**短句谓述出现在长行**（类 2 的 20 字门槛与类 4 的 24 字上限造成的长度断档） | 同一句话被复述/接话两次，中文该处译法不一致 |
@@ -114,6 +114,19 @@ DIALOGUE = re.compile(r"[「『]")
 # ---- 类 7「子句跨缝」用的判据常量（见 clause_echo_pairs）----
 # 中文侧按整句／引号边界切分，用来判断该句在两侧是否已成立对照，避免同句复用重复报出。
 CLAUSE_SPLIT_CN = re.compile(r"[。！？!?「」『』“”]+")
+# ---- 类 3「近距引述」用的判据常量（默认开启的高精度近距局部反问／接话引述）----
+# 匹配句尾显式引述助词；`ですって／だって／だと／とは` 置前以免 `だって` 残留 `だ`。
+ECHO_SUFFIX_RE = re.compile(
+    r"^(?:……|…)?(.{3,24}?)([、，]?)(ですって|だって|だとォ?|とは|というのか|って)(?:[？?！!。…]*)$"
+)
+# `って` 前若为格助词／指示副词连缀（`にとって`／`どうやって`／`として`），不作引述剥离。
+ECHO_PARTICLE_GUARD = re.compile(
+    r"(?:にと|にとっ|にな|によ|とし|としっ|どうや|こうや|そうや|ああや)$"
+)
+# 无助词短反问句：整行对话为简短问句，复述前文局部词句。
+BARE_ECHO_Q_RE = re.compile(r"^[「『][^「」『』]{2,24}[？?]+[」』]$")
+NEAR_ECHO_PARTICLE_WINDOW = 12
+NEAR_ECHO_BARE_WINDOW = 6
 
 DEFAULT_OUT = Path(".cache/epub-work/echo-check")
 # 书目录名形如 `【作品号】标题`（兼容历史半角 `[]`）。惯例统计要按目录反查作品号。
@@ -1262,17 +1275,18 @@ def inner_cn(text: str) -> str:
 
 
 def marker_quotes(jp: str, min_len: int) -> list[str]:
-    """从含引述助词的行里提取被引述的片段（`って` / `とか` 直接引述，或 `と`+引用动词）。
+    """从含引述助词的行里提取被引述的片段（`ですって／だって／だと／とは／って／とか` 直接引述，或 `と`+引用动词）。
 
-    日语引述不只用 `『…』`：「…って」「…とか」本身即可引述，且**改动引述措辞时
-    更隐蔽**（历史案例：S1_01 第一章 L290 把 `つかないんだよって` 引述处改成
-    「连一道伤痕都留不下」，而被引处 L288 并未使用同一措辞——当时工具抓不到这类）。
-    该形态噪声高，调用方须再用「被引内容在作品内多处出现」等证据过滤。
+    日语引述不只用 `『…』`：「…って」「…とか」「…だって」本身即可引述，且改动引述
+    措辞时更隐蔽。该形态全卷噪声较高，调用方须结合命中证据或近距约束过滤。
     """
     out: list[str] = []
-    # `って` / `とか` 直接引述（不要求后接引用动词）
-    for m in re.finditer(r"([^。！？\n]{3,60}?)(?:って|とか)", jp):
-        frag = m.group(1).strip("「」『』、。…—─ \u3000")
+    # 显式引述助词直接引述（长词置前避免 `だって` 切出残留 `だ`）
+    for m in re.finditer(r"([^。！？\n]{3,60}?)(ですって|だって|だとォ?|とは|って|とか)", jp):
+        raw_frag, particle = m.group(1), m.group(2)
+        if particle == "って" and ECHO_PARTICLE_GUARD.search(norm_jp(raw_frag)):
+            continue
+        frag = raw_frag.strip("「」『』、。…—─ \u3000")
         if len(norm_jp(frag)) >= min_len:
             out.append(frag)
     # `と` + 引用动词（`と言った` 等），义项更确定
@@ -1287,11 +1301,14 @@ def cn_quotes_back(jp: str, cn: str) -> bool:
     """中文侧是否保留了「引述某处的说法」的标记。
 
     只要求「有引号」太宽（`「…」` 是台词常态，会淹没候选）；要求中文侧同时出现
-    引号与**引述回指词**（说什么／说过／不记得／说什么来着…）才认。
+    引号与**引述回指词**（说什么／刚刚说／说过／不记得／说什么来着…）才认。
     """
     if not CN_QUOTE_PAIR.search(cn):
         return False
-    return any(w in cn for w in ("说什么", "说过", "不记得", "明明说", "什么来着", "什么话", "所谓"))
+    return any(w in cn for w in (
+        "说什么", "说过", "不记得", "明明说", "什么来着", "什么话", "所谓",
+        "刚刚说", "刚才说",
+    ))
 
 
 def _is_top_level_quote(jp_line: str) -> bool:
@@ -1331,10 +1348,71 @@ def _index_quote_bodies(rows: list[dict]) -> tuple[list[dict], dict[str, set[int
     return bodies, inverted
 
 
+def _near_echo_cn_consistent(cn_src: str, cn_echo: str) -> bool:
+    """近距局部引述在中文侧是否已有清晰对应，压掉「玩具？」↔「制造玩具」等一致项。
+
+    不用仅 2 字非虚词交叉（否则「绝对不会……再次」与「再也不会了」会因共用「不会」被误滤），
+    只接受：极短回应（2–3 字非虚词整段命中前文）、含 ≥2 实字的 3 字连续串，或 ≥3 字非虚词 LCS。
+    """
+    na, nb = norm_cn(cn_src), norm_cn(cn_echo)
+    ra = "".join(c for c in na if c not in CN_FUNCTION_CHARS)
+    rb = "".join(c for c in nb if c not in CN_FUNCTION_CHARS)
+    if 2 <= len(rb) <= 3 and rb in ra:
+        return True
+    if len(na) >= 3 and len(nb) >= 3:
+        for i in range(len(na) - 2):
+            sub = na[i:i + 3]
+            if sum(1 for c in sub if c not in CN_FUNCTION_CHARS) >= 2 and sub in nb:
+                return True
+    if len(ra) >= 3 and len(rb) >= 3:
+        prev = [0] * (len(rb) + 1)
+        for ca in ra:
+            cur = [0] * (len(rb) + 1)
+            for j, cb in enumerate(rb, 1):
+                if ca == cb:
+                    cur[j] = prev[j - 1] + 1
+                    if cur[j] >= 3:
+                        return True
+            prev = cur
+    return False
+
+
+def _extract_near_echo_probes(row: dict) -> list[tuple[str, str, int, bool]]:
+    """提取行内「近距局部引述」探针：[(原引文, 归一键, 向前行窗, 须严格真包含)]。"""
+    probes: list[tuple[str, str, int, bool]] = []
+    seen_keys: set[str] = set()
+    for seg_raw in QUOTE_PAIR.findall(row["jp"]):
+        for sub in re.split(r"[。！？!?]+", seg_raw):
+            match = ECHO_SUFFIX_RE.match(sub.strip())
+            if not match:
+                continue
+            prefix_raw, comma, particle = match.group(1), match.group(2), match.group(3)
+            if particle == "って" and ECHO_PARTICLE_GUARD.search(norm_jp(prefix_raw)):
+                continue
+            quote = prefix_raw.strip("「」『』、。…—─ \u3000")
+            key = norm_jp(quote)
+            if (len(key) < 4 or key in seen_keys
+                    or LONG_VOWEL.search(key) or _is_onomatopoeia(key)):
+                continue
+            has_content = bool(HAN_TEXT.search(key) or KATAKANA.search(key))
+            if not has_content and not (comma and len(key) >= 4) and len(key) < 6:
+                continue
+            seen_keys.add(key)
+            probes.append((quote, key, NEAR_ECHO_PARTICLE_WINDOW, False))
+    if not probes and BARE_ECHO_Q_RE.match(row["jp"].strip()):
+        quote = row["jp"].strip("「」『』、。！？?!…—─ \u3000")
+        key = norm_jp(quote)
+        if (4 <= len(key) <= 10
+                and not LONG_VOWEL.search(row["jp"]) and not _is_onomatopoeia(key)
+                and (HAN_TEXT.search(key) or KATAKANA.search(key)) and _has_predicate(key)):
+            probes.append((quote, key, NEAR_ECHO_BARE_WINDOW, True))
+    return probes
+
+
 def quote_lookups(rows: list[dict], min_len: int, cover: float,
                   include_marker: bool = False, frag_min: int = 12,
                   prior_rows: list[dict] | None = None) -> list[dict]:
-    """类 3：日语侧 `『…』` 引文 -> 全文及可选跨卷出处候选。
+    """类 3：日语侧 `『…』` 引文及近距局部反问引述 -> 出处候选。
 
     每条候选带三项判定辅助：
     - `relation`：日语侧 exact／within／wraps／fuzzy（`wraps` 即「引述升级」，
@@ -1349,6 +1427,7 @@ def quote_lookups(rows: list[dict], min_len: int, cover: float,
     prior_bodies, prior_inverted = _index_quote_bodies(prior_rows) if prior_rows else ([], {})
     out: list[dict] = []
     seen: set[tuple[str, str, int, str, str, int, str]] = set()
+    seen_pairs: set[tuple[str, str, int, str, str, int]] = set()
 
     def _collect_matches(
         row: dict,
@@ -1404,6 +1483,10 @@ def quote_lookups(rows: list[dict], min_len: int, cover: float,
             if ident in seen:
                 continue
             seen.add(ident)
+            seen_pairs.add((
+                row.get("work", ""), row["file"], int(row["line"]),
+                candidate.get("work", ""), candidate["file"], int(candidate["line"]),
+            ))
             cn_class = classify_cn_differences([
                 {"cn": inner_cn(row["cn"])},
                 {"cn": inner_cn(candidate["cn"])},
@@ -1429,7 +1512,7 @@ def quote_lookups(rows: list[dict], min_len: int, cover: float,
         return found
 
     for row in bodies:
-        # 两类引文来源：显式 `『…』`，以及引述助词标记（って／とか／と+引用动词）
+        # 两类全文引文来源：显式 `『…』`，以及引述助词标记（って／とか／だって／と+引用动词）
         pending: list[tuple[str, str]] = [
             (m.group(1), "引用符") for m in re.finditer(r"『([^『』]{6,80})』", row["jp"])
         ]
@@ -1467,6 +1550,60 @@ def quote_lookups(rows: list[dict], min_len: int, cover: float,
             for m in matches:
                 m["upgrade"] = m["relation"] == "wraps"
             out.append({"src": row, "quote": quote, "kind": kind, "hits": matches[:2]})
+
+    # 近距局部反问／接话引述：遍历全部行（含 4–5 字短行），在同文件邻近前文中检索逐字包含出处
+    by_file: dict[str, list[dict]] = defaultdict(list)
+    for row in rows:
+        by_file[row["file"]].append(row)
+    for items in by_file.values():
+        ordered = sorted(items, key=lambda item: int(item["line"]))
+        norms = [norm_jp(item["jp"]) for item in ordered]
+        for idx, row in enumerate(ordered):
+            row_line = int(row["line"])
+            row_pos = (row.get("seq", ""), row_line)
+            for quote, key, max_win, require_strict_super in _extract_near_echo_probes(row):
+                for prev_idx in range(idx - 1, -1, -1):
+                    cand = ordered[prev_idx]
+                    cand_line = int(cand["line"])
+                    if row_line - cand_line > max_win:
+                        break
+                    if (cand.get("seq", ""), cand_line) >= row_pos:
+                        continue
+                    cand_norm = norms[prev_idx]
+                    if key not in cand_norm:
+                        continue
+                    if require_strict_super and cand_norm == key:
+                        continue
+                    pair_key = (
+                        row.get("work", ""), row["file"], row_line,
+                        cand.get("work", ""), cand["file"], cand_line,
+                    )
+                    ident = (*pair_key, key)
+                    if pair_key in seen_pairs or ident in seen:
+                        continue
+                    if _near_echo_cn_consistent(cand["cn"], row["cn"]):
+                        continue
+                    seen.add(ident)
+                    seen_pairs.add(pair_key)
+                    cn_class = classify_cn_differences([
+                        {"cn": inner_cn(row["cn"])},
+                        {"cn": inner_cn(cand["cn"])},
+                    ])
+                    out.append({
+                        "src": row,
+                        "quote": quote,
+                        "kind": "近距引述",
+                        "hits": [{
+                            "cover": 1.0,
+                            "row": cand,
+                            "relation": quote_relation(quote, cand["jp"]),
+                            "cn_class": cn_class,
+                            "upgrade": False,
+                            "fragment": "",
+                            "cross_book": False,
+                        }],
+                    })
+                    break
     # 「引述升级」置顶；无出处的改写式引述（待人工定位）次之；其余按日语关系强度
     def rank(c: dict) -> tuple[int, int]:
         if not c["hits"]:
@@ -1526,16 +1663,20 @@ def render(work: str, rows: list[dict], report: dict) -> tuple[str, str]:
     quotes = report["quotes"]
     n_upgrade = sum(1 for c in quotes if any(m["upgrade"] for m in c["hits"]))
     n_exact = sum(1 for c in quotes if any(m["relation"] == "exact" for m in c["hits"]))
+    n_quote = sum(1 for c in quotes if c.get("kind", "引用符") == "引用符")
+    n_near = sum(1 for c in quotes if c.get("kind") == "近距引述")
     n_marker = sum(1 for c in quotes if c.get("kind") == "引述助词")
     n_frag = sum(1 for c in quotes if any(m.get("fragment") for m in c["hits"]))
     lines.append(
-        f"## 类 3 引述回指出处候选（{len(quotes)} 条：引用符 {len(quotes) - n_marker}／"
-        f"引述助词 {n_marker}；其中引述升级 {n_upgrade} 条、逐字同形 {n_exact} 条、"
-        f"片段复现 {n_frag} 条）"
+        f"## 类 3 引述回指出处候选（{len(quotes)} 条：引用符 {n_quote}／"
+        f"近距引述 {n_near}／引述助词 {n_marker}；其中引述升级 {n_upgrade} 条、"
+        f"逐字同形 {n_exact} 条、片段复现 {n_frag} 条）"
     )
     lines.append("")
-    lines.append("核对被引处措辞是否与引文对应。「引述助词」类是 `って／とか／と+引用动词` 形态的"
-                 "回指（不一定带引号），只在日语侧逐字命中时列出。")
+    lines.append("核对被引处措辞是否与引文对应。「近距引述」类默认开启，扫描邻近前文中的局部"
+                 "反问／接话引述（`だって／だと／とは／ですって／って` 收尾或短问句，仅保留"
+                 "中文尚未形成对应者）；「引述助词」类是全卷 `って／とか／だって／と+引用动词` "
+                 "形态的回指（不一定带引号），需显式开启 `--include-marker-quotes`。")
     lines.append("")
     lines.append("**先看 `关系` 与 `中文差异` 两栏**：")
     lines.append("")

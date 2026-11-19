@@ -12,6 +12,7 @@ sys.path.insert(0, str(TOOLS))
 from check_echo import (  # noqa: E402
     _longest_common_span,
     clause_echo_pairs,
+    cn_quotes_back,
     convention_stats,
     default_prior_works,
     find_book_dir,
@@ -20,6 +21,7 @@ from check_echo import (  # noqa: E402
     iter_works,
     load_pairs,
     main as echo_main,
+    marker_quotes,
     norm_cn,
     norm_jp,
     pattern_echo_pairs,
@@ -952,6 +954,93 @@ class QuoteLookupTests(unittest.TestCase):
             report_text = (out / "S1_02-呼应候选.md").read_text(encoding="utf-8")
             self.assertIn("[跨卷]", report_text)
             self.assertIn("S1_01/S1_01-01_Prologue.xhtml:1", report_text)
+
+    def test_detects_near_echo_particle_quote_and_clears_when_aligned(self):
+        # S1_13-08 L440/L443 真实形态：无『…』、局部反问仅 5 字 +「だって？」、
+        # 中文共用 2 字「不会」但未对齐（「绝对不会……再次」↔「再也不会了」）。
+        broken = [
+            {"file": "S1_13-08_Chapter10.xhtml", "line": 440,
+             "jp": "「黙れ!!　私はもう二度と、科学なんぞに身を預けない!!」",
+             "cn": "「住口！我绝对不会……将自己再次交给科学！」"},
+            {"file": "S1_13-08_Chapter10.xhtml", "line": 443,
+             "jp": "「もう二度と、だって？」",
+             "cn": "「你刚刚说……再也不会了？」"},
+        ]
+        found = quote_lookups(broken, min_len=8, cover=0.5)
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0]["kind"], "近距引述")
+        self.assertEqual(found[0]["quote"], "もう二度と")
+        self.assertEqual(found[0]["src"]["line"], 443)
+        self.assertEqual(found[0]["hits"][0]["row"]["line"], 440)
+        self.assertEqual(found[0]["hits"][0]["relation"], "within")
+
+        # L440 对齐为「再也不会」后（≥3 字连续重叠），不再误报候选
+        aligned = [
+            {**broken[0], "cn": "「住口！我再也不会……将自己交给科学了！」"},
+            broken[1],
+        ]
+        self.assertEqual(quote_lookups(aligned, min_len=8, cover=0.5), [])
+
+    def test_detects_near_katakana_comma_kana_and_bare_short_question_echo(self):
+        cases = [
+            # 片假名借词被不同名词替换（S2_03-02 L178/L179 形态）
+            ("『グレムリンを止めるのかスーツケースをどうにかするのか……』",
+             "『あれじゃない？　スーツケースって』",
+             "『是该阻止格雷姆林，还是该想办法处理公文包……』",
+             "『你说的行李箱，是不是那个？』",
+             "スーツケース"),
+            # 逗号隔开的纯假名引述（S2_12-04 L770/L771 形态）
+            ("「……その準備には、いつまでかかる？」",
+             "「いつまで、って」",
+             "「……你要花多少时间准备？」",
+             "「你是说，到什么时候？」",
+             "いつまで"),
+            # 无助词且整行 < 6 字的短反问句（S1_02-01 L46/L48 形态）
+            ("「とうま、三六〇〇円あったら何ができた？」",
+             "「何ができた？」",
+             "「当麻，有了三千六百日元，我们能做什么？」",
+             "「做成了什么？」",
+             "何ができた"),
+        ]
+        for jp1, jp2, cn1, cn2, expected_quote in cases:
+            with self.subTest(expected_quote=expected_quote):
+                rows = [
+                    {"file": "a.xhtml", "line": 10, "jp": jp1, "cn": cn1},
+                    {"file": "a.xhtml", "line": 12, "jp": jp2, "cn": cn2},
+                ]
+                found = quote_lookups(rows, min_len=8, cover=0.5)
+                self.assertEqual(len(found), 1)
+                self.assertEqual(found[0]["kind"], "近距引述")
+                self.assertEqual(found[0]["quote"], expected_quote)
+
+    def test_near_echo_guards_consistent_chinese_non_quotative_and_marker_strip(self):
+        # 已有清晰中文对应的短回应（如「玩具？」↔「在制造玩具」）、非引述格助词「にとって」均不进候选
+        ignored = [
+            {"file": "a.xhtml", "line": 1, "jp": "「現在、オモチャを作っているようです」",
+             "cn": "「现在好像在制造玩具。」"},
+            {"file": "a.xhtml", "line": 2, "jp": "「オモチャだと」", "cn": "「玩具？」"},
+            {"file": "a.xhtml", "line": 10, "jp": "「学園都市にとっても火種を残しそォだしよ」",
+             "cn": "「也会留下有可能拖学园都市后腿的火种。」"},
+            {"file": "a.xhtml", "line": 11, "jp": "「学園都市にとって？　お前らしくもない」",
+             "cn": "「对学园都市来说？这种说法可真不像你。」"},
+        ]
+        self.assertEqual(quote_lookups(ignored, min_len=8, cover=0.5), [])
+
+        # marker_quotes 剥除「だって」不残留「だ」，cn_quotes_back 识别「刚刚说」
+        self.assertEqual(marker_quotes("「もう二度と、だって？」", min_len=4), ["もう二度と"])
+        self.assertEqual(marker_quotes("「学園都市にとって？」", min_len=4), [])
+        self.assertTrue(cn_quotes_back("「もう二度と、だって？」", "「你刚刚说……再也不会了？」"))
+
+        # render 正确拆分引用符／近距引述／引述助词三类计数
+        rows = [
+            {"file": "a.xhtml", "line": 1, "jp": "「私はもう二度と預けない」", "cn": "「我绝对不会再次交出。」"},
+            {"file": "a.xhtml", "line": 2, "jp": "「もう二度と、だって？」", "cn": "「你刚刚说……再也不会了？」"},
+        ]
+        report = {"frag": [], "pairs": [], "short": [], "quotes": quote_lookups(rows, 8, 0.5)}
+        text, summary = render("S1_13", rows, report)
+        self.assertIn("引用符 0／近距引述 1／引述助词 0", text)
+        self.assertIn("〔近距引述〕 a.xhtml:2 引述「もう二度と」", text)
+        self.assertIn("引述回指 1 条", summary)
 
 
 class IterWorksTests(unittest.TestCase):
