@@ -104,9 +104,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Iterable, Sequence
 
-if __package__:
+# calibre-debug 的 exec_path 以 __package__ == "calibre" 执行本脚本，不能仅凭 __package__ 做相对导入
+if __package__ == "tools":
     from .cli_output import configure_output
 else:
+    _tools_dir = str(Path(__file__).resolve().parent)
+    if _tools_dir not in sys.path:
+        sys.path.insert(0, _tools_dir)
     from cli_output import configure_output
 
 REPO_ROOT = Path(__file__).resolve().parents[1]

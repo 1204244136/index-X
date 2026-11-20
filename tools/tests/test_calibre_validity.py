@@ -458,6 +458,35 @@ class MainEntryTests(unittest.TestCase):
             with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
                 self.assertEqual(main(["--worker-batch", str(batch)]), 2)
 
+    def test_calibre_package_context_imports_cli_output(self) -> None:
+        """模拟 calibre-debug 以 __package__='calibre' 执行脚本时的导入路径。"""
+        import types
+
+        script = TOOLS / "check_epub_validity.py"
+        saved_path = list(sys.path)
+        saved_cli_output = sys.modules.pop("cli_output", None)
+        saved_tools_cli_output = sys.modules.pop("tools.cli_output", None)
+        mod_name = "_calibre_exec_test"
+        dummy_mod = types.ModuleType(mod_name)
+        dummy_mod.__file__ = str(script)
+        dummy_mod.__package__ = "calibre"
+        sys.modules[mod_name] = dummy_mod
+        try:
+            tools_str = str(TOOLS)
+            sys.path[:] = [p for p in sys.path if p != tools_str and Path(p or ".").resolve() != TOOLS.resolve()]
+            code = compile(script.read_text(encoding="utf-8"), str(script), "exec")
+            exec(code, dummy_mod.__dict__)
+            self.assertTrue(callable(dummy_mod.configure_output))
+        finally:
+            sys.modules.pop(mod_name, None)
+            sys.path[:] = saved_path
+            if saved_cli_output is not None:
+                sys.modules["cli_output"] = saved_cli_output
+            else:
+                sys.modules.pop("cli_output", None)
+            if saved_tools_cli_output is not None:
+                sys.modules["tools.cli_output"] = saved_tools_cli_output
+
 
 if __name__ == "__main__":
     unittest.main()
