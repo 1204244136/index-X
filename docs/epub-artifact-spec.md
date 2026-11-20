@@ -37,6 +37,7 @@
 - `toc.ncx` 的 `docTitle` 必须等于 `dc:title`。
 - `toc.ncx` 的 `dtb:uid` 必须等于包文档的 `unique-identifier`（即 `id="BookId"` 那条 `dc:identifier` 的值）。
 - `unique-identifier`（`dc:identifier id="BookId"`）在库内必须唯一。
+- `<dc:identifier>calibre:<号></dc:identifier>` 为历史 calibre 导出残留或用户显式指定的库号，非必备元数据；由智能体生成新成品时不写入该条目（不照抄模板书的号）。
 
 ## 四、目录条目口径
 

@@ -306,7 +306,7 @@ python tools/import_build_text.py .cache/epub-work/import/plan.json --out "EPUB/
 python tools/import_images.py suggest --src 素材目录 --jp-dir .cache/…/item/image --work S4_04
 python tools/import_images.py apply .cache/epub-work/import/plan.json --out "EPUB/【S4_04】…" --apply
 python tools/import_build_wrappers.py .cache/epub-work/import/plan.json --template "EPUB/【S4_03】…" `
-    --info 制作信息.txt --intro 简介.txt --out "EPUB/【S4_04】…" --apply --calibre-id 197
+    --info 制作信息.txt --intro 简介.txt --out "EPUB/【S4_04】…" --apply
 ```
 
 - `import_materials.py` 是**材料门禁**：交稿、图片素材、制作信息、简介、作品号与书目录名、日文工作源、模板书七项逐项核对。作品号与计划校验共用完整作品号口径，支持 S5 独立作品与 `S6_YY.MM.DD` 日期短篇。缺项非零退出并输出缺失项；智能体按资料访问与导入流程定位、恢复或说明，齐备前不生成成品，不得自拟封面、简介或制作信息。三副本待发布状态需人工用 `publish_auto.py --dry-run` 确认。
@@ -316,7 +316,7 @@ python tools/import_build_wrappers.py .cache/epub-work/import/plan.json --templa
 - `import_build_text.py` 渲染正文（固定行模板、`<ruby>`、Note 页与脚注引用）。**写盘前逐章断言物理行数与日文一致，任何一章不齐整批不写**；只清段落首尾的 ASCII 空格与不换行空格，段内全角空格（对齐／分字）原样保留。译注正文在正文渲染时已由 `esc_ruby` 转成可安全嵌入的行内 XML（含 `<ruby>`／`<b>`），写 Note 页时**原样写入**，不得二次转义（否则译注里的注音会退化成 `&lt;ruby&gt;` 字面文本）。
 - 计划的章节 `fname` 必须是单个 `.xhtml` 文件名，按不区分大小写判重；绝对路径、目录分隔符及越界输出阻断。正文工具在任何写入前逐项核对实际目标。显式 `--report` 在预览时可写报告，但须避开计划、交稿、素材、日文参考和成品目录；执行模式的报告与正文写入一并回滚。
 - `import_images.py`：`suggest` 用 dHash 把素材对到日文原图给命名建议；`apply` 复制并校验作品号前缀、可解码性与指纹，低置信项必须人工看图。`apply` 子命令与 `import_build_wrappers.py` 的显式 `--report` 在预览时也写计划报告，标明未产出；执行成功的报告标明已写入。两入口在任何写入前检查报告目标，拒绝覆盖计划／制作材料，或落入素材、模板、日文参考及成品目录，路径别名同样检查；报告原子写入，执行模式的报告与本批成品写入一并回滚。
-- `import_build_wrappers.py` 从模板书取样式表、container 与 calibre 元数据块，生成包装页（Cover／Information／Introduction，计划里有 `role=illustration` 彩页时再加 Illustrations）与 `nav.xhtml`／`toc.ncx`／`content.opf`／`mimetype`。`--info`／`--intro` 是页面 L4 起的内容行（第 1 行 h1、第 2 行空行占位），由用户素材决定；简介页文件名默认 `<作品号>-Introduction.xhtml`，计划里写 `intro_fname` 可让它占某个内容序（S5 外典书库用 `-01`，与日文侧整页作品扉页同序）；manifest 的 item id 用 `id-t{n}`，避免与 metadata 的 `id-1`／`id-2` 冲突（calibre 会报 `DuplicateId`）。
+- `import_build_wrappers.py` 从模板书取样式表、container 与 calibre 元数据块，生成包装页（Cover／Information／Introduction，计划里有 `role=illustration` 彩页时再加 Illustrations）与 `nav.xhtml`／`toc.ncx`／`content.opf`／`mimetype`。`--info`／`--intro` 是页面 L4 起的内容行（第 1 行 h1、第 2 行空行占位），由用户素材决定；简介页文件名默认 `<作品号>-Introduction.xhtml`，计划里写 `intro_fname` 可让它占某个内容序（S5 外典书库用 `-01`，与日文侧整页作品扉页同序）；manifest 的 item id 用 `id-t{n}`，避免与 metadata 的 `id-1`／`id-2` 冲突（calibre 会报 `DuplicateId`）；`--calibre-id` 默认省略——由智能体生成成品时不写入 `<dc:identifier>calibre:…</dc:identifier>`（不照抄模板书库号），仅在用户显式指定时传入。
 - 六步之后按 C4 跑 `text_norm.py`、`check_alignment.py --strict`、`check_epub_health.py --strict`、`check_note_order.py`、`publish_preflight.py`、`check_epub_validity.py`，再走 C1 的发布。
 
 ### BW 提取预处理

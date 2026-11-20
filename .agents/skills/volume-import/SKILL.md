@@ -124,7 +124,7 @@ python tools/import_images.py apply .cache/epub-work/import/plan.json --out "EPU
 ```powershell
 python tools/import_build_wrappers.py .cache/epub-work/import/plan.json `
     --template "EPUB/【S4_03】某暗部的少女共栖 3" --info 制作信息.txt --intro 简介.txt `
-    --out "EPUB/【S4_04】某暗部的少女共栖 4" --apply --calibre-id 197
+    --out "EPUB/【S4_04】某暗部的少女共栖 4" --apply
 ```
 
 生成 Cover／Illustrations／Information／Introduction 四个包装页与 `nav.xhtml`、`toc.ncx`、
@@ -132,7 +132,8 @@ python tools/import_build_wrappers.py .cache/epub-work/import/plan.json `
 前置是正文与图片都已就位，缺一即阻断不写盘。`--info`／`--intro` 是页面 **L4 起**的内容行
 （第 1 行 h1、第 2 行空行占位），由用户素材决定，工具不内置署名或简介。
 `--calibre-id` 是可选的 calibre 库号，会写成 OPF 里的 `<dc:identifier>calibre:<号></dc:identifier>`；
-取值由用户按其 calibre 库给出，缺省则不写这一行——不要照抄模板书的号。
+**由智能体生成成品时默认不写这一行**（不传 `--calibre-id`，不照抄模板书的号，也不自行编造或索取），
+仅在用户明确指定写入某个 calibre 库号时才传入。
 
 ### 6. 规范化与门禁
 
