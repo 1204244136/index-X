@@ -158,6 +158,7 @@ python tools/publish_auto.py --only-books "chinese-text/【S4_04】某暗部的�
 
 * 无论单本或跨本，修改范围、依据与验证结果均由提交承载。
 * 同步成功后，按 [提交规范](../../../docs/commit-spec.md) 的成品导入分支完成本地提交。
+* 新书正式入库后，同步更新 [全系列作品对应与收录进度表](../../../docs/work-correspondence.md)（总览计数、待制作清单与对应系列分卷行）。
 * 图片素材、交稿、计划文件等外部输入不进仓库。
 
 ## 四、实测坑位（都踩过）
@@ -175,3 +176,7 @@ python tools/publish_auto.py --only-books "chinese-text/【S4_04】某暗部的�
 7. **全角空格**：段内的 `U+3000` 可能是对齐或分字效果，不要「顺手清理」。
 8. **对齐工具不是语义判据**：`import_align_plan.py` 用「汉字重叠＋长度比」替代外部对齐工具的
    多语言向量打分，只为离线可用；语义级复核使用 `check_semantic_alignment.py --strict`，环境按 [工具合同](../../../tools/README.md#克隆后的运行环境) 配置。
+9. **插图文件名正确但引用位置互换**：行对齐与单侧健康检查只看图片行存在性，不比较画面内容；
+   导入或复核后须用 `compare_epub_images.py` 或视觉对照日文同位置原图确认一一对应（历史先例：`S1_19`、`S3_04` 第三章两张插图曾互换）。
+10. **交稿上下标与模板 `nav` 残余**：交稿中的化学式等上下标（如 `HNO<sub>3</sub>`／`H<sub>2</sub>O`）
+    渲染后须核验完整保留；生成或复用模板的 `nav.xhtml` 时不得带入杂散裸 `<br/>`（`check_epub_health` 的 `nav-structure` 会阻断）。

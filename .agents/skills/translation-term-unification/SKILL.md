@@ -123,6 +123,7 @@ python tools/check_alignment.py --strict        # 中日行数 / 模板 / h2 / �
 python tools/check_epub_health.py --strict      # 单侧结构（XML、ruby、加粗、悬空引用等）
 python tools/check_translation_spec.py          # 涉及标点／注音／单位／日期时跑；报告在 .cache/epub-work/
 python tools/check_project_docs.py              # 改过裁定表／说话习惯表后必跑；0 条（含「裁定表不记日期」）
+python tools/check_speech_habits.py             # 改过说话习惯表或裁定表 §六 后必跑
 ```
 
 记录本次选定范围的实际文件数、未配对范围与问题数；数量变化先核对输入范围和收录状态，不能套用历史全库数字。
@@ -166,7 +167,7 @@ python tools/proofread_review.py <commit>       # 产物 .cache/epub-work/proofr
 
 ## 六、已裁定结论索引
 
-**已生效的译名裁定集中在 `docs/translation-name-rulings.md`（译名裁定总表）**：只收「多个都成立的候选之间必须选一个」的决定，逐条给出「日文锚点 → 裁定 → 被否决或并存的候选 → 备注」，并列出裁定为「不作统一／按语义分轨」的锚点，以及**不算裁定的纠错与规范执行**清单（该表 §十一）。
+**已生效的译名裁定集中在 `docs/translation-name-rulings.md`（译名裁定总表）**：只收「多个都成立的候选之间必须选一个」的决定，逐条给出「日文锚点 → 裁定 → 被否决或并存的候选 → 备注」，并列出裁定为「不作统一／按语义分轨」的锚点，以及**不算裁定的纠错与规范执行**清单（该表 §1.2／§1.3）。
 
 做新任务前先查该表；命中就沿用，不要在无关任务里顺手改动。标「不作统一／按语义分轨」的锚点，复核时不得再当异译翻出；「被否决或并存的候选」列列出的写法不得沿用。
 
@@ -186,7 +187,8 @@ python tools/proofread_review.py <commit>       # 产物 .cache/epub-work/proofr
 | 剥标签忘剥 `<rt>` 导致漏检 | **先剥 `<rt>` 再** `xhtml_text.text_of`（`text_of` 不去注音）；或直接用 proofread-review skill 的 `lookup_source.py` |
 | 把风格化 ruby 行当错字 | 跳过（§3.2） |
 | 把口癖按单句语感各译各的 | 口癖优先；同一台词跨卷必须逐字相同 |
-| 只改正文，漏了 OPF 简介／nav／Introduction | 一并判定并同步（§五 末） |
+| 只改正文，漏了 OPF 简介／nav／Introduction | 一并判定并同步（§五 末），同时检查后记（`*-Afterwords.xhtml`），章标题变动须同步 `nav.xhtml`／`toc.ncx`；并列称谓转为后置敬称时须逐人补全后项敬称（见 `docs/translation-spec.md` 五.12） |
+| 同姓不同身份角色机械套用称呼 | 按「角色名＋さん」批量收敛称呼关系时（如「御坂さん」统一为学生互称「御坂同学」），必须逐条回上下文核实对象身份，避免误伤同姓成年人／家长（如 `fbd9c8f6` 曾把御坂美铃误改为「御坂同学」） |
 | 为凑行数增删行 | 行内替换天然保行数；行数变了说明改错了 |
 | 顺手把 CRLF 改成 LF | 项目对换行符不敏感（`AGENTS.md`），无需关注换行符 |
 | 把未配对作品当「无问题」 | 统计时单列「中文未收录」，不要静默丢弃 |
