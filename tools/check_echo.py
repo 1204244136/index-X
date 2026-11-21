@@ -1081,7 +1081,8 @@ def term_groups(rows: list[dict], *, min_lines: int = 3, max_lines: int = 60,
     术语的出现行，再看中文侧是否有两种几乎互斥、合起来覆盖全部出现行的写法：
 
     - 术语出现 `min_lines`–`max_lines` 行；
-    - 中文候选词为 2–6 字纯汉字片段，起点落在术语按比例映射的位置附近
+    - 中文候选词为 2–6 字纯汉字片段，每种写法至少出现 2 行（不另设占比下限，避免
+      21–60 行术语里的 2 行少数异译被滤掉），起点落在术语按比例映射的位置附近
       （`window` 为行宽比例）；候选词相对全卷的提升倍数 ≥ `lift_min`，且与术语
       的平均位置偏差 ≤ `max_drift`；
     - 两种写法在同一行几乎不共现（重叠 < 10%），合起来覆盖术语出现行的
@@ -1151,8 +1152,6 @@ def term_groups(rows: list[dict], *, min_lines: int = 3, max_lines: int = 60,
             if len(lines) < 2:
                 continue
             coverage = len(lines) / n
-            if coverage < 0.1:
-                continue
             lift = coverage / max(1e-9, global_counts[gram] / total)
             if lift < lift_min:
                 continue

@@ -724,6 +724,21 @@ class TermGroupTests(unittest.TestCase):
     def test_ignores_single_minority_line(self):
         self.assertEqual(term_groups(self._rows(["肌肉萎缩症"] * 5 + ["肌营养不良症"])), [])
 
+    def test_flags_two_minority_lines_below_ten_percent(self):
+        # 2/29 ≈ 6.9% < 10%：只要满足 ≥2 行、lift 与 drift，不因总行数 >20 而漏报。
+        rows = self._rows(["肌肉萎缩症"] * 27 + ["肌营养不良症"] * 2)
+        rows.extend(
+            {"file": "c.xhtml", "line": i + 1, "jp": "無関係な文。", "cn": "无关的句子。"}
+            for i in range(150)
+        )
+        groups = term_groups(rows)
+        self.assertEqual(len(groups), 1)
+        self.assertEqual(groups[0]["term"], "ジストロフィー")
+        self.assertEqual(
+            {variant["cn"]: len(variant["rows"]) for variant in groups[0]["variants"]},
+            {"肌肉萎缩症": 27, "肌营养不良症": 2},
+        )
+
     def test_does_not_treat_scene_word_as_variant(self):
         # 场景词在术语各行都出现时不构成「另一种译法」：两种写法必须互补。
         rows = self._rows(["肌肉萎缩症"] * 4 + ["肌营养不良症"] * 2)
