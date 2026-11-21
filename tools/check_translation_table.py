@@ -167,10 +167,10 @@ def load_plain(path: Path) -> str:
 
 RUBY_PAIR_RE = re.compile(r"<ruby\b[^>]*>(.*?)</ruby>", re.S | re.I)
 RT_INNER_RE = re.compile(r"<rt\b[^>]*>(.*?)</rt>", re.S | re.I)
-# 裁定表锚点列：含注音的锚点直接写成 <ruby>…</ruby>（不加反引号，见 §12 格式约定）
+# 裁定表锚点列：含注音的锚点直接写成 <ruby>…</ruby>（不加反引号，见 §十一.9 格式约定）
 RUBY_ANCHOR_RE = re.compile(r"<ruby\b[^>]*>.*?</ruby\s*>", re.S | re.I)
 
-# 判定列的**匹配轴**取值（裁定表 §12.8）。轴决定「日文侧凭什么认定该锚点出现」：
+# 判定列的**匹配轴**取值（裁定表 §十一.8）。轴决定「日文侧凭什么认定该锚点出现」：
 #   留空／`匹配基文`（默认）——只按基文匹配，注音不参与（今天的既有行为）
 #   `严格全文`           ——基文＋注文都要对上：日文侧须有 `<ruby>基文<rt>注文</rt></ruby>`
 #                          这一复合串；裸写基文不在本行范围（如 `人払い` 的术式层）
@@ -389,7 +389,7 @@ def load_rulings(path: Path) -> dict[str, dict[str, object]]:
     返回 {归一化日文锚点: {"forms": [可接受写法…], "raw": [原始裁定单元格…],
                           "labels": [义项标识…], "human_only": bool}}。
 
-    解析规则与裁定表 §12 的格式约定一致：
+    解析规则与裁定表 §十一.9 的格式约定一致：
       · 锚点列用反引号包裹，**一行的多个反引号内容都算锚点**（如 `魔術`／`魔術師`）；
       · **含注音的锚点写成裸 `<ruby>基文<rt>注文</rt></ruby>`（不加反引号）**，同样计入锚点
         （反引号会把标记当代码原样显示，预览里注音不渲染）；
@@ -732,7 +732,7 @@ def compare(entries: list[dict[str, str]], jp_books: dict[str, str],
         for bid in shared:
             jp_text = jp_norm[bid]
             ruby_text = jp_ruby_norm.get(bid, "")
-            # 匹配轴（裁定表 §12.8）：决定日文侧凭什么认定该锚点出现。
+            # 匹配轴（裁定表 §十一.8）：决定日文侧凭什么认定该锚点出现。
             if match_axis == MATCH_READING and anchor_rts:
                 # 匹配注文：基文可以是别的字，按复合串里的注文定位
                 probe = next((f"({rt})" for rt in anchor_rts if f"({rt})" in ruby_text), "")

@@ -87,7 +87,7 @@ def text_of_without_ruby_compact(data: bytes) -> str:
 
     术语锚点检索专用：`text_of` 把每个标签换成空格，按字注音的
     `<ruby>魔</ruby><ruby>術</ruby>` 会被读成「魔 術」，`魔術`／`魔術師` 这类锚点
-    因此永远匹配不到（2026-11-04 查出的门禁漏检即此）。
+    因此永远匹配不到。
     """
     return text_of_without_ruby_compact_str(data.decode("utf-8", errors="ignore"))
 

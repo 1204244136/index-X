@@ -4,7 +4,7 @@
 
 中日逐行配对，只报「日文含裁定锚点、中文含误形且无裁定写法」；
 书名、省略或改写也可能缺少裁定写法，因此仅缺写法不作为命中。
-写法与误形从 `docs/translation-name-rulings.md` 读取，锚点取该表 §五「机检」列
+写法与误形从 `docs/translation-name-rulings.md` 读取，锚点取该表 §五／§六「机检」列
 标记的行（或用 --anchor 指定）；日文语境例外由 ANCHOR_CONTEXT_EXCEPTIONS 定义。
 
 只读、只报告，不判定改写方案。命令合同见 `tools/README.md`「术语锚点门禁」。
@@ -46,7 +46,7 @@ DEFAULT_JP = REPO_ROOT / ".cache" / "epub-work" / "japanese-text"
 DEFAULT_RULINGS = REPO_ROOT / "docs" / "translation-name-rulings.md"
 DEFAULT_OUT = REPO_ROOT / ".cache" / "epub-work" / "term-anchor-check.tsv"
 
-# 机检锚点由裁定表 §五 的「机检」列决定（该列填「是」的行纳入），本模块不再维护常量清单：
+# 机检锚点由裁定表 §五／§六 的「机检」列决定（该列填「是」的行纳入），本模块不再维护常量清单：
 # 新增锚点只需在裁定表标记该行。纳入条件见裁定表 §四.8。
 
 # 日文语境例外：锚点 → 命中即整行跳过的正则。
@@ -89,7 +89,7 @@ def load_rules(rulings_path: Path, anchors: tuple[str, ...]) -> list[dict]:
 
     同一锚点可能有多行登记（如 `魔術師` 的牌名例外行）。机检只取「机检」列为「是」的
     登记行：例外行的写法（牌名「魔术师」）按语境豁免，不能并进无条件写法，否则门禁
-    会把该锚点的误形当成合规写法而永远不报（2026-11-04 查出）。
+    会把该锚点的误形当成合规写法而永远不报。
     """
     rulings = load_rulings(rulings_path)
     rules: list[dict] = []
@@ -348,7 +348,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--rulings", type=Path, default=DEFAULT_RULINGS, help="译名裁定总表")
     parser.add_argument("--book", action="append", default=[], help="作品号筛选，可重复")
     parser.add_argument("--anchor", action="append", default=[],
-                        help="锚点筛选，可重复；默认为裁定表 §五「机检」列标记的锚点")
+                        help="锚点筛选，可重复；默认为裁定表 §五／§六「机检」列标记的锚点")
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT, help="TSV 报告路径")
     parser.add_argument("--top", type=int, default=20, help="终端最多列出的命中数")
     parser.add_argument("--strict", action="store_true", help="误形命中或适用范围未完整核对时非零退出")

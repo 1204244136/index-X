@@ -34,6 +34,8 @@
   css-layout 样式表缺盒模型/分页类或含破坏性边距
   note-structure 译注页外壳/槽位/容器/属性/行内标签不合规（只对 `*-Note.xhtml`；
              规范见 `docs/epub-structure-spec.md`「译注页（Note）结构规约」，首引顺序与 ID 完整性另查）
+  title-style 标题默认样式/分层角色与字号/彩页及特典标题/序终章间距（含非标题误用）
+  title-catalog 目录纯文本与实际标题投影/nav 与 NCX 一致性
   dir-name   书目录名的 `【作品号】` 前缀（error；规范见 `docs/epub-artifact-spec.md` 第三节）
   metadata-title `dc:title` 逐字节等于书目录名（error）
   packaging-required `content.opf`／`nav.xhtml`／`toc.ncx` 与封面、制作信息页齐备，
@@ -44,7 +46,7 @@
   ncx-uid    `toc.ncx` 的 `dtb:uid` 等于包文档 `unique-identifier`（error）
   identifier-unique 库内 `unique-identifier` 唯一（error；跨书汇总）
 
-八项均为 error 级：逐本项由 `audit_book` 判定，跨书项在 `main()` 层计算；
+以上成品构成八项均为 error 级：逐本项由 `audit_book` 判定，跨书项在 `main()` 层计算；
 发布阻断由 `publish_preflight.py` 承担——逐本取 error 级，库级再复核 `unique-identifier`。
 
 刻意不纳入的检查项
