@@ -1,0 +1,1194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>index-X · 某魔法的禁书目录 X 系列精校档案</title>
+  <meta name="description" content="《某魔法的禁书目录》及其外传轻小说 X 系列精校 EPUB 档案主页：版本深度对比、双层 Ruby 注音与弹注体验、全系列收录进度、更新渠道导览与阅读器指南。" />
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem("index-x-theme");
+        var preferDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", saved || (preferDark ? "dark" : "light"));
+      } catch (e) {
+        document.documentElement.setAttribute("data-theme", "light");
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="container nav-inner">
+      <a class="brand-link" href="#top">
+        <img class="brand-logo" src="./favicon.svg" alt="" width="30" height="30" />
+        <span>index-X</span>
+        <span class="brand-sub">禁书目录 X 系列</span>
+      </a>
+
+      <nav class="nav-links" aria-label="主导航">
+        <a class="nav-link" href="#comparison">版本对比</a>
+        <a class="nav-link" href="#showcase">排版体验</a>
+        <a class="nav-link" href="#catalog">收录进度</a>
+        <a class="nav-link" href="#channels">获取与更新</a>
+        <a class="nav-link" href="#readers">阅读指南</a>
+        <a class="nav-link" href="#faq">FAQ</a>
+        <a class="nav-link" href="#support">支持与仓库</a>
+      </nav>
+
+      <div class="nav-actions">
+        <button id="theme-toggle" class="icon-btn" type="button" aria-label="切换明暗主题" title="切换明暗主题">
+          <span id="theme-icon" aria-hidden="true">🌙</span>
+        </button>
+        <a class="ghost-btn" href="https://github.com/1204244136/index-X" target="_blank" rel="noopener noreferrer">
+          <span>GitHub 仓库</span>
+        </a>
+        <button id="menu-toggle" class="icon-btn menu-toggle" type="button" aria-label="打开导航菜单" aria-expanded="false" aria-controls="mobile-drawer">
+          ☰
+        </button>
+      </div>
+    </div>
+
+    <nav id="mobile-drawer" class="mobile-drawer" aria-label="移动端导航">
+      <a class="nav-link" href="#comparison">版本对比</a>
+      <a class="nav-link" href="#showcase">排版体验</a>
+      <a class="nav-link" href="#catalog">收录进度</a>
+      <a class="nav-link" href="#channels">获取与更新</a>
+      <a class="nav-link" href="#readers">阅读指南</a>
+      <a class="nav-link" href="#faq">常见问题（FAQ）</a>
+      <a class="nav-link" href="#support">反馈、支持与仓库</a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <!-- Hero -->
+    <section class="hero">
+      <div class="container hero-grid">
+        <div>
+          <div class="status-row">
+            <span class="brand-pill">
+              <span class="brand-dot"></span>
+              <span>index-X · 轻小说精校 EPUB 档案</span>
+            </span>
+          </div>
+
+          <h1 class="hero-title">
+            某魔法的禁书目录 <span class="accent">X 系列</span>
+          </h1>
+          <p class="hero-slogan">禁书目录 X 系列，不一样的阅读体验！</p>
+          <p class="hero-desc">
+            《某魔法的禁书目录》既有电子版中，台版严谨但偏离大陆习惯，网译贴合语感却错漏较多。<strong>X 系列</strong>兼取两者底本之长，对照日文原版逐行精校并持续勘误。
+          </p>
+
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="#channels">获取电子书</a>
+            <a class="btn btn-secondary" href="https://qm.qq.com/cgi-bin/qm/qr?k=TtTcct3Iz8Y7CewT5QA2RlLrR0p5-WN2&jump_from=webapi" target="_blank" rel="noopener noreferrer">加入交流群（953679671）</a>
+            <button class="btn btn-subtle" type="button" data-copy="953679671" data-copy-label="交流群号 953679671">复制群号</button>
+          </div>
+
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <div class="metric-val">82 册</div>
+              <div class="metric-label">EPUB 已成品归档</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-val">S0–S6</div>
+              <div class="metric-label">旧约至外传全系列</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-val">80 册</div>
+              <div class="metric-label">中日逐行对齐精校</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-val">4 级同步</div>
+              <div class="metric-label">多渠道实时同步</div>
+            </div>
+          </div>
+        </div>
+
+        <aside class="reader-frame" aria-label="X 系列 EPUB 阅读效果交互预览">
+          <div class="reader-topbar">
+            <div class="window-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+            <span>【S0_00】读前必看 · 排版实效预览</span>
+            <span class="reader-badge">原生 Ruby + 弹注</span>
+          </div>
+          <div class="reader-page">
+            <div class="reader-chapter">第 1 节 · 文本精校与双层注音还原</div>
+            <p>
+              上条当麻右手寄宿着名为「<ruby>幻想杀手<rt>Imagine Breaker</rt></ruby>」的力量；面对神话级的「<ruby>主神之枪<rt>冈格尼尔</rt></ruby>」时，同样在译名与注音间保留准确对应。
+            </p>
+            <p>
+              在涉及结社称谓的段落中，同样保留原语注音与背景译注，例如「<ruby>妹妹<rt>Soror</rt></ruby><button class="note-trigger" type="button" aria-expanded="false" data-note-title="译注 · 源自《S0_00》测试页" data-note="黄金黎明的成员会使用「姐妹」（拉丁语：Soror）来称呼其他女性成员。">㊟</button>」——点击上方的 <strong>㊟</strong> 即可直接查看弹注效果。
+            </p>
+          </div>
+          <div class="reader-footer">
+            <span>正文统一使用直角引号「」</span>
+            <div class="reader-chips">
+              <span class="mini-chip">双层 Ruby</span>
+              <span class="mini-chip">可点击㊟弹注</span>
+              <span class="mini-chip">CSS 防分页漂移</span>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- Section 1: Version Comparison -->
+    <section id="comparison" class="section">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="section-kicker">01 · Version Matrix</span>
+            <h2 class="section-title">各版本对比（电子版）</h2>
+            <p class="section-sub">网译贴近大陆语感但错漏较多，台版严谨却偏离大陆习惯——<strong>X 系列兼取两者之长</strong>；点击任意网译或台版卡片，可展开该维度的详细说明。</p>
+          </div>
+        </div>
+
+        <div class="comp-heads" aria-hidden="true">
+          <div class="comp-head dim"><span class="comp-col-title">对比维度</span></div>
+          <div class="comp-head"><span class="comp-col-title">网译</span><span class="comp-badge">民间译本</span></div>
+          <div class="comp-head"><span class="comp-col-title">台版</span><span class="comp-badge">官方繁中</span></div>
+          <div class="comp-head x"><span class="comp-col-title">X 系列（index-X）</span><span class="comp-badge">推荐阅读</span></div>
+        </div>
+
+        <div class="comp-rows">
+          <article class="comp-row">
+            <div class="comp-cell comp-dim">
+              <div class="dim-icon" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+              </div>
+              <div class="dim-name">底本校对</div>
+              <div class="dim-en">TEXT QUALITY</div>
+            </div>
+            <div class="comp-cell comp-other" role="button" tabindex="0" aria-expanded="false" aria-controls="ex-quality" data-example-row="ex-quality" data-example-focus="wf">
+              <span class="mobile-label">网译 · 民间译本</span>
+              <div class="status-head">
+                <div class="status-line bad"><span class="dot-sm"></span>参差不齐</div>
+                <span class="cell-hint" aria-hidden="true"><svg class="cell-chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+              </div>
+              <div class="cell-text">不同译者水平差异大，错译、漏句与语气失真较常见。</div>
+            </div>
+            <div class="comp-cell comp-other" role="button" tabindex="0" aria-expanded="false" aria-controls="ex-quality" data-example-row="ex-quality" data-example-focus="tw">
+              <span class="mobile-label">台版 · 官方繁中</span>
+              <div class="status-head">
+                <div class="status-line mid"><span class="dot-sm"></span>严谨但进度慢</div>
+                <span class="cell-hint" aria-hidden="true"><svg class="cell-chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+              </div>
+              <div class="cell-text">行文质量较稳定，但后期新卷出版滞后，部分卷尚未发行。</div>
+            </div>
+            <div class="comp-cell comp-x">
+              <span class="mobile-label">X 系列（推荐阅读）</span>
+              <div class="x-head"><strong>兼取台版与网译底本</strong>，对照日文原版通卷逐行精校</div>
+              <div class="x-example-box">
+                <span class="ex-tag">做法</span>
+                <span>逐行核对日文原著补全漏译与误读；官方出新单行本后再行复校整合，并结合 AI 辅助排查长篇疏漏。</span>
+              </div>
+            </div>
+            <div id="ex-quality" class="example-drawer" hidden>
+              <div class="example-drawer-head">
+                <div class="example-drawer-meta">
+                  <span class="ex-col-badge" data-drawer-badge></span>
+                  <span class="example-drawer-title" data-drawer-title>底本校对</span>
+                </div>
+                <button class="example-close" type="button" data-example-close="ex-quality">收起 ✕</button>
+              </div>
+              <div class="example-body">
+                <div class="example-panel" data-col="wf" hidden>
+                  <ul class="example-list">
+                    <li>跨 31 册常见网译 EPUB 合计出现 <strong>124 处</strong>将「学园都市」错写为「学院都市」（如《新约 17》：「对于外面的人来说学院都市是相当奇特的城市」）。</li>
+                    <li>存在未清洗编码与卷名错字，如《新约 20》正文残留 <code>&amp;#160;</code>，外传卷名错作《通向恩底尼翁之路》（应为「恩底弥翁」）。</li>
+                  </ul>
+                </div>
+                <div class="example-panel" data-col="tw" hidden>
+                  <ul class="example-list">
+                    <li>出版进度滞后：《创约》（日版已刊至第 16 卷）与《外典书库 1–4》至今 <strong>0 卷出版</strong>，《暗部共生少女》仅出至第 4 卷（日版已至第 7 卷）。</li>
+                    <li>早期卷带有生硬拟方言字，如《魔法禁書目錄 1》蓝发耳环台词作：「假……假關西腔？幹嘛說偶假關西腔？偶真的素大阪人哩！」。</li>
+                  </ul>
+                </div>
+                <div class="example-x-card">
+                  <span class="ex-tag">X 系列同卷对照</span>
+                  <p class="example-x-text">全系列对照日文原版逐行精校，已覆盖旧约 25 册、新约 23 册、创约 1–11 卷、暗部 1–5 卷与外典 9 篇，并配合自动化体检拦截常见错字与漏译。</p>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="comp-row">
+            <div class="comp-cell comp-dim">
+              <div class="dim-icon" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8l6 6"/><path d="M4 14l6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="M22 22l-5-10-5 10"/><path d="M14 18h6"/></svg>
+              </div>
+              <div class="dim-name">译名术语</div>
+              <div class="dim-en">TERMINOLOGY</div>
+            </div>
+            <div class="comp-cell comp-other" role="button" tabindex="0" aria-expanded="false" aria-controls="ex-terms" data-example-row="ex-terms" data-example-focus="wf">
+              <span class="mobile-label">网译 · 民间译本</span>
+              <div class="status-head">
+                <div class="status-line warn"><span class="dot-sm"></span>早期译法杂乱</div>
+                <span class="cell-hint" aria-hidden="true"><svg class="cell-chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+              </div>
+              <div class="cell-text">符合大陆语感，但同词多译现象普遍，部分早期译名与现行维基标准脱节。</div>
+            </div>
+            <div class="comp-cell comp-other" role="button" tabindex="0" aria-expanded="false" aria-controls="ex-terms" data-example-row="ex-terms" data-example-focus="tw">
+              <span class="mobile-label">台版 · 官方繁中</span>
+              <div class="status-head">
+                <div class="status-line mid"><span class="dot-sm"></span>台湾惯用语</div>
+                <span class="cell-hint" aria-hidden="true"><svg class="cell-chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+              </div>
+              <div class="cell-text">包含较多台湾习惯用语，部分专名与大陆主流魔禁社群叫法有差异。</div>
+            </div>
+            <div class="comp-cell comp-x">
+              <span class="mobile-label">X 系列（推荐阅读）</span>
+              <div class="x-head"><strong>大陆自然语感 + 全库统一术语</strong>，跟进魔禁维基最新标准</div>
+              <div class="x-example-box">
+                <span class="ex-tag">示例</span>
+                <span>主系列书名统一为《<strong>某魔法的禁书目录</strong>》（与《某科学》外传对齐）；上条名台词「那我就先杀了这个幻想」保留与「幻想杀手」的原意呼应。</span>
+              </div>
+            </div>
+            <div id="ex-terms" class="example-drawer" hidden>
+              <div class="example-drawer-head">
+                <div class="example-drawer-meta">
+                  <span class="ex-col-badge" data-drawer-badge></span>
+                  <span class="example-drawer-title" data-drawer-title>译名术语</span>
+                </div>
+                <button class="example-close" type="button" data-example-close="ex-terms">收起 ✕</button>
+              </div>
+              <div class="example-body">
+                <div class="example-panel" data-col="wf" hidden>
+                  <ul class="example-list">
+                    <li>同词跨卷长期混用：常见网译单行本中「驱散闲人」（32 处）与「闲人驱散」（16 处）并存、「魔术师」（85 处）与「魔法师」混用、「欧提努斯」（216 处）与「奥丁」（201 处）混用。</li>
+                    <li>早期人名与现行魔禁维基标准脱节，如《新约 07》写作「芙蕾米娅·塞伊文」（现行规范为「芙蕾梅亚·塞维伦」）。</li>
+                  </ul>
+                </div>
+                <div class="example-panel" data-col="tw" hidden>
+                  <ul class="example-list">
+                    <li>书名与大陆主流社群叫法存在差异：主系列缺「某」字作《魔法禁書目錄》，外传称《暗部共生少女》《科學超電磁砲》。</li>
+                    <li>正文包含较多台湾惯用语，如《旧约 01》《暗部 01》实测均见「放電國中妹」「腳踏車」「計程車」「塑膠水桶」「雷射光線」「網路」「螢幕」「影片」「資訊」等。</li>
+                  </ul>
+                </div>
+                <div class="example-x-card">
+                  <span class="ex-tag">X 系列同卷对照</span>
+                  <p class="example-x-text">主系列与外传统一按日文原名格式定名，以日文锚点维护全库单一《译名裁定总表》，兼顾大陆自然语感与魔禁维基最新标准。</p>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="comp-row">
+            <div class="comp-cell comp-dim">
+              <div class="dim-icon" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              </div>
+              <div class="dim-name">原文注音</div>
+              <div class="dim-en">RUBY &amp; NOTES</div>
+            </div>
+            <div class="comp-cell comp-other" role="button" tabindex="0" aria-expanded="false" aria-controls="ex-ruby" data-example-row="ex-ruby" data-example-focus="wf">
+              <span class="mobile-label">网译 · 民间译本</span>
+              <div class="status-head">
+                <div class="status-line bad"><span class="dot-sm"></span>注音大多缺失</div>
+                <span class="cell-hint" aria-hidden="true"><svg class="cell-chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+              </div>
+              <div class="cell-text">常直接删去双层注音或塞进括号，也缺少设定考据与背景注释。</div>
+            </div>
+            <div class="comp-cell comp-other" role="button" tabindex="0" aria-expanded="false" aria-controls="ex-ruby" data-example-row="ex-ruby" data-example-focus="tw">
+              <span class="mobile-label">台版 · 官方繁中</span>
+              <div class="status-head">
+                <div class="status-line mid"><span class="dot-sm"></span>无背景译注</div>
+                <span class="cell-hint" aria-hidden="true"><svg class="cell-chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+              </div>
+              <div class="cell-text">保留了部分原文注音，但几乎不补充术语典故或设定考据说明。</div>
+            </div>
+            <div class="comp-cell comp-x">
+              <span class="mobile-label">X 系列（推荐阅读）</span>
+              <div class="x-head"><strong>完整还原日版假名注音（Ruby）</strong>，并增补背景译注</div>
+              <div class="x-example-box">
+                <span class="ex-tag">效果</span>
+                <span>正文实效：<ruby>幻想杀手<rt>Imagine Breaker</rt></ruby>、<ruby>主神之枪<rt>冈格尼尔</rt></ruby>、<ruby>妹妹<rt>Soror</rt></ruby><button class="note-trigger" type="button" aria-expanded="false" data-note-title="译注 · Soror" data-note="黄金黎明的成员会使用「姐妹」（拉丁语：Soror）来称呼其他女性成员。">㊟</button>（点击角标查看弹注）</span>
+              </div>
+            </div>
+            <div id="ex-ruby" class="example-drawer" hidden>
+              <div class="example-drawer-head">
+                <div class="example-drawer-meta">
+                  <span class="ex-col-badge" data-drawer-badge></span>
+                  <span class="example-drawer-title" data-drawer-title>原文注音</span>
+                </div>
+                <button class="example-close" type="button" data-example-close="ex-ruby">收起 ✕</button>
+              </div>
+              <div class="example-body">
+                <div class="example-panel" data-col="wf" hidden>
+                  <ul class="example-list">
+                    <li>早中期卷普遍完全丢失双层注音：《旧约 01》《旧约 08》《新约 01》实测 <code>&lt;ruby&gt;</code> 均为 <strong>0 处</strong>、弹注 <strong>0 条</strong>，只能硬塞进括号（如 <code>幻想杀手（Imagine Breaker）</code>、<code>Innocentius（猎杀魔女之王）</code>）。</li>
+                    <li>后期《创约 01》全卷亦仅保留 <strong>28 处</strong> <code>&lt;ruby&gt;</code>，且未使用标准弹注结构。</li>
+                  </ul>
+                </div>
+                <div class="example-panel" data-col="tw" hidden>
+                  <ul class="example-list">
+                    <li>双层注音保留极少且<strong>全卷 0 条背景译注</strong>：实测《旧约 01》仅 <strong>3 处</strong> <code>&lt;ruby&gt;</code>（连 <code>幻想殺手（Imagine-Breaker）</code> 也退化为括号）、《旧约 08》仅 <strong>13 处</strong>。</li>
+                    <li>后期仍缺背景译注：《新约 22R》仅 <strong>38 处</strong> <code>&lt;ruby&gt;</code>，《暗部 01》仅 <strong>49 处</strong>，上述各卷 <code>noteref</code> 弹注均为 <strong>0 条</strong>。</li>
+                  </ul>
+                </div>
+                <div class="example-x-card">
+                  <span class="ex-tag">X 系列同卷对照</span>
+                  <p class="example-x-text">同卷实测《S1_01》含 <strong>437 处</strong> <code>&lt;ruby&gt;</code> ＋ <strong>54 条</strong>弹注，《S3_01》含 <strong>241 处</strong> <code>&lt;ruby&gt;</code> ＋ <strong>93 条</strong>弹注，《S4_01》含 <strong>214 处</strong> <code>&lt;ruby&gt;</code> ＋ <strong>27 条</strong>弹注。</p>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="comp-row">
+            <div class="comp-cell comp-dim">
+              <div class="dim-icon" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              </div>
+              <div class="dim-name">插图修嵌</div>
+              <div class="dim-en">ILLUSTRATIONS</div>
+            </div>
+            <div class="comp-cell comp-other" role="button" tabindex="0" aria-expanded="false" aria-controls="ex-images" data-example-row="ex-images" data-example-focus="wf">
+              <span class="mobile-label">网译 · 民间译本</span>
+              <div class="status-head">
+                <div class="status-line bad"><span class="dot-sm"></span>图源混杂</div>
+                <span class="cell-hint" aria-hidden="true"><svg class="cell-chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+              </div>
+              <div class="cell-text">分辨率参差不齐，部分彩页或插画未作汉化，偶见压缩噪点。</div>
+            </div>
+            <div class="comp-cell comp-other" role="button" tabindex="0" aria-expanded="false" aria-controls="ex-images" data-example-row="ex-images" data-example-focus="tw">
+              <span class="mobile-label">台版 · 官方繁中</span>
+              <div class="status-head">
+                <div class="status-line mid"><span class="dot-sm"></span>画质较老 / 繁中</div>
+                <span class="cell-hint" aria-hidden="true"><svg class="cell-chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+              </div>
+              <div class="cell-text">早期卷扫图偏模糊、偶见网纹，插图嵌字均为繁体中文。</div>
+            </div>
+            <div class="comp-cell comp-x">
+              <span class="mobile-label">X 系列（推荐阅读）</span>
+              <div class="x-head"><strong>原图无损级重压 + 全彩图/插画简体中文精修嵌字</strong></div>
+              <div class="x-example-box">
+                <span class="ex-tag">实测</span>
+                <span>未压缩单卷常超 15–20 MB 易致翻页卡顿；经无损级重压后体积大幅瘦身，在各类屏幕上画质几乎无损。</span>
+              </div>
+            </div>
+            <div id="ex-images" class="example-drawer" hidden>
+              <div class="example-drawer-head">
+                <div class="example-drawer-meta">
+                  <span class="ex-col-badge" data-drawer-badge></span>
+                  <span class="example-drawer-title" data-drawer-title>插图修嵌</span>
+                </div>
+                <button class="example-close" type="button" data-example-close="ex-images">收起 ✕</button>
+              </div>
+              <div class="example-body">
+                <div class="example-panel" data-col="wf" hidden>
+                  <ul class="example-list">
+                    <li>图源分辨率两极分化：早期《旧约 01》插图仅 <code>501×750</code>–<code>534×750</code>；后期《创约 01》又把 <code>501×947</code> 与 <code>1443×2048</code> 混装，单卷达 <strong>16.74 MB</strong>。</li>
+                    <li>资源命名杂乱（如包内含 <code>ko_no_安娜_哒！！！.jpg</code>），《暗部 01/02》未压缩单卷亦达 <strong>10.8–12.7 MB</strong>。</li>
+                  </ul>
+                </div>
+                <div class="example-panel" data-col="tw" hidden>
+                  <ul class="example-list">
+                    <li>彩页与插画嵌字均为繁体中文，且未针对移动端做轻量化重压：《旧约 08》单卷高达 <strong>21.44 MB</strong>（43 张图片）。</li>
+                    <li>多卷单本体积长期偏大：《旧约 04/05/06/15》与《科學超電磁砲》单卷普遍在 <strong>15–16.8 MB</strong>，易拖慢移动端翻页与载入。</li>
+                  </ul>
+                </div>
+                <div class="example-x-card">
+                  <span class="ex-tag">X 系列同卷对照</span>
+                  <p class="example-x-text">全彩图与插图简体中文精修嵌字并做无损级重压——同卷实测《S1_01》仅 <strong>2.89 MB</strong>（单页 <code>1120×1600</code>、跨页 <code>2210×1600</code>）、《S1_08》仅 <strong>2.74 MB</strong>、《S3_01》仅 <strong>5.53 MB</strong>（跨页达 <code>4096×2200</code>）。</p>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="comp-row">
+            <div class="comp-cell comp-dim">
+              <div class="dim-icon" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+              </div>
+              <div class="dim-name">排版适配</div>
+              <div class="dim-en">LAYOUT &amp; CSS</div>
+            </div>
+            <div class="comp-cell comp-other" role="button" tabindex="0" aria-expanded="false" aria-controls="ex-layout" data-example-row="ex-layout" data-example-focus="wf">
+              <span class="mobile-label">网译 · 民间译本</span>
+              <div class="status-head">
+                <div class="status-line bad"><span class="dot-sm"></span>格式混乱</div>
+                <span class="cell-hint" aria-hidden="true"><svg class="cell-chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+              </div>
+              <div class="cell-text">缺乏统一排版规范，常见缩进错乱、空行不一或图文错位。</div>
+            </div>
+            <div class="comp-cell comp-other" role="button" tabindex="0" aria-expanded="false" aria-controls="ex-layout" data-example-row="ex-layout" data-example-focus="tw">
+              <span class="mobile-label">台版 · 官方繁中</span>
+              <div class="status-head">
+                <div class="status-line mid"><span class="dot-sm"></span>基础版式</div>
+                <span class="cell-hint" aria-hidden="true"><svg class="cell-chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+              </div>
+              <div class="cell-text">仅满足基本阅读需要，在移动端多列分页阅读器下偶发排版漂移。</div>
+            </div>
+            <div class="comp-cell comp-x">
+              <span class="mobile-label">X 系列（推荐阅读）</span>
+              <div class="x-head"><strong>严格 CSS 排版规范</strong>，彻底杜绝移动端分页漂移</div>
+              <div class="x-example-box">
+                <span class="ex-tag">细节</span>
+                <span>正文统一使用直角引号 <span class="quote-chip">「」</span>，避免弯引号“”混排时按西文字体渲染为窄比例导致间距局促，更贴合日版原著观感。</span>
+              </div>
+            </div>
+            <div id="ex-layout" class="example-drawer" hidden>
+              <div class="example-drawer-head">
+                <div class="example-drawer-meta">
+                  <span class="ex-col-badge" data-drawer-badge></span>
+                  <span class="example-drawer-title" data-drawer-title>排版适配</span>
+                </div>
+                <button class="example-close" type="button" data-example-close="ex-layout">收起 ✕</button>
+              </div>
+              <div class="example-body">
+                <div class="example-panel" data-col="wf" hidden>
+                  <ul class="example-list">
+                    <li>各卷样式割裂：《旧约 01》《新约 01》仍残留十多年前 Sony Reader 专属字体路径（<code>url(res:///opt/sony/ebook/FONT/tt0011m_.ttf)</code>）。</li>
+                    <li>标点与版式不统一：《旧约 01》用直角引号 <code>「」</code>，而《创约 01》全卷退化为 <strong>2,250 个弯引号 <code>“”</code></strong>（0 个 <code>「」</code>），缺少移动端分页防御。</li>
+                  </ul>
+                </div>
+                <div class="example-panel" data-col="tw" hidden>
+                  <ul class="example-list">
+                    <li>沿用角川日系竖排电子书模板（<code>book-style.css</code> / <code>fixed-layout-jp.css</code>），单卷普遍含 <strong>130–277 处</strong> <code>&lt;br/&gt;</code> 断行。</li>
+                    <li>在大陆读者常用的横排多列分页阅读器下易出现版式错位与插图分页漂移。</li>
+                  </ul>
+                </div>
+                <div class="example-x-card">
+                  <span class="ex-tag">X 系列同卷对照</span>
+                  <p class="example-x-text">全库 82 册统一采用精简 CSS 与固定 XHTML 模板，正文统一使用直角引号 <code>「」</code>，并内置移动端多列分页与插图防裁切规则。</p>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="comp-row">
+            <div class="comp-cell comp-dim">
+              <div class="dim-icon" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+              </div>
+              <div class="dim-name">后续维护</div>
+              <div class="dim-en">MAINTENANCE</div>
+            </div>
+            <div class="comp-cell comp-other" role="button" tabindex="0" aria-expanded="false" aria-controls="ex-maint" data-example-row="ex-maint" data-example-focus="wf">
+              <span class="mobile-label">网译 · 民间译本</span>
+              <div class="status-head">
+                <div class="status-line bad"><span class="dot-sm"></span>基本停更</div>
+                <span class="cell-hint" aria-hidden="true"><svg class="cell-chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+              </div>
+              <div class="cell-text">多年前整理发布后无人接手维护，已知错译与错字长期留存。</div>
+            </div>
+            <div class="comp-cell comp-other" role="button" tabindex="0" aria-expanded="false" aria-controls="ex-maint" data-example-row="ex-maint" data-example-focus="tw">
+              <span class="mobile-label">台版 · 官方繁中</span>
+              <div class="status-head">
+                <div class="status-line mid"><span class="dot-sm"></span>定稿即止</div>
+                <span class="cell-hint" aria-hidden="true"><svg class="cell-chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+              </div>
+              <div class="cell-text">商业出版后极少再作文字订正，也很少回改前卷已定型的译名。</div>
+            </div>
+            <div class="comp-cell comp-x">
+              <span class="mobile-label">X 系列（推荐阅读）</span>
+              <div class="x-head"><strong>长效持续维护</strong>，根据社群反馈与官方新卷持续勘误</div>
+              <div class="x-example-box">
+                <span class="ex-tag">闭环</span>
+                <span>读者报错 → 核对日文原版与裁定表 → 全库同步修正，通过 OneDrive 实时同步与 GitHub 定时发版交付。</span>
+              </div>
+            </div>
+            <div id="ex-maint" class="example-drawer" hidden>
+              <div class="example-drawer-head">
+                <div class="example-drawer-meta">
+                  <span class="ex-col-badge" data-drawer-badge></span>
+                  <span class="example-drawer-title" data-drawer-title>后续维护</span>
+                </div>
+                <button class="example-close" type="button" data-example-close="ex-maint">收起 ✕</button>
+              </div>
+              <div class="example-body">
+                <div class="example-panel" data-col="wf" hidden>
+                  <ul class="example-list">
+                    <li>多数流传合集在早年打包后即无人接手维护：前述跨 31 卷 124 处「学院都市」错字、旧译名混用与 <code>&amp;#160;</code> 编码残留长期保留至今。</li>
+                    <li>同系列不同译者接力断档后，缺少统一审校与跨卷回改机制。</li>
+                  </ul>
+                </div>
+                <div class="example-panel" data-col="tw" hidden>
+                  <ul class="example-list">
+                    <li>商业单行本定稿上架后极少回改前卷文字与译名（如《旧约 01》早期方言腔与缺失注音多年未作订正）。</li>
+                    <li>《创约》全系列与《外典书库》至今仍未出版，长期存在完整度空缺。</li>
+                  </ul>
+                </div>
+                <div class="example-x-card">
+                  <span class="ex-tag">X 系列同卷对照</span>
+                  <p class="example-x-text">建立「读者群内报错 → 核对日文原版与裁定表 → 全库同步修正」长效闭环，通过 OneDrive 实时同步与 GitHub 定时发版持续交付。</p>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <div class="summary-box">
+          <div class="summary-head">
+            <div class="summary-title">为什么推荐直接读 X 系列？</div>
+          </div>
+          <div class="summary-grid-4">
+            <div class="sum-pill">
+              <div class="sum-k">底本最优组合</div>
+              <div class="sum-v">兼取台版严谨与网译语感，逐行核对日文原著补漏纠错</div>
+            </div>
+            <div class="sum-pill">
+              <div class="sum-k">原汁原味设定</div>
+              <div class="sum-v">完整保留双层 Ruby 注音与背景译注，读得懂梗与术式</div>
+            </div>
+            <div class="sum-pill">
+              <div class="sum-k">全彩精修轻量化</div>
+              <div class="sum-v">简体汉化插图 + 无损级重压，高清不糊且翻页零卡顿</div>
+            </div>
+            <div class="sum-pill">
+              <div class="sum-k">活水长效勘误</div>
+              <div class="sum-v">全库译名统一，社群反馈随时修，越更新越完善</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: Typography & Craft Showcase -->
+    <section id="showcase" class="section section-alt">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="section-kicker">02 · Craft &amp; Typography Lab</span>
+            <h2 class="section-title">排版与精修细节实验室</h2>
+            <p class="section-sub">从标点字形、双层注音到插图压缩与跨卷译名一致性，每一项取舍都有明确规范与自动化检查守护。</p>
+          </div>
+        </div>
+
+        <div class="lab-grid">
+          <article class="lab-card">
+            <div class="lab-top">
+              <h3 class="lab-title">① Ruby 双层注音与弹注交互</h3>
+              <span class="lab-tag">原生 EPUB 3 特性</span>
+            </div>
+            <p class="lab-desc">日文轻小说常用汉字与假名构成双层表意（术语名＋术式/外语读音）。X 系列完整保留 <code>&lt;ruby&gt;</code>，并为专有典故增补 <code>epub:type="noteref"</code> 弹注。</p>
+            <div class="sample-box">
+              「所谓的<ruby>神之右席<rt>God's Right Seat</rt></ruby>，并非单纯的组织头衔……就像将<ruby>妹妹<rt>Soror</rt></ruby><button class="note-trigger" type="button" aria-expanded="false" data-note-title="译注 · 源自《S0_00》测试页" data-note="黄金黎明的成员会使用「姐妹」（拉丁语：Soror）来称呼其他女性成员。">㊟</button>作为结社成员的称谓一样。」
+            </div>
+            <div class="lab-links">
+              <a href="#readers">查看如何用《S0_00》测阅读器 →</a>
+            </div>
+          </article>
+
+          <article class="lab-card">
+            <div class="lab-top">
+              <h3 class="lab-title">② 直角引号「」 vs 弯引号混排对比</h3>
+              <span class="lab-tag">交互对比</span>
+            </div>
+            <p class="lab-desc">弯引号“”属中西文共用码位（<code>U+201C/201D</code>），混排或字体回退时易按西文字体渲染为窄比例字形，导致间距局促；直角引号「」为中日文专属全角码位，与方块字契合且不会退化。</p>
+            <div class="quote-toggle" role="group" aria-label="引号风格切换">
+              <button id="btn-quote-corner" class="toggle-btn is-active" type="button" data-quote-mode="corner">X 系列：直角引号「」</button>
+              <button id="btn-quote-curly" class="toggle-btn" type="button" data-quote-mode="curly">常见混排：弯引号 “”</button>
+            </div>
+            <div id="quote-sample-box" class="sample-box"></div>
+            <p id="quote-caption" class="lab-note"></p>
+          </article>
+
+          <article class="lab-card">
+            <div class="lab-top">
+              <h3 class="lab-title">③ 插图简体精修与无损级重压</h3>
+              <span class="lab-tag">体积对比</span>
+            </div>
+            <p class="lab-desc">未压缩单卷 EPUB 往往超过 15–20 MB，在手机与电子墨水屏上极易导致翻页和加载卡顿。经无损级算法重压与简体中文精修嵌字后，体积大幅精简且观感依旧锐利。</p>
+            <div class="size-bars">
+              <div>
+                <div class="size-row-head">
+                  <span>未压缩常见单卷</span>
+                  <span>15–20+ MB · 翻页易卡顿</span>
+                </div>
+                <div class="size-track"><div class="size-fill raw"></div></div>
+              </div>
+              <div>
+                <div class="size-row-head">
+                  <span>X 系列无损级重压</span>
+                  <span>大幅精简 · 高分屏画质几乎无损</span>
+                </div>
+                <div class="size-track"><div class="size-fill opt"></div></div>
+              </div>
+            </div>
+            <p id="illus-note" class="lab-note">仓库内同时维护彩图文字与日文正文行号的对照表（<a href="https://github.com/1204244136/index-X/blob/master/docs/illustration-text-mapping.md" target="_blank" rel="noopener noreferrer"><code>docs/illustration-text-mapping.md</code></a>），确保嵌字与正文译名始终对得上。</p>
+          </article>
+
+          <article class="lab-card">
+            <div class="lab-top">
+              <h3 class="lab-title">④ 全库译名统一与维基标准跟进</h3>
+              <span class="lab-tag">单一裁定表</span>
+            </div>
+            <p class="lab-desc">以日文原词为锚点跨 80 余卷统一专名与角色口癖：主系列定名为《某魔法的禁书目录》以对齐《某科学》外传；译名遵循「从俗 → 从官 → 自拟」原则，并与魔禁维基差异显式留档。</p>
+            <div class="lab-links">
+              <a href="https://github.com/1204244136/index-X/blob/master/docs/translation-name-rulings.md" target="_blank" rel="noopener noreferrer">译名裁定总表 ↗</a>
+              <a href="https://toaru.huijiwiki.com/wiki/Project:%E6%B2%99%E7%9B%92/%E7%9F%A5%E4%B8%80%E4%B8%80" target="_blank" rel="noopener noreferrer">作者博客说明 ↗</a>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 3: Series Catalog & Progress -->
+    <section id="catalog" class="section">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="section-kicker">03 · Catalog &amp; Progress</span>
+            <h2 class="section-title">全系列收录进度总览</h2>
+            <p class="section-sub">当前已收录成品 <strong>82 册</strong>（其中 80 册拥有中日双侧逐行对齐工作源），另有 <strong>8 册</strong>已有日文工作源占位、待汉化入库。点击下方任意系列卡片即可切换查看对应卷目。</p>
+          </div>
+          <div class="head-tip-box">
+            <div class="head-tip-title">底本选用策略</div>
+            <div class="head-tip-desc">旧约 / 新约取<strong>台版</strong>底本，创约 / 番外取<strong>网翻</strong>底本；《某暗部的少女共栖》第 1–4 卷与《某科学的超电磁炮 SS》15 周年单行本已合入台版复校，全系列对照日文原版精校。</div>
+          </div>
+        </div>
+
+        <div id="series-overview" class="series-overview" role="tablist" aria-label="按系列切换"></div>
+
+        <div class="catalog-toolbar">
+          <div class="toolbar-left">
+            <div class="active-series-info">
+              <span id="active-series-name" class="active-series-name">当前查看：全部系列总览</span>
+              <button id="reset-series-btn" class="reset-series-btn" type="button" hidden>返回全部</button>
+            </div>
+            <div id="status-tabs" class="segmented-control" role="group" aria-label="按制作状态筛选">
+              <button class="seg-btn is-active" type="button" data-status="all">全部状态 (90)</button>
+              <button class="seg-btn" type="button" data-status="done">已成品 (82)</button>
+              <button class="seg-btn" type="button" data-status="pending">待制作 (8)</button>
+            </div>
+          </div>
+          <div class="toolbar-right">
+            <input id="catalog-search" class="search-input" type="search" placeholder="搜索作品号、书名或出处，例如 S2_22、雅妮丝…" aria-label="搜索书目" />
+          </div>
+        </div>
+
+        <div class="catalog-meta">
+          <span id="catalog-count-label">正在显示全部书目</span>
+          <div class="catalog-meta-links">
+            <a href="#faq-scope" data-open-faq="faq-scope">收录边界说明 ↓</a>
+            <a href="https://github.com/1204244136/index-X/blob/master/docs/work-correspondence.md" target="_blank" rel="noopener noreferrer">仓库完整对应表与缺口明细 ↗</a>
+          </div>
+        </div>
+
+        <div id="book-grid" class="book-grid"></div>
+        <div id="catalog-more" class="catalog-more"></div>
+      </div>
+    </section>
+
+    <!-- Section 4: Download & Update Granularity -->
+    <section id="channels" class="section section-alt">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="section-kicker">04 · Channels &amp; Cadence</span>
+            <h2 class="section-title">获取渠道与四级更新颗粒度导览</h2>
+            <p class="section-sub">各渠道的<strong>书籍正文完全同源一致</strong>，只是「攒多少改动才发布一次」和「打包形式」不同，按自己的阅读习惯选入口即可。</p>
+          </div>
+          <div class="head-tip-box">
+            <div class="head-tip-title">怎么理解「颗粒度」？</div>
+            <div class="head-tip-desc">越细 = 更新越勤快，改好一卷就同步；<br />越粗 = 攒多些再集中打包，省心少折腾。</div>
+          </div>
+        </div>
+
+        <div class="spectrum-bar">
+          <div class="spectrum-top">
+            <span>四级更新颗粒度一览（点击卡片跳转下方详情）</span>
+            <div class="spectrum-track">
+              <span class="track-pill">细颗粒 · 实时勤更</span>
+              <span aria-hidden="true">──────▶</span>
+              <span class="track-pill">粗颗粒 · 重大打包</span>
+            </div>
+          </div>
+          <div class="flow-grid">
+            <a class="flow-chip s1" href="#tier-onedrive">
+              <div class="chip-tag">① 最细颗粒</div>
+              <div class="chip-title">OneDrive 实时更新</div>
+              <div class="chip-sub">改好一卷 · 立刻同步一卷</div>
+            </a>
+            <div class="flow-sep" aria-hidden="true">›</div>
+            <a class="flow-chip s2" href="#tier-commits">
+              <div class="chip-tag">② 较细颗粒</div>
+              <div class="chip-title">GitHub 仓库更新</div>
+              <div class="chip-sub">每次修订 · 记一笔明细</div>
+            </a>
+            <div class="flow-sep" aria-hidden="true">›</div>
+            <a class="flow-chip s3" href="#tier-releases">
+              <div class="chip-tag">③ 中等颗粒</div>
+              <div class="chip-title">GitHub 定时发版</div>
+              <div class="chip-sub">每晚 23:00 · 汇总打包一次</div>
+            </a>
+            <div class="flow-sep" aria-hidden="true">›</div>
+            <a class="flow-chip s4" href="#tier-archive">
+              <div class="chip-tag">④ 最粗颗粒</div>
+              <div class="chip-title">网盘 / 群文件整合</div>
+              <div class="chip-sub">重大更新 · 定期整包同步</div>
+            </a>
+          </div>
+        </div>
+
+        <div class="tiers">
+          <!-- Tier 1 -->
+          <article id="tier-onedrive" class="tier-card t1">
+            <div class="tier-left">
+              <div>
+                <span class="tier-badge">① 实时单卷 · 最快最新</span>
+                <div class="tier-name">OneDrive 实时更新</div>
+              </div>
+              <div class="svg-box" aria-hidden="true">
+                <svg width="206" height="52" viewBox="0 0 206 52" fill="none">
+                  <rect x="8" y="8" width="44" height="36" rx="6" style="fill:var(--svg-chip);stroke:var(--svg-stroke)" stroke-width="1.5"/>
+                  <text x="30" y="30" font-size="11" font-weight="700" style="fill:var(--svg-muted)" text-anchor="middle">卷 1</text>
+                  <rect x="62" y="5" width="56" height="42" rx="7" style="fill:var(--c1-soft);stroke:var(--c1)" stroke-width="2"/>
+                  <text x="90" y="24" font-size="11" font-weight="800" style="fill:var(--c1-ink)" text-anchor="middle">卷 2</text>
+                  <rect x="74" y="29" width="32" height="12" rx="6" style="fill:var(--c1-solid)"/>
+                  <text x="90" y="38" font-size="8.5" font-weight="700" fill="#fff" text-anchor="middle">秒同步</text>
+                  <rect x="128" y="8" width="44" height="36" rx="6" style="fill:var(--svg-chip);stroke:var(--svg-stroke)" stroke-width="1.5"/>
+                  <text x="150" y="30" font-size="11" font-weight="700" style="fill:var(--svg-muted)" text-anchor="middle">卷 3</text>
+                  <circle cx="190" cy="26" r="9" style="fill:var(--c1-soft);stroke:var(--c1)" stroke-width="1.5"/>
+                  <path d="M186 26l3 3 5-5" style="stroke:var(--c1)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+            </div>
+            <div class="tier-mid">
+              <div class="tier-headline">改好一卷就立刻同步那一卷，全库最新版基准</div>
+              <div class="tier-points">
+                <div class="point-row">
+                  <span class="point-pill">怎么更</span>
+                  <span>某卷完成勘误或新书制作后<strong>即时生效</strong>，不用等全库一起打包。</span>
+                </div>
+                <div class="point-row">
+                  <span class="point-pill">拿什么</span>
+                  <span>按卷分好的现成电子书（<code>.epub</code>），打开即可单本下载阅读。</span>
+                </div>
+              </div>
+              <div class="tier-actions">
+                <a class="tier-link-btn" href="https://1drv.ms/f/c/dd2408f3b9d24400/IgBOKmWl2cxOTJAu7WDk6kBaAVQQEYs1ALcVLLHgC7fAKSI?e=8den6B" target="_blank" rel="noopener noreferrer">打开 OneDrive 最新全卷 ↗</a>
+              </div>
+            </div>
+            <div class="tier-right">
+              <div>
+                <div class="fit-label">适合谁</div>
+                <div class="fit-text">想第一时间追最新勘误、只想单下某几卷的读者。</div>
+              </div>
+              <div class="meter">
+                <div class="meter-label"><span>更新频度</span><span>实时（最快）</span></div>
+                <div class="bars"><div class="bar on"></div><div class="bar on"></div><div class="bar on"></div><div class="bar on"></div></div>
+              </div>
+            </div>
+          </article>
+
+          <!-- Tier 2 -->
+          <article id="tier-commits" class="tier-card t2">
+            <div class="tier-left">
+              <div>
+                <span class="tier-badge">② 逐笔提交 · Commit</span>
+                <div class="tier-name">GitHub 仓库更新</div>
+              </div>
+              <div class="svg-box" aria-hidden="true">
+                <svg width="206" height="52" viewBox="0 0 206 52" fill="none">
+                  <line x1="20" y1="19" x2="184" y2="19" style="stroke:var(--c2-mid)" stroke-width="3" stroke-linecap="round"/>
+                  <circle cx="28" cy="19" r="5.5" style="fill:var(--svg-chip);stroke:var(--c2)" stroke-width="2.4"/>
+                  <circle cx="76" cy="19" r="5.5" style="fill:var(--svg-chip);stroke:var(--c2)" stroke-width="2.4"/>
+                  <circle cx="124" cy="19" r="5.5" style="fill:var(--svg-chip);stroke:var(--c2)" stroke-width="2.4"/>
+                  <circle cx="176" cy="19" r="7.5" style="fill:var(--c2)"/>
+                  <circle cx="176" cy="19" r="2.8" fill="#fff"/>
+                  <text x="103" y="42" font-size="11" font-weight="700" style="fill:var(--c2-ink)" text-anchor="middle">一笔一笔记录每次修改明细</text>
+                </svg>
+              </div>
+            </div>
+            <div class="tier-mid">
+              <div class="tier-headline">每次修订都会在仓库记下一笔「改动明细」</div>
+              <div class="tier-points">
+                <div class="point-row">
+                  <span class="point-pill">怎么更</span>
+                  <span>每修完一批内容就提交一次，记清改了哪本书、哪句话与裁定依据。</span>
+                </div>
+                <div class="point-row">
+                  <span class="point-pill">拿什么</span>
+                  <span>供翻阅「具体改了哪里」的修改记录，<strong>不是直接下载看书的成品包</strong>。</span>
+                </div>
+              </div>
+              <div class="tier-actions">
+                <a class="tier-link-btn" href="https://github.com/1204244136/index-X/commits/master" target="_blank" rel="noopener noreferrer">查看最近提交记录 ↗</a>
+              </div>
+            </div>
+            <div class="tier-right">
+              <div>
+                <div class="fit-label">适合谁</div>
+                <div class="fit-text">好奇每次改了什么字句、想对照查看修订明细的读者。</div>
+              </div>
+              <div class="meter">
+                <div class="meter-label"><span>更新频度</span><span>高（随提交）</span></div>
+                <div class="bars"><div class="bar on"></div><div class="bar on"></div><div class="bar on"></div><div class="bar"></div></div>
+              </div>
+            </div>
+          </article>
+
+          <!-- Tier 3 -->
+          <article id="tier-releases" class="tier-card t3">
+            <div class="tier-left">
+              <div>
+                <span class="tier-badge">③ 每日汇总 · 自动打包</span>
+                <div class="tier-name">GitHub 定时发版</div>
+              </div>
+              <div class="svg-box" aria-hidden="true">
+                <svg width="206" height="52" viewBox="0 0 206 52" fill="none">
+                  <circle cx="22" cy="14" r="4.5" style="fill:var(--c3-soft);stroke:var(--c3)" stroke-width="1.6"/>
+                  <circle cx="22" cy="26" r="4.5" style="fill:var(--c3-soft);stroke:var(--c3)" stroke-width="1.6"/>
+                  <circle cx="22" cy="38" r="4.5" style="fill:var(--c3-soft);stroke:var(--c3)" stroke-width="1.6"/>
+                  <path d="M29 14L58 24M29 26H58M29 38L58 28" style="stroke:var(--c3)" stroke-width="1.6" stroke-linecap="round"/>
+                  <rect x="62" y="11" width="52" height="30" rx="7" style="fill:var(--c3-soft);stroke:var(--c3)" stroke-width="1.6"/>
+                  <text x="88" y="25" font-size="9.5" font-weight="800" style="fill:var(--c3-ink)" text-anchor="middle">23:00</text>
+                  <text x="88" y="36" font-size="8.5" font-weight="700" style="fill:var(--c3-ink)" text-anchor="middle">汇总打包</text>
+                  <path d="M118 26h13" style="stroke:var(--c3)" stroke-width="2" stroke-linecap="round"/>
+                  <path d="M127 21l5 5-5 5" style="stroke:var(--c3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <rect x="136" y="10" width="62" height="32" rx="7" style="fill:var(--c3-solid)"/>
+                  <text x="167" y="24" font-size="9.5" font-weight="800" fill="#fff" text-anchor="middle">每日一版</text>
+                  <text x="167" y="36" font-size="8.5" font-weight="600" fill="#ecfdf5" text-anchor="middle">单本 + 合集</text>
+                </svg>
+              </div>
+            </div>
+            <div class="tier-mid">
+              <div class="tier-headline">每晚北京时间 23:00 自动把当天新改动打包成一个版本</div>
+              <div class="tier-points">
+                <div class="point-row">
+                  <span class="point-pill">怎么更</span>
+                  <span>每天定时巡检一次，<strong>有新改动才发新版</strong>，以计划发布日打标 <code>YYYY.MM.DD</code>；已有 tag 时自动跳过。</span>
+                </div>
+                <div class="point-row">
+                  <span class="point-pill">拿什么</span>
+                  <span>按日期整理的发布页，含全套单本 <code>.epub</code> 及旧约、新约、创约、某暗部的少女共栖、番外及全集 ZIP。</span>
+                </div>
+              </div>
+              <div class="tier-actions">
+                <a id="releases-cta" class="tier-link-btn" href="https://github.com/1204244136/index-X/releases" target="_blank" rel="noopener noreferrer">前往 GitHub Releases ↗</a>
+                <span id="latest-release-pill" class="release-pill tier-release-pill">每晚 23:00 自动检查打包</span>
+              </div>
+            </div>
+            <div class="tier-right">
+              <div>
+                <div class="fit-label">适合谁</div>
+                <div class="fit-text">习惯在 GitHub 一键下载全系列合集压缩包的读者。</div>
+              </div>
+              <div class="meter">
+                <div class="meter-label"><span>更新频度</span><span>中（最多每日 1 版）</span></div>
+                <div class="bars"><div class="bar on"></div><div class="bar on"></div><div class="bar"></div><div class="bar"></div></div>
+              </div>
+            </div>
+          </article>
+
+          <!-- Tier 4 -->
+          <article id="tier-archive" class="tier-card t4">
+            <div class="tier-left">
+              <div>
+                <span class="tier-badge">④ 重大更新 · 整包直连</span>
+                <div class="tier-name">网盘 / 群文件整合</div>
+              </div>
+              <div class="svg-box" aria-hidden="true">
+                <svg width="206" height="52" viewBox="0 0 206 52" fill="none">
+                  <rect x="8" y="12" width="42" height="28" rx="6" style="fill:var(--c4-soft);stroke:var(--c4)" stroke-width="1.4" stroke-dasharray="3 2"/>
+                  <text x="29" y="30" font-size="9" font-weight="700" style="fill:var(--c4-ink)" text-anchor="middle">攒多轮</text>
+                  <path d="M54 26h13" style="stroke:var(--c4)" stroke-width="2" stroke-linecap="round"/>
+                  <path d="M63 21l5 5-5 5" style="stroke:var(--c4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <rect x="72" y="8" width="126" height="36" rx="9" style="fill:var(--c4-soft);stroke:var(--c4)" stroke-width="2"/>
+                  <text x="135" y="24" font-size="11" font-weight="800" style="fill:var(--c4-ink)" text-anchor="middle">重大更新大包</text>
+                  <text x="135" y="37" font-size="9" font-weight="600" style="fill:var(--c4-ink)" text-anchor="middle">出新卷 / 定期整合才发</text>
+                </svg>
+              </div>
+            </div>
+            <div class="tier-mid">
+              <div class="tier-headline">攒到重大节点或定期整合时，统一打包上传国内网盘与群文件</div>
+              <div class="tier-points">
+                <div class="point-row">
+                  <span class="point-pill">怎么更</span>
+                  <span>平时零星小修不惊动网盘；遇到<strong>新卷入库、整卷精校完成</strong>或定期汇总才集中发版。</span>
+                </div>
+                <div class="point-row">
+                  <span class="point-pill">拿什么</span>
+                  <span>整理好的全套整合大包，QQ 交流群（<code>953679671</code>）群文件与网盘直连高速下载。</span>
+                </div>
+              </div>
+              <div class="tier-actions">
+                <a class="tier-link-btn" href="https://qm.qq.com/cgi-bin/qm/qr?k=TtTcct3Iz8Y7CewT5QA2RlLrR0p5-WN2&jump_from=webapi" target="_blank" rel="noopener noreferrer">加入 X 系列交流群领群文件 ↗</a>
+                <button class="tier-link-btn" type="button" data-copy="953679671" data-copy-label="交流群号 953679671">复制群号 953679671</button>
+              </div>
+            </div>
+            <div class="tier-right">
+              <div>
+                <div class="fit-label">适合谁</div>
+                <div class="fit-text">不想频繁重下、希望在国内网盘或群文件一次存稳全套的读者。</div>
+              </div>
+              <div class="meter">
+                <div class="meter-label"><span>更新频度</span><span>低（重大节点 / 定期）</span></div>
+                <div class="bars"><div class="bar on"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div></div>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <div class="summary-box">
+          <div class="summary-title" style="margin-bottom:12px;">一句话对号入座：我该去哪看或下载？</div>
+          <div class="summary-grid-4">
+            <div class="pick-item">
+              <div class="pick-need">想追最新勘误 / 下单本</div>
+              <div class="pick-go c1">→ OneDrive 实时更新</div>
+            </div>
+            <div class="pick-item">
+              <div class="pick-need">想看具体改了哪些地方</div>
+              <div class="pick-go c2">→ GitHub 仓库更新</div>
+            </div>
+            <div class="pick-item">
+              <div class="pick-need">想按天领系列合集压缩包</div>
+              <div class="pick-go c3">→ GitHub 定时发版</div>
+            </div>
+            <div class="pick-item">
+              <div class="pick-need">想国内直连省心存大包</div>
+              <div class="pick-go c4">→ 网盘 / 群文件整合</div>
+            </div>
+          </div>
+          <div class="footnote-center">各渠道只是更新节奏不同，不存在内容差异；日常细微勘误无需反复重下。</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 5: Readers Guide -->
+    <section id="readers" class="section">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="section-kicker">05 · Reader Guide</span>
+            <h2 class="section-title">阅读器避坑与开读指南</h2>
+            <p class="section-sub">X 系列深度运用了 Ruby 注音、弹注跳转与精细分页 CSS；选对阅读器，才能看到完整的排版效果。</p>
+          </div>
+        </div>
+
+        <div class="alert-banner">
+          <div>
+            <div class="alert-title">请勿使用多看阅读或手机系统自带阅读器！</div>
+            <div class="alert-desc">这类阅读器常会剥离 Ruby 上标、忽略弹注跳转或破坏多列分页样式，导致注音错位与注释失效。</div>
+          </div>
+          <a class="btn btn-primary" href="https://docs.qq.com/sheet/DUWtiZ3dBbXZFWGR5?tab=000001" target="_blank" rel="noopener noreferrer">打开阅读器兼容性测评表 ↗</a>
+        </div>
+
+        <div class="steps-grid">
+          <article class="step-card">
+            <span class="step-num">1</span>
+            <h3>参考测评挑选阅读器</h3>
+            <p>不同系统对 Ruby 注音与弹注支持度差异很大（日常阅读安卓常选用 Reasily、iOS 可用系统「图书」）；其他平台及电子墨水屏可先对照在线测评表挑选。</p>
+            <div class="card-actions">
+              <a href="https://docs.qq.com/sheet/DUWtiZ3dBbXZFWGR5?tab=000001" target="_blank" rel="noopener noreferrer">查看阅读器测评 ↗</a>
+            </div>
+          </article>
+
+          <article class="step-card">
+            <span class="step-num">2</span>
+            <h3>先读《S0_00 读前必看》验机</h3>
+            <p>下载书籍后，先导入 <code>【S0_00】读前必看.epub</code>：对照书内的效果图测试「<ruby>幻想杀手<rt>Imagine Breaker</rt></ruby>」注音位置以及「㊟」弹注是否能正常弹窗。</p>
+            <div class="card-actions">
+              <a href="#top">回到首屏交互示例 ↑</a>
+            </div>
+          </article>
+
+          <article class="step-card">
+            <span class="step-num">3</span>
+            <h3>按建议顺序开读正篇与外传</h3>
+            <p>《某魔法的禁书目录》正篇跨越旧约、新约、创约，并与《某科学的超电磁炮》《某暗部的少女共栖》及外典系列交织。不确定卷次穿插关系时，可先对照魔禁维基整理的时间线顺序。</p>
+            <div class="card-actions">
+              <a href="https://toaru.huijiwiki.com/wiki/Project:%E6%9F%90%E7%B3%BB%E5%88%97%E4%BD%9C%E5%93%81%E8%A7%82%E7%9C%8B%E9%A1%BA%E5%BA%8F%E5%8F%82%E8%80%83" target="_blank" rel="noopener noreferrer">建议阅读顺序参考 ↗</a>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 6: FAQ -->
+    <section id="faq" class="section section-alt">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="section-kicker">06 · FAQ</span>
+            <h2 class="section-title">常见问题与说明</h2>
+            <p class="section-sub">本节部分说明由 Chansey 整理，汇总了读者关于底本、校对、引号、图片与阅读器的高频疑问。</p>
+          </div>
+          <div class="faq-controls">
+            <button id="faq-toggle-all" class="ghost-btn" type="button" data-expanded="false">全部展开</button>
+          </div>
+        </div>
+
+        <div class="faq-list">
+          <details id="faq-scope" class="faq-item">
+            <summary>
+              <span>哪些番外、联动或特典没有收录？</span>
+              <span class="faq-chevron" aria-hidden="true">▾</span>
+            </summary>
+            <div class="faq-body">
+              本项目定位为某系列主线与外传轻小说 EPUB 档案。跨作品联动（如《某魔法的电脑战机》《某魔法的重装座敷童子》）、店铺附赠的 1–4 页极短篇以及灰村清孝画集 1 附赠《情书争夺战》等少数特典暂未入库（即《S0_00》提示的「X 版有很多没收录的番外内容，这部分请看网翻」）。完整缺口明细与收录边界可查阅仓库中的 <a href="https://github.com/1204244136/index-X/blob/master/docs/work-correspondence.md" target="_blank" rel="noopener noreferrer">全系列作品对应与收录进度表 ↗</a>。
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>
+              <span>为什么书名定为《某魔法的禁书目录》？</span>
+              <span class="faq-chevron" aria-hidden="true">▾</span>
+            </summary>
+            <div class="faq-body">
+              简中旧译主系列漏了「某」字写作《魔法禁书目录》，而外传却译作《某科学的超电磁炮》等。X 系列统一按日版原名（とある…）规范，与外传保持一致格式。
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>
+              <span>译名和台版、网译一致吗？</span>
+              <span class="faq-chevron" aria-hidden="true">▾</span>
+            </summary>
+            <div class="faq-body">
+              部分不同。X 系列全库统一术语，多跟进魔禁维基最新标准，具体取舍与差异可查阅 <a href="https://github.com/1204244136/index-X/blob/master/docs/translation-name-rulings.md" target="_blank" rel="noopener noreferrer">译名裁定总表 §八 ↗</a> 及 <a href="https://toaru.huijiwiki.com/wiki/Project:%E6%B2%99%E7%9B%92/%E7%9F%A5%E4%B8%80%E4%B8%80" target="_blank" rel="noopener noreferrer">作者博客 ↗</a>。
+            </div>
+          </details>
+
+          <details class="faq-item" open>
+            <summary>
+              <span>会用 AI 校对吗？</span>
+              <span class="faq-chevron" aria-hidden="true">▾</span>
+            </summary>
+            <div class="faq-body">
+              会。校对流程中引入 AI 辅助查验，主要用于降低长篇文本逐字通校时的人工疏漏；所有改动与疑点仍以日文原版与项目译名裁定为核定依据。
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>
+              <span>为什么正文改用直角引号「」？</span>
+              <span class="faq-chevron" aria-hidden="true">▾</span>
+            </summary>
+            <div class="faq-body">
+              弯引号“”属中西文共用码位（<code>U+201C/201D</code>），混排或字体回退时易按西文字体渲染为窄比例导致间距局促；直角引号「」属中日文专属全角码位，更契合方块字且贴合日版原著的阅读习惯。
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>
+              <span>为什么要压缩图片？</span>
+              <span class="faq-chevron" aria-hidden="true">▾</span>
+            </summary>
+            <div class="faq-body">
+              未压缩单卷常超过 15–20 MB，极易导致移动端翻页与加载卡顿。经无损级算法压缩后体积大幅精简，且在各类屏幕上画质几乎无损。
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>
+              <span>对阅读器有什么要求？</span>
+              <span class="faq-chevron" aria-hidden="true">▾</span>
+            </summary>
+            <div class="faq-body">
+              X 系列深度运用了 Ruby 注音、注脚跳转与分页控制等 EPUB 进阶排版特性。请勿使用多看阅读或手机自带阅读器，建议参考 <a href="https://docs.qq.com/sheet/DUWtiZ3dBbXZFWGR5?tab=000001" target="_blank" rel="noopener noreferrer">阅读器测评 ↗</a> 挑选。
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>
+              <span>遇到错别字或漏段，能在 GitHub 提 Issue 或 PR 吗？</span>
+              <span class="faq-chevron" aria-hidden="true">▾</span>
+            </summary>
+            <div class="faq-body">
+              请勿在 GitHub 提交 Issue 或 PR。本项目在 GitHub 上主要用于版本归档与自动打包；勘误反馈与译文探讨请直接加入 X 系列专属交流群（<code>953679671</code>）。
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>
+              <span>和魔禁维基、汉化组是什么关系？</span>
+              <span class="faq-chevron" aria-hidden="true">▾</span>
+            </summary>
+            <div class="faq-body">
+              无直接关系。本项目为同好独立发起与维护，非魔禁维基或汉化组官方出品。
+            </div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 7: Feedback, Support & Repository -->
+    <section id="support" class="section">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="section-kicker">07 · Community &amp; Repository</span>
+            <h2 class="section-title">反馈、支持官方与仓库协作</h2>
+            <p class="section-sub">勘误与优化离不开大家的参与；如果喜欢这部作品，也请支持原作正版发行与中文圈同好生态。</p>
+          </div>
+        </div>
+
+        <div class="support-grid">
+          <article class="support-card">
+            <h3>阅读反馈与勘误</h3>
+            <ul class="clean-list">
+              <li><strong>文字与排版报错</strong>：错别字、漏标点、漏段、格式错乱等明显问题，附带截图或卷页即可直接反馈。</li>
+              <li><strong>译文探讨</strong>：对译文理解有异议时，欢迎结合日文原文或英翻共同商榷。</li>
+              <li><strong>反馈前确认</strong>：反馈前请尽量确认手头书籍已更新至最新版；勿在 GitHub 提 Issue 或 PR。</li>
+            </ul>
+            <div class="card-actions">
+              <a class="btn btn-primary" href="https://qm.qq.com/cgi-bin/qm/qr?k=TtTcct3Iz8Y7CewT5QA2RlLrR0p5-WN2&jump_from=webapi" target="_blank" rel="noopener noreferrer">加入交流群</a>
+              <button class="btn btn-subtle" type="button" data-copy="953679671" data-copy-label="交流群号 953679671">复制 953679671</button>
+            </div>
+          </article>
+
+          <article class="support-card">
+            <h3>支持原作与圈子</h3>
+            <ul class="clean-list">
+              <li><strong>支持官方</strong>：购买<a href="https://toaru.huijiwiki.com/wiki/%E5%8D%9A%E5%AE%A2:%E6%9F%90%E7%B3%BB%E5%88%97%E5%AE%9E%E4%BD%93%E4%B9%A6%E8%B4%AD%E4%B9%B0%E6%8C%87%E5%8D%97%EF%BC%88%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0%E4%B8%AD%EF%BC%89" target="_blank" rel="noopener noreferrer">实体书 ↗</a>、<a href="https://toaru.huijiwiki.com/wiki/%E5%8D%9A%E5%AE%A2:%E6%9F%90%E7%B3%BB%E5%88%97%E7%94%B5%E5%AD%90%E4%B9%A6%E8%B4%AD%E4%B9%B0%E6%8C%87%E5%8D%97" target="_blank" rel="noopener noreferrer">电子书 ↗</a>及周边。</li>
+              <li><strong>关注圈子</strong>：关注 B 站 <a href="https://space.bilibili.com/1885534527" target="_blank" rel="noopener noreferrer">魔禁维基 ↗</a>，加入资源群（<code>908245142</code>）。</li>
+              <li><strong>支持项目</strong>：前往 GitHub 点亮右上角 ⭐ Star，多在群内交流提建议。</li>
+            </ul>
+            <div class="card-actions">
+              <button class="btn btn-subtle" type="button" data-copy="908245142" data-copy-label="资源群号 908245142">复制资源群 908245142</button>
+              <a class="btn btn-secondary" href="https://github.com/1204244136/index-X" target="_blank" rel="noopener noreferrer">去点 Star ⭐</a>
+            </div>
+          </article>
+
+          <article class="support-card">
+            <h3>仓库源码与维护文档</h3>
+            <ul class="clean-list">
+              <li>仓库以解压形态保存全部 EPUB 源文件，支持本地一键打包与多种一致性体检。</li>
+              <li>面向智能体的中文检索、成品检查、本地打包或原文核对入口均已在文档规范化说明。</li>
+            </ul>
+            <div class="card-actions">
+              <a class="tier-link-btn" href="https://github.com/1204244136/index-X/blob/master/docs/README.md" target="_blank" rel="noopener noreferrer">文档索引 ↗</a>
+              <a class="tier-link-btn" href="https://github.com/1204244136/index-X/blob/master/docs/agents/reference-access.md" target="_blank" rel="noopener noreferrer">资料访问说明 ↗</a>
+              <a class="tier-link-btn" href="https://github.com/1204244136/index-X/blob/master/tools/README.md" target="_blank" rel="noopener noreferrer">工具合同 ↗</a>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div>index-X · 同好独立发起与维护的非官方轻小说精校归档项目，仅作同好交流学习。</div>
+      <div class="footer-links">
+        <a href="#top">返回顶部 ↑</a>
+        <a href="https://github.com/1204244136/index-X" target="_blank" rel="noopener noreferrer">GitHub 仓库</a>
+        <a href="https://github.com/1204244136/index-X/releases" target="_blank" rel="noopener noreferrer">Releases</a>
+        <a href="https://www.star-history.com/#1204244136/index-X&Date" target="_blank" rel="noopener noreferrer">Star History</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Footnote Popover -->
+  <div id="note-popover" class="note-popover" role="dialog" aria-modal="false" hidden>
+    <div class="note-pop-head">
+      <span id="note-popover-title">译注</span>
+      <button id="note-popover-close" class="note-close" type="button" aria-label="关闭译注">✕</button>
+    </div>
+    <div id="note-popover-body"></div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="./catalog-data.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
