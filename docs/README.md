@@ -11,6 +11,7 @@
 | [智能体资料访问与受阻说明](agents/reference-access.md) | 原文与外部材料的定位、可生成输入的恢复、证据覆盖及向使用者解释受阻；按角色准备资料 | 原文核对、外部证据／材料缺失或工具环境受阻时 |
 | [EPUB 内容维护流程](agents/content-maintenance.md) | 内容修改的环境分支、写前／写后同步、门禁与本地提交步骤 | 修改任何 EPUB 内容前；只读问答不触发 |
 | [工具与文档维护流程](agents/tool-maintenance.md) | 工具行为说明、脚本说明软门禁及复用工具／一次性产物边界 | 修改工具、测试、CI 脚本或规范说明前 |
+| [issue-tracker](agents/issue-tracker.md)／[triage-labels](agents/triage-labels.md)／[domain](agents/domain.md) | 仓库级工程 skill 配置：GitHub Issues 读写约定、五角色 triage 标签映射与领域文档消费方式 | 仓库级工程 skill 交互 GitHub Issues、分配标签或探索领域文档时 |
 | [提交规范](commit-spec.md) | 提交单元、标题、正文字段、业务提交分支、执行核验与对话收尾格式 | 编写、检查或重写提交信息；各 skill 的提交格式只引用本规范 |
 | [`tools/README.md`](../tools/README.md) | 工具入口、参数、数据流、判定口径与可验证行为 | 运行任何 `tools/` 命令前 |
 | [`translation-term-unification/SKILL.md`](../.agents/skills/translation-term-unification/SKILL.md) | 流程：译名／术语统一**怎么做** | 收敛异译、统一角色口癖与专名、裁定敬称与术语分层 |
@@ -40,18 +41,18 @@
 | --- | --- |
 | [翻译规范（EPUB 成品层）](translation-spec.md) | 译文**该写成什么样**：标点、字形、注音、译注、语义与证据边界（规范执行类以此为准） |
 | [译名选取规范](translation-name-selection-spec.md) | 一个译名在多个候选之间**怎么取舍**：从俗 → 从官 → 自拟、原语还原防日语中转、外文人名性别化选字 |
-| [译名裁定总表](translation-name-rulings.md) | **已经作出过的裁定**：某锚点在多个成立候选间定了哪个、否决了什么、哪些不作统一；§7.1 是与灰机 Wiki 译名表的人为固有差异清单，同时作为 `tools/check_translation_table.py` 的**门禁**被机器读取 |
+| [译名裁定总表](translation-name-rulings.md) | **已经作出过的裁定**：某锚点在多个成立候选间定了哪个、否决了什么、哪些不作统一；§八 是与灰机 Wiki 译名表的人为固有差异清单，同时作为 `tools/check_translation_table.py` 的**门禁**被机器读取 |
 | [角色说话习惯表](character-speech-habits.csv) | 角色说话习惯的**盘点层**（CSV，一行一个「角色＋口癖」）：类型、首现卷、网翻／台版／本项目写法、裁定状态。已裁定的取值与裁定表 §六 逐字镜像，列义、记号与判定顺序见 `translation-spec.md`「说话习惯表」 |
 
 选译法的**原则**看前三份；**已决的取舍**看裁定总表；**这次改了什么、改了多少**看提交历史，记录要求见 [提交规范](commit-spec.md)。
 
-## 三、归档与冻结
+## 四、归档与冻结
 
 | 文档 | 状态 |
 | --- | --- |
 | [`archive/legacy-changelog.md`](archive/legacy-changelog.md) | 原 `docs/changelog.md`，已冻结归档，**禁止继续编辑** |
 
-## 四、维护约定
+## 五、维护约定
 
 - 本文件**不承载规范条文、裁定结论或工具参数**——那些仍在各自文档中维护，保持单一来源，不在本文件复制。
 - 同一规则只在一处写正文，其余处只留指针：常驻边界在 `AGENTS.md`，资料访问、内容修改及工具维护步骤在上表登记的 `docs/agents/` 正文；译文规范以 `translation-spec.md` 为准，版式规范以 `epub-naming-spec.md`／`epub-structure-spec.md`／`epub-css-layout-spec.md`／`epub-artifact-spec.md` 为准，译名选取以 `translation-name-selection-spec.md` 为准，已决裁定以 `translation-name-rulings.md` 为准，机器可判定的词表以对应 `tools/check_*.py` 的常量为准。
