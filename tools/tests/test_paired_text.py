@@ -155,6 +155,27 @@ class MainExitCodeTests(unittest.TestCase):
                          "--book", "S9_99", "--out", str(root / "report.tsv")])
             self.assertEqual(code, 2)
 
+    def test_missing_jp_dir_returns_setup_error_message(self):
+        import io
+        from contextlib import redirect_stderr, redirect_stdout
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "EPUB").mkdir()
+            err = io.StringIO()
+            with redirect_stdout(io.StringIO()), redirect_stderr(err):
+                code = main(["--epub", str(root / "EPUB"), "--jp-dir", str(root / "missing-jp"),
+                             "--out", str(root / "report.tsv")])
+            self.assertEqual(code, 2)
+            self.assertIn("日文参考目录不存在", err.getvalue())
+
+    def test_zero_coverage_and_no_applicable_units_status(self):
+        from check_paired_text import PairedTextAudit
+        zero = PairedTextAudit()
+        zero.miss("missing")
+        self.assertEqual(zero.status, "零覆盖")
+        none_applicable = PairedTextAudit(exempt_books=1)
+        self.assertEqual(none_applicable.status, "无适用配对单元")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -74,6 +74,22 @@ class IllustrationMappingTests(unittest.TestCase):
         self.assertEqual(problems[0]["suggest"], 4)
         self.assertEqual(len(rows), 1)
 
+    def test_cross_file_drift_reports_suggest_file(self):
+        xhtml = self.jp_root / "【S1_01】书" / "item" / "xhtml"
+        (xhtml / "S1_01-02.xhtml").write_text(
+            "<html><body>\n<p>另一章句子</p>\n</body></html>\n",
+            encoding="utf-8",
+        )
+        self.write_doc([
+            "| S1_01 | S1_01-kuchie-001.jpg | 「另一章句子」 | S1_01-01.xhtml | 4 | 另一章句子 | — |",
+        ])
+        self.assertEqual(self.run_main(), 1)
+        _, problems, _ = check_illustration_mapping.check(self.doc, self.jp_root, limit=0)
+        self.assertEqual(len(problems), 1)
+        self.assertEqual(problems[0]["suggest"], 2)
+        self.assertEqual(problems[0].get("suggest_file"), "S1_01-02.xhtml")
+        self.assertIn("S1_01-02.xhtml:2", str(problems[0]["detail"]))
+
     def test_row_without_anchor_is_skipped(self):
         self.write_doc([
             "| S1_01 | S1_01-kuchie-001.jpg | 「正文没有」 | — | — | — | 正文无此句。 |",

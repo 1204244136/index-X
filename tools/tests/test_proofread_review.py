@@ -371,7 +371,7 @@ class EnrichRowsTests(unittest.TestCase):
                 self.assertEqual("bold_punct" in rows[0]["flags"].split(","), expected)
 
     def test_enrich_adds_jp_and_flags(self):
-        # 受控术语规则须落在《译名裁定总表》上：此处用裁定表 §九登记的
+        # 受控术语规则须落在《译名裁定总表》上：此处用裁定表 §五登记的
         # 「和服裤裙」回退写法（与 test_audit_risk.test_controlled_term 同源）。
         # 用例随裁定表规则同步，确保测试条目有可核对的来源。
         rows = [{

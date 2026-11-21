@@ -62,6 +62,47 @@ class AuditRiskTests(unittest.TestCase):
             self.assertIn("空中酒店", terms[0][0])
             self.assertEqual(terms[0][1], "空中饭店")
 
+    def test_ruling_terms_with_note_column_and_role_table(self):
+        """备注列标记「成品旧译／成品旧写法」且含多候选、散文说明与角色列时能正确解析并过滤。"""
+        from audit_risk import load_ruling_terms
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "rulings.md"
+            path.write_text(
+                "## 五、术语\n\n"
+                "| 日文锚点 | 裁定 | 被否决或并存的候选 | 备注 | 判定 | 机检 |\n"
+                "| --- | --- | --- | --- | --- | --- |\n"
+                "| `セイズ魔術` | **赛尔魔法** | 塞德尔魔法／赛德魔法·塞德／塞兹·赛兹 | 赛德魔法·塞德：成品旧译 | 人读 |  |\n"
+                "| `イシス` | 伊西斯 | 伊西丝 | 伊西丝：成品旧写法 |  |  |\n"
+                "| `エニーリャ` | 艾妮莉亚；**同作品另有其他角色** | 艾妮莉娅 | 艾妮莉娅：成品旧写法 | 人读 |  |\n"
+                "| `〜班` | `〜小队` | 照搬日文「班」；「小组／组／队／人马」等并存写法 | 成品旧译 | 人读 |  |\n\n"
+                "## 六、角色\n\n"
+                "| 角色 | 日文锚点 | 裁定 | 被否决或并存的候选 | 备注 | 判定 | 机检 |\n"
+                "| --- | --- | --- | --- | --- | --- |\n"
+                "| 甲 | `テスト` | 测试正译 | 测试旧译 | 成品旧译 |  |  |\n",
+                encoding="utf-8",
+            )
+            terms = load_ruling_terms(str(path))
+        by_form = {pat: std for pat, std, _ in terms}
+        self.assertEqual(by_form.get("塞德尔魔法"), "赛尔魔法")
+        self.assertEqual(by_form.get("赛德魔法"), "赛尔魔法")
+        self.assertEqual(by_form.get("伊西丝"), "伊西斯")
+        self.assertEqual(by_form.get("艾妮莉娅"), "艾妮莉亚")
+        self.assertEqual(by_form.get("测试旧译"), "测试正译")
+        self.assertNotIn("赛德", by_form)
+        self.assertNotIn("小组", by_form)
+
+    def test_repo_rulings_yields_non_empty_clean_terms(self):
+        from audit_risk import load_ruling_terms
+        rulings_path = TOOLS.parent / "docs" / "translation-name-rulings.md"
+        terms = load_ruling_terms(str(rulings_path))
+        self.assertGreater(len(terms), 0)
+        forms = {pat for pat, _, _ in terms}
+        self.assertIn("巫毒咒术师", forms)
+        self.assertIn("伊西丝", forms)
+        self.assertIn("艾妮莉娅", forms)
+        self.assertIn("赛德魔法", forms)
+        self.assertNotIn("赛德", forms)
+
     def test_large_deletion_and_addition(self):
         del_flags = audit_risk_flags("这是一段非常非常长的文字内容，包含了很多重要的实义成分", "文字")
         self.assertIn("del_large", del_flags)

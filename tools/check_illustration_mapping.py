@@ -4,7 +4,7 @@
 `tools/pull.ps1` 重建——日文源一重导、一规范化，行号就可能整体位移。本工具逐行回查：
 
 - 行号仍命中且 `正文原句` 对得上 → 通过；
-- 行号不符 → 在该卷正文里按 `正文原句` 重新定位，给出建议行号；
+- 行号不符 → 记为漂移并非零退出，同时在该卷正文里按 `正文原句` 重新定位，给出建议文件／行号；
 - 重新定位也找不到 → 记为未解析，非零退出。
 
 只读：不写任何文件（`--json` 除外，写显式报告路径）。
@@ -124,8 +124,8 @@ def xhtml_dir(vol_dir: Path) -> Path | None:
     return None
 
 
-def relocate(jp_root: Path, vol: str, expected: str) -> int | None:
-    """按 `正文原句` 在整卷里重新定位，返回最佳行号。"""
+def relocate_with_file(jp_root: Path, vol: str, expected: str) -> tuple[str, int] | None:
+    """按 `正文原句` 在整卷里重新定位，返回 `(文件名, 物理行号)`。"""
     directory = volume_dir(jp_root, vol)
     if directory is None:
         return None
@@ -135,17 +135,23 @@ def relocate(jp_root: Path, vol: str, expected: str) -> int | None:
     query = norm(expected)
     if not query:
         return None
-    best: tuple[float, int] | None = None
+    best: tuple[float, str, int] | None = None
     for path in sorted(source.glob(f"{vol}-*.xhtml")):
         for number, texts in line_paragraphs(path).items():
             for text in texts:
                 candidate = norm(text)
                 if candidate == query:
-                    return number
+                    return (path.name, number)
                 ratio = difflib.SequenceMatcher(None, query, candidate).ratio()
                 if ratio >= FUZZY_MIN and (best is None or ratio > best[0]):
-                    best = (ratio, number)
-    return best[1] if best else None
+                    best = (ratio, path.name, number)
+    return (best[1], best[2]) if best else None
+
+
+def relocate(jp_root: Path, vol: str, expected: str) -> int | None:
+    """按 `正文原句` 在整卷里重新定位，返回最佳行号。"""
+    found = relocate_with_file(jp_root, vol, expected)
+    return found[1] if found else None
 
 
 def check(doc: Path, jp_root: Path, limit: int = 0) -> tuple[int, list[dict[str, object]], list[str]]:
@@ -183,12 +189,22 @@ def check(doc: Path, jp_root: Path, limit: int = 0) -> tuple[int, list[dict[str,
             wanted = norm(expected)
             if not wanted or any(norm(text) == wanted for text in texts):
                 continue
-        suggestion = relocate(jp_root, vol, expected) if expected else None
-        unresolved.append({
+        located = relocate_with_file(jp_root, vol, expected) if expected else None
+        suggest_file, suggestion = located if located else (None, None)
+        if located is None:
+            detail = f"第 {start} 行已不是这句，整卷未找到"
+        elif suggest_file and suggest_file != filename:
+            detail = f"第 {start} 行已不是这句，建议 {suggest_file}:{suggestion}"
+        else:
+            detail = f"第 {start} 行已不是这句，建议 {suggestion}"
+        item: dict[str, object] = {
             "vol": vol, "image": name, "kind": "line_drift",
             "file": filename, "line": start, "suggest": suggestion,
-            "detail": f"第 {start} 行已不是这句" + (f"，建议 {suggestion}" if suggestion else "，整卷未找到"),
-        })
+            "detail": detail,
+        }
+        if suggest_file and suggest_file != filename:
+            item["suggest_file"] = suggest_file
+        unresolved.append(item)
 
     if problems:
         unresolved.extend({"vol": "-", "image": "-", "kind": "format", "detail": text}

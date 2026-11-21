@@ -85,6 +85,7 @@ jobs:
           set -euo pipefail
           python tools/tests/run_tests.py
           python tools/check_project_docs.py
+          python tools/check_speech_habits.py
           python tools/publish_preflight.py --source EPUB
 
       - name: Create EPUB files

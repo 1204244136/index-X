@@ -78,6 +78,9 @@ jobs:
       - name: 文档职责与链接检查
         run: python tools/check_project_docs.py
 
+      - name: 说话习惯表与裁定表一致性检查
+        run: python tools/check_speech_habits.py
+
   health:
     runs-on: ubuntu-latest
 

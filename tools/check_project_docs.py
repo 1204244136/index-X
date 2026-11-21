@@ -99,10 +99,11 @@ def audit(root: Path) -> list[str]:
     if doc_index.is_file():
         index_resolved = doc_index.resolve()
         index_text = doc_index.read_text(encoding="utf-8-sig")
-        # 顶层 docs/*.md 必须登记进文档索引；archive/ 按目录登记，不逐项要求
-        for path in sorted((root / "docs").glob("*.md")):
-            if path.name != "README.md" and path.name not in index_text:
-                issues.append(f"docs/README.md: 缺少文档登记：{path.name}")
+        # 非归档 docs/**/*.md 必须登记进文档索引；archive/ 按目录登记，不逐项要求
+        for path in sorted((root / "docs").rglob("*.md")):
+            rel_doc = path.relative_to(root / "docs")
+            if rel_doc.name != "README.md" and "archive" not in rel_doc.parts and rel_doc.as_posix() not in index_text:
+                issues.append(f"docs/README.md: 缺少文档登记：{rel_doc.as_posix()}")
         # 活跃文档开头必须保留回指索引的入口；冻结归档不在此列
         active = [root / "README.md", root / "AGENTS.md", root / "tools/README.md"]
         active += [p for p in sorted((root / "docs").glob("*.md")) if p.name != "README.md"]
@@ -334,6 +335,10 @@ RULINGS_DATE_WHITELIST = "rulings-date-ok"
 TABLE_ROW_RE = re.compile(r"^\s*\|")
 SECTION_HEAD_RE = re.compile(r"^#{2,3}\s+([0-9]+(?:\.[0-9]+)?|[一二三四五六七八九十]+)[、\s]")
 SECTION_REF_RE = re.compile(r"§\s*([0-9]+(?:\.[0-9]+)?|[一二三四五六七八九十]+)")
+EXPLICIT_RULING_REF_RE = re.compile(
+    r"(?:(?:译名)?裁定(?:总)?表(?:》|\)|\]\([^)]+\))?|translation-name-rulings\.md\)?)"
+    r"\s*§\s*([0-9]+(?:\.[0-9]+)?|[一二三四五六七八九十]+)"
+)
 REF_SCAN_DOCS = SPEC_DOCS + (RULINGS_DOC,)
 
 
@@ -383,17 +388,23 @@ def ruling_rows(root: Path) -> list[tuple[str, str, int]]:
             continue
         raw = cells[index]
         found = BACKTICK_RE.findall(raw)
-        # 含注音的锚点写成裸 <ruby>…</ruby>（不加反引号，见裁定表 §12 格式约定），同样计入锚点
+        # 含注音的锚点写成裸 <ruby>…</ruby>（不加反引号，见裁定表 §十一.9 格式约定），同样计入锚点
         found += [match.group(0) for match in RUBY_ANCHOR_RE.finditer(raw)]
         found = list(dict.fromkeys(found))
         if not found:
             continue
-        label = RUBY_ANCHOR_RE.sub("", BACKTICK_RE.sub("", raw)).strip("（）() ").strip()
+        label = RUBY_ANCHOR_RE.sub("", BACKTICK_RE.sub("", raw)).strip("（）()／/、· ").strip()
         if not label:
             note_index = next((n for n, name in enumerate(header) if name in ("备注", "理由")), None)
             if note_index is not None and note_index < len(cells):
                 label = cells[note_index]
-        rows.append((found[0], label, number))
+        seen_in_row: set[str] = set()
+        for anchor in found:
+            normalized = norm_anchor(anchor)
+            if normalized in seen_in_row:
+                continue
+            seen_in_row.add(normalized)
+            rows.append((anchor, label, number))
     return rows
 
 
@@ -459,6 +470,7 @@ def single_source_issues(root: Path) -> list[str]:
         for match in [SECTION_HEAD_RE.match(line)]
         if match
     }
+    flagged_refs: set[tuple[str, int, str]] = set()
     for rel in REF_SCAN_DOCS:
         path = root / rel
         if not path.is_file():
@@ -466,6 +478,24 @@ def single_source_issues(root: Path) -> list[str]:
         for number, line in enumerate(path.read_text(encoding="utf-8-sig").splitlines(), 1):
             for ref in SECTION_REF_RE.findall(line):
                 if ref not in sections:
+                    flagged_refs.add((rel, number, ref))
+                    issues.append(f"{rel}:{number}: 引用的裁定表小节 §{ref} 不存在")
+
+    active_docs = [root / "README.md", root / "AGENTS.md", root / "tools/README.md"]
+    if (root / "docs").is_dir():
+        active_docs += [p for p in sorted((root / "docs").rglob("*.md"))
+                        if "archive" not in p.relative_to(root / "docs").parts]
+    if (root / ".agents").is_dir():
+        active_docs += sorted((root / ".agents").rglob("*.md"))
+    for path in active_docs:
+        if not path.is_file():
+            continue
+        rel = path.relative_to(root).as_posix()
+        for number, line in enumerate(prose(path.read_text(encoding="utf-8-sig")).splitlines(), 1):
+            for match in EXPLICIT_RULING_REF_RE.finditer(line):
+                ref = match.group(1)
+                if ref not in sections and (rel, number, ref) not in flagged_refs:
+                    flagged_refs.add((rel, number, ref))
                     issues.append(f"{rel}:{number}: 引用的裁定表小节 §{ref} 不存在")
 
     # ⑤ 裁定表不记过往：备注与候选列只写判据与理由，不写日期（时间归提交信息）

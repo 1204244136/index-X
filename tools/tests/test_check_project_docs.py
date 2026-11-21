@@ -185,6 +185,20 @@ class DocumentationTests(unittest.TestCase):
             (root / "docs/README.md").write_text("# 文档索引\n[规范](spec.md)\n[新规范](new-spec.md)\n", encoding="utf-8")
             self.assertEqual(audit(root), [])
 
+    def test_subdirectory_docs_must_be_registered_while_archive_ignored(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._active_tree(root)
+            (root / "docs/agents").mkdir()
+            (root / "docs/archive").mkdir()
+            (root / "docs/archive/legacy.md").write_text("# 归档\n", encoding="utf-8")
+            (root / "docs/agents/guide.md").write_text("# 指南\n", encoding="utf-8")
+            issues = audit(root)
+            self.assertEqual(len(issues), 1)
+            self.assertIn("缺少文档登记：agents/guide.md", issues[0])
+            (root / "docs/README.md").write_text("# 文档索引\n[规范](spec.md)\n[指南](agents/guide.md)\n", encoding="utf-8")
+            self.assertEqual(audit(root), [])
+
     def test_active_docs_must_link_back_to_index_near_the_top(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -307,6 +321,32 @@ class SingleSourceTests(unittest.TestCase):
                   + HEADER + "| `甲` | 乙 | | |\n",
                   "见裁定表 §11.1 与 §五。\n")
             self.assertEqual(single_source_issues(root), [])
+
+    def test_secondary_anchor_checked_and_same_row_variants_deduped(self):
+        """同格多锚点的次要锚点也纳入重复与取值检查；同行正字法变体不自报重复。"""
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            build(root, "## 五、设定\n\n" + HEADER
+                  + "| `魔術`／`魔術師` | 魔法／魔法师 | 魔术／魔术师 | |\n"
+                  + "| `魔術師` | 魔法师 | 魔术师 | |\n"
+                  + "| `ひこーき`／`『ひこーき』` | 飞机 | | |\n",
+                  "示例：`魔術師` → 「魔法师」。\n")
+            issues = single_source_issues(root)
+            self.assertTrue(any("裁定条目重复" in issue and "魔術師" in issue for issue in issues), issues)
+            self.assertTrue(any("出现裁定取值" in issue and "魔術師" in issue for issue in issues), issues)
+            self.assertFalse(any("ひこーき" in issue for issue in issues), issues)
+
+    def test_explicit_ruling_ref_checked_across_active_docs(self):
+        """README.md 等活跃文档显式引用失效裁定表小节 → 报。"""
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            build(root, "## 五、设定\n\n" + HEADER + "| `サイド` | 阵营 | 势力 | |\n")
+            (root / "README.md").write_text("详见 [译名裁定总表](docs/translation-name-rulings.md) §7.1。\n", encoding="utf-8")
+            (root / "tools").mkdir()
+            (root / "tools/README.md").write_text("规则见裁定表 §12。\n", encoding="utf-8")
+            issues = single_source_issues(root)
+            self.assertTrue(any("README.md:1" in issue and "§7.1" in issue for issue in issues), issues)
+            self.assertTrue(any("tools/README.md:1" in issue and "§12" in issue for issue in issues), issues)
 
 
 class RulingsHistoryTests(unittest.TestCase):

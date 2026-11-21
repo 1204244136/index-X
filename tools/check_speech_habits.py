@@ -72,11 +72,12 @@ EXEMPT_ANCHORS = {
     "エセ関西弁": "蓝发耳环的方言标记，本行无字面口癖",
     "たん": "通用称呼后缀，非角色条目",
     "、": "手盐惠未的断顿句式，本行按句式类登记、无字面口癖",
+    "シスターちゃん／シスターの子": "对茵蒂克丝的跨角色称呼规则（月咏小萌用 シスターちゃん，御坂美琴／爱丽丝用 シスターの子）",
 }
 RULING_SECTION = "## 六、角色口癖与自称"
 PROSE_HINTS = ("译出", "不拟")
 ROLE_SPLIT = re.compile(r"[／/]")
-ANCHOR_SPLIT = re.compile(r"[・/]")
+ANCHOR_SPLIT = re.compile(r"[・/／]")
 PAREN = re.compile(r"（[^）]*）|\([^)]*\)")
 
 
@@ -86,10 +87,12 @@ def role_set(cell: str) -> set[str]:
 
 
 def anchor_match(csv_anchor: str, ruling_anchor: str) -> bool:
-    """精确相等，或本表把多个形态用 `・` 连写而裁定表只登记其中一个。"""
+    """精确相等，或任一侧用 `・`／`/`／`／` 连写多形且形态存在交集。"""
     if csv_anchor == ruling_anchor:
         return True
-    return ruling_anchor in {part.strip() for part in ANCHOR_SPLIT.split(csv_anchor) if part.strip()}
+    csv_parts = {part.strip() for part in ANCHOR_SPLIT.split(csv_anchor) if part.strip()}
+    ruling_parts = {part.strip() for part in ANCHOR_SPLIT.split(ruling_anchor) if part.strip()}
+    return bool(csv_parts & ruling_parts)
 
 
 def norm_decision(cell: str) -> str:
@@ -126,7 +129,7 @@ def read_rulings(path: Path) -> list[dict[str, str]]:
         rows.append(
             {
                 "role": cells[0],
-                "anchor": cells[1].strip("`").strip(),
+                "anchor": cells[1].replace("`", "").strip(),
                 "decision": cells[2],
                 "judge": cells[5] if len(cells) > 5 else "",
             }

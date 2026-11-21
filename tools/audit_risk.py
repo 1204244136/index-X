@@ -41,18 +41,21 @@ JP_SHINJITAI = {
 # 常见受控术语规则 (正则, 规范词, 风险描述)。
 # 条目须在《译名裁定总表》有可核对的落点，并在此注明来源。
 CONTROLLED_TERMS = [
-    # 裁定表 §九「袴少女」系列：本卷既有写法自洽，不另拟
-    (r"和服裤裙", "袴之少女", "应统一为「袴之少女」专称（裁定表 §九）"),
+    # 裁定表 §五「袴少女」系列：本卷既有写法自洽，不另拟
+    (r"和服裤裙", "袴之少女", "应统一为「袴之少女」专称（裁定表 §五）"),
     # 裁定表 §五：オペレーションネーム・ハンドカフス／ハンドカフス（按语境）
     (r"行动代号[·・]手铐|代号[·・]手铐", "手铐行动", "应统一使用已裁定术语「手铐行动」（裁定表 §五）"),
 ]
 
+_RULING_ALT_FORM_RE = re.compile(r"[\u4e00-\u9fffA-Za-z0-9\-]+")
+
 
 def load_ruling_terms(path: str) -> list[tuple[str, str, str]]:
-    """从《译名裁定总表》的候选列生成受控术语提示（只取标注「成品旧译」的条目）。
+    """从《译名裁定总表》生成受控术语提示（只取标注「成品旧译」或「成品旧写法」的条目）。
 
     只对**确证在成品里出现过**的旧译生成规则——把全表候选列都变成提示会让噪声淹没
-    真信号。候选列的第一个词条（`／` 或 `（` 之前）是写法本体。
+    真信号。按表头定位「裁定」「被否决或并存的候选」「备注／理由」列，兼容六列表（含角色列）
+    与将「成品旧译／成品旧写法」记在备注列的结构；只保留 clean 短词形式，排除散文与词干片段。
     """
     from pathlib import Path
 
@@ -60,19 +63,45 @@ def load_ruling_terms(path: str) -> list[tuple[str, str, str]]:
     if not p.is_file():
         return []
     out: list[tuple[str, str, str]] = []
-    for line in p.read_text(encoding="utf-8").splitlines():
-        if not line.lstrip().startswith("|"):
+    seen: set[tuple[str, str]] = set()
+    header: list[str] | None = None
+    for raw_line in p.read_text(encoding="utf-8-sig").splitlines():
+        line = raw_line.strip()
+        if line.startswith("#") or not line.startswith("|"):
+            header = None
             continue
-        cells = [c.strip() for c in line.strip().strip("|").split("|")]
-        if len(cells) < 4:
+        cells = [c.strip() for c in line.strip("|").split("|")]
+        if header is None:
+            header = cells
             continue
-        ruling = cells[1].replace("**", "").strip()
-        alt = cells[2]
-        if "成品旧译" not in alt or not ruling:
+        if len(cells) != len(header) or set("".join(cells)) <= set("-: "):
             continue
-        form = re.split(r"／|（|\(", alt)[0].strip()
-        if form:
-            out.append((re.escape(form), ruling, f"裁定表登记的成品旧译「{form}」应作「{ruling}」"))
+        ruling_idx = next((i for i, h in enumerate(header) if h in ("裁定", "裁定标准形")), None)
+        alt_idx = next((i for i, h in enumerate(header) if h == "被否决或并存的候选"), None)
+        note_idx = next((i for i, h in enumerate(header) if h in ("备注", "理由")), None)
+        if ruling_idx is None or alt_idx is None:
+            continue
+        alt = cells[alt_idx]
+        note = cells[note_idx] if note_idx is not None else ""
+        if not any(tag in alt or tag in note for tag in ("成品旧译", "成品旧写法")):
+            continue
+        ruling = cells[ruling_idx].split("；", 1)[0].replace("**", "").replace("`", "").strip()
+        if not ruling:
+            continue
+        for clause in alt.split("；"):
+            clause = clause.strip()
+            if not clause or any(hint in clause for hint in ("并存", "照搬", "同形旁词", "不属本", "保留")):
+                continue
+            for part in re.split(r"[／/]", clause):
+                form = re.split(r"[（(·]", part, maxsplit=1)[0]
+                form = form.replace("**", "").replace("`", "").strip()
+                if not (2 <= len(form) <= 12 and _RULING_ALT_FORM_RE.fullmatch(form)):
+                    continue
+                key = (form, ruling)
+                if key in seen:
+                    continue
+                seen.add(key)
+                out.append((re.escape(form), ruling, f"裁定表登记的成品旧译「{form}」应作「{ruling}」"))
     return out
 
 NEG_WORDS_CN = re.compile(r"(不|没|未|别|非|无|莫)")

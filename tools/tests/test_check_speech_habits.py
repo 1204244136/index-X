@@ -84,7 +84,15 @@ class SpeechHabitsTests(unittest.TestCase):
             [
                 "| 甲 | `あ` | 阿 | — | 说明 |  |\n",
                 "| 乙 | `たん` | 炭 | — | 通用后缀 | 严格全文 |\n",
+                "| （对茵蒂克丝的称呼） | `シスターちゃん`／`シスターの子` | **小修女** | 修女小姐／修女妹妹 | 说明 | 人读 |\n",
             ],
+        )
+        self.assertEqual(self.run_check(), [])
+
+    def test_fullwidth_slash_anchor_match_pass(self):
+        self.write(
+            ["甲,あ,第一人称,S1_01,【未查到】,【未查到】,阿,,已裁定\n"],
+            ["| 甲 | `あ`／`ぁ` | 阿 | — | 说明 |  |\n"],
         )
         self.assertEqual(self.run_check(), [])
 

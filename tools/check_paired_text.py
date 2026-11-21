@@ -82,7 +82,9 @@ class PairedTextAudit:
 
     @property
     def status(self) -> str:
-        return "完整覆盖" if not self.incomplete else "部分覆盖"
+        if self.incomplete:
+            return "部分覆盖" if self.checked else "零覆盖"
+        return "完整覆盖" if self.checked else "无适用配对单元"
 
     def miss(self, note: str, units: int = 1) -> None:
         self.skipped += units
@@ -148,6 +150,10 @@ def audit_coverage(
     pair_struct_cache: dict[tuple[Path, Path], list[str]] | None = None,
 ) -> PairedTextAudit:
     """遍历配对单元，返回截断命中与注音覆盖统计；只读。"""
+    if not cn_root.is_dir():
+        raise FileNotFoundError(f"中文成品目录不存在：{cn_root}")
+    if not jp_root.is_dir():
+        raise FileNotFoundError(f"日文参考目录不存在：{jp_root}")
     jp_ids = {japanese_book_id(wid) for wid in work_ids} if work_ids is not None else None
     cn_books = books_by_id(cn_root, work_ids)
     jp_books = books_by_id(jp_root, jp_ids)
