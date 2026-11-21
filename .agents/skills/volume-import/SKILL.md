@@ -158,7 +158,7 @@ python tools/publish_auto.py --only-books "chinese-text/【S4_04】某暗部的�
 
 * 无论单本或跨本，修改范围、依据与验证结果均由提交承载。
 * 同步成功后，按 [提交规范](../../../docs/commit-spec.md) 的成品导入分支完成本地提交。
-* 新书正式入库后，同步更新 [全系列作品对应与收录进度表](../../../docs/work-correspondence.md)（总览计数、待制作清单与对应系列分卷行）。
+* 新书正式入库后，同步更新 [全系列作品对应与收录进度表](../../../docs/work-correspondence.md) 及主页书目数据 [`site/catalog-data.js`](../../../site/catalog-data.js)（总览计数、待制作清单与对应系列分卷行；总览数字变化时一并同步 `site/index.html`）。
 * 图片素材、交稿、计划文件等外部输入不进仓库。
 
 ## 四、实测坑位（都踩过）
