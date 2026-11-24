@@ -31,13 +31,13 @@
     </navPoint>
     <navPoint id="num_4" playOrder="4">
       <navLabel>
-        <text>序　章 缺陷电气 Level2</text>
+        <text>序　章 Radio Noise Level2</text>
       </navLabel>
       <content src="OEBPS/Text/S1_03-01_Prologue.xhtml"/>
     </navPoint>
     <navPoint id="num_5" playOrder="5">
       <navLabel>
-        <text>第一章 幻想杀手 Level0(and_More)</text>
+        <text>第一章 Imagine Breaker Level0(and_More)</text>
       </navLabel>
       <content src="OEBPS/Text/S1_03-02_Chapter1.xhtml"/>
       <navPoint id="num_6" playOrder="6">
@@ -61,7 +61,7 @@
     </navPoint>
     <navPoint id="num_9" playOrder="9">
       <navLabel>
-        <text>第二章 缺陷电气 Level2(Product_Model)</text>
+        <text>第二章 Radio Noise Level2(Product_Model)</text>
       </navLabel>
       <content src="OEBPS/Text/S1_03-03_Chapter2.xhtml"/>
       <navPoint id="num_10" playOrder="10">
@@ -121,7 +121,7 @@
     </navPoint>
     <navPoint id="num_19" playOrder="19">
       <navLabel>
-        <text>第三章 超电磁炮 Level5</text>
+        <text>第三章 Railgun Level5</text>
       </navLabel>
       <content src="OEBPS/Text/S1_03-04_Chapter3.xhtml"/>
       <navPoint id="num_20" playOrder="20">
@@ -157,7 +157,7 @@
     </navPoint>
     <navPoint id="num_25" playOrder="25">
       <navLabel>
-        <text>第四章 一方通行 Level5(Extend)</text>
+        <text>第四章 Accelerator Level5(Extend)</text>
       </navLabel>
       <content src="OEBPS/Text/S1_03-05_Chapter4.xhtml"/>
       <navPoint id="num_26" playOrder="26">
@@ -211,7 +211,7 @@
     </navPoint>
     <navPoint id="num_34" playOrder="34">
       <navLabel>
-        <text>终　章 独一无二 ID_Not_Found</text>
+        <text>终　章 Only One ID_Not_Found</text>
       </navLabel>
       <content src="OEBPS/Text/S1_03-06_Epilogue.xhtml"/>
     </navPoint>
