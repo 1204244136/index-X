@@ -176,7 +176,7 @@ Lead 仅在机械检查和语义验收后写 `selection.json`，结构为 `slice
 
 每片只选一个有效路径，格式须为 `slices/<slice-id>.a<1或2>[.r<N>].json`，路径标识与报告内的切片及 attempt 相符；按计划顺序对账，不依据文件时间、最高 attempt 或最后返回者自动选取。计划外切片、绝对路径和越界路径阻断；未选片或所选报告不合格则全片记 `U`，不能沿用旧报告的部分结论。`coverage` 给出逐 ID 的 `T/S/M/K/R/H/U` 与未解决项，`ready_for_lead_acceptance` 只表示机械汇总条件满足，不证明语义、R4、门禁或完整工作流已完成。Lead 将所选路径和语义验收状态同步到计划与主报告；旧 attempt／revision 保留，未被选择者不计数。
 
-**R7 写盘前保存覆盖快照**：完成 Lead 验收后，用 `coverage --selection … --output <report-root>/coverage.json --apply` 保存本轮对账，再执行已确认的回改。回改会使中文源偏离本轮 SHA-256，这是建立回改验收新轮的输入；原轮清单、取证包、结果与写盘前快照保留，R8 汇报沿用这些已验收记录并另列验收轮结果。不要对已经回改的活动源重跑原轮 `coverage`，也不修改旧哈希或关闭来源核验来重新通过。该快照只证明写盘前状态，计划外的输入变化仍按漂移规则重新核对；不能凭旧快照放行新增改动。
+**R7 写盘前保存覆盖快照**：完成 Lead 验收后，用 `coverage --selection … --output <report-root>/coverage.json --apply` 保存本轮对账，再执行已确认的回改。回改会使中文源偏离本轮 SHA-256，这是建立回改验收新轮的输入；原轮清单、取证包、结果与写盘前快照保留，R8 汇报沿用这些已验收记录并另列验收轮结果。不要对已经回改的活动源重跑原轮 `coverage`，也不修改旧哈希或关闭来源核验来重新通过。该快照只证明写盘前状态，计划外的输入变化仍按漂移规则重新核对；不能凭旧快照放行新增改动。若本批任何改动（含已保留原改动与回改）带有 `illustration_text` 标记或命中 `check_illustration_mapping.py --diff`，R7 须同步更新 `docs/illustration-text-mapping.md` 对应正文行号／原句并过 `check_illustration_mapping.py`，R8 最终答复须向用户额外单列受影响中文插图（未命中时保持静默，不额外说明无需改图）。
 
 ## 四、主报告模板
 

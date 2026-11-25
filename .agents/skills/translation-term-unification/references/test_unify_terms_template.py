@@ -118,6 +118,35 @@ def main() -> int:
     code, out = run(module, [])
     results.append(check("空映射拒绝", code == 2 and "MAPPINGS 为空" in out))
 
+    # 6. 修改命中插图对应正文行时，预览与写盘都打印联动提醒
+    import io
+    from contextlib import redirect_stdout
+    illu_doc = ROOT / "mapping.md"
+    illu_doc.write_text(
+        "\n".join([
+            "| 卷号 | 日文图片 | 日文图片文字 | 日文正文文件 | 日文行号 | 日文正文原句 | 中文图片 | 中文图片文字 | 中文正文文件 | 中文行号 | 中文正文原句 | 嵌字状态 | 备注 |",
+            "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+            f"| S3_05 | S3_05-kuchie-001.jpg | 「待考」 | S3_05-01.xhtml | 6 | 「待考」 | S3_05-Illustrations1.jpg | 「可别啦」 | {NAME} | 6 | 可别啦 | 无需重嵌 | |",
+        ]),
+        encoding="utf-8",
+    )
+    sys.argv_bak = None
+    m_illu = [("S3_05", NAME, 6, "可别啦", "才怪")]
+    old_argv = sys.argv
+    try:
+        module.MAPPINGS = m_illu
+        for lbl, apply_flag in (("命中插图行预览返回 0 且打印联动提醒", False), ("命中插图行写盘返回 0 且打印联动提醒", True)):
+            sys.argv = ["unify_terms_template.py", "--epub", str(ROOT), "--illustration-doc", str(illu_doc)]
+            if apply_flag:
+                sys.argv.append("--apply")
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                rc_i = module.main()
+            out_i = buf.getvalue()
+            results.append(check(lbl, rc_i == 0 and "【插图文本联动提醒】" in out_i and "S3_05-Illustrations1.jpg" in out_i, out_i))
+    finally:
+        sys.argv = old_argv
+
     print(f"\n{sum(results)}/{len(results)} 通过")
     return 0 if all(results) else 1
 

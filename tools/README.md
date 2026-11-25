@@ -91,7 +91,7 @@ AMD GPU 按 [TheRock 发布文档](https://github.com/ROCm/TheRock/blob/main/REL
 | 术语锚点与译名落地 | `check_term_anchors.py`、`check_translation_table.py` | 需要参考；strict 不接受显式所选范围未核验，译名表默认全库交集与两侧独有作品分别报告 |
 | 对照完整性与注音覆盖 | `check_paired_text.py` | 需要参考；截断判据命中即阻断，注音覆盖比值只进报告、不阻断 |
 | 呼应与惯例候选 | `check_echo.py` | 需要可靠配对；零配对报前置错误，有配对而零候选／零模式命中属于正常结果 |
-| 原文定位与插图映射 | `japanese_lookup.py`、`check_illustration_mapping.py` | 缺日文源明确失败，不能把缺输入解释成零命中 |
+| 原文定位与插图映射 | `japanese_lookup.py`、`check_illustration_mapping.py` | 原文定位缺日文源明确失败；插图映射默认校验中文 `EPUB/` 与可用日文参考（无日文参考时自动跳过日文侧并单列提示），`--require-jp`／显式 `--jp-root` 缺失时失败 |
 | 校对改动分级 | `proofread_review.py` | 可降级分级，始终列出原文覆盖；`--no-jp` 明确仅分级、未核验日文 |
 | 复核取证包 | `proofread_session.py prepare` | 缺参考阻断，不能形成可验收的语义取证包 |
 | 配对规范化与结构修复 | `normalize_paired.py`、`fix_legacy_pagebreak_br.py`、`restore_cn_scene_breaks.py`、`sync_pb_tags.py`、`wrap_cn_image_lines.py` | 配对修复与删除图片容器结构行前需要参考；已登记结构例外另列，单侧模板用 `normalize_single.py`，仅包裸图用 `--wrap-only` |
@@ -230,7 +230,7 @@ python tools/publish_preflight.py --source EPUB --only-books chinese-text/某书
 python tools/publish_preflight.py --source EPUB --calibre
 ```
 
-`--source` 为中文候选根；`--jp-root` 是可选只读日文参考，省略时仅检查中文。CLI 显式指定日文根时要求所选适用范围的参考完整，缺目录为 2，缺书／正文或无法可靠配对为 1。输出实际覆盖与未核验原因，不把空目录记作双语通过。`--only-books` 以逗号分隔的 `side/book` 限定书籍，逐项核对请求范围，不存在项不能被其它已找到的书掩盖；内部 `allow_removed=True` 保留同步器的删除路径。`--jobs` 控制单本检查的并发进程数（`0` 为自动并发，`1` 为单进程）。`--calibre` 显式启用全 source 的补充校验，不与 `--only-books` 合用；任一硬错误非零。内部 `validate_publication(cn_root, jp_root=None, book_keys=None, *, allow_removed=False, require_reference=False)` 返回 bool；同步器默认允许合法的单侧作品，但须报告仅单侧／部分／完整覆盖，调用方可用 `require_reference=True` 要求参考完整。
+`--source` 为中文候选根；`--jp-root` 是可选只读日文参考，省略时仅检查中文。CLI 显式指定日文根时要求所选适用范围的参考完整，缺目录为 2，缺书／正文或无法可靠配对为 1。输出实际覆盖与未核验原因，不把空目录记作双语通过。当检查目标为实库 `EPUB/`、缓存 `chinese-text/` 或显式传入 `--illustration-doc` 时，预检按所选书籍范围同步执行插图文字映射阻断检查（校验中文行位／原句／重嵌清单及可用日文参考，失配即阻断并打印 `【插图文本联动提醒】`）。`--only-books` 以逗号分隔的 `side/book` 限定书籍，逐项核对请求范围，不存在项不能被其它已找到的书掩盖；内部 `allow_removed=True` 保留同步器的删除路径。`--jobs` 控制单本检查的并发进程数（`0` 为自动并发，`1` 为单进程）。`--calibre` 显式启用全 source 的补充校验，不与 `--only-books` 合用；任一硬错误非零。内部 `validate_publication(cn_root, jp_root=None, book_keys=None, *, allow_removed=False, require_reference=False, jobs=None, illustration_doc=None)` 返回 bool；同步器默认允许合法的单侧作品，但须报告仅单侧／部分／完整覆盖，调用方可用 `require_reference=True` 要求参考完整。
 
 跨书 UUID 唯一性将所选中文候选与整个中文根比较；所选书与范围外书重复也阻断，范围外书相互重复不阻断无关选书。
 
@@ -481,7 +481,7 @@ python tools/reorder_notes.py --root EPUB --pattern "*S1_01*" --apply --no-backu
 | `check_project_docs.py` | `python tools/check_project_docs.py` | 只读；终端报告 | 本地链接／锚点、索引登记与回指、工具簇归属、单一来源与裁定表日期（备注／候选列不写日期）；缺项非零【无】 | `test_check_project_docs.py` |
 | `check_environment.py` | `python tools/check_environment.py --profile core` | 只读环境；终端／JSON 报告 | 所选依赖导入或显式本地模型验证失败为 2；不检查书籍【无】 | `test_check_environment.py` |
 | `check_echo.py` | `python tools/check_echo.py --book S1_01 --book S1_02`／`--convention "<日文正则>" --convention-words "<中文正则表>"` | 只读；写 `--out` 候选清单或惯例报告 | 只定位呼应候选（片段多译／同源复现／引述回指／短平行句／术语多译／模式复述／子句跨缝）与全库用词分布，不判定、不阻断【无】 | `test_check_echo.py` |
-| `check_illustration_mapping.py` | `python tools/check_illustration_mapping.py [--doc …] [--jp-root …] [--json …]` | 只读 `docs/illustration-text-mapping.md` 与日文缓存；写 `--json` 显式报告 | 逐行回查物理行号；不符时按「正文原句」重定位并给建议行号，未解析非零；缓存缺失为 2【无】 | `test_check_illustration_mapping.py` |
+| `check_illustration_mapping.py` | `python tools/check_illustration_mapping.py [--doc …] [--cn-root …] [--jp-root …] [--diff [REF]] [--book …] [--json]` | 只读 `docs/illustration-text-mapping.md`、中文 `EPUB/` 与日文缓存（可选执行 Git 差异影响扫描）；写 `--json` 显式报告 | 双向核对物理行号、正文原句、图片存在性与重嵌清单自洽；不一致或触发联动即非零并输出 `【插图文本联动提醒】`；`--diff` 报告改动命中的插图行／目录彩图标题／插图资源；显式缓存／输入缺失或 Git 失败为 2（已接入 CI 与发布检查）【P3】 | `test_check_illustration_mapping.py`、`test_publish_preflight.py` |
 | `check_speech_habits.py` | `python tools/check_speech_habits.py` | 只读 `docs/character-speech-habits.csv` 与译名裁定总表；终端报告 | 表头与列序、`(角色, 口癖)` 唯一、裁定状态与 §六 对齐、`X版` 逐字镜像、§六 锚点反向覆盖（跨角色例外以 `EXEMPT_ANCHORS` 为准）、记号只许出现在规定列、`-` 不得回归；有问题非零，输入缺失为 2（已接入 CI 与发布检查）【无】 | `test_check_speech_habits.py` |
 
 - **依赖**：`compare_epub_images.py` 与 `image_signature.py` 需要可选的 Pillow，安装见 [独立环境配置](#创建与核验独立环境)；ImageHash 只补充感知哈希。CI 保留标准库运行方式，缺 Pillow 的用例跳过；维护环境安装依赖后实际运行这些用例。
@@ -614,11 +614,15 @@ python tools/compare_epub_images.py --pattern "*S3_*" --output 显式报告目�
 
 ```powershell
 python tools/check_illustration_mapping.py
+python tools/check_illustration_mapping.py --cn-only
+python tools/check_illustration_mapping.py --diff HEAD
 ```
 
-核对 [插图文字映射表](../docs/illustration-text-mapping.md) 的每一行：`行号` 是否还指着 `正文原句`。表里的行号是日文缓存的**物理行号**，而缓存由 `pull.ps1` 重建——日文源一重导、一规范化就可能整体位移，所以每次拉取后跑一次。
+核对 [插图文字映射表](../docs/illustration-text-mapping.md) 的第四节双向映射行与第五节待重新嵌字清单：逐行回查**中文 `EPUB/`**（默认必查）与**日文工作源缓存**（存在时必查，缺失时自动跳过日文侧并输出提示；显式传入 `--jp-root`、`--jp-only` 或 `--require-jp` 且缺失仍返回 2），验证实体文件、物理行号（含 `a–b` 行区间）、正文原句与映射图片存在性，并核对第四节待重嵌状态与第五节基线清单的自洽性（实际重嵌执行与完成进度不设于本仓库）。
 
-行号不符时即计为 `line_drift` 并非零退出，同时按 `正文原句` 在该卷正文里重新定位，给出建议行号（跨文件移动时同时附带建议文件名 `suggest_file`，仍找不到则报整卷未找到）。`--jp-root` 换参考根，`--json` 写完整报告，`--limit` 只控制终端样例条数（0 显示全部，负数返回 2），不改变问题总数、JSON 或退出码。**缓存缺失返回 2（前提不成立）**，与「有漂移」的 1 区分开，避免在没拉取的环境里误报。
+行号不符时计为 `line_drift`（按原句同文件就近优先、再跨文件重定位给 `suggest_file`／`suggest`），正文原句已被改写则计为 `content_changed` 并伴随非零退出；涉及中文侧问题时同时输出 `【插图文本联动提醒】` 与受影响的中文插图文件名。`--book S1_01` 可按作品筛选；`--limit` 仅截断终端展示条数（0 不限，负数返回 2）；`--diff [REF]`（默认 `HEAD`）扫描 `EPUB/` 改动是否命中已映射插图正文行、含目录彩图（`*-Contents*` 及第五节目录类插图）卷的 `<h1>`/`<h2>` 标题行或插图页／图片资源，仅在命中时打印联动提醒，未命中清单时不追加“无需改图”提示（加 `--fail-on-diff` 时有命中即返回 1）。
+
+接入点：`publish_preflight.py`（检查实库 `EPUB/`／`chinese-text/` 或显式 `--illustration-doc` 时按选书阻断）、`proofread_review.py`（`enrich_rows` 为命中插图行打 `illustration_text` 标记并在 `summarize` 输出联动提醒）、`unify_terms_template.py`（预览与写盘命中插图行输出联动提醒）、CI `check-epub-health`（`health` 作业及 release／规范化 workflow 的发布预检）、`translation-term-unification` §S6、`proofread-review` R7／R8、`volume-import` 与 `docs/agents/content-maintenance.md`。
 
 ### 翻译规范检查
 
@@ -746,7 +750,7 @@ python tools/audit_risk.py --old "旧句" --new "新句" --jp "日文"
 
 产物为 `changes.tsv`、`semantic.tsv`、`spec.tsv`、`groups.txt`。TSV 使用标准 tab 分隔和 CSV 字段引用，保留字段里的双引号、制表符及换行，读取用 `csv.DictReader`。一物理行合一条记录，用最小差异分级：spec 为确定规范形状，tiny 为 ≤2 字且全属虚词，local 为 ≤12 字局部变化，rewrite 为更大变化或整段增删；spec 仅在整段最小差异都能由规范解释时放行。数字／字母不当标点剥除。
 
-`line` 使用 Git 行级配对的新侧行号，纯删除回旧侧行号；不可用 word-diff 物理行推算。`jp` 是当前参考的同行，不证明历史提交对应关系；行数变动时人工检索上下文。lookup 按完整稳定表头解析普通系列、S5 与 S6 日期文件名，稳定名称文件保留原拼写。risk 标记包括否定、数字、疑问、字形、加粗标点、嵌套引号、受控术语和明显增删；加粗标点使用原始新行标签核验，纯文本分级与 TSV 列保持既有口径。它们只提示复核优先级。人工处置和抽样范围以 [校对复核 skill](../.agents/skills/proofread-review/SKILL.md) 为准。
+`line` 使用 Git 行级配对的新侧行号，纯删除回旧侧行号；不可用 word-diff 物理行推算。`jp` 是当前参考的同行，不证明历史提交对应关系；行数变动时人工检索上下文。lookup 按完整稳定表头解析普通系列、S5 与 S6 日期文件名，稳定名称文件保留原拼写。risk 标记包括否定、数字、疑问、字形、加粗标点、嵌套引号、受控术语、明显增删与插图映射命中（`illustration_text`，由 `enrich_rows` 对照 [插图文字映射表](../docs/illustration-text-mapping.md) 为规范级与语义级改动同步标注，命中时 `summarize` 另印 `[插图文本联动提醒]`）；加粗标点使用原始新行标签核验，纯文本分级与 TSV 列保持既有口径。它们只提示复核优先级与插图正文同步排查（未命中时静默）。人工处置和抽样范围以 [校对复核 skill](../.agents/skills/proofread-review/SKILL.md) 为准。
 
 ### 校对复核会话
 

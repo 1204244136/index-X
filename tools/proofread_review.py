@@ -43,6 +43,7 @@ import re
 import subprocess
 import sys
 from collections import Counter, defaultdict
+from pathlib import Path
 
 if __package__:
     from .cli_output import configure_output
@@ -52,6 +53,7 @@ from xhtml_text import text_of
 from epub_ids import work_id
 from japanese_lookup import JapaneseSourceLookup, DEFAULT_JP_BASE, strip_ruby_markup
 from audit_risk import audit_risk_flags, load_ruling_terms
+from check_illustration_mapping import load_cn_anchors
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_OUT_DIR = os.path.join(REPO_ROOT, ".cache", "epub-work", "proofread-review")
@@ -343,13 +345,26 @@ def render_groups(rows: list[dict]) -> str:
 COLUMNS = ["commit", "work", "file", "line", "grade", "kind", "flags", "old", "new", "jp"]
 
 
+def _load_illustration_index(
+    repo_root: str = REPO_ROOT,
+    illustration_doc: str | None = None,
+) -> dict[tuple[str, str, int], list[dict[str, str]]]:
+    doc_path = illustration_doc or os.path.join(repo_root, "docs", "illustration-text-mapping.md")
+    if not doc_path or not os.path.isfile(doc_path):
+        return {}
+    exact, _ranges, errors = load_cn_anchors(Path(doc_path))
+    return {} if errors else exact
+
+
 def enrich_rows(
     rows: list[dict],
     repo_root: str = REPO_ROOT,
     jp_base_dir: str = DEFAULT_JP_BASE,
     enable_jp: bool = True,
     enable_audit: bool = True,
+    illustration_doc: str | None = None,
 ) -> None:
+    cn_anchors = _load_illustration_index(repo_root, illustration_doc) if enable_audit else {}
     """模块化增强：自动关联日文原文对应行，并执行启发式语义与规范风险诊断。"""
     lookup = JapaneseSourceLookup(repo_root, jp_base_dir) if enable_jp else None
     # 裁定表登记的「成品旧译」纳入受控术语标记：此前只传日文与新旧译，
@@ -383,6 +398,13 @@ def enrich_rows(
                     fl.append("bold_punct")
             if fl:
                 flags_str = ",".join(fl)
+        if cn_anchors and str(r.get("line", "")).isdigit():
+            key = (r.get("work", ""), os.path.basename(r.get("file", "")), int(r["line"]))
+            if key in cn_anchors:
+                cur_flags = [x for x in flags_str.split(",") if x]
+                if "illustration_text" not in cur_flags:
+                    cur_flags.append("illustration_text")
+                flags_str = ",".join(cur_flags)
         r["flags"] = flags_str
 
 
@@ -395,8 +417,15 @@ def write_tsv(path: str, rows: list[dict]) -> None:
         writer.writerows(rows)
 
 
-def summarize(rows: list[dict], out_dir: str, *, enable_jp: bool = True,
-              enable_audit: bool = True) -> None:
+def summarize(
+    rows: list[dict],
+    out_dir: str,
+    *,
+    enable_jp: bool = True,
+    enable_audit: bool = True,
+    repo_root: str = REPO_ROOT,
+    illustration_doc: str | None = None,
+) -> None:
     grades = Counter(r["grade"] for r in rows)
     kinds = Counter(r["kind"] for r in rows if r["grade"] == "spec")
     semantic = [r for r in rows if r["grade"] != "spec"]
@@ -434,6 +463,24 @@ def summarize(rows: list[dict], out_dir: str, *, enable_jp: bool = True,
     print("按作品：")
     for name, n in Counter(r["work"] for r in rows).most_common():
         print("  %-10s %d" % (name, n))
+    illu_rows = [r for r in rows if "illustration_text" in r.get("flags", "").split(",")]
+    if illu_rows:
+        cn_anchors = _load_illustration_index(repo_root, illustration_doc)
+        print(
+            f"\n[插图文本联动提醒] 检出 {len(illu_rows)} 处改动命中彩色插图对应正文行"
+            "（请同步更新 docs/illustration-text-mapping.md 对应正文行号／原句，并在最终回复末尾额外提醒用户受影响的中文插图）："
+        )
+        for r in illu_rows:
+            key = (
+                (r.get("work", ""), os.path.basename(r.get("file", "")), int(r["line"]))
+                if str(r.get("line", "")).isdigit()
+                else None
+            )
+            matched = cn_anchors.get(key, []) if key else []
+            imgs = ", ".join(dict.fromkeys(m["中文图片"] for m in matched if m.get("中文图片") not in {"", "—"})) or "未关联图片名"
+            img_txts = " / ".join(dict.fromkeys(m["中文图片文字"] for m in matched if m.get("中文图片文字") not in {"", "—"}))
+            detail = f"｜图上「{img_txts}」" if img_txts else ""
+            print(f"  - {r.get('work')} {imgs} ({os.path.basename(r.get('file', ''))}:{r.get('line')}){detail}")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -483,7 +530,13 @@ def main(argv: list[str] | None = None) -> int:
     with open(os.path.join(args.out, "groups.txt"), "w", encoding="utf-8") as f:
         f.write(render_groups([r for r in rows if r["grade"] in ("tiny", "local", "rewrite")]))
 
-    summarize(rows, args.out, enable_jp=not args.no_jp, enable_audit=not args.no_audit)
+    summarize(
+        rows,
+        args.out,
+        enable_jp=not args.no_jp,
+        enable_audit=not args.no_audit,
+        repo_root=args.repo,
+    )
     return 0
 
 

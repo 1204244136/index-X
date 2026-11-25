@@ -232,5 +232,56 @@ class PreflightTests(unittest.TestCase):
         self.assertEqual(outputs[0][0], 1)
 
 
+    def test_illustration_mapping_blocks_modified_cn_anchor(self):
+        cn_root = self.root / "cn"
+        book_dir = cn_root / "【S1_01】测试书"
+        chap = make_book(book_dir, layout=True)
+        img_name = "S1_01-Illustrations1.jpg"
+        img_path = book_dir / "OEBPS" / "Images" / img_name
+        img_path.parent.mkdir(parents=True, exist_ok=True)
+        img_path.write_bytes(b"img")
+        opf = book_dir / "OEBPS" / "content.opf"
+        opf.write_text(
+            opf.read_text(encoding="utf-8").replace(
+                "</manifest>",
+                f'  <item id="illu1" href="Images/{img_name}" media-type="image/jpeg"/>\n  </manifest>',
+            ),
+            encoding="utf-8",
+        )
+        lines = chap.read_text(encoding="utf-8").splitlines()
+        body_idx = next(i for i, ln in enumerate(lines, 1) if "<p" in ln and ">" in ln)
+        actual_txt = lines[body_idx - 1].split(">", 1)[1].rsplit("<", 1)[0]
+
+        header = (
+            "| 卷号 | 日文图片 | 日文图片文字 | 日文正文文件 | 日文行号 | 日文正文原句 "
+            "| 中文图片 | 中文图片文字 | 中文正文文件 | 中文行号 | 中文正文原句 | 嵌字状态 | 备注 |"
+        )
+        sep = "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"
+        doc = self.root / "mapping.md"
+        doc.write_text(
+            f"{header}\n{sep}\n| S1_01 | — | — | — | — | — | {img_name} | 「图上」 | {chap.name} | {body_idx} | 「已改动的旧译」 | 无需重嵌 | |\n",
+            encoding="utf-8",
+        )
+        import io
+        from contextlib import redirect_stderr, redirect_stdout
+        err_buf = io.StringIO()
+        out_buf = io.StringIO()
+        with redirect_stdout(out_buf), redirect_stderr(err_buf):
+            ok = validate_publication(cn_root, illustration_doc=doc)
+        self.assertFalse(ok)
+        self.assertIn("插图映射[S1_01]", err_buf.getvalue())
+        if img_name != "—":
+            self.assertIn("【插图文本联动提醒】", err_buf.getvalue())
+
+        doc.write_text(
+            f"{header}\n{sep}\n| S1_01 | — | — | — | — | — | {img_name} | 「图上」 | {chap.name} | {body_idx} | {actual_txt} | 无需重嵌 | |\n",
+            encoding="utf-8",
+        )
+        err_buf2 = io.StringIO()
+        with redirect_stdout(io.StringIO()), redirect_stderr(err_buf2):
+            ok2 = validate_publication(cn_root, illustration_doc=doc)
+        self.assertTrue(ok2, err_buf2.getvalue())
+
+
 if __name__ == "__main__":
     unittest.main()

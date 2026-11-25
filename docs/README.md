@@ -19,7 +19,7 @@
 | [`proofread-review/SKILL.md`](../.agents/skills/proofread-review/SKILL.md) | 流程：批量译文改动**怎么复核** | 复核校对产出、判定误改并回改 |
 | [`bw-source-import/SKILL.md`](../.agents/skills/bw-source-import/SKILL.md) | 流程：**日文 BW 源怎么导入** | 把某卷日文源做成工作源、BW 预处理与分页合并、交接给成品生成 |
 | [`volume-import/SKILL.md`](../.agents/skills/volume-import/SKILL.md) | 流程：**新书成品怎么生成** | 交稿转成品、新书入库；材料核对与六步原子工具链 |
-| [插图文字映射表](illustration-text-mapping.md) | **彩色插图上的文字 → 日文正文行号**的对照表（S1–S6，565 条），含口径、列义与逐卷覆盖统计 | 查某张彩页上的字在正文哪一行；核对插图页与正文是否对得上 |
+| [插图文字映射表](illustration-text-mapping.md) | **中日彩色插图上的文字 ↔ 中日双侧正文物理行号**的对照表（S1–S6 全覆盖）及**待重嵌图片基线问题清单**，含口径、列义与逐卷覆盖统计 | 查某张彩页上的字在正文哪一行；当修改命中清单正文／目录标题时同步行位原句并触发联动提醒（重嵌完成状态由外部工程接管） |
 | [全系列作品对应与收录进度表](work-correspondence.md) | **`S0`–`S6` 全作品编号对应、台版／日文工作源状态与未收录官方小说清单** | 查某卷中日编号与台版对照；看项目做到哪、还有哪些官方小说未收录 |
 | [BOOK☆WALKER 日文简介原文收录](bw-introduction-originals.md) | **BOOK☆WALKER「あらすじ・内容」日文原文**（按 `S1`–`S6` 作品号索引 77 条目，含加粗导语与商品页链接） | 核对或补全各卷 `Introduction.xhtml` 日文参考来源；区分加粗导语与折页正文 |
 

@@ -426,5 +426,54 @@ class ReferenceCoverageTests(unittest.TestCase):
         self.assertIn("未核验", output.getvalue())
 
 
+class IllustrationTextAlertTests(unittest.TestCase):
+    def test_enrich_and_summarize_flag_illustration_hits(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            doc = Path(tmp) / "mapping.md"
+            doc.write_text(
+                "\n".join([
+                    "| 卷号 | 日文图片 | 日文图片文字 | 日文正文文件 | 日文行号 | 日文正文原句 | 中文图片 | 中文图片文字 | 中文正文文件 | 中文行号 | 中文正文原句 | 嵌字状态 | 备注 |",
+                    "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+                    "| S1_02 | S1_02-kuchie-004.jpg | 「アルス＝マグナ」 | S1_02-05.xhtml | 90 | 「アルス＝マグナ」 | S1_02-Illustrations3.jpg | 「大衍术？」 | S1_02-05_Chapter3.xhtml | 90 | 「难道……是……金色的……Ars Magna？」 | 无需重嵌 | |",
+                ]),
+                encoding="utf-8",
+            )
+            rows = [
+                {
+                    "commit": "abc",
+                    "work": "S1_02",
+                    "file": "S1_02-05_Chapter3.xhtml",
+                    "line": "90",
+                    "grade": "spec",
+                    "kind": "punctuation",
+                    "flags": "",
+                    "old": "旧句",
+                    "new": "新句",
+                    "jp": "",
+                },
+                {
+                    "commit": "abc",
+                    "work": "S1_02",
+                    "file": "S1_02-05_Chapter3.xhtml",
+                    "line": "91",
+                    "grade": "spec",
+                    "kind": "punctuation",
+                    "flags": "",
+                    "old": "旧句2",
+                    "new": "新句2",
+                    "jp": "",
+                },
+            ]
+            enrich_rows(rows, repo_root=tmp, enable_jp=False, enable_audit=True, illustration_doc=str(doc))
+            self.assertIn("illustration_text", rows[0]["flags"])
+            self.assertEqual(rows[1]["flags"], "")
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                summarize(rows, tmp, enable_jp=False, repo_root=tmp, illustration_doc=str(doc))
+            out = buf.getvalue()
+            self.assertIn("[插图文本联动提醒]", out)
+            self.assertIn("S1_02-Illustrations3.jpg", out)
+
+
 if __name__ == "__main__":
     unittest.main()

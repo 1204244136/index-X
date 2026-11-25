@@ -74,6 +74,62 @@ def context(line: str, old: str, new: str, width: int = 14) -> str:
     return f"{head}【{old}→{new}】{tail}"
 
 
+_ILLU_COLUMNS = (
+    "卷号", "日文图片", "日文图片文字", "日文正文文件", "日文行号", "日文正文原句",
+    "中文图片", "中文图片文字", "中文正文文件", "中文行号", "中文正文原句", "嵌字状态", "备注",
+)
+
+
+def _load_illustration_anchors(doc_path: Path) -> dict[tuple[str, str, int], list[tuple[str, str, str]]]:
+    """独立解析映射表，避免复制到临时目录运行时依赖仓库模块路径。"""
+    if not doc_path.is_file():
+        return {}
+    anchors: dict[tuple[str, str, int], list[tuple[str, str, str]]] = {}
+    in_table = False
+    for raw in doc_path.read_text(encoding="utf-8-sig").splitlines():
+        s = raw.strip()
+        if not s.startswith("|"):
+            in_table = False
+            continue
+        cells = [c.strip().strip("`") for c in s.strip("|").split("|")]
+        if not in_table:
+            in_table = tuple(cells) == _ILLU_COLUMNS
+            continue
+        if len(cells) != len(_ILLU_COLUMNS) or all(set(c) <= {"-", ":"} for c in cells):
+            continue
+        vol, _ji, _jt, _jf, _jl, _js, cn_img, cn_txt, cn_file, cn_line, _cs, state, _note = cells
+        if cn_file in {"", "—", "-"} or cn_line in {"", "—", "-"}:
+            continue
+        parts = cn_line.replace("–", "-").split("-")
+        if len(parts) > 2 or not all(p.isdigit() for p in parts):
+            continue
+        a = int(parts[0])
+        b = int(parts[-1])
+        for ln in range(a, b + 1):
+            anchors.setdefault((vol, Path(cn_file).name, ln), []).append((cn_img, cn_txt, state))
+    return anchors
+
+
+def _print_illustration_alerts(
+    changed: list[tuple[str, str, int, str, str, str]],
+    doc_path: Path,
+) -> None:
+    """命中插图正文行时打印显著提醒，提示同步映射表并在答复中告知用户。"""
+    anchors = _load_illustration_anchors(doc_path)
+    if not anchors:
+        return
+    hits: list[tuple[str, str, int, str, str, str, str, str]] = []
+    for book, name, line_no, old, new, _ctx in changed:
+        for cn_img, cn_txt, state in anchors.get((book, Path(name).name, int(line_no)), []):
+            hits.append((book, name, line_no, cn_img, cn_txt, state, old, new))
+    if not hits:
+        return
+    print(f"\n【插图文本联动提醒】本次替换命中 {len(hits)} 条插图对应正文行：")
+    for book, name, line_no, cn_img, cn_txt, state, old, new in hits:
+        print(f"  - {book} {cn_img} ({Path(name).name}:{line_no})｜状态={state}｜图上「{cn_txt}」｜{old} -> {new}")
+    print("  [重要] 若执行 --apply，请同步更新 docs/illustration-text-mapping.md 对应正文行号／原句，并在最终回复末尾额外提醒用户受影响的中文插图！")
+
+
 def main() -> int:
     # 模板可复制到任意临时目录独立运行，不依赖仓库内工具的导入路径。
     for stream in (sys.stdout, sys.stderr):
@@ -87,6 +143,7 @@ def main() -> int:
     parser.add_argument("--apply", action="store_true", help="预检全过后写盘（默认只预览）")
     parser.add_argument("--epub", default="EPUB", help="EPUB 归档根目录（默认 EPUB/）")
     parser.add_argument("--tsv", help="把修订明细写成 TSV，供本地核验与汇总提交信息")
+    parser.add_argument("--illustration-doc", default=None, help="插图文字映射表路径（默认自动查同级 docs/illustration-text-mapping.md）")
     args = parser.parse_args()
 
     epub_root = Path(args.epub)
@@ -161,7 +218,13 @@ def main() -> int:
         Path(args.tsv).write_text("\n".join(rows) + "\n", encoding="utf-8")
         print(f"明细已写入 {args.tsv}")
 
+    illu_doc = (
+        Path(args.illustration_doc)
+        if args.illustration_doc
+        else (epub_root.parent / "docs" / "illustration-text-mapping.md")
+    )
     print(f"\n预检通过：待改 {len(changed)} 处／已统一 {len(already)} 处／涉及文件 {len(writes)} 个")
+    _print_illustration_alerts(changed, illu_doc)
     if not args.apply:
         print("（预览模式，未写盘。确认无误后加 --apply）")
         return 0
@@ -169,7 +232,8 @@ def main() -> int:
     for path, payload in writes:
         path.write_bytes(payload)
     print(f"已写入 {len(writes)} 个文件（仅 {epub_root}/）。"
-          f"下一步：check_alignment.py --strict → publish_auto.py")
+          f"下一步：check_alignment.py --strict → check_illustration_mapping.py → publish_auto.py")
+    _print_illustration_alerts(changed, illu_doc)
     return 0
 
 

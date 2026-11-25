@@ -24,6 +24,10 @@ from check_epub_health import (
     find_identifier_duplicates,
     load_book_snapshot,
 )
+from check_illustration_mapping import (
+    DEFAULT_DOC as DEFAULT_ILLUSTRATION_DOC,
+    check as check_illustration_mapping,
+)
 from check_note_order import check_book
 from check_paired_text import audit_coverage as audit_paired_text
 from check_term_anchors import audit_coverage as audit_term_coverage
@@ -63,7 +67,8 @@ def _validate_single_book(task: tuple[str, str, Path, bool]) -> list[str]:
 
 def validate_publication(cn_root: Path, jp_root: Path | None = None,
                          book_keys: list[str] | None = None, *, allow_removed: bool = False,
-                         require_reference: bool = False, jobs: int | None = None) -> bool:
+                         require_reference: bool = False, jobs: int | None = None,
+                         illustration_doc: Path | None = None) -> bool:
     """Validate the selected current copies before any mirror/upload mutation.
 
     book_keys use side/book identities. Deleted books have no container to check;
@@ -197,6 +202,49 @@ def validate_publication(cn_root: Path, jp_root: Path | None = None,
             scope += "（仅单侧；无适用日文逐行核验结果）"
     else:
         scope += "（仅单侧；无日文参考）" if jp_root is None else "（仅单侧；日文逐行核验未执行）"
+    eff_illu_doc = illustration_doc
+    if eff_illu_doc is None and DEFAULT_ILLUSTRATION_DOC.is_file():
+        repo_root = DEFAULT_ILLUSTRATION_DOC.parent.parent
+        auto_roots = {
+            (repo_root / "EPUB").resolve(),
+            (repo_root / ".cache" / "epub-work" / "chinese-text").resolve(),
+        }
+        if cn_root.resolve() in auto_roots:
+            eff_illu_doc = DEFAULT_ILLUSTRATION_DOC
+    if eff_illu_doc is not None and checked > 0:
+        selected_names = {Path(k).name for k in book_keys} if book_keys is not None else None
+        selected_ids = {
+            book_id(p.name)
+            for p in cn_root.iterdir()
+            if p.is_dir() and book_id(p.name) and (selected_names is None or p.name in selected_names)
+        }
+        if selected_ids:
+            has_jp_ref = jp_root is not None and jp_root.is_dir()
+            _ic, illu_probs, illu_errs = check_illustration_mapping(
+                eff_illu_doc,
+                jp_root if has_jp_ref else None,
+                cn_root=cn_root,
+                books=selected_ids,
+                check_jp=has_jp_ref,
+                check_cn=True,
+            )
+            for err in illu_errs:
+                problems.append(f"插图映射格式错误：{err}")
+            cn_hit_imgs: list[str] = []
+            for p in illu_probs:
+                row = p["row"]
+                suffix = f"（疑似移至 {p['suggest_file']}:{p['suggest']}）" if p.get("suggest_file") and p.get("suggest") else ""
+                problems.append(f"插图映射[{row.get('卷号', '?')}]: {p['message']}{suffix}")
+                if p.get("side") == "cn" and row.get("中文图片") not in {"", "—", None}:
+                    cn_hit_imgs.append(f"{row.get('卷号')}/{row.get('中文图片')}")
+            if cn_hit_imgs:
+                uniq_imgs = ", ".join(dict.fromkeys(cn_hit_imgs))
+                problems.append(
+                    f"【插图文本联动提醒】受影响中文彩图（{uniq_imgs}）："
+                    "请同步更新 docs/illustration-text-mapping.md 对应正文行号／原句，并在最终回复末尾额外提醒受影响的中文插图"
+                )
+            scope += "／插图映射"
+
     print(f"发布预检：{checked} 本；{scope}；问题 {len(problems)} 条")
     for problem in problems:
         print(f"  [阻断] {problem}", file=sys.stderr)
@@ -219,6 +267,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--jobs", type=_positive_int, default=None,
                         help="单侧单本检查并行进程数（默认自动：至少 8 本书时启用多进程）")
     parser.add_argument("--calibre", action="store_true", help="追加 calibre 完整结构校验，需要本机安装")
+    parser.add_argument("--illustration-doc", type=Path, default=None,
+                        help="显式指定插图文字映射文档路径（发布实库时默认自动核对）")
     args = parser.parse_args(argv)
     if not args.source.is_dir():
         print(f"中文成品目录不存在：{args.source}", file=sys.stderr)
@@ -227,7 +277,14 @@ def main(argv: list[str] | None = None) -> int:
         print(f"日文参考目录不存在：{args.jp_root}；请指定已解包的日文工作源。", file=sys.stderr)
         return 2
     keys = args.only_books.split(",") if args.only_books else None
-    if not validate_publication(args.source, args.jp_root, keys, require_reference=args.jp_root is not None, jobs=args.jobs):
+    if not validate_publication(
+        args.source,
+        args.jp_root,
+        keys,
+        require_reference=args.jp_root is not None,
+        jobs=args.jobs,
+        illustration_doc=args.illustration_doc,
+    ):
         return 1
     if args.calibre:
         if keys:

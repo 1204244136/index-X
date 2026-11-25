@@ -145,6 +145,7 @@ python tools/check_note_order.py --root EPUB --pattern "*S4_04*"
 python tools/check_translation_spec.py --cache EPUB --pattern "*S4_04*"
 python tools/publish_preflight.py --source EPUB --jp-root .cache/epub-work/japanese-text --only-books "chinese-text/【S4_04】某暗部的少女共栖 4"
 python tools/check_epub_validity.py "EPUB/【S4_04】某暗部的少女共栖 4" --structural --strict
+python tools/check_illustration_mapping.py --book S4_04   # 若新卷彩图含对白／引文，须同步补入 docs/illustration-text-mapping.md 正文行位／原句
 ```
 
 门禁非零就修内容或计划后重跑，不得放宽门禁。`check_translation_spec` 的 P6／P7／P15 之类

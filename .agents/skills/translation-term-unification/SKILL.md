@@ -119,12 +119,16 @@ python .agents/skills/translation-term-unification/references/test_unify_terms_t
 ```powershell
 python tools/text_norm.py --pattern "<本任务书名匹配式>" --dry-run  # 必须 0 命中；需要 --apply 时保留同一范围
 python tools/check_term_anchors.py --book <作品号> --strict        # 裁定表锚点误形，0 命中；无日文参考的作品单列
+python tools/check_illustration_mapping.py                        # 双向核对插图映射表与 EPUB/ 原句／清单自洽
+python tools/check_illustration_mapping.py --diff HEAD            # 扫描本次替换是否命中插图对应正文／目录标题
 python tools/check_alignment.py --strict        # 中日行数 / 模板 / h2 / 图片行
 python tools/check_epub_health.py --strict      # 单侧结构（XML、ruby、加粗、悬空引用等）
 python tools/check_translation_spec.py          # 涉及标点／注音／单位／日期时跑；报告在 .cache/epub-work/
 python tools/check_project_docs.py              # 改过裁定表／说话习惯表后必跑；0 条（含「裁定表不记日期」）
 python tools/check_speech_habits.py             # 改过说话习惯表或裁定表 §六 后必跑
 ```
+
+> 仅当执行模板脚本（`unify_terms_template.py`）或 `check_illustration_mapping.py --diff` 打印了 `【插图文本联动提醒】` 时，须同步更新 `docs/illustration-text-mapping.md` 的 `中文正文原句` 与行号，并在最终回复末尾向用户额外显著提醒受影响的中文插图（不裁决重嵌完成状态）；**未命中清单时保持静默，不额外声明“无需改图”。**
 
 记录本次选定范围的实际文件数、未配对范围与问题数；数量变化先核对输入范围和收录状态，不能套用历史全库数字。
 

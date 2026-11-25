@@ -145,9 +145,13 @@ python tools/proofread_review.py b7515335 2d44cb26 821c46b9 7a218119
 ```powershell
 python tools/text_norm.py --pattern "<本轮书名匹配式>" --dry-run  # 必须 0 命中；需要 --apply 时保留同一范围
 python tools/check_term_anchors.py --book <作品号> --strict       # 术语锚点误形，0 命中；无日文侧时在报告里说明跳过原因
+python tools/check_illustration_mapping.py                        # 双向核对插图映射表、重嵌清单与 EPUB/ 正文原句
+python tools/check_illustration_mapping.py --diff <基线>          # 检出命中插图正文／目录彩图标题的改动范围
 python tools/check_alignment.py --strict        # 行模板 / 中日行数 / h2 / 图片行
 python tools/check_epub_health.py --strict      # 单侧结构（XML / ruby / 加粗 / 悬空引用）
 ```
+
+- **插图文本联动与额外提醒**：若 `proofread_review.py` 检出 `illustration_text` 风险标记（含规范级）或 `check_illustration_mapping.py --diff` 命中插图正文／目录彩图标题／插图资源，Lead 必须在更新 `docs/illustration-text-mapping.md` 对应正文行号／原句后，在最终回复末尾向用户额外显著提醒受影响的中文插图；**未命中清单时保持静默，不额外说明“无需改图”。**
 
 术语锚点门禁查的是「日文裁定锚点出现、中文却用裁定表登记的误形」这一类**结构门禁查不到**的回退（`魔術`→「魔术」即此型）；它必须与 `text_norm` 同批运行，命中项按 R7 的显式映射回改。CI 只有中文侧、不执行该项，本地 `publish_preflight.py`（带日文参考的发布会）会再阻断一次。
 

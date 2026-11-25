@@ -113,6 +113,9 @@ jobs:
             echo "无日文参考（.cache/epub-work/japanese-text），跳过中日锚点检查；本地发布预检会执行。"
           fi
 
+      - name: 插图文字映射门禁（无日文侧则仅核对中文 EPUB/）
+        run: python tools/check_illustration_mapping.py
+
       - name: 写入 job summary
         if: always()
         run: |
