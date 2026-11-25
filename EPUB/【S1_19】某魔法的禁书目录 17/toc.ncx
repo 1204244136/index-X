@@ -379,7 +379,7 @@
     </navPoint>
     <navPoint id="num_62" playOrder="62">
       <navLabel>
-        <text>终　章 每个人的想法与心思 War_in_Britain.</text>
+        <text>终　章 每一方各自的想法与心思 War_in_Britain.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_19-07_Epilogue.xhtml"/>
     </navPoint>
