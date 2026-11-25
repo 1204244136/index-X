@@ -15,7 +15,7 @@ docx 交稿格式、漫画修嵌），那些在 EPUB 成品中已转换为 ruby 
   P5  省略号后带句号/点号（……。 ……・ 不保留）
   P6  弯引号 “” ‘’（中文语境应使用直角引号 「」『』）
   P7  日文点号 ・（与全书主导 · 不一致，规范提醒勿混淆）
-  P8  正文假名残留（可能为漏翻；原文引用属合法；形状描述统一写作「く字形」，已豁免）
+  P8  正文假名残留（可能为漏翻；原文引用属合法；形状描述保留「く字形」「コ字形」，已豁免）
   P9  单位（公斤/公里，规范建议 千克/千米；赛事项目名如「十公里长跑」豁免）
   P10 注音（ruby <rt> 内日文假名应译为汉语；空 rt / 缺 rt 提示）
   P11 语气词/音译（切！、啊啦、呀吼、吥吥 等规范示例词）
@@ -34,6 +34,7 @@ docx 交稿格式、漫画修嵌），那些在 EPUB 成品中已转换为 ruby 
   P24 译注·谓语词未收敛（即／意为／原指 三族刻意保留，不报）
   P25 译注·互参用数字注号或顺序指代（重排后会指错）
   P26 日期写法与数字域合规（故事体汉字数字／占位零〇，数字与时间单位无空格）
+  P27 形状符合规（注音符号 ㄑ／ㄈ 与生僻古字 匚 不作中文形状符）
 
 报告写入 .cache/epub-work/translation-spec-check.tsv / .json / .md。
 默认读取 EPUB/，不修改输入书籍。
@@ -414,12 +415,22 @@ P26_DATE_RULES = (
 # 假名残留（仅 content 文件）
 KANA_RE = re.compile(r"[%s]" % KANA)
 
-# P8 形状描述白名单：日文「くの字」（如 `くの字に折れ曲がる`）是原作高频的
-# 身体/物体折角描写，中文成品统一写作裸写「く字形」（不带引号）。
-# 该写法是有意保留的假名形状符，不算漏翻，P8 不予报告。
-# 依据 docs/translation-spec.md §六.7「形状描述用假名字形」。
-# 只豁免「く」+ 字/字形 这一固定形态，其余假名残留照常报告。
-P8_SHAPE_EXEMPT_RE = re.compile(r"く字形?")
+# P27：非规范形状符。日文形状描写（`くの字`／`コの字`）的中文成品只允许
+# 日文字形符「く字形」「コ字形」与拉丁字母形状（`U字形`、`V字形` 等）。
+# 注音符号（U+3105–U+312F）与不用于现代形状描述的生僻古字（`匚` U+531A）
+# 不得作为中文形状符——它们既不在 KANA 范围（P8 检不出），也不是中文惯用写法。
+# 依据 docs/translation-spec.md §五.13 与 docs/translation-name-rulings.md §九。
+P27_SHAPE_RE = re.compile(r"[「『]?([\u3105-\u312f]|匚)[」』]?字[形状]?")
+
+# P8 形状描述白名单：日文形状符是原作高频的折角与围合描写。
+# 中文成品保留对应字形符，统一写作裸写形态（不带引号）：
+#   `くの字`（平假名折角，如 `くの字に折れ曲がる`） → 「く字形」
+#   `コの字`（片假名围合开口，如 `コの字の壁`）     → 「コ字形」
+# 两者都是有意义保留的日文字形符，不算漏翻，P8 不予报告。
+# 依据 docs/translation-spec.md §五.13「形状描述用日文字形符」与
+# docs/translation-name-rulings.md §九 的形状描述条目。
+# 只豁免「く/コ」+ 字/字形/字状 这一固定形态，其余假名残留照常报告。
+P8_SHAPE_EXEMPT_RE = re.compile(r"(?:く|コ)字形?")
 
 # ruby 注音检查（逐行原始文本）
 RT_RE = re.compile(r"<rt\b[^>]*>([^<]*)</rt>")
@@ -646,6 +657,13 @@ def _check_text_from_stripped(text, line, fkind, *, errors_only=False, has_kana=
             if errors_only and sev != "error":
                 continue
             _append_regex_hits(hits, text, rx, "P26", sev, msg)
+    # P27：注音符号／生僻古字作形状符（仅正文内容文件；日文引用行豁免）
+    if fkind == "content" and not get_has_kana():
+        _append_regex_hits(
+            hits, text, P27_SHAPE_RE, "P27", "warning",
+            "正文用注音符号或生僻古字作形状符，应改用日文字形符"
+            "（く字形／コ字形）或拉丁字母形状（如 U字形），",
+        )
     if fkind == "note":
         hits.extend(check_note(text, errors_only=errors_only))
     return hits
@@ -685,13 +703,13 @@ def check_ruby(line, fkind):
 
 def check_kana(text, line_no, fn):
     hits = []
-    # P8 白名单：「く字形」是规范形状描述符，不按假名残留处理
+    # P8 白名单：「く字形」「コ字形」是规范形状描述符，不按假名残留处理
     for m in KANA_RE.finditer(strip_p8_shape(text)):
         s = max(0, m.start() - 10)
         example = text[s:m.end() + 20]
         hits.append(("P8", "warning",
                      "正文出现日文假名，疑似漏翻；若为原文引用或特殊效果可忽略"
-                     "（形状描述统一写作「く字形」，已豁免）。",
+                     "（形状描述保留「く字形」「コ字形」，已豁免）。",
                      short(example, 60)))
         break  # 每行只报一条
     return hits
@@ -726,7 +744,7 @@ def audit_book(text_dir, *, errors_only=False) -> list[tuple[str, int, str, str,
             kana_match = None
             has_kana = None
             if fkind == "content" and not errors_only:
-                # P8 白名单：「く字形」是规范形状描述符，先剔除再判假名残留
+                # P8 白名单：「く字形」「コ字形」是规范形状描述符，先剔除再判假名残留
                 kana_match = KANA_RE.search(strip_p8_shape(text))
                 has_kana = KANA_RE.search(text) is not None
             # 文本检查（先移除 <style>/<script>/<rt> 块再剥标签）
@@ -741,7 +759,7 @@ def audit_book(text_dir, *, errors_only=False) -> list[tuple[str, int, str, str,
                 findings.append((
                     fn, ln, "P8", "warning",
                     "正文出现日文假名，疑似漏翻；若为原文引用或特殊效果可忽略"
-                    "（形状描述统一写作「く字形」，已豁免）。",
+                    "（形状描述保留「く字形」「コ字形」，已豁免）。",
                     short(example, 60),
                 ))
     return findings
@@ -868,6 +886,7 @@ def _run():
         "P24": "译注·谓语词未收敛（即／意为／原指 三族刻意保留，不报）",
         "P25": "译注·互参用数字注号或顺序指代（重排后会指错）",
         "P26": "日期写法与数字域合规（故事体汉字数字／占位零〇，数字与时间单位无空格）",
+        "P27": "形状符合规（注音符号／生僻古字不作中文形状符）",
     }
     for cat in sorted(cat_desc, key=lambda x: int(x[1:])):
         lines.append("| %s | %s | %d |" % (cat, cat_desc[cat], category_counts.get(cat, 0)))
