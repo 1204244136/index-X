@@ -137,6 +137,7 @@ PAIR_RULES: dict[str, str] = {
     "S1_05-04": "right-wrapper",
     "S1_05-05": "right-wrapper",
     "S4_01-06": "right-wrapper",
+    "S5_04_01-09": "right-wrapper",
 }
 
 

@@ -247,6 +247,7 @@ class AlignmentTests(unittest.TestCase):
                 "S1_05-04": "right-wrapper",
                 "S1_05-05": "right-wrapper",
                 "S4_01-06": "right-wrapper",
+                "S5_04_01-09": "right-wrapper",
             })
         for header, rule in alignment_rules.PAIR_RULES.items():
             self.assertIn(rule, ("afterword-moved", "section-order", "right-wrapper"), header)
