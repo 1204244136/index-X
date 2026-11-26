@@ -416,5 +416,99 @@ class P26DateExpressionTests(unittest.TestCase):
             self.assertTrue(any(h[2] == "P26" for h in fast_errors))
 
 
+class P23NoteStyleAndAntipatternTests(unittest.TestCase):
+    """P23 拦截语体缺陷、词条界说冗余指示语与机械套壳病句，放行双轨规范下的自然陈述句。"""
+
+    def p23(self, line):
+        return [h for h in cts.check_text(line, "note") if h[0] == "P23"]
+
+    def test_valid_dual_track_notes_and_exemptions_pass(self):
+        clean_notes = (
+            '<li epub:type="footnote" id="note1">门松，指一种新年时用竹子和松枝制成的装饰品。</li>',
+            '<li epub:type="footnote" id="note2">柏青哥（パチンコ），指日本的一种弹珠游戏机。</li>',
+            '<li epub:type="footnote" id="note3">PAC3，即Patriot Advanced Capability-3，爱国者3型导弹。</li>',
+            '<li epub:type="footnote" id="note4">应该是明治神宫。</li>',
+            '<li epub:type="footnote" id="note5">可能指一种能共享梦境的卡片。</li>',
+            '<li epub:type="footnote" id="note6">此处为前期过时设定，实际应为二百三十万人口。</li>',
+            '<li epub:type="footnote" id="note7">日本的自动贩卖机有抽奖功能。</li>',
+            '<li epub:type="footnote" id="note8">与中国不同，日本饭店免费提供的一般都是凉水。</li>',
+            '<li epub:type="footnote" id="note9">原文中「Last Order」有两种汉字标记方式，一为打ち止め，一为最終信号，两者读法相同，指同一个人物。</li>',
+            '<li epub:type="footnote" id="note10">原文注释：在一九九三年就因破坏力太强大，而经过国会决议禁止贩卖。</li>',
+            '<li epub:type="footnote" id="note11">僧正，日文读作「そうじょう」，与「早女」「总女」发音相近。</li>',
+            '<li epub:type="footnote" id="note12">奥雷欧斯·伊萨德惯用「～然」形式的词语起句。</li>',
+            '<li epub:type="footnote" id="note13">传说中毕达哥拉斯路过一家铁匠店时发现四个铁匠打铁的声音异常悦耳，便开始研究起了声音的变化。</li>',
+            '<li epub:type="footnote" id="note14">日文原文作「蒸留」，与中文「蒸馏」同义，此处正文按现代汉语规范写作「蒸馏」。</li>',
+            '<li epub:type="footnote" id="note15">如果你是跳转到这里的，说明你的阅读器不支持弹注。</li>',
+            '<li epub:type="footnote" id="note16">安赛尔（Ainsel），故事的含义为「我是我自己」。</li>',
+            '<li epub:type="footnote" id="note17">妃姬子（ひきこさん），日本都市传说中的妖怪：走近才发现那其实是被拖得血肉模糊的小孩。</li>',
+        )
+        for s in clean_notes:
+            with self.subTest(s=s):
+                self.assertEqual(self.p23(s), [], "合规或已豁免译注不应命中 P23：%s" % s)
+
+    def test_style_defects_redundant_deictics_and_antipatterns_flagged(self):
+        bad_notes = (
+            '<li epub:type="footnote" id="note1">原文是 Girlish 兵器，我就用牝找了词语选了这个。</li>',
+            '<li epub:type="footnote" id="note2">虽然设定怪，但我就不强行改了。</li>',
+            '<li epub:type="footnote" id="note3">中文里比较难体现我也不去硬凹翻译了，注解一下。</li>',
+            '<li epub:type="footnote" id="note4">几何学，实际上大家在上小学时非常熟悉的理论。</li>',
+            '<li epub:type="footnote" id="note5">或许大家已经发现了，前两个字母是首字母。</li>',
+            '<li epub:type="footnote" id="note6">其实是小瓶饮料。</li>',
+            '<li epub:type="footnote" id="note7">日式炸鸡一般是不带骨头的，所以有种不太符合西方传统节日的感觉。</li>',
+            '<li epub:type="footnote" id="note8">可能neta自某公司。</li>',
+            '<li epub:type="footnote" id="note9">指某种未考证事物（待详细考据）。</li>',
+            '<li epub:type="footnote" id="note10">这里的「拟人化」为日本动漫画同好间的流行用语。</li>',
+            '<li epub:type="footnote" id="note11">这里指的应该是明治神宫。</li>',
+            '<li epub:type="footnote" id="note12">指作者在原文里故意让萝拉使用似是而非的日文古语讲话。</li>',
+            '<li epub:type="footnote" id="note13">指安娜·金斯福德的话语中除了各种各样的符号。</li>',
+            '<li epub:type="footnote" id="note14">自动贩卖机的抽奖转盘，指日本的自动贩卖机有抽奖功能。</li>',
+            '<li epub:type="footnote" id="note15">凉水，指日本饭店免费提供的水一般是凉的，与中国不同。</li>',
+            '<li epub:type="footnote" id="note16">「楼层」，指日文中与「海草」音近的词。</li>',
+            '<li epub:type="footnote" id="note17">蒸留，指原文如此，人名不做改动。</li>',
+            '<li epub:type="footnote" id="note18">原文为土御门舞夏是用平辈间的普通语体与美琴说话。</li>',
+            '<li epub:type="footnote" id="note19">小田原城（小田原城），是战国时代神奈川的城池。</li>',
+        )
+        for s in bad_notes:
+            with self.subTest(s=s):
+                hits = self.p23(s)
+                self.assertTrue(hits, "语体缺陷或套壳病句应命中 P23：%s" % s)
+                self.assertTrue(all(h[1] == "warning" for h in hits))
+
+
+class P24PredicateConvergenceTests(unittest.TestCase):
+    """P24 只收敛纯冗余谓语词，放行语法或语体有分工的合理用法。"""
+
+    def p24(self, line):
+        return [h for h in cts.check_text(line, "note") if h[0] == "P24"]
+
+    def test_redundant_predicates_flagged(self):
+        for s in (
+            '<li epub:type="footnote" id="note1">「人柱」指的是日本古代习俗。</li>',
+            '<li epub:type="footnote" id="note2">根据《圣经》记载，所多玛是罪恶之城。</li>',
+            '<li epub:type="footnote" id="note3">恶灵军团，典出《马可福音》第五章。</li>',
+            '<li epub:type="footnote" id="note4">高山病，也称高山适应不全症。</li>',
+            '<li epub:type="footnote" id="note5">原文是コールドミストレス。</li>',
+        ):
+            with self.subTest(s=s):
+                hits = self.p24(s)
+                self.assertTrue(hits, "冗余谓语词应命中 P24：%s" % s)
+                self.assertEqual(hits[0][1], "info")
+
+    def test_distinct_grammar_and_semantic_predicates_preserved(self):
+        for s in (
+            '<li epub:type="footnote" id="note1">原文中土御门舞夏是用平辈间的普通语体与美琴说话。</li>',
+            '<li epub:type="footnote" id="note2">原文注释：在一九九三年禁止贩卖。</li>',
+            '<li epub:type="footnote" id="note3">鬼子母神来自佛经，原为婆罗门教中的恶神。</li>',
+            '<li epub:type="footnote" id="note4">「秃鹫之女」和「苦刑梨」均为刑具。</li>',
+            '<li epub:type="footnote" id="note5">乙醇，俗称酒精，食用酒类的主要成分。</li>',
+            '<li epub:type="footnote" id="note6">注连绳，是日本神道中所使用的绳索，常见于神社内。</li>',
+            '<li epub:type="footnote" id="note7">PAC3，即爱国者3型导弹。</li>',
+            '<li epub:type="footnote" id="note8">ambulance意为救护车。</li>',
+            '<li epub:type="footnote" id="note9">弗仑汀，原指公元8世纪古英格兰叙事诗中所出现的宝剑。</li>',
+        ):
+            with self.subTest(s=s):
+                self.assertEqual(self.p24(s), [], "有语法或语体分工的写法不应命中 P24：%s" % s)
+
+
 if __name__ == "__main__":
     unittest.main()

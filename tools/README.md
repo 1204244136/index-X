@@ -636,13 +636,13 @@ P1–P26 与规范条款的完整对应表唯一维护于 [翻译规范](../docs
 
 `audit_book(text_dir)` 是 `main()` 与 `publish_preflight.py` 共用的入口，返回 `(file, line, category, severity, message, example)`；发布预检只取 `severity == "error"`。**注意两处计数粒度不同**：`main()` 的 `emit` 按「行×类别」去重，`audit_book` 不去重、按命中逐条返回——引用计数时须注明粒度。
 
-**P17–P25 只对 `*-Note.xhtml` 判定**（口径见 [翻译规范](../docs/translation-spec.md) 三.2）。其中只有 **`P17`（中文语境半角括号）与 `P20`（括号不配对）是 error 级**并接入发布阻断——这两条在 Note 页回测为零误报。其余七项为 warning／info：`P23`（译注起句）与 `P24`（谓语词收敛）经存量收敛后仅余少量边界或新书条目，因涉及语境判断与逐批维护，仍留在报告级而不接入发布阻断。**`P26`（日期写法与数字域）**对故事体（正文、`Afterwords`、无内容序短篇与特典）四位汉字年份混用「零」、阿拉伯年份／年代／世纪／月日／单月以及全域数字＋空格＋时间单位按 error 级接入发布阻断，故事体单写阿拉伯纯日期以 warning 级报告。
+**P17–P25 只对 `*-Note.xhtml` 判定**（口径见 [翻译规范](../docs/translation-spec.md) 三.2）。其中只有 **`P17`（中文语境半角括号）与 `P20`（括号不配对）是 error 级**并接入发布阻断——这两条在 Note 页回测为零误报。其余七项为 warning／info：`P23`（译注语体缺陷与机械套壳病句）与 `P24`（纯冗余谓语词收敛）因涉及语境判断与逐批维护，仍留在报告级而不接入发布阻断。**`P26`（日期写法与数字域）**对故事体（正文、`Afterwords`、无内容序短篇与特典）四位汉字年份混用「零」、阿拉伯年份／年代／世纪／月日／单月以及全域数字＋空格＋时间单位按 error 级接入发布阻断，故事体单写阿拉伯纯日期以 warning 级报告。
 
-词表与判据常量的唯一来源都在本文件：`P9_EVENT_SUFFIXES`（赛事项目名例外）、`P16_TRADITIONAL`（繁体字表，由 OpenCC `TSCharacters` 生成）、`NOTE_LANG_LABELS`（译注语言标签，取规范译名而非库内多数派）、`NOTE_PREDICATE_CONVERGENCE`（译注同义谓语词收敛）、`NOTE_PREDICATE_GUARD`（词表里的复合词陷阱豁免）、`NOTE_LEAD_PATTERNS`（译注起句三类白名单）、`NOTE_METADISCOURSE_LEAD`（元话语起句黑名单）、`NOTE_INVIS_BAD`／`NOTE_INVIS_KEEP`（不可见字符）。只改集合不复制到文档；改变规则语义才更新规范与合同，并运行 `test_translation_spec.py`。
+词表与判据常量的唯一来源都在本文件：`P9_EVENT_SUFFIXES`（赛事项目名例外）、`P16_TRADITIONAL`（繁体字表，由 OpenCC `TSCharacters` 生成）、`NOTE_LANG_LABELS`（译注语言标签，取规范译名而非库内多数派）、`NOTE_PREDICATE_CONVERGENCE`（译注纯冗余谓语词收敛）、`NOTE_PREDICATE_GUARD`（词表里的复合词陷阱豁免）、`NOTE_STYLE_BAD_PATTERNS`／`NOTE_REDUNDANT_DEICTIC_LEAD`／`NOTE_ANTIPATTERN_RULES`（P23 语体缺陷、界说冗余指示语与套壳反模式）、`NOTE_EXPLANATORY_ENTRY`（说明型条目豁免）、`NOTE_INVIS_BAD`／`NOTE_INVIS_KEEP`（不可见字符）。只改集合不复制到文档；改变规则语义才更新规范与合同，并运行 `test_translation_spec.py`。
 
-**P23 白名单必须配 `NOTE_METADISCOURSE_LEAD` 黑名单**：白名单只能判断「开头像不像甲类」，判断不了「开头是不是被注词」。甲类的 `[，]?指` 形式放宽后，`这里「龙王的一闪」指的就是…`、`本文中均指日文版的ISBN码`、`此处的抛物线花园可能是指…` 一类**元话语起句**会被白名单误放行，因此命中黑名单的一律判废。
+**P23 采用负向坏味与套壳反模式检测**：聚焦拦截第一人称随笔腔、对读者呼语、口语化表述、词条界说前冗余指示语（如 `这里的「拟人化」为…`）以及「指／原文为＋整句」和 `X（X）` 等套壳病句，不再以词典起句白名单拦截文化常识、设定勘误、双关说明等自然陈述句；语体检查先剥除 `「」`／`『』` 直引内容以防误报。
 
-**`NOTE_PREDICATE_CONVERGENCE` 里有两族不可盲替换，改写时须逐条判断**：`原文中`／`原文是`／`原文注释` 是**收敛目标**（统一为 `原文为`），但原句常带 `写作`／`误记为` 一类成分，直接替换会写出病句（`作者在原文中误记为Salvere000` → `作者在原文为误记为…`）；`原为` 表**词源变迁**，按三族划分归 `原指` 而非 `是`。
+**`NOTE_PREDICATE_CONVERGENCE` 只收敛纯冗余写法**：`原文中`（方位状语，接完整陈述句）、`原文注释`（原书自带注）、`均为`、`原为`、`俗称` 及 `即`／`意为`／`原指` 按语法与语体分工保留，不列入收敛；`见于` 保留 `NOTE_PREDICATE_GUARD` 的 `常` 字守卫。
 
 ### 译名表落地核对与术语审计
 
