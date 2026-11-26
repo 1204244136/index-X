@@ -109,7 +109,7 @@
     </navPoint>
     <navPoint id="num_17" playOrder="17">
       <navLabel>
-        <text>第二章 苏醒的野兽前往钢城 X=Scarlet.</text>
+        <text>第二章 苏醒之兽行于钢铁城 X=Scarlet.</text>
       </navLabel>
       <content src="OEBPS/Text/S2_19-05_Chapter2.xhtml"/>
       <navPoint id="num_18" playOrder="18">
@@ -199,7 +199,7 @@
     </navPoint>
     <navPoint id="num_32" playOrder="32">
       <navLabel>
-        <text>第三章 他没忘记人类的温柔 Gift_of_the_Hope.</text>
+        <text>第三章 那人未忘人类的温柔 Gift_of_the_Hope.</text>
       </navLabel>
       <content src="OEBPS/Text/S2_19-07_Chapter3.xhtml"/>
       <navPoint id="num_33" playOrder="33">

@@ -31,13 +31,13 @@
     </navPoint>
     <navPoint id="num_4" playOrder="4">
       <navLabel>
-        <text>序　章 身为指导者的立场上 Stage_in_Roma.</text>
+        <text>序　章 身为指导者所处立场 Stage_in_Roma.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_17-01_Prologue.xhtml"/>
     </navPoint>
     <navPoint id="num_5" playOrder="5">
       <navLabel>
-        <text>第一章 从平稳向毁灭的过程 Battle_of_Collapse.</text>
+        <text>第一章 从平稳通往破灭之路 Battle_of_Collapse.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_17-02_Chapter1.xhtml"/>
       <navPoint id="num_6" playOrder="6">
@@ -121,7 +121,7 @@
     </navPoint>
     <navPoint id="num_19" playOrder="19">
       <navLabel>
-        <text>第二章 在失败中屹立的人们 Flere210.</text>
+        <text>第二章 从败北中振作的人们 Flere210.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_17-04_Chapter2.xhtml"/>
       <navPoint id="num_20" playOrder="20">
@@ -187,7 +187,7 @@
     </navPoint>
     <navPoint id="num_30" playOrder="30">
       <navLabel>
-        <text>第三章 能力悬殊的怪物死斗 Saint_VS_Saint.</text>
+        <text>第三章 超规格怪物间的死斗 Saint_VS_Saint.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_17-06_Chapter3.xhtml"/>
       <navPoint id="num_31" playOrder="31">
@@ -223,7 +223,7 @@
     </navPoint>
     <navPoint id="num_36" playOrder="36">
       <navLabel>
-        <text>第四章 谁会是谁的守护者呢 Leader_is_All_Members.</text>
+        <text>第四章 谁守护谁又被谁守护 Leader_is_All_Members.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_17-08_Chapter4.xhtml"/>
       <navPoint id="num_37" playOrder="37">
@@ -265,7 +265,7 @@
     </navPoint>
     <navPoint id="num_43" playOrder="43">
       <navLabel>
-        <text>终　章 将混乱更加扩大的人 True_Target_is……</text>
+        <text>终　章 通往更大骚乱的向导 True_Target_is……</text>
       </navLabel>
       <content src="OEBPS/Text/S1_17-10_Epilogue.xhtml"/>
     </navPoint>

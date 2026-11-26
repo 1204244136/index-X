@@ -31,13 +31,13 @@
     </navPoint>
     <navPoint id="num_4" playOrder="4">
       <navLabel>
-        <text>序　章 最好的子弹给亲爱的你 Management.</text>
+        <text>序　章 献给亲爱的你极品铅弹 Management.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_16-01_Prologue.xhtml"/>
     </navPoint>
     <navPoint id="num_5" playOrder="5">
       <navLabel>
-        <text>第一章 谁也听不到的确切信号 Compass.</text>
+        <text>第一章 谁也听不见的确切号炮 Compass.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_16-02_Chapter1.xhtml"/>
       <navPoint id="num_6" playOrder="6">
@@ -115,7 +115,7 @@
     </navPoint>
     <navPoint id="num_18" playOrder="18">
       <navLabel>
-        <text>第二章 慢慢地开始行动的人们 Hikoboshi_II.</text>
+        <text>第二章 开始缓缓采取行动之人 Hikoboshi_II.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_16-04_Chapter2.xhtml"/>
       <navPoint id="num_19" playOrder="19">
@@ -211,7 +211,7 @@
     </navPoint>
     <navPoint id="num_34" playOrder="34">
       <navLabel>
-        <text>第三章 超能力被封住的土地上 Reformatory.</text>
+        <text>第三章 在超能力遭封印的土地 Reformatory.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_16-06_Chapter3.xhtml"/>
       <navPoint id="num_35" playOrder="35">
@@ -301,7 +301,7 @@
     </navPoint>
     <navPoint id="num_49" playOrder="49">
       <navLabel>
-        <text>第四章 自嘲与自夸在一字之间 Enemy_Level5.</text>
+        <text>第四章 自嘲与骄傲仅一线之隔 Enemy_Level5.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_16-08_Chapter4.xhtml"/>
       <navPoint id="num_50" playOrder="50">
@@ -409,7 +409,7 @@
     </navPoint>
     <navPoint id="num_67" playOrder="67">
       <navLabel>
-        <text>终　章 存活者所得到的战利品 Nano_Size_Data.</text>
+        <text>终　章 幸存者所赢得的战利品 Nano_Size_Data.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_16-11_Epilogue.xhtml"/>
     </navPoint>

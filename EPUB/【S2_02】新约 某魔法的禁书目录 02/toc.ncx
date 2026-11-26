@@ -97,7 +97,7 @@
     </navPoint>
     <navPoint id="num_15" playOrder="15">
       <navLabel>
-        <text>第二章 不变之日，偶尔异质 Lecture_Two.</text>
+        <text>第二章 不变日常，偶现异质 Lecture_Two.</text>
       </navLabel>
       <content src="OEBPS/Text/S2_02-04_Chapter2.xhtml"/>
       <navPoint id="num_16" playOrder="16">
@@ -169,7 +169,7 @@
     </navPoint>
     <navPoint id="num_27" playOrder="27">
       <navLabel>
-        <text>第三章 被接受者，仍不稳定 Lecture_Three.</text>
+        <text>第三章 接纳之人，暗藏不稳 Lecture_Three.</text>
       </navLabel>
       <content src="OEBPS/Text/S2_02-06_Chapter3.xhtml"/>
       <navPoint id="num_28" playOrder="28">
@@ -235,7 +235,7 @@
     </navPoint>
     <navPoint id="num_38" playOrder="38">
       <navLabel>
-        <text>第四章 邀请之函，而其名为 Lecture_Four（and_More）.</text>
+        <text>第四章 一纸请柬，而其名为 Lecture_Four（and_More）.</text>
       </navLabel>
       <content src="OEBPS/Text/S2_02-08_Chapter4.xhtml"/>
       <navPoint id="num_39" playOrder="39">

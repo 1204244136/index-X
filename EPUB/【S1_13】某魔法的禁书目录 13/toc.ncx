@@ -31,7 +31,7 @@
     </navPoint>
     <navPoint id="num_4" playOrder="4">
       <navLabel>
-        <text>第六章 被冷雨淋湿的街道上 Battle_Preparation.</text>
+        <text>第六章 在冷雨拍打下的街道 Battle_Preparation.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_13-01_Chapter6.xhtml"/>
       <navPoint id="num_5" playOrder="5">
@@ -391,7 +391,7 @@
     </navPoint>
     <navPoint id="num_64" playOrder="64">
       <navLabel>
-        <text>终　章 前往正负的应走之路 The_Branch_Road.</text>
+        <text>终　章 正与负各自应走之路 The_Branch_Road.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_13-09_Epilogue.xhtml"/>
     </navPoint>

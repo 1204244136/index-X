@@ -37,7 +37,7 @@
     </navPoint>
     <navPoint id="num_5" playOrder="5">
       <navLabel>
-        <text>第九章 巨大扭曲的修正之时 Broken_Right_Hand.</text>
+        <text>第九章 修正巨大扭曲的时刻 Broken_Right_Hand.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_24-02_Chapter9.xhtml"/>
       <navPoint id="num_6" playOrder="6">
@@ -79,7 +79,7 @@
     </navPoint>
     <navPoint id="num_12" playOrder="12">
       <navLabel>
-        <text>第十章 最终术式下准备完毕 Rebirth_the...</text>
+        <text>第十章 最终术式已筹备完毕 Rebirth_the...</text>
       </navLabel>
       <content src="OEBPS/Text/S1_24-04_Chapter10.xhtml"/>
       <navPoint id="num_13" playOrder="13">
@@ -187,7 +187,7 @@
     </navPoint>
     <navPoint id="num_30" playOrder="30">
       <navLabel>
-        <text>终　章 静寂以及少年的结局 Silent_to_Small_Fire.</text>
+        <text>终　章 万籁俱寂与少年终局 Silent_to_Small_Fire.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_24-09_Epilogue.xhtml"/>
     </navPoint>

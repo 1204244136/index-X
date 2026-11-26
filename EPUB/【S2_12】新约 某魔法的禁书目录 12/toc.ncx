@@ -127,7 +127,7 @@
     </navPoint>
     <navPoint id="num_20" playOrder="20">
       <navLabel>
-        <text>第二章 魔神邂逅了骗子 St.Germain,and_LIAR.</text>
+        <text>第二章 魔神与骗子邂逅 St.Germain,and_LIAR.</text>
       </navLabel>
       <content src="OEBPS/Text/S2_12-04_Chapter2.xhtml"/>
       <navPoint id="num_21" playOrder="21">
@@ -343,7 +343,7 @@
     </navPoint>
     <navPoint id="num_56" playOrder="56">
       <navLabel>
-        <text>第四章 这唯一的突破口 Hand_Made_ROUTE.</text>
+        <text>第四章 朝唯一出路突围 Hand_Made_ROUTE.</text>
       </navLabel>
       <content src="OEBPS/Text/S2_12-08_Chapter4.xhtml"/>
       <navPoint id="num_57" playOrder="57">

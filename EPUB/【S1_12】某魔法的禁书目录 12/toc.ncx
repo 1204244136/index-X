@@ -181,7 +181,7 @@
     </navPoint>
     <navPoint id="num_29" playOrder="29">
       <navLabel>
-        <text>第四章 如此缓缓交错的两组 Boy_Meets_Girl (×2).</text>
+        <text>第四章 缓缓交错而过的两组 Boy_Meets_Girl (×2).</text>
       </navLabel>
       <content src="OEBPS/Text/S1_12-08_Chapter4.xhtml"/>
       <navPoint id="num_30" playOrder="30">
@@ -241,7 +241,7 @@
     </navPoint>
     <navPoint id="num_39" playOrder="39">
       <navLabel>
-        <text>第五章 过于暧昧的日落时分 Hard_Way,Hard_Luck.</text>
+        <text>第五章 在朦胧中逝去的日落 Hard_Way,Hard_Luck.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_12-10_Chapter5.xhtml"/>
       <navPoint id="num_40" playOrder="40">

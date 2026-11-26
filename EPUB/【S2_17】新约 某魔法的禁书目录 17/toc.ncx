@@ -31,13 +31,13 @@
     </navPoint>
     <navPoint id="num_4" playOrder="4">
       <navLabel>
-        <text>序　章 或许正因是前提才包含结论 to_the_Girl’s_ABYSS.</text>
+        <text>序　章 或许唯有前提才能蕴含结论 to_the_Girl’s_ABYSS.</text>
       </navLabel>
       <content src="OEBPS/Text/S2_17-01_Prologue.xhtml"/>
     </navPoint>
     <navPoint id="num_5" playOrder="5">
       <navLabel>
-        <text>第一章 或许正因为隔绝才造成扩散 Gray_City.</text>
+        <text>第一章 或许唯有隔绝才能引发扩散 Gray_City.</text>
       </navLabel>
       <content src="OEBPS/Text/S2_17-02_Chapter1.xhtml"/>
       <navPoint id="num_6" playOrder="6">
@@ -103,7 +103,7 @@
     </navPoint>
     <navPoint id="num_16" playOrder="16">
       <navLabel>
-        <text>第二章 或许正因为逃走才能够反击 Social_Network_Slayer.</text>
+        <text>第二章 或许唯有逃走才能赢得反击 Social_Network_Slayer.</text>
       </navLabel>
       <content src="OEBPS/Text/S2_17-04_Chapter2.xhtml"/>
       <navPoint id="num_17" playOrder="17">
@@ -211,7 +211,7 @@
     </navPoint>
     <navPoint id="num_34" playOrder="34">
       <navLabel>
-        <text>第三章 或许正因为孤独才胜过团体 Engage_U.F.O.</text>
+        <text>第三章 或许唯有孤独才能胜过群体 Engage_U.F.O.</text>
       </navLabel>
       <content src="OEBPS/Text/S2_17-06_Chapter3.xhtml"/>
       <navPoint id="num_35" playOrder="35">
@@ -307,7 +307,7 @@
     </navPoint>
     <navPoint id="num_50" playOrder="50">
       <navLabel>
-        <text>第四章 或许正因是禁忌才取得安宁 Salvage_XXX.</text>
+        <text>第四章 或许唯有禁忌才能紧握安宁 Salvage_XXX.</text>
       </navLabel>
       <content src="OEBPS/Text/S2_17-08_Chapter4.xhtml"/>
       <navPoint id="num_51" playOrder="51">
@@ -391,7 +391,7 @@
     </navPoint>
     <navPoint id="num_64" playOrder="64">
       <navLabel>
-        <text>终　章 或许正因是疑念才存有真理 Bet_Time.Red_or_Black.</text>
+        <text>终　章 或许唯有疑念才能孕育真理 Bet_Time.Red_or_Black.</text>
       </navLabel>
       <content src="OEBPS/Text/S2_17-10_Epilogue.xhtml"/>
     </navPoint>

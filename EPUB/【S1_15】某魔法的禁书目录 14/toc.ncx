@@ -37,7 +37,7 @@
     </navPoint>
     <navPoint id="num_5" playOrder="5">
       <navLabel>
-        <text>第一章 瞬息万变的速度 In_a_Long_Distance_Country.</text>
+        <text>第一章 变化过快的速度 In_a_Long_Distance_Country.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_15-02_Chapter1.xhtml"/>
       <navPoint id="num_6" playOrder="6">
@@ -223,7 +223,7 @@
     </navPoint>
     <navPoint id="num_36" playOrder="36">
       <navLabel>
-        <text>第四章 蔽日的钢铁之群 Cruel_Troopers.</text>
+        <text>第四章 蔽空的钢铁集群 Cruel_Troopers.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_15-08_Chapter4.xhtml"/>
       <navPoint id="num_37" playOrder="37">
@@ -277,7 +277,7 @@
     </navPoint>
     <navPoint id="num_45" playOrder="45">
       <navLabel>
-        <text>终　章 答案是下一个谜 Question.</text>
+        <text>终　章 答案引向新谜团 Question.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_15-09_Epilogue.xhtml"/>
     </navPoint>

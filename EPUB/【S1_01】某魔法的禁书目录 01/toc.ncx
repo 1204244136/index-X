@@ -37,7 +37,7 @@
     </navPoint>
     <navPoint id="num_5" playOrder="5">
       <navLabel>
-        <text>第一章 魔法师她降临在高塔 FAIR,_Occasionally_GIRL.</text>
+        <text>第一章 魔法师，降临于高塔 FAIR,_Occasionally_GIRL.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_01-02_Chapter1.xhtml"/>
       <navPoint id="num_6" playOrder="6">
@@ -85,7 +85,7 @@
     </navPoint>
     <navPoint id="num_13" playOrder="13">
       <navLabel>
-        <text>第二章 奇术师他带来了终焉 The_7th-Egde.</text>
+        <text>第二章 奇术师，赐予了终焉 The_7th-Egde.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_01-03_Chapter2.xhtml"/>
       <navPoint id="num_14" playOrder="14">
@@ -115,7 +115,7 @@
     </navPoint>
     <navPoint id="num_18" playOrder="18">
       <navLabel>
-        <text>第三章 魔道书她静静微笑着 “Forget_me_not.”</text>
+        <text>第三章 魔道书，静静地微笑 “Forget_me_not.”</text>
       </navLabel>
       <content src="OEBPS/Text/S1_01-04_Chapter3.xhtml"/>
       <navPoint id="num_19" playOrder="19">
@@ -145,7 +145,7 @@
     </navPoint>
     <navPoint id="num_23" playOrder="23">
       <navLabel>
-        <text>第四章 退魔师他已选择终局 (N)Ever_Say_Good_bye.</text>
+        <text>第四章 退魔师，选择了终局 (N)Ever_Say_Good_bye.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_01-05_Chapter4.xhtml"/>
       <navPoint id="num_24" playOrder="24">

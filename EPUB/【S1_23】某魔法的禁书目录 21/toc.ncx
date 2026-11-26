@@ -109,7 +109,7 @@
     </navPoint>
     <navPoint id="num_17" playOrder="17">
       <navLabel>
-        <text>第七章 屠尽天空的嗜杀天使 MISHA_the_Angel_“GABRIEL”.</text>
+        <text>第七章 现身天空的灭世天使 MISHA_the_Angel_“GABRIEL”.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_23-05_Chapter7.xhtml"/>
       <navPoint id="num_18" playOrder="18">
@@ -169,7 +169,7 @@
     </navPoint>
     <navPoint id="num_27" playOrder="27">
       <navLabel>
-        <text>第八章 努力之人的多边反击 Combination.</text>
+        <text>第八章 他们展开的多线反击 Combination.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_23-07_Chapter8.xhtml"/>
       <navPoint id="num_28" playOrder="28">

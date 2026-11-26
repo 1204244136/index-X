@@ -31,7 +31,7 @@
     </navPoint>
     <navPoint id="num_4" playOrder="4">
       <navLabel>
-        <text>序　章 血之圣诞节，开宴 12/24_to_12/25.</text>
+        <text>序　章 血色圣诞节，开宴 12/24_to_12/25.</text>
       </navLabel>
       <content src="OEBPS/Text/S3_02-01_Prologue.xhtml"/>
     </navPoint>
@@ -43,7 +43,7 @@
     </navPoint>
     <navPoint id="num_6" playOrder="6">
       <navLabel>
-        <text>第一章 实际这才步入正题 Home_Ground_Hospital.</text>
+        <text>第一章 其实这才是重头戏 Home_Ground_Hospital.</text>
       </navLabel>
       <content src="OEBPS/Text/S3_02-03_Chapter1.xhtml"/>
       <navPoint id="num_7" playOrder="7">
@@ -91,7 +91,7 @@
     </navPoint>
     <navPoint id="num_14" playOrder="14">
       <navLabel>
-        <text>第二章 黑之药丸，白之雪 and_RED_Rose.</text>
+        <text>第二章 黑药丸、纯白的雪 and_RED_Rose.</text>
       </navLabel>
       <content src="OEBPS/Text/S3_02-05_Chapter2.xhtml"/>
       <navPoint id="num_15" playOrder="15">
@@ -169,7 +169,7 @@
     </navPoint>
     <navPoint id="num_27" playOrder="27">
       <navLabel>
-        <text>第三章 在为零的空白之中 Contact_6.</text>
+        <text>第三章 在归零的空白之中 Contact_6.</text>
       </navLabel>
       <content src="OEBPS/Text/S3_02-07_Chapter3.xhtml"/>
       <navPoint id="num_28" playOrder="28">
@@ -235,7 +235,7 @@
     </navPoint>
     <navPoint id="num_38" playOrder="38">
       <navLabel>
-        <text>第四章 名为上条当麻现象 Not_Right_Hand.</text>
+        <text>第四章 上条当麻这一现象 Not_Right_Hand.</text>
       </navLabel>
       <content src="OEBPS/Text/S3_02-09_Chapter4.xhtml"/>
       <navPoint id="num_39" playOrder="39">
@@ -283,7 +283,7 @@
     </navPoint>
     <navPoint id="num_46" playOrder="46">
       <navLabel>
-        <text>终　章 来自铁窗内的致意 Matching_Complete.</text>
+        <text>终　章 隔着铁窗致以问候 Matching_Complete.</text>
       </navLabel>
       <content src="OEBPS/Text/S3_02-10_Epilogue.xhtml"/>
     </navPoint>

@@ -145,7 +145,7 @@
     </navPoint>
     <navPoint id="num_23" playOrder="23">
       <navLabel>
-        <text>第四章 醉酒母亲的目前状况 The_Two_Leading_Roles.</text>
+        <text>第四章 醉酒母亲的难言隐情 The_Two_Leading_Roles.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_14-05_Chapter4.xhtml"/>
       <navPoint id="num_24" playOrder="24">
@@ -217,7 +217,7 @@
     </navPoint>
     <navPoint id="num_35" playOrder="35">
       <navLabel>
-        <text>终　章 某个意志与微小钥匙 The_Present_Target.</text>
+        <text>终　章 一道意志与小小钥匙 The_Present_Target.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_14-06_Epilogue.xhtml"/>
     </navPoint>

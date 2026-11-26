@@ -31,7 +31,7 @@
     </navPoint>
     <navPoint id="num_4" playOrder="4">
       <navLabel>
-        <text>序　章 始于泳装的学校守城 Melt_the_Asphalt.</text>
+        <text>序　章 始于泳装的校园固守 Melt_the_Asphalt.</text>
       </navLabel>
       <content src="OEBPS/Text/S2_16-01_Prologue.xhtml"/>
     </navPoint>
@@ -43,7 +43,7 @@
     </navPoint>
     <navPoint id="num_6" playOrder="6">
       <navLabel>
-        <text>第一章 炎热之下的安全确保 Water_Hunt.</text>
+        <text>第一章 酷暑延续的安全保障 Water_Hunt.</text>
       </navLabel>
       <content src="OEBPS/Text/S2_16-03_Chapter1.xhtml"/>
       <navPoint id="num_7" playOrder="7">
@@ -145,7 +145,7 @@
     </navPoint>
     <navPoint id="num_23" playOrder="23">
       <navLabel>
-        <text>第三章 化敌为友的协力要求 Double_Enemy.</text>
+        <text>第三章 宿敌交涉的联手请求 Double_Enemy.</text>
       </navLabel>
       <content src="OEBPS/Text/S2_16-07_Chapter3.xhtml"/>
       <navPoint id="num_24" playOrder="24">
@@ -193,7 +193,7 @@
     </navPoint>
     <navPoint id="num_31" playOrder="31">
       <navLabel>
-        <text>第四章 传导毁灭的形势急转 Operation_Right_Hand.</text>
+        <text>第四章 宣告破灭的急转直下 Operation_Right_Hand.</text>
       </navLabel>
       <content src="OEBPS/Text/S2_16-09_Chapter4.xhtml"/>
       <navPoint id="num_32" playOrder="32">

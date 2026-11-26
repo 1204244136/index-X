@@ -37,7 +37,7 @@
     </navPoint>
     <navPoint id="num_5" playOrder="5">
       <navLabel>
-        <text>第一章 不动魔法大国与变态 Welcome_Home, A.C！！</text>
+        <text>第一章 巍然魔法大国与变态 Welcome_Home, A.C！！</text>
       </navLabel>
       <content src="OEBPS/Text/S2_20-02_Chapter1.xhtml"/>
       <navPoint id="num_6" playOrder="6">
@@ -73,7 +73,7 @@
     </navPoint>
     <navPoint id="num_11" playOrder="11">
       <navLabel>
-        <text>第二章 处刑塔张开大嘴等待 the_Abyss_of_London.</text>
+        <text>第二章 处刑塔张开巨颚以待 the_Abyss_of_London.</text>
       </navLabel>
       <content src="OEBPS/Text/S2_20-04_Chapter2.xhtml"/>
       <navPoint id="num_12" playOrder="12">
@@ -133,7 +133,7 @@
     </navPoint>
     <navPoint id="num_21" playOrder="21">
       <navLabel>
-        <text>第三章 血的选择，虔诚兵器 SISTER(×N.A._Weapon).</text>
+        <text>第三章 血之抉择与虔诚兵器 SISTER(×N.A._Weapon).</text>
       </navLabel>
       <content src="OEBPS/Text/S2_20-06_Chapter3.xhtml"/>
       <navPoint id="num_22" playOrder="22">

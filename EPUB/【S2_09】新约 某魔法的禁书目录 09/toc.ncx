@@ -67,7 +67,7 @@
     </navPoint>
     <navPoint id="num_10" playOrder="10">
       <navLabel>
-        <text>第六章 这更迭动荡的世界 Version_Alpha.</text>
+        <text>第六章 流转摇曳的诸世界 Version_Alpha.</text>
       </navLabel>
       <content src="OEBPS/Text/S2_09-04_Chapter6_Alpha.xhtml"/>
       <navPoint id="num_11" playOrder="11">
@@ -91,7 +91,7 @@
     </navPoint>
     <navPoint id="num_14" playOrder="14">
       <navLabel>
-        <text>第六章 这更迭动荡的世界 Version_Beta.</text>
+        <text>第六章 流转摇曳的诸世界 Version_Beta.</text>
       </navLabel>
       <content src="OEBPS/Text/S2_09-05_Chapter6_Beta.xhtml"/>
       <navPoint id="num_15" playOrder="15">
@@ -151,7 +151,7 @@
     </navPoint>
     <navPoint id="num_24" playOrder="24">
       <navLabel>
-        <text>第六章 这更迭动荡的世界 Version_Omega.</text>
+        <text>第六章 流转摇曳的诸世界 Version_Omega.</text>
       </navLabel>
       <content src="OEBPS/Text/S2_09-07_Chapter6_Omega.xhtml"/>
     </navPoint>
@@ -289,7 +289,7 @@
     </navPoint>
     <navPoint id="num_47" playOrder="47">
       <navLabel>
-        <text>终　章 接受吗，不接受吗 Continue.</text>
+        <text>终　章 接受，抑或是拒绝 Continue.</text>
       </navLabel>
       <content src="OEBPS/Text/S2_09-12_Epilogue.xhtml"/>
     </navPoint>

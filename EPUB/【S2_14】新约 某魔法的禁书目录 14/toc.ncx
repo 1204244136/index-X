@@ -79,7 +79,7 @@
     </navPoint>
     <navPoint id="num_12" playOrder="12">
       <navLabel>
-        <text>第二章 食客是会增加的生物 Cannibalization.</text>
+        <text>第二章 食客总是会越变越多 Cannibalization.</text>
       </navLabel>
       <content src="OEBPS/Text/S2_14-06_Chapter2.xhtml"/>
       <navPoint id="num_13" playOrder="13">
@@ -265,7 +265,7 @@
     </navPoint>
     <navPoint id="num_43" playOrder="43">
       <navLabel>
-        <text>终　章 摇篮时间结束 More_Purely,More_Bloody.</text>
+        <text>终　章 摇篮时光落幕 More_Purely,More_Bloody.</text>
       </navLabel>
       <content src="OEBPS/Text/S2_14-14_Epilogue.xhtml"/>
     </navPoint>

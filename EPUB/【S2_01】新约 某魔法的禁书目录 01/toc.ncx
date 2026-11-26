@@ -97,7 +97,7 @@
     </navPoint>
     <navPoint id="num_15" playOrder="15">
       <navLabel>
-        <text>第二章 今后的事，与该做选择的事 Dream.</text>
+        <text>第二章 今后之事，以及该抉择之事 Dream.</text>
       </navLabel>
       <content src="OEBPS/Text/S2_01-04_Chapter2.xhtml"/>
       <navPoint id="num_16" playOrder="16">
@@ -145,7 +145,7 @@
     </navPoint>
     <navPoint id="num_23" playOrder="23">
       <navLabel>
-        <text>第三章 短暂空白及连接未来的预兆 Girl.</text>
+        <text>第三章 片刻留白与指向未来的预兆 Girl.</text>
       </navLabel>
       <content src="OEBPS/Text/S2_01-06_Chapter3.xhtml"/>
       <navPoint id="num_24" playOrder="24">
@@ -205,7 +205,7 @@
     </navPoint>
     <navPoint id="num_33" playOrder="33">
       <navLabel>
-        <text>第四章 成为善人或选择拒绝的权利 Black.</text>
+        <text>第四章 成为善人与断然拒绝的权利 Black.</text>
       </navLabel>
       <content src="OEBPS/Text/S2_01-08_Chapter4.xhtml"/>
       <navPoint id="num_34" playOrder="34">
@@ -337,7 +337,7 @@
     </navPoint>
     <navPoint id="num_55" playOrder="55">
       <navLabel>
-        <text>第五章 当不成英雄，而这又如何呢 Knight(s).</text>
+        <text>第五章 哪怕注定无法成为一名英雄 Knight(s).</text>
       </navLabel>
       <content src="OEBPS/Text/S2_01-10_Chapter5.xhtml"/>
       <navPoint id="num_56" playOrder="56">
@@ -391,7 +391,7 @@
     </navPoint>
     <navPoint id="num_64" playOrder="64">
       <navLabel>
-        <text>终　章 小小的庆祝与之招来的阴霾 Witch.</text>
+        <text>终　章 一场小小祝宴与招来的阴云 Witch.</text>
       </navLabel>
       <content src="OEBPS/Text/S2_01-11_Epilogue.xhtml"/>
     </navPoint>

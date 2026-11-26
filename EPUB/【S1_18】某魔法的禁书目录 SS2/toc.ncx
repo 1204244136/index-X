@@ -73,7 +73,7 @@
     </navPoint>
     <navPoint id="num_11" playOrder="11">
       <navLabel>
-        <text>第八章 就这样冒出来的女忍者 五月、第四个星期五</text>
+        <text>第八章 女忍者总是会突然现身 五月、第四个星期五</text>
       </navLabel>
       <content src="OEBPS/Text/S1_18-08_Chapter8.xhtml"/>
     </navPoint>
@@ -85,7 +85,7 @@
     </navPoint>
     <navPoint id="num_13" playOrder="13">
       <navLabel>
-        <text>第十章 一夜的诱惑接受或拒绝 七月、第一个星期五</text>
+        <text>第十章 一夜的邀约是接还是拒 七月、第一个星期五</text>
       </navLabel>
       <content src="OEBPS/Text/S1_18-10_Chapter10.xhtml"/>
     </navPoint>
@@ -103,7 +103,7 @@
     </navPoint>
     <navPoint id="num_16" playOrder="16">
       <navLabel>
-        <text>第十三章 她们的集团占卜准确度 八月、第四个星期五</text>
+        <text>第十三章 她们群体占卜的准确度 八月、第四个星期五</text>
       </navLabel>
       <content src="OEBPS/Text/S1_18-13_Chapter13.xhtml"/>
     </navPoint>
@@ -121,7 +121,7 @@
     </navPoint>
     <navPoint id="num_19" playOrder="19">
       <navLabel>
-        <text>第十六章 看不出母亲是有原因的 十月、第一个星期五</text>
+        <text>第十六章 看起来不像母亲的缘由 十月、第一个星期五</text>
       </navLabel>
       <content src="OEBPS/Text/S1_18-16_Chapter16.xhtml"/>
     </navPoint>
@@ -157,7 +157,7 @@
     </navPoint>
     <navPoint id="num_25" playOrder="25">
       <navLabel>
-        <text>第二十二章 个人无法掌握它的结局 十月、第二个星期五</text>
+        <text>第二十二章 个人无从把握最终结局 十月、第二个星期五</text>
       </navLabel>
       <content src="OEBPS/Text/S1_18-22_Chapter22.xhtml"/>
     </navPoint>

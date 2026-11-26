@@ -31,7 +31,7 @@
     </navPoint>
     <navPoint id="num_4" playOrder="4">
       <navLabel>
-        <text>第五章 紧张之线上的休息时间 Resumption_of_Hostilities.</text>
+        <text>第五章 紧绷之弦上的休息时间 Resumption_of_Hostilities.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_10-01_Chapter5.xhtml"/>
       <navPoint id="num_5" playOrder="5">
@@ -91,7 +91,7 @@
     </navPoint>
     <navPoint id="num_14" playOrder="14">
       <navLabel>
-        <text>第六章 追击的再次展开与结束 Accidental_Firing.</text>
+        <text>第六章 再度展开的追击与终结 Accidental_Firing.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_10-03_Chapter6.xhtml"/>
       <navPoint id="num_15" playOrder="15">
@@ -139,7 +139,7 @@
     </navPoint>
     <navPoint id="num_22" playOrder="22">
       <navLabel>
-        <text>第七章 应打倒之敌、守护之人 Parabolic_Antenna.</text>
+        <text>第七章 应击倒之敌与守护之人 Parabolic_Antenna.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_10-05_Chapter7.xhtml"/>
       <navPoint id="num_23" playOrder="23">
@@ -217,7 +217,7 @@
     </navPoint>
     <navPoint id="num_35" playOrder="35">
       <navLabel>
-        <text>第八章 紧握住自己右拳的理由 Light_of_a_Night_Sky.</text>
+        <text>第八章 将右拳紧紧握住的理由 Light_of_a_Night_Sky.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_10-07_Chapter8.xhtml"/>
       <navPoint id="num_36" playOrder="36">
@@ -277,7 +277,7 @@
     </navPoint>
     <navPoint id="num_45" playOrder="45">
       <navLabel>
-        <text>终　章 事情结束后等待的人们 Those_Who_Hold_Out_a_Hand.</text>
+        <text>终　章 一切结束后等待的人们 Those_Who_Hold_Out_a_Hand.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_10-08_Epilogue.xhtml"/>
     </navPoint>

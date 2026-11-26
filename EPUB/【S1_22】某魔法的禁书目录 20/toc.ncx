@@ -37,7 +37,7 @@
     </navPoint>
     <navPoint id="num_5" playOrder="5">
       <navLabel>
-        <text>序　章 火药味刺鼻的天空中 Shooting_Game.</text>
+        <text>序　章 弥漫刺鼻火药的天空 Shooting_Game.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_22-02_Prologue.xhtml"/>
     </navPoint>
@@ -193,7 +193,7 @@
     </navPoint>
     <navPoint id="num_31" playOrder="31">
       <navLabel>
-        <text>第三章 与疑念之障壁的对峙 Great_Complex.</text>
+        <text>第三章 直面横亘的疑念之壁 Great_Complex.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_22-07_Chapter3.xhtml"/>
       <navPoint id="num_32" playOrder="32">

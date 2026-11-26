@@ -31,7 +31,7 @@
     </navPoint>
     <navPoint id="num_4" playOrder="4">
       <navLabel>
-        <text>第五章 佣兵与骑士的邂逅与冲突 Another_Hero.</text>
+        <text>第五章 佣兵与骑士的邂逅与交锋 Another_Hero.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_20-01_Chapter5.xhtml"/>
       <navPoint id="num_5" playOrder="5">
@@ -103,7 +103,7 @@
     </navPoint>
     <navPoint id="num_16" playOrder="16">
       <navLabel>
-        <text>第六章 骑士与公主的防卫线破坏 Safety_in_Subway.</text>
+        <text>第六章 骑士与公主的防线摧毁战 Safety_in_Subway.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_20-03_Chapter6.xhtml"/>
       <navPoint id="num_17" playOrder="17">
@@ -181,7 +181,7 @@
     </navPoint>
     <navPoint id="num_29" playOrder="29">
       <navLabel>
-        <text>第七章 公主与女王的出色的恶徒 Curtana_Original.</text>
+        <text>第七章 公主与女王的绝妙大恶徒 Curtana_Original.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_20-05_Chapter7.xhtml"/>
       <navPoint id="num_30" playOrder="30">
@@ -271,7 +271,7 @@
     </navPoint>
     <navPoint id="num_44" playOrder="44">
       <navLabel>
-        <text>终　章 国家与黑幕的更强的敌人 Next_Step.</text>
+        <text>终　章 国家与黑幕的更强大敌手 Next_Step.</text>
       </navLabel>
       <content src="OEBPS/Text/S1_20-08_Epilogue.xhtml"/>
     </navPoint>
