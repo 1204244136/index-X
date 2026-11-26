@@ -104,7 +104,10 @@ from alignment_rules import (  # noqa: F401
     HEALTH_EXEMPT_WORK_IDS, TEMPLATE_EXEMPT_WORK_IDS, health_exempt, template_exempt,
 )
 from check_alignment import check_file as check_template
-from epub_ids import book_id, content_sequence, header_of, is_list_packaging_header, work_id
+from epub_ids import (
+    book_id, compile_book_pattern, content_sequence, header_of,
+    is_list_packaging_header, work_id,
+)
 from text_norm import split_bold_punct
 from xhtml_slots import NOTE_H1
 from title_rules import audit_title_contract
@@ -570,7 +573,7 @@ def find_css_layout_problems(
 def iter_books(root: Path, pattern: str | None):
     if not root.is_dir():
         raise SystemExit("根目录不存在：%s" % root)
-    rx = re.compile(pattern.replace("*", ".*")) if pattern else None
+    rx = compile_book_pattern(pattern) if pattern else None
     for book in sorted(p for p in root.iterdir() if p.is_dir()):
         if rx and not rx.search(book.name):
             continue
@@ -582,24 +585,57 @@ def iter_books(root: Path, pattern: str | None):
 # ---------------------------------------------------------------------------
 
 BOOK_ID_PREFIX_RE = re.compile(r"^【[^】]+】")
-DC_TITLE_RE = re.compile(r"<dc:title[^>]*>([^<]*)</dc:title>", re.S)
-NCX_DOCTITLE_RE = re.compile(r"<docTitle>\s*<text>([^<]*)</text>", re.S)
-NCX_UID_RE = re.compile(r'<meta name="dtb:uid" content="([^"]*)"')
-NCX_FIRST_ENTRY_RE = re.compile(r"<navMap>.*?<text>([^<]*)</text>", re.S)
-NAV_FIRST_ENTRY_RE = re.compile(r"<ol>\s*<li><a[^>]*>([^<]*)</a>", re.S)
-BOOK_ID_META_RE = re.compile(r'<dc:identifier[^>]*id="BookId"[^>]*>([^<]*)</dc:identifier>')
+
+
+def _local_name(tag: str) -> str:
+    return tag.rsplit("}", 1)[-1]
+
+
+def _extract_opf_title(root: ET.Element | None) -> str | None:
+    if root is None:
+        return None
+    for el in root.iter():
+        if _local_name(el.tag) == "title" and (
+            el.tag == "title" or "purl.org/dc/elements" in el.tag
+        ):
+            return "".join(el.itertext())
+    return None
+
+
+def _extract_unique_identifier(root: ET.Element | None) -> str | None:
+    if root is None:
+        return None
+    uid_attr = (root.get("unique-identifier") or "BookId").strip()
+    candidates: list[tuple[str | None, str]] = []
+    for el in root.iter():
+        if _local_name(el.tag) == "identifier" and (
+            el.tag == "identifier" or "purl.org/dc/elements" in el.tag
+        ):
+            text = "".join(el.itertext()).strip()
+            candidates.append((el.get("id"), text))
+    for item_id, text in candidates:
+        if item_id == uid_attr:
+            return text
+    return candidates[0][1] if len(candidates) == 1 else None
+
+
+def _parse_xml_safe(text: str) -> ET.Element | None:
+    if not text.strip():
+        return None
+    try:
+        return ET.fromstring(text)
+    except ET.ParseError:
+        return None
 
 
 def opf_title(opf: Path) -> str | None:
-    m = DC_TITLE_RE.search(read_text(opf))
-    return m.group(1) if m else None
+    return _extract_opf_title(_parse_xml_safe(read_text(opf)))
 
 
 def opf_spine_hrefs(text: str) -> list[str]:
     """按 XML 读取 spine 的 href；非法 OPF 返回空列表，不从坏文本猜测关系。"""
-    try:
-        root = ET.fromstring(text)
-    except ET.ParseError:
+    root = _parse_xml_safe(text)
+    if root is None:
         return []  # 容器／入库合同报告 XML 错误，体检继续判定必备包装页。
     relations = opf_relations(root, scope="descendants", tag_case="exact")
     hrefs = {item.id: item.href for item in relations.items if item.id and item.href}
@@ -625,17 +661,18 @@ def find_artifact_problems(
             out.append(("packaging-required", "缺少包文档 `OEBPS/content.opf`"))
             return out
         text = snapshot.get_text(opf_rel)
-        m_title = DC_TITLE_RE.search(text)
-        title = m_title.group(1) if m_title else None
+        opf_root = snapshot.get_xml(opf_rel)
     else:
         opf = book_dir / "OEBPS" / "content.opf"
         if not opf.is_file():
             out.append(("packaging-required", "缺少包文档 `OEBPS/content.opf`"))
             return out
         text = read_text(opf)
-        title = opf_title(opf)
+        opf_root = _parse_xml_safe(text)
+    title = _extract_opf_title(opf_root)
     if title is None:
-        out.append(("metadata-title", "`OEBPS/content.opf` 缺少 `<dc:title>`"))
+        if opf_root is not None:
+            out.append(("metadata-title", "`OEBPS/content.opf` 缺少 `<dc:title>`"))
     elif title != name:
         out.append(("metadata-title", "`dc:title` 与书目录名不一致：%r ≠ %r" % (title, name)))
     for rel, label in (("nav.xhtml", "导航文档"), ("toc.ncx", "NCX 目录")):
@@ -643,16 +680,14 @@ def find_artifact_problems(
         if not exists:
             out.append(("packaging-required", "缺少%s `%s`" % (label, rel)))
 
-    if snapshot is not None:
-        opf_root = snapshot.get_xml(opf_rel)
-        if opf_root is None:
-            spine: list[str] = []
-        else:
-            relations = opf_relations(opf_root, scope="descendants", tag_case="exact")
-            hrefs = {item.id: item.href for item in relations.items if item.id and item.href}
-            spine = [hrefs.get(ref.idref, "") for ref in relations.itemrefs if ref.idref]
+    if opf_root is not None:
+        relations = opf_relations(opf_root, scope="descendants", tag_case="exact")
+        hrefs = {item.id: posixpath.normpath(item.href) for item in relations.items if item.id and item.href}
+        manifest_hrefs = {posixpath.normpath(item.href) for item in relations.items if item.href}
+        spine = [hrefs.get(ref.idref, "") for ref in relations.itemrefs if ref.idref]
     else:
-        spine = opf_spine_hrefs(text)
+        manifest_hrefs = None
+        spine = []
     text_dir = book_dir / "OEBPS" / "Text"
     for suffix, label in (("Cover", "封面"), ("Information", "制作信息")):
         fname = "%s-%s.xhtml" % (bid, suffix) if bid else ""
@@ -662,9 +697,13 @@ def find_artifact_problems(
             out.append(("packaging-required",
                         "缺少必备包装页 `%s`（%s）" % (fname or "<作品号>-%s.xhtml" % suffix, label)))
             continue
-        if fname not in text:
+        expected_href = f"Text/{fname}"
+        if manifest_hrefs is not None:
+            if expected_href not in manifest_hrefs:
+                out.append(("packaging-required", "`%s` 未在 manifest 中声明" % fname))
+        elif fname not in text:
             out.append(("packaging-required", "`%s` 未在 manifest 中声明" % fname))
-        if "Text/%s" % fname not in spine:
+        if expected_href not in spine:
             out.append(("packaging-required", "`%s` 未进 spine" % fname))
     return out
 
@@ -675,36 +714,77 @@ def find_toc_problems(
     """采集目录条目、`docTitle` 与 `dtb:uid` 问题；级别由 SEVERITY 定义。"""
     out: list[tuple[str, str]] = []
     if snapshot is not None:
-        ncx_text = snapshot.get_text("toc.ncx") if "toc.ncx" in snapshot.files_rel else ""
-        nav_text = snapshot.get_text("nav.xhtml") if "nav.xhtml" in snapshot.files_rel else ""
-        opf_text = snapshot.get_text("OEBPS/content.opf") if "OEBPS/content.opf" in snapshot.files_rel else ""
-        m_title = DC_TITLE_RE.search(opf_text) if opf_text else None
-        title = m_title.group(1) if m_title else None
-        book_id_meta = BOOK_ID_META_RE.search(opf_text) if opf_text else None
+        ncx_root = snapshot.get_xml("toc.ncx") if "toc.ncx" in snapshot.files_rel else None
+        nav_root = snapshot.get_xml("nav.xhtml") if "nav.xhtml" in snapshot.files_rel else None
+        opf_root = snapshot.get_xml("OEBPS/content.opf") if "OEBPS/content.opf" in snapshot.files_rel else None
     else:
         ncx = book_dir / "toc.ncx"
         nav = book_dir / "nav.xhtml"
-        ncx_text = read_text(ncx) if ncx.is_file() else ""
-        nav_text = read_text(nav) if nav.is_file() else ""
         opf = book_dir / "OEBPS" / "content.opf"
-        opf_text = read_text(opf) if opf.is_file() else ""
-        m_title = DC_TITLE_RE.search(opf_text) if opf_text else None
-        title = m_title.group(1) if m_title else None
-        book_id_meta = BOOK_ID_META_RE.search(opf_text) if opf_text else None
-    doc = NCX_DOCTITLE_RE.search(ncx_text)
-    if title and doc and doc.group(1) != title:
-        out.append(("ncx-doctitle", "`docTitle` 与 `dc:title` 不一致：%r ≠ %r" % (doc.group(1), title)))
-    # `dtb:uid` 应与包文档的 unique-identifier 同值（成品构成规范第三节）。
-    uid = NCX_UID_RE.search(ncx_text)
-    if uid and book_id_meta and uid.group(1) != book_id_meta.group(1):
-        out.append(("ncx-uid", "`dtb:uid` 与包文档 `unique-identifier` 不一致：%r ≠ %r"
-                    % (uid.group(1), book_id_meta.group(1))))
-    for label, first in (("toc.ncx", NCX_FIRST_ENTRY_RE.search(ncx_text)),
-                         ("nav.xhtml", NAV_FIRST_ENTRY_RE.search(nav_text))):
-        if first and first.group(1) != "制作信息":
-            out.append(("toc-entry", "%s 首条目应为「制作信息」，实为 %r" % (label, first.group(1))))
-    if "<text>封面</text>" in ncx_text:
-        out.append(("toc-entry", "`toc.ncx` 列了封面条目；封面不进目录"))
+        ncx_root = _parse_xml_safe(read_text(ncx)) if ncx.is_file() else None
+        nav_root = _parse_xml_safe(read_text(nav)) if nav.is_file() else None
+        opf_root = _parse_xml_safe(read_text(opf)) if opf.is_file() else None
+
+    title = _extract_opf_title(opf_root)
+    book_uid = _extract_unique_identifier(opf_root)
+
+    if ncx_root is not None:
+        doc_title = None
+        for el in ncx_root.iter():
+            if _local_name(el.tag) == "docTitle":
+                txt = next((c for c in el if _local_name(c.tag) == "text"), None)
+                if txt is not None:
+                    doc_title = "".join(txt.itertext())
+                break
+        if title and doc_title is not None and doc_title != title:
+            out.append(("ncx-doctitle", "`docTitle` 与 `dc:title` 不一致：%r ≠ %r" % (doc_title, title)))
+
+        # `dtb:uid` 应与包文档的 unique-identifier 同值（成品构成规范第三节）。
+        ncx_uid = None
+        for el in ncx_root.iter():
+            if _local_name(el.tag) == "meta" and el.get("name") == "dtb:uid":
+                ncx_uid = el.get("content")
+                break
+        if ncx_uid is not None and book_uid is not None and ncx_uid != book_uid:
+            out.append(("ncx-uid", "`dtb:uid` 与包文档 `unique-identifier` 不一致：%r ≠ %r"
+                        % (ncx_uid, book_uid)))
+
+        nav_map = next((el for el in ncx_root.iter() if _local_name(el.tag) == "navMap"), None)
+        if nav_map is not None:
+            first_point = next((el for el in nav_map if _local_name(el.tag) == "navPoint"), None)
+            if first_point is not None:
+                nav_label = next((c for c in first_point if _local_name(c.tag) == "navLabel"), None)
+                text_el = next((c for c in nav_label if _local_name(c.tag) == "text"), None) if nav_label is not None else None
+                first_text = "".join(text_el.itertext()) if text_el is not None else None
+                if first_text is not None and first_text != "制作信息":
+                    out.append(("toc-entry", "toc.ncx 首条目应为「制作信息」，实为 %r" % (first_text,)))
+            cover_texts = [
+                "".join(el.itertext()).strip()
+                for el in nav_map.iter()
+                if _local_name(el.tag) == "text" and "".join(el.itertext()).strip() == "封面"
+            ]
+            if cover_texts:
+                out.append(("toc-entry", "`toc.ncx` 列了封面条目；封面不进目录"))
+
+    if nav_root is not None:
+        toc_nav = next(
+            (el for el in nav_root.iter()
+             if _local_name(el.tag) == "nav"
+             and any(k.endswith("type") and "toc" in (v or "").split() for k, v in el.attrib.items())),
+            None,
+        )
+        root_ol = next(
+            (el for el in (toc_nav if toc_nav is not None else nav_root).iter() if _local_name(el.tag) == "ol"),
+            None,
+        )
+        if root_ol is not None:
+            first_li = next((c for c in root_ol if _local_name(c.tag) == "li"), None)
+            if first_li is not None:
+                first_a = next((c for c in first_li if _local_name(c.tag) == "a"), None)
+                if first_a is not None:
+                    nav_first = "".join(first_a.itertext())
+                    if nav_first != "制作信息":
+                        out.append(("toc-entry", "nav.xhtml 首条目应为「制作信息」，实为 %r" % (nav_first,)))
     return out
 
 
@@ -760,9 +840,9 @@ def find_identifier_duplicates(books: list[Path]) -> list[tuple[str, str]]:
         opf = book_dir / "OEBPS" / "content.opf"
         if not opf.is_file():
             continue
-        m = BOOK_ID_META_RE.search(read_text(opf))
-        if m and m.group(1).strip():
-            seen[m.group(1).strip()].append(book_dir.name)
+        uid = _extract_unique_identifier(_parse_xml_safe(read_text(opf)))
+        if uid:
+            seen[uid].append(book_dir.name)
     out: list[tuple[str, str]] = []
     for value, names in sorted(seen.items()):
         if len(names) > 1:

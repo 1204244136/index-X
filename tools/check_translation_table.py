@@ -440,7 +440,6 @@ def load_rulings(path: Path) -> dict[str, dict[str, object]]:
                     if ji is not None and ji < len(cells) else [])
         axis = declared[0] if len(declared) == 1 else MATCH_BASE
         axis_conflict = len(declared) > 1
-        anchor_rts = [rt.strip() for rt in ANCHOR_RT_RE.findall(cells[ai]) if rt.strip()]
         forms: list[str] = []
         ruby_forms: list[str] = []
         for part in re.split(r"／", cells[ri]):
@@ -458,11 +457,12 @@ def load_rulings(path: Path) -> dict[str, dict[str, object]]:
             key = norm_anchor(strip_markup(anchor))
             if not key:
                 continue
+            anchor_rts = [rt.strip() for rt in ANCHOR_RT_RE.findall(anchor) if rt.strip()]
             slot = out.setdefault(key, {"forms": [], "ruby_forms": [], "raw": [], "labels": [],
                                         "ori_raw": [], "alt_raw": [], "human_only": False,
                                         "machine": False, "rows": [],
                                         "anchor_rts": [], "match_axis": MATCH_BASE,
-                                        "axis_mixed": False, "_axis_flags": []})
+                                        "axis_mixed": False, "_axis_flags": [], "_axis_conflict": False})
             for form in forms:
                 if form not in slot["forms"]:
                     slot["forms"].append(form)
@@ -480,10 +480,12 @@ def load_rulings(path: Path) -> dict[str, dict[str, object]]:
                                  "machine": machine, "human_only": human})
             slot["human_only"] = bool(slot["human_only"]) or human
             slot["machine"] = bool(slot["machine"]) or machine
-            slot["_axis_flags"].append(MATCH_BASE if axis_conflict else axis)
+            slot["_axis_conflict"] = bool(slot["_axis_conflict"]) or axis_conflict
+            slot["_axis_flags"].extend(declared if declared else [MATCH_BASE])
     for slot in out.values():
         axes = slot.pop("_axis_flags", [])
-        slot["axis_mixed"] = len(set(axes)) > 1
+        conflict = bool(slot.pop("_axis_conflict", False))
+        slot["axis_mixed"] = conflict or len(set(axes)) > 1
         slot["axis_values"] = sorted(set(axes))
         slot["match_axis"] = MATCH_BASE if (slot["axis_mixed"] or not axes) else axes[0]
     return out
@@ -746,14 +748,16 @@ def compare(entries: list[dict[str, str]], jp_books: dict[str, str],
                         or not ori_chars <= jp_charsets[bid]):
                     continue
                 if match_axis == MATCH_FULL and anchor_rts:
-                    # 严格全文：日文侧须有「基文（注文）」复合串；裸写基文不在本行范围，
-                    # 既不判落地也不报未落地。
-                    if not any(f"{ori}({rt})" in ruby_text for rt in anchor_rts):
+                    # 严格全文：日文侧须有「基文（注文）」复合串；上下文锚定到带注音的那一处。
+                    probe = next((f"{ori}({rt})" for rt in anchor_rts if f"{ori}({rt})" in ruby_text), "")
+                    if not probe:
                         continue
-                idx = jp_text.find(ori)
-                if idx < 0:
-                    continue
-                ctx_text, ctx_anchor = jp_text, ori
+                    ctx_text, ctx_anchor, idx = ruby_text, probe, ruby_text.find(probe)
+                else:
+                    idx = jp_text.find(ori)
+                    if idx < 0:
+                        continue
+                    ctx_text, ctx_anchor = jp_text, ori
             suspect = is_suspect(ctx_text, idx, ctx_anchor)
 
             settled = settled_anchors.get(ori)

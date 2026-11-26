@@ -302,6 +302,13 @@ class SearchTextTests(unittest.TestCase):
             self.assertIn("#### [S1_01]", md_out)
             self.assertIn("对应中文 (L7)", md_out)
 
+    def test_extract_header_tag_preserves_stable_hyphenated_names(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            corpus = BilingualCorpus(cn_dir=root / "cn", jp_dir=root / "jp", epub_dir=root / "ep")
+            self.assertEqual(corpus.extract_header_tag("S6_24.06.07-02_Sub-Part.xhtml"), "S6_24.06.07-02")
+            self.assertEqual(corpus.extract_header_tag("S1_25-Uiharu_Kazari.xhtml"), "S1_25-UIHARU_KAZARI")
+
 
 if __name__ == "__main__":
     unittest.main()

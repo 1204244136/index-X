@@ -36,13 +36,19 @@ from __future__ import annotations
 import argparse
 import re
 import sys
+import xml.etree.ElementTree as ET
 from collections import Counter
 from pathlib import Path
 if __package__:
     from .cli_output import configure_output
+    from .edit_safety import EditSafetyError, add_edit_mode, require_edit_target
+    from .epub_ids import compile_book_pattern
+    from .file_transaction import atomic_write_bytes, rollback_paths
 else:
     from cli_output import configure_output
-from edit_safety import EditSafetyError, add_edit_mode, require_edit_target
+    from edit_safety import EditSafetyError, add_edit_mode, require_edit_target
+    from epub_ids import compile_book_pattern
+    from file_transaction import atomic_write_bytes, rollback_paths
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_ROOT = REPO_ROOT / "EPUB"
@@ -112,8 +118,9 @@ RULES: tuple[tuple[str, re.Pattern[str], str, str, str], ...] = (
     # （全库 `S0_00-Information.xhtml:5` 的「【汉化组招新】」即属此类，改写会破坏
     # 其语义），`［］` 同理；`〈〉` 是国标单书名号（书名号内嵌套用）亦不在内。
     # 这三类由 `check_translation_spec.py` 的 P18 报告、人工判断，不得自动改写。
-    ("tortoise-bracket-aside", re.compile("〔"), "（", "三.2", "〔 → （（补充说明用；【】〈〉［］不纳入）"),
-    ("tortoise-bracket-aside", re.compile("〕"), "）", "三.2", "〕 → ）（补充说明用；【】〈〉［］不纳入）"),
+    ("tortoise-bracket-aside", re.compile("[〔〕]"),
+     lambda m: "（" if m.group(0) == "〔" else "）", "三.2",
+     "〔〕 → （）（补充说明用；【】〈〉［］不纳入）"),
     # 前后文指涉统一为「上文」「下文」（`docs/translation-spec.md` 三.2「互参」）。
     # 全库实测：前文 1 处（`S5_01_02-04_Chapter3.xhtml`）、后文 7 处（均在 Note 页）、
     # 「前后文」2 处。后者是复合词、不指涉，用负向后视豁免；替换值唯一确定、零歧义。
@@ -205,7 +212,7 @@ def split_bold_punct(line: str):
         toks = TAG_SPLIT.split(inner)
         out: list[str] = []
         buf: list[str] = []
-        skip: str | None = None
+        open_tags: list[str] = []
         changed = False
 
         def flush():
@@ -219,13 +226,24 @@ def split_bold_punct(line: str):
             if not tok:
                 continue
             if tok.startswith("<"):
-                if SKIP_CLOSE_RE.match(tok):
-                    skip = None
-                elif SKIP_OPEN_RE.match(tok):
-                    skip = skip or SKIP_OPEN_RE.match(tok).group(1).casefold()
+                t_stripped = tok.strip()
+                if not t_stripped.startswith("<!--") and not t_stripped.startswith("<?"):
+                    m_tag = re.match(r"^<\s*(/?)\s*([A-Za-z][A-Za-z0-9:_-]*)", t_stripped)
+                    if m_tag:
+                        is_close = bool(m_tag.group(1))
+                        tag_name = m_tag.group(2).casefold()
+                        if is_close:
+                            for idx in range(len(open_tags) - 1, -1, -1):
+                                if open_tags[idx] == tag_name:
+                                    del open_tags[idx:]
+                                    break
+                        elif not t_stripped.endswith("/>"):
+                            open_tags.append(tag_name)
                 buf.append(tok)
                 continue
-            if skip is not None:
+            # 未闭合内层标签（含 <rt>/<style>/<script>/<span>/<ruby> 等）内部不可断段，
+            # 否则会生成 `<b><span>...</b>，<b>...</span></b>` 这类非法交叉 XML。
+            if open_tags:
                 buf.append(tok)
                 continue
             seg = ""
@@ -333,7 +351,12 @@ def unsupported_structure(text: str, lines: list[tuple[str, str]] | None = None)
     return None
 
 
-def process_file(path: Path, apply_changes: bool):
+def process_file(
+    path: Path,
+    apply_changes: bool,
+    *,
+    pending_writes: list[tuple[Path, bytes]] | None = None,
+):
     """处理单个 XHTML。返回 (命中列表, 是否写盘, 拒绝原因)。逐字节保留 BOM 与换行风格。"""
     raw = path.read_bytes()
     has_bom = raw.startswith(b"\xef\xbb\xbf")
@@ -356,9 +379,18 @@ def process_file(path: Path, apply_changes: bool):
         out_lines.append(new_body + eol)
 
     new_text = "".join(out_lines)
+    if new_text != text:
+        try:
+            ET.fromstring(new_text.encode("utf-8"))
+        except ET.ParseError as exc:
+            return [], False, f"改写后 XML 解析失败：{exc}"
     written = False
     if apply_changes and new_text != text:
-        path.write_bytes((b"\xef\xbb\xbf" if has_bom else b"") + new_text.encode("utf-8"))
+        payload = (b"\xef\xbb\xbf" if has_bom else b"") + new_text.encode("utf-8")
+        if pending_writes is not None:
+            pending_writes.append((path, payload))
+        else:
+            atomic_write_bytes(path, payload)
         written = True
     return file_hits, written, None
 
@@ -367,7 +399,7 @@ def collect_targets(root: Path, pattern: str | None):
     """产出 (path, 是否为 nav.xhtml)。nav 单独计数，便于核对标题一致性。"""
     if not root.is_dir():
         raise SystemExit("根目录不存在：%s" % root)
-    pat = re.compile(pattern.replace("*", ".*")) if pattern else None
+    pat = compile_book_pattern(pattern) if pattern else None
     for book in sorted(root.iterdir()):
         if not book.is_dir():
             continue
@@ -414,10 +446,11 @@ def main() -> int:
     skipped: list[tuple[str, str]] = []
     written_files = 0
     scanned = 0
+    pending_writes: list[tuple[Path, bytes]] = []
 
     for path, is_nav in targets:
         scanned += 1
-        hits, written, reason = process_file(path, args.apply)
+        hits, written, reason = process_file(path, args.apply, pending_writes=pending_writes)
         rel = str(path.relative_to(root))
         if reason:
             skipped.append((rel, reason))
@@ -436,6 +469,11 @@ def main() -> int:
             samples = rule_samples.setdefault(rid, [])
             if len(samples) < args.top:
                 samples.append("%s:%d  …%s…" % (rel, lineno, ctx))
+
+    if args.apply and pending_writes:
+        with rollback_paths([p for p, _ in pending_writes]):
+            for path, payload in pending_writes:
+                atomic_write_bytes(path, payload)
 
     total = sum(rule_counts.values())
     spots = len(line_hits)

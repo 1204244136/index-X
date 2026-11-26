@@ -193,7 +193,7 @@ python tools/publish_auto.py --only-books "chinese-text/【S1_01】某魔法的�
 python tools/publish_auto.py --only-books "chinese-text/【S1_01】某魔法的禁书目录 01"
 ```
 
-读取三处副本与 `manifest.json`／`pull-state.tsv` 的差异，输出逐书方向计划；在所选范围内同步变化文件，打包读取选中书的全部当前内容。省略范围参数会处理全部候选书；共享工作区按 [AGENTS.md](../AGENTS.md)「共享工作区协调」选定本任务范围。同一本地书的缓存修改已包含在归档时选择 C，否则报告冲突；OneDrive 外部更新与本地未发布修改冲突时停止。**例外**：OneDrive 的 `.epub` 与缓存同一本书逐字节相同（解压已完成、清单基线与 `pull-state` 未推进，典型是 `-SyncToEpub` 的下游门禁失败）时不算分叉，报「已完成的拉取」并按流程 A 补跑一次，不要求人工选边。冲突合并的操作边界在 AGENTS，`--from` 不代表可以丢弃另一边有效内容。
+读取三处副本与 `manifest.json`／`pull-state.tsv` 的差异，输出逐书方向计划；在所选范围内同步变化文件，打包读取选中书的全部当前内容。省略范围参数会处理全部候选书；共享工作区按 [AGENTS.md](../AGENTS.md)「共享工作区协调」选定本任务范围。同一本地书的缓存修改已包含在归档时选择 C，否则报告冲突；OneDrive 外部更新与本地未发布修改冲突时停止。**例外**：当该书归档（`EPUB/`）无本地改动，且 OneDrive 的 `.epub` 与缓存同一本书逐字节相同（解压已完成、清单基线与 `pull-state` 未推进，典型是 `-SyncToEpub` 的下游门禁失败）时不算分叉，报「已完成的拉取」并按流程 A 补跑一次，不要求人工选边；归档有未发布改动时仍判分叉阻断。冲突合并的操作边界在 AGENTS，`--from` 不代表可以丢弃另一边有效内容。
 
 参数：`--cache`／`--epub`、`--from auto|cache|epub|onedrive`、`--side`、`--pattern`、`--only-books`、`--dry-run`、`--no-upload`、`--force`（配合显式方向）、`--overwrite-cache`、`--chinese-onedrive`／`--japanese-onedrive`。退出码 1 表示被阻塞或失败；dry-run 只预览，不执行发布门禁与同步。
 
@@ -219,7 +219,7 @@ B 不是 agent 的常规编辑入口，只用于同步器／导入流程已生�
 
 C 的 `--overwrite-cache` 以归档为准，全量重建本次受影响的缓存书，清除其独有增删改；普通 C 仍按变化文件增量镜像。冲突书未显式覆盖时计入失败，其他正常书可完成，但整批返回 1；只为成功书推进清单。B 按书识别“目录已不存在且检测结果全部为删除”的整本删除，与普通修改同批处理；现存书仍执行完整预检。整书删除只在中文侧清理归档；先验证外部目标，再将归档、外部包与 pull-state 纳入同一回滚事务，删除或状态更新失败时恢复这些目标。
 
-`--force` 不表示跳过成品结构门禁；限定书籍时只重做所选书，保留其它书的已发布清单记录。清单中某处理侧全无基线记录时，发布停止并给出重建提示；仅确认缓存即已发布状态后用 `python tools/manifest.py --update-books chinese-text/某书目录` 重建，不用清单更新掩盖未发布变化。
+`--force` 不表示跳过成品结构门禁；限定书籍时只重做所选书，保留其它书的已发布清单记录。清单中某处理侧全无基线记录时，发布停止并给出重建提示（其中 `publish.py --sync-only --only-books` 仅同步选定书时允许尚未建立整侧基线，避免首次单侧引入选书被误拦）；仅确认缓存即已发布状态后用 `python tools/manifest.py --update-books chinese-text/某书目录` 重建，不用清单更新掩盖未发布变化。
 
 ### 共享发布前检查
 
@@ -240,10 +240,10 @@ python tools/publish_preflight.py --source EPUB --calibre
 ./tools/pull.ps1
 ./tools/pull.ps1 -WhatIf
 ./tools/pull.ps1 -Side japanese -OnlyBooks "japanese-text/【S4_04】とある暗部の少女共棲(4)"
-./tools/pull.ps1 -OnlyBooks "<side/书目录,...>" -Force
+./tools/pull.ps1 -OnlyBooks "<side/书目录,...>" -Force [-OverwriteCache]
 ```
 
-默认外部源由用户 OneDrive 目录推导；可显式传入 `-ChineseSourceDirectory`、`-JapaneseSourceDirectory`、`-CacheDirectory`、`-EpubDirectory`。`-Side`、`-Pattern` 与 `-OnlyBooks` 求交筛书；按修改时间与大小增量解包，首次建立拉取状态。解包前检查全部待拉取书的缓存差异；`-SyncToEpub` 还检查对应归档差异。本地相对基线的变化若未包含在外部包中，整批停止，不替换缓存、不推进清单或拉取状态；已完成解包而状态未推进的相同内容可继续。`-Force` 只强制重解包，不跳过未发布保护。只更新本次成功书的清单，不把未变化书的新缓存修改当新基线，也不清理范围外书目录。源码读取与包内路径解析由 path safety 共用规则控制。
+默认外部源由用户 OneDrive 目录推导；可显式传入 `-ChineseSourceDirectory`、`-JapaneseSourceDirectory`、`-CacheDirectory`、`-EpubDirectory`。`-Side`、`-Pattern` 与 `-OnlyBooks` 求交筛书；按修改时间与大小增量解包，首次建立拉取状态。解包前检查全部待拉取书的缓存差异；`-SyncToEpub` 还检查对应归档差异。本地相对基线的变化若未包含在外部包中，整批停止，不替换缓存、不推进清单或拉取状态；已完成解包而状态未推进的相同内容可继续。`-Force` 只强制重解包，不跳过未发布保护；`-OverwriteCache`（与 `publish_auto.py --from onedrive --overwrite-cache` 联动传入）仅跳过缓存侧碰撞检查，仍继续保护 `EPUB/` 未发布改动。解包覆盖旧缓存目录时先备份原目录，替换失败则自动回滚恢复。只更新本次成功书的清单，不把未变化书的新缓存修改当新基线，也不清理范围外书目录。源码读取与包内路径解析由 path safety 共用规则控制。
 
 `-SyncToEpub` 转交发布器时保留 `-Pattern` 中的 `*`、`?` 和 `[]`，不按调用目录的文件展开；筛书结果不受调用目录影响。
 
@@ -382,7 +382,7 @@ python tools/docx2epub.py 交稿.docx --out 显式构建输出 --unpacked 显式
 
 写盘型结构修复：模板、标题、序号、页边界、图片行、Note。判定通过与否属于 C4，本簇不负责宣布「已对齐」。标题／页边界的语义未确认时，工具输出待人工项并保留内容；译文选词不由结构工具自动处理。
 
-归档规范化和修复入口默认只预览，显式 `--apply` 才写。`--staging` 只允许显式暂存目录；共享路径保护始终拒绝仓库 `.cache` 和 OneDrive 内容写入。单侧修改指定 `EPUB/`；配对修改使用 `--root EPUB --jp-root .cache/epub-work/japanese-text`，日文目录仅读。双侧暂存处理使用 `--cache <暂存根> --staging`，暂存根包含 `chinese-text/` 和 `japanese-text/`。`--dry-run` 保留为预览兼容参数，与 `--apply` 互斥；它不代替写入授权或路径验证。
+归档规范化和修复入口默认只预览，显式 `--apply` 才写。`--staging` 只允许仓库目录树之外的显式暂存目录；共享路径保护拒绝写入仓库根及仓内任意子目录（含 `.cache`）与 OneDrive 内容。单侧修改指定 `EPUB/`；配对修改使用 `--root EPUB --jp-root .cache/epub-work/japanese-text`，日文目录仅读。双侧暂存处理使用 `--cache <暂存根> --staging`，暂存根包含 `chinese-text/` 和 `japanese-text/`。`--dry-run` 保留为预览兼容参数，与 `--apply` 互斥；它不代替写入授权或路径验证。
 
 | 工具 | 入口命令 | 读写范围 | 门禁与失败边界 | 测试 |
 | --- | --- | --- | --- | --- |
@@ -429,7 +429,7 @@ python tools/shift_content_sequences.py EPUB/某书 --work-id S4_05 --offset 1 -
 python tools/fix_empty_placeholders.py --cache 显式书籍根
 ```
 
-shift 用单次映射改文件与 XHTML/OPF/NCX/nav/CSS/SVG/XML 引用，防止相邻序号级联覆盖；歧义旧裸页引用保持不动并报告。空页工具只删除经判定无文本、无图/SVG 的编号页并前移后续序号，默认预览、`--apply` 写入。日文修改在显式暂存模式完成，不修改参考缓存。
+shift 用单次映射改文件与 XHTML/OPF/NCX/nav/CSS/SVG/XML 引用，防止相邻序号级联覆盖；歧义旧裸页引用保持不动并报告。空页工具只删除经判定无文本、无图/SVG 的编号页并前移后续序号，同样以单次映射改写引用并在落盘前校验 XML 良构性，将文件删改、容器目录条目摘除与引用重写纳入同一 `rollback_paths` 事务；默认预览、`--apply` 写入。日文修改在显式暂存模式完成，不修改参考缓存。
 
 shift 将引用改写、源文件、两阶段临时文件和目标文件纳入同一回滚范围；任一写入或重命名失败时恢复执行前内容与文件名。
 
@@ -579,7 +579,7 @@ L2 环境按以下顺序选择：命令行 `--vector-python` 或兼容入口 `--
 python tools/check_note_order.py --root EPUB
 ```
 
-只读检查 Note 条目的物理顺序是否等于正文首次引用顺序，并报告重复 ID、悬空引用与未引用条目；允许缺号与数字顺序不同，不检查数值连续性或数值排序。ID 格式与属性由 `check_epub_health.py` 的 `note-structure` 检查。在输出目录生成 `note-order-check.tsv`／JSON／Markdown。TSV 每本 Note 一行，列为 `book`、`note_file`、`defined_order`、`appearance_order`、`first_appearance`、`issues`，复杂值用 JSON 单元格保全。输入根目录无效或报告写入失败时 stderr 诊断并返回 2；检查发现的问题仍按既有 strict 语义阻断。重排写入在 C3 的 `reorder_notes.py`，两者共享 `notes_core.py` 的阅读顺序。
+只读检查 Note 条目的物理顺序是否等于正文首次引用顺序，并报告重复 ID、悬空引用与未引用条目；允许缺号与数字顺序不同，不检查数值连续性或数值排序。支持单书多 Note 文件分别校验，并按 `href` 目标文件隔离引用（单 Note 书 JSON 键保持 `书目录名`，多 Note 书记为 `书目录名::Note文件名`）。ID 格式与属性由 `check_epub_health.py` 的 `note-structure` 检查。在输出目录生成 `note-order-check.tsv`／JSON／Markdown。TSV 每本 Note 一行，列为 `book`、`note_file`、`defined_order`、`appearance_order`、`first_appearance`、`issues`，复杂值用 JSON 单元格保全。输入根目录无效或报告写入失败时 stderr 诊断并返回 2；检查发现的问题仍按既有 strict 语义阻断。重排写入在 C3 的 `reorder_notes.py`，两者共享 `notes_core.py` 的阅读顺序。
 
 默认中文输入为 `EPUB/`，`--root` 与兼容参数 `--cache` 互斥。没有选中书籍返回 2；选中书籍存在而无 Note 页返回 0，并说明「译注顺序检查不适用」，不声称核验了译注页。
 
@@ -632,7 +632,7 @@ python tools/check_translation_spec.py --cache EPUB --output 显式报告目录
 
 P1–P26 与规范条款的完整对应表唯一维护于 [翻译规范](../docs/translation-spec.md) 七。检查器只发现可机械形状，warning／info 与例外须人工判断，不自动改正文。`--pattern` 限定书名，`--top` 只控制样例显示；输出 TSV／JSON／Markdown。
 
-默认检查 `EPUB/`；`--root` 与兼容参数 `--cache` 可指定中文输入，二者互斥。根目录不存在、选书没有 XHTML 输入或报告写入失败返回 2；正常产生规范报告仍返回 0，error 级是否阻断由发布预检统一判断。
+默认检查 `EPUB/`；`--root` 与兼容参数 `--cache` 可指定中文输入，二者互斥。根目录不存在、XHTML 文件不可读或解码失败、选书没有 XHTML 输入或报告写入失败返回 2；正常产生规范报告仍返回 0，error 级是否阻断由发布预检统一判断。
 
 `audit_book(text_dir)` 是 `main()` 与 `publish_preflight.py` 共用的入口，返回 `(file, line, category, severity, message, example)`；发布预检只取 `severity == "error"`。**注意两处计数粒度不同**：`main()` 的 `emit` 按「行×类别」去重，`audit_book` 不去重、按命中逐条返回——引用计数时须注明粒度。
 
@@ -642,7 +642,7 @@ P1–P26 与规范条款的完整对应表唯一维护于 [翻译规范](../docs
 
 **P23 采用负向坏味与套壳反模式检测**：聚焦拦截第一人称随笔腔、对读者呼语、口语化表述、词条界说前冗余指示语（如 `这里的「拟人化」为…`）以及「指／原文为＋整句」和 `X（X）` 等套壳病句，不再以词典起句白名单拦截文化常识、设定勘误、双关说明等自然陈述句；语体检查先剥除 `「」`／`『』` 直引内容以防误报。
 
-**`NOTE_PREDICATE_CONVERGENCE` 只收敛纯冗余写法**：`原文中`（方位状语，接完整陈述句）、`原文注释`（原书自带注）、`均为`、`原为`、`俗称` 及 `即`／`意为`／`原指` 按语法与语体分工保留，不列入收敛；`见于` 保留 `NOTE_PREDICATE_GUARD` 的 `常` 字守卫。
+**`NOTE_PREDICATE_CONVERGENCE` 只收敛纯冗余写法**：`原文中`（方位状语，接完整陈述句）、`原文注释`（原书自带注）、`均为`、`原为`、`俗称` 及 `即`／`意为`／`原指` 按语法与语体分工保留，不列入收敛；`见于` 与 `是指` 分别保留 `NOTE_PREDICATE_GUARD` 的 `常`（常见于）与 `而`（而是指）前字守卫。
 
 ### 译名表落地核对与术语审计
 
@@ -725,7 +725,7 @@ python tools/text_norm.py --root EPUB
 python tools/text_norm.py --root EPUB --pattern "*S1_01*" --apply --report 显式报告.md
 ```
 
-只执行规范可确定的字符替换，XML、行数、标签、文件名与引用保持有效。规则实现唯一在 `text_norm.py`，不另写批量替换器。`--pattern` 限定书籍，`--summary` 供 CI 提交信息正文的「字符级规范化」一行（提交主语取实际 diff，见 `.github/workflows/normalize-epub-text.yml`），`--top` 控制报告样例。遇到不支持的结构而拒绝处理文件时，终端／Markdown／summary 都明确检查不完整，警告走 stderr 并返回 1；完整检查且零命中仍返回 0。选词需原文的事项走术语或复核 skill。任何改写行内文字的改动写盘后必须重跑本工具并确认 0 命中。
+只执行规范可确定的字符替换，XML、行数、标签、文件名与引用保持有效。加粗标点拆出遇到未闭合内层行内标签（如 `<ruby>`、`<span>`）时不切段，避免生成交叉 XML；每次改写前经 `ET.fromstring` 校验良构性，整批通过 `rollback_paths` 原子写盘并在异常时回滚。规则实现唯一在 `text_norm.py`，不另写批量替换器。`--pattern` 限定书籍，`--summary` 供 CI 提交信息正文的「字符级规范化」一行（提交主语取实际 diff，见 `.github/workflows/normalize-epub-text.yml`），`--top` 控制报告样例。遇到不支持的结构而拒绝处理文件时，终端／Markdown／summary 都明确检查不完整，警告走 stderr 并返回 1；完整检查且零命中仍返回 0。选词需原文的事项走术语或复核 skill。任何改写行内文字的改动写盘后必须重跑本工具并确认 0 命中。
 
 规则必须**幂等**：同一份文本反复运行结果必须稳定。跨多个标记的连段要整段重排，不能只换相邻一对——`！[？?]` → `？！` 对 `！！！？？？` 既不收敛、产出的交错形态也不满足「问号始终在感叹号左边」，问叹顺序按整段「？在前、！在后」重排（`test_text_norm.py` 有幂等性反例）。
 
@@ -845,11 +845,11 @@ python tools/epub_char_count.py <epub 或目录> [--pages-per 400] [--all] [--js
 探测 EPUB 各**正文成分**的字数并换算为页数。参数可为单个 `.epub` 文件或目录（目录会递归收集全部 `.epub`）。只读，不修改 EPUB。
 
 - **正文成分**：按 spine 顺序取含文字的 XHTML 页；跳过固定版式包装页（pre-paginated / svg，如封面、扉页、卷首插画）与导航文档，也跳过文件名或标题命中包装页关键词（`cover` / `colophon` / `奥付` / `toc` / `目次` / `contents` / `fmatter` / `bmatter` / `bookwalker` / `titlepage` / `caution` / `注意` / `nav` / `版权` / `広告` / `banner` 等）的页面。连包装页一起统计用 `--all`。
-- **字数口径**：去 HTML 标签、去注音假名（`<rt>/<rb>/<rp>`，注音不重复计数）、解实体、去全部空白。「全字符」= 剩余全部字符（含标点、数字、字母）；「占比」= 汉字与假名占全字符的比例（0.xx 两位小数）。
+- **字数口径**：去 HTML 标签、去注音假名（`<rt>/<rp>`，保留 `<rb>` 底字内容，注音不重复计数）、解实体、去全部空白。「全字符」= 剩余全部字符（含标点、数字、字母）；「占比」= 汉字与假名占全字符的比例（0.xx 两位小数）。
 - **子成分（精确到小节）**：成分内若含 `<h2>`，按 `<h2>` 切分为子成分（标签取自小节标题，全角数字转半角，如 `１` → `1`），h1 前的开场文字并入第一节；无 `<h2>` 的成分按整体统计。子成分行不含 h1 标题文字，因此「子成分字数之和 + h1 标题字数 = 成分总字数」，且章级页数 = 子成分页数之和。
-- **页数换算**：每个成分/子成分页数 `= max(1, ceil(全字符 / --pages-per))`，`--pages-per` 默认 `400`（全字符含标点约 400 字/页）。章级（含子成分）页数 = 子成分页数之和。合计行给出「连续排版约 X 页」与「成分整体口径（每成分至少 1 页）」两种参考。文本输出为对齐表格（数字右对齐，子成分以缩进行展示）。
+- **页数换算**：每个成分/子成分页数 `= max(1, ceil(全字符 / --pages-per))`，`--pages-per` 默认 `400` 且必须为正数（`epub_composition_metrics.py` 同样校验，CSV 落盘采用原子写入）。章级（含子成分）页数 = 子成分页数之和。合计行给出「连续排版约 X 页」与「成分整体口径（每成分至少 1 页）」两种参考。文本输出为对齐表格（数字右对齐，子成分以缩进行展示）。
 - **成分命名**：优先取文件 `<h1>` 标题，无标题时用文件名（如 `S4_03-01-p-001`）。可用 `--label-map map.json` 提供成分名映射，键为文件名（去掉 `.xhtml`）或 zip 内路径，如 `{"S4_03-01-p-001": "引子"}`。
-- **成分名规范化**（默认开启，`--raw-labels` 关闭）：章节标题截断为「序章/第N章/终章」（去掉副标题）；常用日文词替换为中文（`行間`→`行间`、`終`→`终`、`あとがき`→`后记`）并去掉标签内空白；位置规则：第一个「序章」之前的成分 → 「引子」，第一个「后记」之后的成分 → 「尾声」。
+- **成分名规范化**（默认开启，`--raw-labels` 关闭）：章节标题截断为「序章/第N章/终章」（去掉副标题，支持简繁体「终章」及常见汉字与阿拉伯数字形态）；常用日文词替换为中文（`行間`→`行间`、`終`→`终`、`あとがき`→`后记`）并去掉标签内空白；位置规则：第一个「序章」之前的成分 → 「引子」，第一个「后记」之后的成分 → 「尾声」。
 - `--min-chars` 忽略全字符数低于阈值的页面（默认 `1`）；`--json` 输出机器可读结构；`--csv` 输出扁平 CSV（UTF-8 带 BOM，Excel 可直接打开；列 = 成分/子成分/全字符/占比/换算页数 + 合计行，多本书时自动追加「书籍」列）。
 - 输入既可以是 `.epub` 文件，也可以是**已解包的书目录**（按 `META-INF/container.xml` 定位 OPF，缺失时回退 `item/standard.opf`）；目录输入按单本处理，不会被当成「递归找 .epub」。
 

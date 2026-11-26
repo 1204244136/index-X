@@ -782,6 +782,36 @@ class ConfiguredTargetIntegrationTests(unittest.TestCase):
             {k: v for k, v in after.items() if k.startswith(f"chinese-text/{BOOK_CN2}/")},
         )
 
+    def test_completed_pull_does_not_drop_archive_changes_into_diverged(self):
+        from package_cache_epubs import package_book
+        fx = Fixture(Path(self._tmp.name) / "diverged-archive")
+        fx.onedrive_cn.mkdir()
+        fx.onedrive_jp.mkdir()
+        # 缓存保持与基线一致；OneDrive 存在同内容但未在 pull-state 登记的 epub（drifted），
+        # 同时 EPUB/ 有本地改动，不得因“缓存匹配 OneDrive”而忽略归档改动绕过分叉阻断。
+        cache_book = fx.cache / "chinese-text" / BOOK_CN
+        package_book(cache_book, fx.onedrive_cn / f"{BOOK_CN}.epub")
+        fx.write_epub_book(BOOK_CN, "<p>归档未发布修改</p>")
+        plan = publish_auto.prepare_plan(publish_auto.parse_args(fx.argv("--side", "chinese")))
+        self.assertEqual(plan.status, "blocked")
+        self.assertIn("分叉", "\n".join(item.text for item in plan.diagnostics))
+
+    def test_sync_only_only_books_allows_missing_other_side_baseline(self):
+        import publish
+        from manifest import load_manifest, save_manifest
+        fx = Fixture(Path(self._tmp.name) / "missing-side")
+        fx.onedrive_cn.mkdir()
+        fx.onedrive_jp.mkdir()
+        baseline = load_manifest(fx.cache)
+        save_manifest(fx.cache, {k: v for k, v in baseline.items() if k.startswith("japanese-text/")})
+        fx.write_cache_book("chinese-text", BOOK_CN, "<p>中文新书</p>")
+        with patch.object(sys, "argv", [
+            "publish.py", "--sync-only", "--cache", str(fx.cache),
+            "--epub", str(fx.epub), "--side", "chinese",
+            "--only-books", f"chinese-text/{BOOK_CN}",
+        ]):
+            self.assertEqual(publish.main(), 0)
+
 
 if __name__ == "__main__":
     unittest.main()

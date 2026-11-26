@@ -505,9 +505,24 @@ class P24PredicateConvergenceTests(unittest.TestCase):
             '<li epub:type="footnote" id="note7">PAC3，即爱国者3型导弹。</li>',
             '<li epub:type="footnote" id="note8">ambulance意为救护车。</li>',
             '<li epub:type="footnote" id="note9">弗仑汀，原指公元8世纪古英格兰叙事诗中所出现的宝剑。</li>',
+            '<li epub:type="footnote" id="note10">此处而是指另一种用法。</li>',
         ):
             with self.subTest(s=s):
                 self.assertEqual(self.p24(s), [], "有语法或语体分工的写法不应命中 P24：%s" % s)
+
+    def test_unreadable_file_and_literal_pattern_behavior(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            text_dir = root / "【S1_01】书[v1]" / "OEBPS" / "Text"
+            text_dir.mkdir(parents=True)
+            (text_dir / "S1_01-01.xhtml").write_bytes(b"\xff\xfe")
+            with self.assertRaises(UnicodeDecodeError):
+                cts.audit_book(str(text_dir))
+            with patch.object(sys, "argv", ["check_translation_spec.py", "--root", str(root),
+                                           "--pattern", "*[v1]*", "--output", str(root / "out")]), \
+                    contextlib.redirect_stdout(io.StringIO()), \
+                    contextlib.redirect_stderr(io.StringIO()):
+                self.assertEqual(cts.main(), 2)
 
 
 if __name__ == "__main__":

@@ -164,6 +164,18 @@ class MergeBwTests(unittest.TestCase):
                 ["S2_99-12_p-019.xhtml", "S2_99-12_p-020.xhtml"],
             )
 
+    def test_nav_page_titles_supports_single_quotes_and_entities_while_requiring_anchor(self):
+        from merge_bw_pages import nav_page_titles
+        nav = (
+            "<ol><li><a href='Text/p-001.xhtml#toc1'>序&amp;章</a></li>"
+            '<li><a href="Text/p-002.xhtml#sec1">第一章</a></li>'
+            "<li><a href='Text/p-003.xhtml'>续页无锚点</a></li></ol>"
+        )
+        self.assertEqual(nav_page_titles(nav), {
+            "p-001.xhtml": "序&章",
+            "p-002.xhtml": "第一章",
+        })
+
 
 if __name__ == "__main__":
     unittest.main()

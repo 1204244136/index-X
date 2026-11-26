@@ -379,11 +379,11 @@ def run_vector_analysis(
         sim = float(sim_matrix[jp_p_idx, cn_p_idx])
         direct_sims.append(sim)
 
-        # 在段落序列窗口 [jp_p_idx - search_window, jp_p_idx + search_window] 内搜索最优匹配
+        # 在段落序列窗口 [cn_p_idx - search_window, cn_p_idx + search_window] 内搜索最优匹配
         best_p_offset = 0
         best_sim = sim
         for off in range(-search_window, search_window + 1):
-            target_c_idx = jp_p_idx + off
+            target_c_idx = cn_p_idx + off
             if 0 <= target_c_idx < len(cn_paras):
                 val = float(sim_matrix[jp_p_idx, target_c_idx])
                 if val > best_sim:
@@ -399,7 +399,7 @@ def run_vector_analysis(
                 status = f"DRIFT_OFFSET_{best_p_offset:+d}"
                 real_drift_count += 1
                 # 记录段落错位对应的物理行号
-                target_physical_line = cn_paras[jp_p_idx + best_p_offset][0] + 1
+                target_physical_line = cn_paras[cn_p_idx + best_p_offset][0] + 1
                 candidate_drifts.append((i + 1, best_p_offset, sim, best_sim, target_physical_line))
             else:
                 # 检查是否为正常意译/假名（消除假阳性）
@@ -435,7 +435,7 @@ def run_vector_analysis(
                 cur_sims.append(d_sim)
                 cur_best_sims.append(b_sim)
             else:
-                if cur_end - cur_start + 1 >= 2:
+                if len(cur_sims) >= 2:
                     drift_windows.append(DriftWindow(
                         start_line=cur_start,
                         end_line=cur_end,
@@ -450,7 +450,7 @@ def run_vector_analysis(
                 cur_sims = [d_sim]
                 cur_best_sims = [b_sim]
 
-        if cur_end - cur_start + 1 >= 2:
+        if len(cur_sims) >= 2:
             drift_windows.append(DriftWindow(
                 start_line=cur_start,
                 end_line=cur_end,
@@ -699,7 +699,7 @@ def _run_pipeline(
     print("=" * 95)
 
     results: list[UnitSemanticResult] = []
-    parsed_units: dict[str, tuple[list[LineData], list[LineData]]] = {}
+    parsed_units: dict[tuple[str, str], tuple[list[LineData], list[LineData]]] = {}
     structural_failures: list[str] = []
 
     # 阶段 1: Level 1 启发式初筛
@@ -713,7 +713,7 @@ def _run_pipeline(
             structural_failures.extend(f"{h}: {problem}" for problem in problems)
         jl = [parse_line(x) for x in jp_raw]
         cl = [parse_line(x) for x in cn_raw]
-        parsed_units[h] = jl, cl
+        parsed_units[(work_id, h)] = jl, cl
 
         tot = min(len(jl), len(cl))
         l1_drift = 0
@@ -770,7 +770,7 @@ def _run_pipeline(
 
     for idx, r in enumerate(vector_targets, 1):
         t0 = time.time()
-        jl, cl = parsed_units[r.header]
+        jl, cl = parsed_units[(r.work_id, r.header)]
 
         avg_sim, matches, real_drifts, fps, windows, details = run_vector_analysis(jl, cl, model)
         r.l2_checked = True
@@ -895,6 +895,13 @@ def vector_dependencies_available() -> bool:
     return True
 
 
+def _same_executable(a: Path, b: Path) -> bool:
+    try:
+        return os.path.samefile(a, b)
+    except OSError:
+        return os.path.normcase(str(a.resolve())) == os.path.normcase(str(b.resolve()))
+
+
 def ensure_vector_environment(args: argparse.Namespace, argv: list[str]) -> int | None:
     """Return a delegated exit code or None when this process can continue."""
     needs_vector = (
@@ -912,7 +919,7 @@ def ensure_vector_environment(args: argparse.Namespace, argv: list[str]) -> int 
         print(f"错误: 显式矢量化 Python 不存在：{candidates[0]}", file=sys.stderr)
         return 2
     current_ready = vector_dependencies_available()
-    current_selected = python is not None and python.absolute() == Path(sys.executable).absolute()
+    current_selected = python is not None and _same_executable(python, Path(sys.executable))
     if current_ready and (not explicit_selected or current_selected or os.environ.get(VECTOR_REEXEC_MARKER)):
         return None
     if os.environ.get(VECTOR_REEXEC_MARKER):

@@ -34,7 +34,7 @@ if __package__:
 else:
     from cli_output import configure_output
 from xhtml_text import strip_ruby_annotations  # noqa: E402  注音剥除规则的唯一实现
-from epub_ids import header_of  # noqa: E402
+from epub_ids import header_of, historical_work_id  # noqa: E402
 
 
 _RUBY_PATTERN = re.compile(r"<ruby\b[^>]*>(.*?)</ruby>", re.I | re.S)
@@ -108,10 +108,11 @@ class JapaneseSourceLookup:
             self._work_dir_cache[work] = None
             return None
 
-        # 匹配包含【S3_03】或 S3_03 的目录
+        # 匹配包含【S3_03】或历史 [S3_03] 的目录，精确比较解析出的完整作品号
         target_dir = None
-        for entry in base.iterdir():
-            if entry.is_dir() and work in entry.name:
+        want = work.upper()
+        for entry in sorted(base.iterdir()):
+            if entry.is_dir() and historical_work_id(entry.name) == want:
                 item_xhtml = entry / "item" / "xhtml"
                 if item_xhtml.is_dir():
                     target_dir = item_xhtml
@@ -154,7 +155,7 @@ class JapaneseSourceLookup:
             return []
 
         try:
-            with open(target_file, "r", encoding="utf-8", errors="replace") as f:
+            with open(target_file, "r", encoding="utf-8-sig", errors="replace") as f:
                 lines = f.readlines()
         except OSError:
             lines = []

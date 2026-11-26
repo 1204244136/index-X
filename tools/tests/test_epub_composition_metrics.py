@@ -233,6 +233,17 @@ class PrintedPageAnalysisTests(unittest.TestCase):
                 self.assertIn("CSV 已写入", result.stderr)
                 self.assertTrue(output.read_text(encoding="utf-8-sig").strip())
 
+    def test_non_positive_pages_per_rejected(self):
+        book = make_book(self.root / "badpp", {"S1_01-01_Chapter1.xhtml": "<h1>章</h1><p>正文</p>"})
+        with self.assertRaises(ValueError):
+            scan_book(EpubSource(book), pages_per=0, include_all=False)
+        res = subprocess.run(
+            [sys.executable, str(Path(__file__).resolve().parents[1] / "epub_composition_metrics.py"),
+             str(book), "--pages-per", "0", "--no-csv"],
+            capture_output=True, text=True, encoding="utf-8", check=False,
+        )
+        self.assertNotEqual(res.returncode, 0)
+
 
 if __name__ == "__main__":
     unittest.main()

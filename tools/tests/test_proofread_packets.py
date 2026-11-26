@@ -513,6 +513,30 @@ class PacketTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "新译与中文源实际行不符"):
             stale.prepare()
 
+    def test_source_context_validates_keys_bounds_and_clamps_asymmetrical_files(self):
+        f = self.fixture([Fixture.row(line="3", old="旧甲", new="新甲")], name="ctxbounds")
+        f.freeze()
+        session = packets.load_session(f.root)
+        cn_path = next(f.cn.glob("*.xhtml"))
+        jp_path = next(f.jp.glob("*.xhtml"))
+        jp_text = "<html>\n<body>\n<p>j3</p>\n<p>j4</p>\n</html>\n"
+        cn_text = "<html>\n<body>\n<p>c3</p>\n"
+        jp_path.write_text(jp_text, encoding="utf-8")
+        cn_path.write_text(cn_text, encoding="utf-8")
+        session["source_files"]["jp:S1_01-01"]["sha256"] = hashlib.sha256(jp_path.read_bytes()).hexdigest()
+        session["source_files"]["jp:S1_01-01"]["line_count"] = len(jp_text.splitlines())
+        session["source_files"]["cn:S1_01-01"]["sha256"] = hashlib.sha256(cn_path.read_bytes()).hexdigest()
+        session["source_files"]["cn:S1_01-01"]["line_count"] = len(cn_text.splitlines())
+        f.reseal_session(session)
+
+        ctx = packets.source_context(f.root, "s01", packets.load_packet(f.root, "s01")["items"][0]["item_id"], radius=3)
+        self.assertEqual([c["line"] for c in ctx["context"]], [1, 2])
+
+        session["source_files"].pop("cn:S1_01-01")
+        f.reseal_session(session)
+        with self.assertRaisesRegex(ValueError, "冻结会话缺少源文件记录"):
+            packets.source_context(f.root, "s01", packets.load_packet(f.root, "s01")["items"][0]["item_id"])
+
 
 if __name__ == "__main__":
     unittest.main()

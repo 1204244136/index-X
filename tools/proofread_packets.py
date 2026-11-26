@@ -538,7 +538,12 @@ def source_context(report_root: Path | str, slice_id: str, item_id: str, *, radi
         raise ValueError(f"请求 ID 不属于本片：{item_id}")
     session = load_session(report_root)
     header, line = item["seq"], item["line"]
-    pair = {key: session["source_files"][key] for key in (f"jp:{header}", f"cn:{header}")}
+    source_files = session.get("source_files") or {}
+    pair: dict[str, dict] = {}
+    for key in (f"jp:{header}", f"cn:{header}"):
+        if key not in source_files:
+            raise ValueError(f"冻结会话缺少源文件记录：{key}")
+        pair[key] = source_files[key]
     lines = {}
     for key, source in pair.items():
         data = Path(source["path"]).read_bytes()
@@ -548,9 +553,11 @@ def source_context(report_root: Path | str, slice_id: str, item_id: str, *, radi
         if len(lines[key]) != source["line_count"]:
             raise ValueError(f"冻结源行数不符：{key}")
     jp, cn = lines[f"jp:{header}"], lines[f"cn:{header}"]
+    if line < 1 or line > min(len(jp), len(cn)):
+        raise ValueError(f"行号越界：{header}:{line}")
     neighbors = [dict(_evidence(pair[f"jp:{header}"], header, jp, number),
                       cn=strip_rt_and_tags(cn[number - 1]))
-                 for number in range(max(1, line - radius), min(len(jp), line + radius) + 1)
+                 for number in range(max(1, line - radius), min(len(jp), len(cn), line + radius) + 1)
                  if number != line]
     return {"schema_version": 1, "run_id": packet["run_id"], "slice_id": slice_id,
             "item_id": item_id, "radius": radius, "source_files": copy.deepcopy(pair),

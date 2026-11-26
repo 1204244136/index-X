@@ -717,6 +717,9 @@ def _parse_git_diff_changes(
             if _HEADING_RE.search(line[1:]):
                 heading_hits.append((cur_vol, cur_name, new_ln, _line_plain(line[1:]).strip()))
             new_ln += 1
+        elif line.startswith(" "):
+            old_ln += 1
+            new_ln += 1
 
     return touched_lines, heading_hits, asset_hits
 

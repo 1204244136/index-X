@@ -174,7 +174,7 @@ def iter_works(cn_root: Path, jp_root: Path) -> list[str]:
                 continue
             match = WORK_DIR_RE.match(entry.name)
             if match:
-                found.add(match.group(1) or match.group(2))
+                found.add((match.group(1) or match.group(2)).upper())
         return found
 
     return sorted(names(cn_root) & names(jp_root))
@@ -297,7 +297,7 @@ def classify_cn_differences(rows: list[dict]) -> str:
     return "并列"
 
 
-def frag_groups(rows: list[dict], min_len: int) -> list[tuple[str, list[dict]]]:
+def frag_groups(rows: list[dict], min_len: int) -> list[tuple[str, list[dict], str]]:
     """类 1：同一日文片段（引号内优先，兼取整行）在多行出现且中文不一致。"""
     index: dict[str, list[tuple[dict, str]]] = defaultdict(list)
     for row in rows:
@@ -323,6 +323,8 @@ def frag_groups(rows: list[dict], min_len: int) -> list[tuple[str, list[dict]]]:
                 continue
             seen.add(ident)
             unique.append(row)
+        if len(unique) < 2 or len({norm_cn(row["cn"]) for row in unique}) < 2:
+            continue
         out.append((items[0][1], unique, classify_cn_differences(unique)))
     # 实词/语体级差异优先（那才是必须回原文判断的），虚词级差异排后
     order = {"实词": 0, "语体": 1, "虚词": 2, "并列": 3}

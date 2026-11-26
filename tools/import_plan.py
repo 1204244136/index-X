@@ -147,7 +147,7 @@ def validate_ops(ops, where: str) -> list[str]:
             problems.append(f"{at}.op 非法：{kind!r}")
             continue
         para = op.get("para")
-        if not isinstance(para, int) or para < 0:
+        if isinstance(para, bool) or not isinstance(para, int) or para < 0:
             problems.append(f"{at}.para 必须是非负整数")
             continue
         if para in used:
@@ -176,9 +176,11 @@ def validate_images(images) -> list[str]:
                 problems.append(f"{at} 缺少字段 {field}")
         if entry.get("role") and entry["role"] not in IMAGE_ROLES:
             problems.append(f"{at}.role 非法：{entry['role']!r}")
-        if entry.get("dst") in seen:
-            problems.append(f"{at}.dst 与前面的图片重复：{entry['dst']}")
-        seen.add(entry.get("dst"))
+        dst = entry.get("dst")
+        if dst:
+            if dst in seen:
+                problems.append(f"{at}.dst 与前面的图片重复：{dst}")
+            seen.add(dst)
     return problems
 
 

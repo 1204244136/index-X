@@ -9,9 +9,11 @@ sys.path.insert(0, str(TOOLS))
 
 from epub_ids import (  # noqa: E402
     book_id,
+    compile_book_pattern,
     content_sequence,
     header_of,
     historical_work_id,
+    is_list_packaging_path,
     japanese_book_id,
     work_id,
 )
@@ -70,6 +72,19 @@ class EpubIdTests(unittest.TestCase):
             "S6_22.06.10-02",
         )
         self.assertIsNone(pairing_header_of("S6_22.06.10-p-caution.xhtml"))
+
+    def test_compile_book_pattern_treats_brackets_as_literal(self):
+        pat = compile_book_pattern("*[S1_01]*")
+        self.assertIsNotNone(pat.search("【x】[S1_01]书"))
+        self.assertIsNone(pat.search("S1_01 书"))
+        q_pat = compile_book_pattern("S1_0?")
+        self.assertIsNotNone(q_pat.search("S1_01"))
+        self.assertIsNone(q_pat.search("S1_012"))
+
+    def test_is_list_packaging_path_accepts_archive_and_cache_cn_only(self):
+        self.assertTrue(is_list_packaging_path("EPUB/【S1_01】书/OEBPS/Text/S1_01-Note.xhtml"))
+        self.assertTrue(is_list_packaging_path(".cache/epub-work/chinese-text/【S1_01】书/OEBPS/Text/S1_01-Note.xhtml"))
+        self.assertFalse(is_list_packaging_path(".cache/epub-work/japanese-text/【S1_01】本/OEBPS/Text/S1_01-Note.xhtml"))
 
 
 if __name__ == "__main__":

@@ -21,9 +21,12 @@ import re
 import xml.etree.ElementTree as ET
 
 # 注音元素：`<rt>` 是读音，`<rp>` 是给不支持 ruby 的阅读器用的括号，二者都要移除
-RUBY_ELEMENT = re.compile(r"<(?:rt|rp)\b[^>]*>.*?</(?:rt|rp)>", re.I | re.S)
+RUBY_ELEMENT = re.compile(
+    r"<(?:rt|rp)\b[^>]*>.*?</(?:rt|rp)\s*>|<(?:rt|rp)\b[^>]*/>",
+    re.I | re.S,
+)
 # 只移除 `<rt>`：可见文本比较保留 `<rp>` 的括号
-RT_ELEMENT = re.compile(r"<rt\b[^>]*>.*?</rt\s*>", re.I | re.S)
+RT_ELEMENT = re.compile(r"<rt\b[^>]*>.*?</rt\s*>|<rt\b[^>]*/>", re.I | re.S)
 SCRIPT_STYLE_RE = re.compile(r"<(script|style)\b[^>]*>.*?</\1>", re.I | re.S)
 WS_RE = re.compile(r"\s+")
 TAG = re.compile(r"<[^>]+>")
@@ -60,12 +63,12 @@ def text_of(data: bytes) -> str:
     Review snippets retain them so that changes to readings remain visible to
     the diff classifier.
     """
-    return _flatten(data.decode("utf-8", errors="ignore"))
+    return _flatten(data.decode("utf-8-sig", errors="ignore"))
 
 
 def text_of_without_ruby(data: bytes) -> str:
     """与 `text_of` 同口径，但先移除注音；原文检索与术语比对用。"""
-    return _flatten(strip_ruby_annotations(data.decode("utf-8", errors="ignore")))
+    return _flatten(strip_ruby_annotations(data.decode("utf-8-sig", errors="ignore")))
 
 
 def text_of_without_ruby_compact_str(text: str, *, strip_script_style: bool = True) -> str:
@@ -89,7 +92,7 @@ def text_of_without_ruby_compact(data: bytes) -> str:
     `<ruby>魔</ruby><ruby>術</ruby>` 会被读成「魔 術」，`魔術`／`魔術師` 这类锚点
     因此永远匹配不到。
     """
-    return text_of_without_ruby_compact_str(data.decode("utf-8", errors="ignore"))
+    return text_of_without_ruby_compact_str(data.decode("utf-8-sig", errors="ignore"))
 
 
 def _flatten(text: str) -> str:

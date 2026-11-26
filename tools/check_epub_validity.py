@@ -689,8 +689,13 @@ def print_summary(
         print("-" * 72)
         print("检查失败（无法打开或子进程中断）：")
         for result in failed:
-            first = result["issues"][0]  # type: ignore[index]
-            print(f"  {result['path']}: {first['message']}")
+            issues = result.get("issues") or []  # type: ignore[assignment]
+            msg = (
+                issues[0].get("message", "未知错误")  # type: ignore[index,union-attr]
+                if issues
+                else (result.get("error") or "未知错误")
+            )
+            print(f"  {result['path']}: {msg}")
     if total == 0 and not failed:
         print("未发现问题。")
     print("=" * 72, flush=True)

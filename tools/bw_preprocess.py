@@ -63,6 +63,7 @@ from urllib.parse import unquote, urlsplit
 
 import merge_bw_pages
 from alignment_rules import JP_WRAPPER_RE
+from epub_structure import replace_reference_names
 from path_safety import (
     UnsafeArchivePath,
     archive_member_destination,
@@ -157,12 +158,15 @@ def load_rules(rules_path: Path | None) -> list[dict]:
         if r.get("dot_all"):
             flags |= re.DOTALL
         find = r["find"]
-        if r.get("mode", "regex") != "regex":
+        is_regex = r.get("mode", "regex") == "regex"
+        if not is_regex:
             find = re.escape(find)
+        repl_raw = r["replace"]
+        repl = repl_raw if is_regex else (lambda _m, s=repl_raw: s)
         compiled.append({
             "name": r.get("name", f"规则{len(compiled) + 1}"),
             "pat": re.compile(find, flags),
-            "repl": r["replace"],
+            "repl": repl,
             "iterative": bool(r.get("iterative", False)),
         })
     return compiled
@@ -551,16 +555,14 @@ def page_map_contract_issues(
 
 def apply_entry_renames(entries: dict[str, bytes], renames: dict[str, str]) -> dict[str, bytes]:
     """重命名 ZIP 条目，并同步改写 XML/XHTML/OPF/NCX/CSS/SVG 引用。"""
-    replacements = [
-        (old.rsplit("/", 1)[-1].encode("utf-8"),
-         new.rsplit("/", 1)[-1].encode("utf-8"))
+    name_map = {
+        old.rsplit("/", 1)[-1]: new.rsplit("/", 1)[-1]
         for old, new in renames.items()
-    ]
+    }
     rewritten: dict[str, bytes] = {}
     for old_name, data in entries.items():
         if old_name.lower().endswith(REFERENCE_SUFFIXES):
-            for old, new in replacements:
-                data = data.replace(old, new)
+            data = replace_reference_names(data, name_map)
         rewritten[renames.get(old_name, old_name)] = data
     return rewritten
 
@@ -741,16 +743,9 @@ def merge_epub_pages(
             notes.append(f"[OPF更新警告] {exc}")
 
     # 同步更新 XML / NCX / nav / CSS 中的文件引用
-    replacements = [
-        (old.encode("utf-8"), new.encode("utf-8"))
-        for old, new in page_to_merged.items()
-    ]
     for name in list(new_entries):
         if name != opf_name and name.lower().endswith(REFERENCE_SUFFIXES):
-            data = new_entries[name]
-            for old, new in replacements:
-                data = data.replace(old, new)
-            new_entries[name] = data
+            new_entries[name] = replace_reference_names(new_entries[name], page_to_merged)
 
     # 更新 infos
     new_infos = []
@@ -1043,6 +1038,14 @@ def check_epub(
         return stats
 
 
+def _strip_noise_parens(raw_title: str) -> str:
+    """移除下载站、文库与作者/插画噪声括号。"""
+    title = re.sub(r"[\(（][^\)）]*(?:z-library|1lib|libgen|z-lib)[^\)）]*[\)）]", "", raw_title, flags=re.I)
+    title = re.sub(r"[\(（][^\)）]*(?:電撃文庫|角川|MF文庫|スニーカー文庫)[^\)）]*[\)）]", "", title, flags=re.I)
+    title = re.sub(r"[\(（][^\)）]*(?:鎌池|はいむら|ニリツ|冬川|近木)[^\)）]*[\)）]", "", title, flags=re.I)
+    return title
+
+
 def infer_book_id(name: str) -> str | None:
     """根据书名或文件名规范推导作品号（如 S4_01）。"""
     # 1. 直接匹配已有的【S4_01】或 S4_01
@@ -1051,7 +1054,7 @@ def infer_book_id(name: str) -> str | None:
         return m.group(0).upper()
 
     trans = str.maketrans("０１２３４５６７８９", "0123456789")
-    norm = name.translate(trans)
+    norm = _strip_noise_parens(name.translate(trans))
 
     # 2. 匹配 暗部の少女共棲 系列 (S4)
     if "暗部の少女共棲" in norm or "暗部の少女共栖" in norm:
@@ -1110,13 +1113,7 @@ def infer_book_id(name: str) -> str | None:
 
 def clean_book_title(raw_title: str, book_id: str | None = None) -> str:
     """清理下载站噪声，并严格对齐 OneDrive\\某系列\\日文原文 既有命名格式。"""
-    title = raw_title
-    # 移除下载站等括号
-    title = re.sub(r"\([^\)]*(?:z-library|1lib|libgen|z-lib)[^\)]*\)", "", title, flags=re.I)
-    # 移除出版文库括号
-    title = re.sub(r"\([^\)]*(?:電撃文庫|角川|MF文庫|スニーカー文庫)[^\)]*\)", "", title, flags=re.I)
-    # 移除作者/插画括号
-    title = re.sub(r"\([^\)]*(?:鎌池|はいむら|ニリツ|冬川|近木)[^\)]*\)", "", title, flags=re.I)
+    title = _strip_noise_parens(raw_title)
     title = re.sub(r"\.preprocessed", "", title, flags=re.I)
     # 移除已有的【S...】前缀
     title = re.sub(r"^【S\d+[^】]*】\s*", "", title.strip(), flags=re.I)
@@ -1138,7 +1135,7 @@ def clean_book_title(raw_title: str, book_id: str | None = None) -> str:
         elif book_id_upper == "S6_24.06.07":
             return "とある魔術の禁書目録外伝　エース御坂美琴 対 クイーン食蜂操祈!!"
 
-        m = re.match(r"^S(\d+)_(\d+)", book_id_upper)
+        m = re.fullmatch(r"S(\d+)_(\d+)", book_id_upper)
         if m:
             series_num, vol_num = int(m.group(1)), int(m.group(2))
             if series_num == 5:

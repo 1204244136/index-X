@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import os
+import posixpath
 import re
 from collections import OrderedDict
 from pathlib import Path
+from urllib.parse import unquote
 
 from epub_ids import content_sequence
 
@@ -74,6 +76,9 @@ def gather_refs(
                     continue
                 href_match = HREF_NOTE_RE.search(tag)
                 if not href_match:
+                    continue
+                target_path = href_match.group(2).split("#", 1)[0].split("?", 1)[0]
+                if target_path and posixpath.basename(unquote(target_path)) != note_basename:
                     continue
                 note_id = href_match.group(3)
                 all_refs.setdefault(note_id, []).append((path.name, line_number))

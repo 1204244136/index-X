@@ -437,6 +437,38 @@ class SemanticCliEnvironmentTests(unittest.TestCase):
             self.assertEqual(semantic.ensure_vector_environment(args, ["--vector"]), 0)
             self.assertEqual(run.call_args.args[0][0], str(executables[0]))
 
+    def test_vector_window_uses_cn_para_index_and_same_executable_case_insensitive(self):
+        self.assertTrue(semantic._same_executable(Path(sys.executable), Path(str(sys.executable).upper())))
+        try:
+            import numpy as np
+        except ImportError:
+            self.skipTest("numpy unavailable")
+
+        class FakeModel:
+            def encode(self, texts, **_kwargs):
+                vecs = []
+                for t in texts:
+                    if "甲" in t:
+                        vecs.append([1.0, 0.0, 0.0])
+                    elif "乙" in t:
+                        vecs.append([0.0, 1.0, 0.0])
+                    else:
+                        vecs.append([0.0, 0.0, 1.0])
+                return np.array(vecs, dtype=float)
+
+        # jp 前两行为图片，正文从第 3 行起始（jp_p_idx 0=甲, 1=乙）；
+        # cn 第 1 行多出一段无关正文，第 2-3 行为甲、乙，导致第 3 行处 jp_p_idx=0 与 cn_p_idx=2 相对，
+        # 只能从 cn_p_idx + (-1) 搜索到匹配的甲（若误用 jp_p_idx + (-1) 会因越界找不到）。
+        jl = [semantic.parse_line('<p class="fit"><img src="a.jpg"/></p>'),
+              semantic.parse_line('<p class="fit"><img src="b.jpg"/></p>'),
+              semantic.parse_line("<p>甲</p>"), semantic.parse_line("<p>乙</p>")]
+        cl = [semantic.parse_line("<p>无关</p>"), semantic.parse_line("<p>甲</p>"),
+              semantic.parse_line("<p>乙</p>"), semantic.parse_line("<p>无关</p>")]
+        _avg, _m, _rd, _fp, windows, details = semantic.run_vector_analysis(jl, cl, FakeModel(), min_match_sim=0.9)
+        self.assertEqual(details[2]["status"], "DRIFT_OFFSET_-1")
+        self.assertEqual(details[3]["status"], "DRIFT_OFFSET_-1")
+        self.assertEqual(len(windows), 1)
+
 
 if __name__ == "__main__":
     unittest.main()

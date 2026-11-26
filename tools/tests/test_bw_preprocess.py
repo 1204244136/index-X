@@ -19,12 +19,15 @@ from bw_preprocess import (  # noqa: E402
     artifact_contract_issues,
     check_dir,
     check_epub,
+    clean_book_title,
     epub_zip_issues,
+    infer_book_id,
     is_content,
     is_epilogue_story_page,
     is_reading_notice,
     load_header_map,
     load_rules,
+    merge_epub_pages,
     page_map_contract_issues,
     pairing_header_renames,
     process_dir,
@@ -769,6 +772,45 @@ class FinalEpubContractTests(unittest.TestCase):
             self.assertTrue(any("XML 解析失败" in problem for _, problem in stats["issues"]))
             self.assertFalse(output.exists())
             self.assertTrue(check_epub(source, RULES, book_id=None)["issues"])
+
+    def test_literal_rule_replacement_preserves_backslashes_and_substrings_rename_safely(self):
+        import json
+        with tempfile.TemporaryDirectory() as tmp:
+            rules_path = Path(tmp) / "literal.json"
+            rules_path.write_text(
+                json.dumps({
+                    "searches": [{"name": "lit", "mode": "literal", "find": "X", "replace": r"\1\n"}]
+                }),
+                encoding="utf-8",
+            )
+            rules = load_rules(rules_path)
+            self.assertEqual(apply_rules("<p>x</p>", rules), r"<p>\1\n</p>")
+
+        entries = {
+            "item/image/cover.jpg": b"c",
+            "item/image/back_cover.jpg": b"bc",
+            "item/xhtml/p-001.xhtml": (
+                b'<img src="../image/cover.jpg"/><img src="../image/back_cover.jpg"/>'
+            ),
+        }
+        rewritten = apply_entry_renames(entries, {
+            "item/image/cover.jpg": "item/image/S1_01-cover.jpg",
+            "item/image/back_cover.jpg": "item/image/S1_01-back_cover.jpg",
+        })
+        xhtml_out = rewritten["item/xhtml/p-001.xhtml"]
+        self.assertIn(b"../image/S1_01-cover.jpg", xhtml_out)
+        self.assertIn(b"../image/S1_01-back_cover.jpg", xhtml_out)
+
+    def test_infer_book_id_strips_noise_parens_and_clean_title_preserves_s5_subvolume(self):
+        self.assertEqual(infer_book_id("(1lib) 創約 とある魔術の禁書目録(5)(電撃文庫)"), "S3_05")
+        self.assertEqual(
+            clean_book_title("【S5_01_03】エンデュミオンへの道", "S5_01_03"),
+            "エンデュミオンへの道",
+        )
+        self.assertEqual(
+            clean_book_title("外典書庫", "S5_01"),
+            "とある魔術の禁書目録 外典書庫(1)",
+        )
 
 
 if __name__ == "__main__":

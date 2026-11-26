@@ -733,8 +733,8 @@ def render_markdown(report: dict) -> str:
               f"| 按文件名规则匹配 | {summary['name_rule_matches']} |",
               f"| 名称不同且算法确认同图 | {summary['name_different_same_content']} |",
               f"| 疑似同图（渲染/颜色差异） | {summary['possible_same_content']} |",
-              f"| 疑似文字/字体变化 | {summary['possible_text_or_font_changes']} |", "",
-              f"| 同编号单双页尺寸冲突 | {summary['layout_mismatches']} |", "",
+              f"| 疑似文字/字体变化 | {summary['possible_text_or_font_changes']} |",
+              f"| 同编号单双页尺寸冲突 | {summary['layout_mismatches']} |",
               f"| 中文双页合图对应日文单页组合 | {summary['composite_range_matches']} |", "",
               f"算法后端：ImageHash={'启用' if report['algorithms']['imagehash'] else '未安装（使用 Pillow 回退）'}。", ""]
     if report["unpaired_books"]:

@@ -51,7 +51,7 @@ if __package__:
     from .cli_output import configure_output
 else:
     from cli_output import configure_output
-from epub_ids import content_sequence
+from epub_ids import compile_book_pattern, content_sequence
 from xhtml_text import strip_ruby_annotations
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -289,8 +289,9 @@ NOTE_PREDICATE_KEEP = frozenset({"即", "意为", "意思为", "原指"})
 
 # 词表里带复合词陷阱的键：命中位置前若为本集合中的字，则该次出现不是收敛义，豁免。
 # 实测：`S1_06-Note:note1`「日本神道中所使用的绳索，常见于神社内…」的「常见于」
-# 是「常见＋于」而非引证义，盲替换会改成「常出自」。
-NOTE_PREDICATE_GUARD = {"见于": "常"}
+# 是「常见＋于」而非引证义，盲替换会改成「常出自」；
+# 「而是指」中的「是指」承接转折连词「而是」，也不作泛泛替换为「而是指→而指」。
+NOTE_PREDICATE_GUARD = {"见于": "常", "是指": "而"}
 
 # 不可见字符：LRM（希伯来文等 RTL 文本在 LTR 环境中的终止符）与 ZWJ（天城文
 # 半体合写）是排版所需，**保留**；ZWNJ、ZWSP、BOM 与 NBSP 违规。
@@ -728,11 +729,8 @@ def audit_book(text_dir, *, errors_only=False) -> list[tuple[str, int, str, str,
             continue
         fkind = classify(fn)
         path = os.path.join(text_dir, fn)
-        try:
-            with open(path, encoding="utf-8-sig") as f:
-                lines = f.read().splitlines()
-        except Exception:
-            continue
+        with open(path, encoding="utf-8-sig") as f:
+            lines = f.read().splitlines()
         for ln, line in enumerate(lines, 1):
             if not errors_only:
                 # ruby 检查（原始行）
@@ -798,14 +796,13 @@ def _run():
         severity_counts[sev] += 1
         per_book[book][fn].setdefault(cat, []).append((ln, sev, msg, ex))
 
+    pattern_rx = compile_book_pattern(args.pattern) if args.pattern else None
     for book in sorted(os.listdir(root)):
         text_dir = os.path.join(root, book, "OEBPS", "Text")
         if not os.path.isdir(text_dir) or not any(fn.endswith(".xhtml") for fn in os.listdir(text_dir)):
             continue
-        if args.pattern:
-            pat = args.pattern.replace("*", ".*")
-            if not re.search(pat, book):
-                continue
+        if pattern_rx and not pattern_rx.search(book):
+            continue
         books_checked.add(book)
         per_book[book] = OrderedDict()
         for fn, ln, cat, sev, msg, ex in audit_book(text_dir):
@@ -907,11 +904,8 @@ def _run():
         for fn in os.listdir(text_dir):
             if not fn.endswith(".xhtml"):
                 continue
-            try:
-                with open(os.path.join(text_dir, fn), encoding="utf-8-sig") as f:
-                    t = f.read()
-            except Exception:
-                continue
+            with open(os.path.join(text_dir, fn), encoding="utf-8-sig") as f:
+                t = f.read()
             cnt += strip_tags(html.unescape(t)).count("·")
         middot[book] = cnt
     if nakaguro:

@@ -5,13 +5,52 @@ import posixpath
 import re
 import zipfile
 import xml.etree.ElementTree as ET
+from collections.abc import Mapping
 from typing import Literal, NamedTuple
 from urllib.parse import unquote, urlsplit
 from alignment_rules import JP_WRAPPER_RE
 
 XHTML_SUFFIXES = (".xhtml", ".html", ".htm")
 IMAGE_SUFFIXES = (".jpg", ".jpeg", ".png", ".gif", ".webp", ".avif", ".bmp", ".svg", ".tif", ".tiff")
+IMAGE_MEDIA_TYPES: dict[str, str] = {
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".png": "image/png",
+    ".gif": "image/gif",
+    ".webp": "image/webp",
+    ".avif": "image/avif",
+    ".bmp": "image/bmp",
+    ".svg": "image/svg+xml",
+    ".tif": "image/tiff",
+    ".tiff": "image/tiff",
+}
 XML_SUFFIXES = XHTML_SUFFIXES + (".opf", ".ncx", ".xml", ".svg")
+
+
+def image_media_type(name: str) -> str:
+    """Return the EPUB manifest media-type for an image filename."""
+    suffix = "." + name.rsplit(".", 1)[-1].lower() if "." in name else ""
+    return IMAGE_MEDIA_TYPES.get(suffix, "application/octet-stream")
+
+
+def replace_reference_names(
+    data: bytes, mapping: Mapping[str | bytes, str | bytes]
+) -> bytes:
+    """Replace resource names in one pass so shorter names cannot corrupt longer siblings."""
+    clean = {
+        old.encode("utf-8") if isinstance(old, str) else old:
+        new.encode("utf-8") if isinstance(new, str) else new
+        for old, new in mapping.items()
+    }
+    clean = {old: new for old, new in clean.items() if old and old != new}
+    if not clean:
+        return data
+    pattern = re.compile(
+        rb"(?<![A-Za-z0-9_.-])(?:"
+        + b"|".join(re.escape(old) for old in sorted(clean, key=len, reverse=True))
+        + rb")"
+    )
+    return pattern.sub(lambda match: clean[match.group(0)], data)
 # 书内引用改名要覆盖的文本文件：XML 家族（含 xhtml/opf/ncx/svg）＋ CSS。
 REFERENCE_SUFFIXES = frozenset(XML_SUFFIXES + (".css",))
 # 会被删条目（manifest item／itemref／navPoint／nav li）的文件类型：只有这四类

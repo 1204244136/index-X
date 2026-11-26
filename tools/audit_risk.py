@@ -17,14 +17,19 @@
 from __future__ import annotations
 
 import argparse
+import html
 import json
 import re
 import sys
 
 if __package__:
     from .cli_output import configure_output
+    from .text_norm import BOLD_RULE_ID, split_bold_punct
+    from .xhtml_text import strip_ruby_annotations
 else:
     from cli_output import configure_output
+    from text_norm import BOLD_RULE_ID, split_bold_punct
+    from xhtml_text import strip_ruby_annotations
 
 # 常见日文新字体 / 异体字（简体中文成书应转化为规范简化字）
 JP_SHINJITAI = {
@@ -93,6 +98,7 @@ def load_ruling_terms(path: str) -> list[tuple[str, str, str]]:
             if not clause or any(hint in clause for hint in ("并存", "照搬", "同形旁词", "不属本", "保留")):
                 continue
             for part in re.split(r"[／/]", clause):
+                # 裁定表允许以「全称·简称」记并存旧译（如 `赛德魔法·塞德`），故沿 `·` 截断取完整首形。
                 form = re.split(r"[（(·]", part, maxsplit=1)[0]
                 form = form.replace("**", "").replace("`", "").strip()
                 if not (2 <= len(form) <= 12 and _RULING_ALT_FORM_RE.fullmatch(form)):
@@ -110,8 +116,9 @@ JP_QUESTION = re.compile(r"(か|のか|だろうか|のかっ|じゃないか|�
 
 
 def strip_html(text: str) -> str:
-    """去除 HTML 标签。"""
-    return re.sub(r"<[^>]+>", "", text).strip()
+    """去除注音 `<rt>`/`<rp>` 与 HTML 标签，并反转义实体后返回纯文本。"""
+    no_ruby = strip_ruby_annotations(text)
+    return html.unescape(re.sub(r"<[^>]+>", "", no_ruby)).strip()
 
 
 def audit_risk_flags(old: str, new: str, jp: str = "", *,
@@ -175,9 +182,9 @@ def audit_risk_details(old: str, new: str, jp: str = "",
             "desc": f"检测到未简化日文汉字: {found_kanji}"
         })
 
-    # 5. 加粗内含标点（违反健康门禁 [bold-punct]）
-    # 匹配 <b> 标签内部紧邻或包含中英文逗号、句号、分号等
-    if re.search(r"<b>[^<]*[，。！？；：、…][^<]*</b>", new):
+    # 5. 加粗内含标点（违反健康门禁 [bold-punct]，复用 text_norm.split_bold_punct 统一口径）
+    _, bold_hits = split_bold_punct(new)
+    if any(rid == BOLD_RULE_ID for rid, *_ in bold_hits):
         risks.append({
             "flag": "bold_punct",
             "desc": "<b> 加粗标签内包含标点符号，违反 [bold-punct] 规范"
@@ -191,9 +198,9 @@ def audit_risk_details(old: str, new: str, jp: str = "",
             "desc": "对话「」内部同级嵌套了「」，应使用二级引号『』"
         })
 
-    # 7. 受控术语与已知误改模式
+    # 7. 受控术语与已知误改模式（在剥注音与标签的纯文本上匹配，避免命中属性）
     for pat, standard, note in list(CONTROLLED_TERMS) + list(extra_terms or []):
-        if re.search(pat, new):
+        if re.search(pat, new_p):
             risks.append({
                 "flag": "controlled_term",
                 "desc": f"命中受控词规则 [{pat}]，规范应为 [{standard}] ({note})"

@@ -341,6 +341,32 @@ class DiffCliInputTests(unittest.TestCase):
             self.assertEqual(output.getvalue(), "")
             self.assertIn(str(jp), errors.getvalue())
 
+    def test_invalid_utf8_fails_and_tsv_rows_always_have_nine_columns(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            cache = self.paired_cache(root)
+            jp_book = next((cache / "japanese-text").iterdir())
+            cn_book = next((cache / "chinese-text").iterdir())
+            # 纯图片页
+            (jp_book / "S1_01-Cover.xhtml").write_text(
+                '<html xmlns="http://www.w3.org/1999/xhtml"><head/><body><p><img src="a.jpg"/></p></body></html>',
+                encoding="utf-8",
+            )
+            (cn_book / "S1_01-Cover.xhtml").write_text(
+                '<html xmlns="http://www.w3.org/1999/xhtml"><head/><body><p><img src="S1_01-a.jpg"/></p></body></html>',
+                encoding="utf-8",
+            )
+            tsv = root / "report.tsv"
+            code, _out, _err = self.invoke(["--cache", str(cache), "--tsv", str(tsv), "--no-progress"])
+            self.assertEqual(code, 0)
+            lines = tsv.read_text(encoding="utf-8-sig").splitlines()
+            self.assertTrue(all(len(line.split("\t")) == 9 for line in lines))
+
+            next(cn_book.rglob("S1_01-01*")).write_bytes(b"\xff\xfe")
+            code_bad, _o, err = self.invoke(["--cache", str(cache), "--tsv", str(tsv), "--no-progress"])
+            self.assertEqual(code_bad, 2)
+            self.assertTrue(err)
+
 
 if __name__ == "__main__":
     unittest.main()

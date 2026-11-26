@@ -59,8 +59,10 @@ from typing import Any, Iterable, List, Optional, Tuple
 
 if __package__:
     from .cli_output import configure_output
+    from .epub_ids import header_of, work_id as epub_work_id
 else:
     from cli_output import configure_output
+    from epub_ids import header_of, work_id as epub_work_id
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CN_CACHE = REPO_ROOT / ".cache" / "epub-work" / "chinese-text"
@@ -341,12 +343,18 @@ class BilingualCorpus:
 
     def _scan_work_dirs(self) -> None:
         """Index available works, preferring each cached Chinese book over its archive copy."""
+        def _resolve_work_id(name: str) -> str:
+            parsed = epub_work_id(name)
+            if parsed:
+                return parsed
+            m = re.search(r"【([A-Za-z0-9_.]+)】", name)
+            return m.group(1) if m else name
+
         # 1. 扫描日文
         if self.jp_dir.is_dir():
-            for entry in self.jp_dir.iterdir():
+            for entry in sorted(self.jp_dir.iterdir()):
                 if entry.is_dir():
-                    m = re.search(r"【([A-Za-z0-9_.]+)】", entry.name)
-                    w_id = m.group(1) if m else entry.name
+                    w_id = _resolve_work_id(entry.name)
                     text_dir = self._find_text_dir(entry)
                     if list(text_dir.glob("*.xhtml")):
                         self._work_dirs["jp"][w_id] = text_dir
@@ -359,10 +367,9 @@ class BilingualCorpus:
         for cn_source in cn_sources:
             if not cn_source.is_dir():
                 continue
-            for entry in cn_source.iterdir():
+            for entry in sorted(cn_source.iterdir()):
                 if entry.is_dir():
-                    m = re.search(r"【([A-Za-z0-9_.]+)】", entry.name)
-                    w_id = m.group(1) if m else entry.name
+                    w_id = _resolve_work_id(entry.name)
                     text_dir = self._find_text_dir(entry)
                     # 如果该目录有 xhtml 文件，记录
                     if list(text_dir.glob("*.xhtml")):
@@ -385,6 +392,9 @@ class BilingualCorpus:
 
     def extract_header_tag(self, filename: str) -> str:
         """从文件名提取对齐表头，例如 S1_01-02_Chapter1.xhtml -> S1_01-02。"""
+        parsed = header_of(filename)
+        if parsed:
+            return parsed
         # S5 系列
         m5 = re.search(r"(S5_\d+_\d+-\d+)", filename)
         if m5:

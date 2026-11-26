@@ -275,6 +275,20 @@ class PullTests(unittest.TestCase):
         self.external()
         self.assert_success(self.run_pull("-Side", "chinese", "-OnlyBooks", self.key, shell=legacy))
 
+    def test_overwrite_cache_overrides_local_cache_but_still_protects_archive(self):
+        self.external(text="<p>外部新内容</p>")
+        (self.cache_book / self.chapter).write_text("<p>本地未发布缓存</p>", encoding="utf-8")
+        self.assert_success(self.run_pull("-Side", "chinese", "-OnlyBooks", self.key, "-OverwriteCache"))
+        expected = (self.fx.root / "external" / BOOK_CN / self.chapter).read_bytes()
+        self.assertEqual((self.cache_book / self.chapter).read_bytes(), expected)
+
+        # Even with -OverwriteCache, un-published archive changes remain protected on -SyncToEpub.
+        (self.fx.epub / BOOK_CN / self.chapter).write_text("<p>归档本地修改</p>", encoding="utf-8")
+        self.external(text="<p>外部再次更新</p>")
+        blocked = self.run_pull("-Side", "chinese", "-OnlyBooks", self.key, "-OverwriteCache", "-SyncToEpub")
+        self.assertEqual(blocked.returncode, 1)
+        self.assertIn("归档", blocked.stdout + blocked.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -125,24 +125,7 @@ def _parse_col_selection(
             selected.append(header_to_idx[item])
             continue
 
-        # 2. 尝试解析为 1-based 数字索引
-        if item.isdigit():
-            val = int(item) - 1
-            if 0 <= val < total_cols:
-                selected.append(val)
-            continue
-
-        # 3. 尝试解析为列字母 (A, B, AA...)
-        if re.fullmatch(r"[A-Za-z]+", item):
-            try:
-                c_idx = _col_letter_to_index(item)
-                if 0 <= c_idx < total_cols:
-                    selected.append(c_idx)
-                    continue
-            except ValueError:
-                pass
-
-        # 4. 若不区分大小写匹配表头
+        # 2. 不区分大小写匹配表头（优先于列字母解析，避免英文表头被当成列字母）
         matched = False
         item_lower = item.lower()
         for h, idx in header_to_idx.items():
@@ -152,6 +135,23 @@ def _parse_col_selection(
                 break
         if matched:
             continue
+
+        # 3. 尝试解析为 1-based 数字索引
+        if item.isdigit():
+            val = int(item) - 1
+            if 0 <= val < total_cols:
+                selected.append(val)
+            continue
+
+        # 4. 尝试解析为列字母 (A, B, AA...)
+        if re.fullmatch(r"[A-Za-z]+", item):
+            try:
+                c_idx = _col_letter_to_index(item)
+                if 0 <= c_idx < total_cols:
+                    selected.append(c_idx)
+                    continue
+            except ValueError:
+                pass
 
         # 若未找到匹配列，向用户发出友好告警并忽略
         sys.stderr.write(f"[警告] 未找到指定列: '{item}'\n")

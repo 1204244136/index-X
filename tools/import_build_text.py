@@ -124,8 +124,13 @@ def build(plan: dict, docx: Path) -> tuple[dict[str, str], list[str], list[str]]
     report: list[str] = []
     image_cursor = 0
     for meta, chapter in zip(plan["chapters"], chapters):
-        if not (chapter["title"] or "").startswith(meta["cn_title"][:2]):
-            raise PlanError(f"交稿章标题与计划顺序不一致：{chapter['title']!r} vs {meta['cn_title']!r}")
+        cn_title = meta.get("cn_title") or ""
+        raw_title = (chapter["title"] or "").strip()
+        if cn_title:
+            if not raw_title.startswith(cn_title[:2]):
+                raise PlanError(f"交稿章标题与计划顺序不一致：{chapter['title']!r} vs {cn_title!r}")
+        elif raw_title:
+            raise PlanError(f"无标题章节不得出现交稿标题：{chapter['title']!r}")
         rows = apply_ops([{"idx": r["idx"], "kind": chapter_kind(r), "text": r["text"]}
                           for r in chapter["rows"]],
                          {"ops": meta.get("ops") or []}, where=meta["cn_title"])

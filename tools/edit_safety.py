@@ -53,8 +53,8 @@ def require_edit_target(path: Path | str, staging: bool = False,
     allowed = _resolved_cached(str(epub_root)) if epub_root is not None else _resolved_cached(str(DEFAULT_EPUB))
     if not staging and not _inside(resolved, allowed):
         raise EditSafetyError(f"内容写入必须位于 {allowed}；临时处理请显式使用 --staging：{path}")
-    if staging and resolved == REPO_ROOT:
-        raise EditSafetyError("--staging 必须指向明确的临时目录，不能使用仓库根目录")
+    if staging and (_inside(supplied, REPO_ROOT) or _inside(resolved, REPO_ROOT)):
+        raise EditSafetyError(f"--staging 必须指向仓库外的显式临时目录，不能写入仓库目录：{path}")
     return resolved
 
 

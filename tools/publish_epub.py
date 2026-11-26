@@ -30,14 +30,14 @@ import argparse
 import fnmatch
 import sys
 from pathlib import Path
+TOOLS_DIR = Path(__file__).resolve().parent
+if str(TOOLS_DIR) not in sys.path:
+    sys.path.insert(0, str(TOOLS_DIR))
 if __package__:
     from .cli_output import configure_output
 else:
     from cli_output import configure_output
-from publish_preflight import validate_publication
-
-TOOLS_DIR = Path(__file__).resolve().parent
-sys.path.insert(0, str(TOOLS_DIR))
+from publish_preflight import validate_publication  # noqa: E402
 from file_transaction import rollback_paths  # noqa: E402
 from manifest import load_manifest, save_manifest, scan_cache, scan_epub  # noqa: E402
 from package_cache_epubs import package_book, PackageError  # noqa: E402

@@ -21,6 +21,7 @@ else:
 from file_transaction import rollback_paths
 from edit_safety import (EditSafetyError, add_content_roots, add_edit_mode,
                          content_roots, require_edit_target)
+from epub_ids import compile_book_pattern
 
 from notes_core import (
     LI_FULL_RE,
@@ -137,8 +138,8 @@ def main():
         return 0
     books = sorted(d for d in os.listdir(root) if os.path.isdir(os.path.join(root, d)))
     if args.pattern:
-        pat = args.pattern.replace("*", ".*")
-        books = [b for b in books if re.search(pat, b)]
+        pat = compile_book_pattern(args.pattern)
+        books = [b for b in books if pat.search(b)]
 
     if args.apply:
         try:

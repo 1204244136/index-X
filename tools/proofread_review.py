@@ -243,8 +243,12 @@ def parse_diff_rows(text: str, label: str) -> list[dict]:
             news.append((line[1:], new_no))
             new_no += 1
         elif line.startswith(" "):  # `-U0` 下不出现；留作上下文行的行号对齐
+            flush()
+            olds, news = [], []
             old_no += 1
             new_no += 1
+        elif line.startswith("\\"):
+            continue
     flush()
     return rows
 

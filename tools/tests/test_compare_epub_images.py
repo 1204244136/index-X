@@ -458,6 +458,24 @@ class ImageCompareSourceCliTests(unittest.TestCase):
         self.assertIn("未完成", errors)
         self.assertNotIn("Traceback", errors)
 
+    def test_render_markdown_summary_table_has_no_internal_blank_lines(self):
+        md = render_markdown({
+            "cache": "c",
+            "summary": {
+                "paired_books": 1, "chinese_images": 1, "japanese_images": 1,
+                "matched_chinese_images": 1, "matched_japanese_images": 1,
+                "missing_chinese": 0, "missing_japanese": 0, "name_rule_matches": 1,
+                "name_different_same_content": 0, "possible_same_content": 0,
+                "possible_text_or_font_changes": 0, "layout_mismatches": 0,
+                "composite_range_matches": 0,
+            },
+            "algorithms": {"imagehash": False},
+            "unpaired_books": [],
+            "books": [],
+        })
+        table_block = md.split("## 汇总\n\n", 1)[1].split("\n\n算法后端", 1)[0]
+        self.assertNotIn("\n\n", table_block)
+
 
 if __name__ == "__main__":
     unittest.main()

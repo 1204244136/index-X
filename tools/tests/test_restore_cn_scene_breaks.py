@@ -68,6 +68,45 @@ class RestoreSceneBreakTests(unittest.TestCase):
         self.assertEqual(reason, "")
         self.assertEqual(out[:5], chinese[:5])
 
+    def test_cli_rolls_back_all_files_on_partial_write_failure(self):
+        import io
+        import tempfile
+        from contextlib import redirect_stdout
+        from unittest.mock import patch
+        import restore_cn_scene_breaks as rc
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            cn_book = root / "cn" / "【S1_01】书" / "OEBPS" / "Text"
+            jp_book = root / "jp" / "【S1_01】本" / "item" / "xhtml"
+            cn_book.mkdir(parents=True)
+            jp_book.mkdir(parents=True)
+            for idx in (1, 2):
+                (jp_book / f"S1_01-0{idx}.xhtml").write_text(
+                    "\n".join(jp("<p>甲。</p>", "<br/>", "<p>乙。</p>", "</body></html>")) + "\n",
+                    encoding="utf-8",
+                )
+                (cn_book / f"S1_01-0{idx}.xhtml").write_text(
+                    "\n".join(jp("<p>A。</p>", "<p>B。</p>", "</body></html>")) + "\n",
+                    encoding="utf-8",
+                )
+            before = {p: p.read_bytes() for p in cn_book.glob("*.xhtml")}
+            real_write = rc.atomic_write_bytes
+            calls = 0
+
+            def fail_second(path, data):
+                nonlocal calls
+                calls += 1
+                if calls == 2:
+                    raise OSError("fail second")
+                return real_write(path, data)
+
+            with patch.object(rc, "atomic_write_bytes", side_effect=fail_second), \
+                    patch.object(sys, "argv", ["restore_cn_scene_breaks.py", "--root", str(root / "cn"), "--jp-root", str(root / "jp"), "--apply", "--staging"]), \
+                    redirect_stdout(io.StringIO()):
+                with self.assertRaises(OSError):
+                    rc.main()
+            self.assertEqual({p: p.read_bytes() for p in cn_book.glob("*.xhtml")}, before)
+
 
 if __name__ == "__main__":
     unittest.main()

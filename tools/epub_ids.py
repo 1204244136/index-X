@@ -127,9 +127,22 @@ def is_list_packaging_header(header: str | None) -> bool:
     return suffix in LIST_PACKAGING_SUFFIXES if suffix else False
 
 
-def is_list_packaging_path(path: Path) -> bool:
+def compile_book_pattern(pattern: str) -> re.Pattern[str]:
+    """Compile a book-directory filter safely without treating brackets as regex sets."""
+    if "*" in pattern or "?" in pattern:
+        parts = [
+            ".*" if piece == "*" else ("." if piece == "?" else re.escape(piece))
+            for piece in re.split(r"(\*|\?)", pattern)
+        ]
+        return re.compile("^" + "".join(parts) + "$", re.IGNORECASE)
+    return re.compile(re.escape(pattern), re.IGNORECASE)
+
+
+def is_list_packaging_path(path: Path | str) -> bool:
     """Whether a Chinese path may use a UL/OL opener in the L5 slot."""
-    if "chinese-text" not in {part.casefold() for part in path.parts}:
+    path = Path(path)
+    parts = {part.casefold() for part in path.parts}
+    if not ("chinese-text" in parts or ("epub" in parts and "japanese-text" not in parts)):
         return False
     suffix = header_suffix(header_of(path.name))
     return suffix in LIST_PACKAGING_SUFFIXES if suffix else False

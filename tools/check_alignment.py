@@ -668,7 +668,7 @@ def main() -> int:
     print(f"已验证正文文件：{checked}；问题记录：{len(bad)}")
     print(f"报告：{tsv}")
     for r in bad:
-        print(f"  [{r[0]}] {r[1]} | {r[2].split(chr(92))[-1]} | {r[5]}")
+        print(f"  [{r[0]}] {r[1]} | {Path(r[2]).name} | {r[5]}")
     if any(r[6] == "输入缺失" for r in bad):
         print("检查未完成：所选书籍或 XHTML 输入为空，请核对根目录与作品范围。", file=sys.stderr)
         return 2

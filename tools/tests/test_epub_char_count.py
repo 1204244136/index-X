@@ -189,6 +189,16 @@ class ScanBookTests(unittest.TestCase):
         items = [item["path"] for item in spine_xhtml_items(source)]
         self.assertIn("OEBPS/Text/S1_01-01_Chapter1.xhtml", items)
 
+    def test_simplified_end_chapter_rb_base_text_unquoted_href_and_positive_pages_per(self):
+        from epub_char_count import normalize_label, text_of
+        self.assertEqual(normalize_label("终 章 结束"), "终章")
+        self.assertEqual(text_of("<p><ruby><rb>魔術</rb><rp>(</rp><rt>まじゅつ</rt><rp>)</rp></ruby><rt/></p>"), "魔術")
+        book = make_book(self.root, {"S1_01-01%20Ch.xhtml": "<p>正文</p>"})
+        items = spine_xhtml_items(EpubSource(book))
+        self.assertTrue(any(it["path"].endswith("S1_01-01 Ch.xhtml") for it in items))
+        with self.assertRaises(ValueError):
+            scan_book(book, pages_per=0, include_wrapper=False, min_chars=1, label_map={})
+
 
 if __name__ == "__main__":
     unittest.main()

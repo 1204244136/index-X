@@ -622,6 +622,28 @@ class HealthCheckNegativeTests(unittest.TestCase):
         self.assertTrue(any("越界" in msg for _c, msg in hits))
         self.assertTrue(any("#missing-id" in msg for _c, msg in hits))
 
+    def test_opf_ncx_xml_checks_handle_entities_attr_order_and_comments(self):
+        book = self.build("S1_01", {"OEBPS/Text/S1_01-01_Chapter1.xhtml": GOOD})
+        renamed = book.parent / "【S1_01】A&B"
+        book.rename(renamed)
+        opf = renamed / "OEBPS/content.opf"
+        opf_text = opf.read_text(encoding="utf-8")
+        opf_text = opf_text.replace(
+            'unique-identifier="BookId"', 'unique-identifier="MainId"',
+        ).replace(
+            '<dc:title id="id">【S1_01】测试书X</dc:title>',
+            '<!-- <dc:title>假标题</dc:title> --><dc:title id="id">【S1_01】A&amp;B</dc:title>',
+        ).replace('id="BookId"', 'id="MainId"')
+        opf.write_text(opf_text, encoding="utf-8")
+        ncx = renamed / "toc.ncx"
+        ncx_text = ncx.read_text(encoding="utf-8").replace(
+            '<meta name="dtb:uid" content="uuid:test-S1_01"/>',
+            '<meta content="uuid:test-S1_01" name="dtb:uid"/>',
+        ).replace("<text>【S1_01】测试书X</text>", "<text>【S1_01】A&amp;B</text>")
+        ncx.write_text(ncx_text, encoding="utf-8")
+        findings, *_ = audit_book(renamed, {"metadata-title", "packaging-required", "toc-entry", "ncx-doctitle", "ncx-uid"})
+        self.assertEqual(findings, [])
+
 
 class OpfSpineReadingTests(unittest.TestCase):
     def test_xml_quotes_namespaces_entities_and_attribute_spacing(self):
@@ -686,6 +708,14 @@ class OpfSpineReadingTests(unittest.TestCase):
         ):
             with self.subTest(text=text):
                 self.assertEqual(check_epub_health.opf_spine_hrefs(text), [])
+
+    def test_iter_books_pattern_treats_brackets_as_literal(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "【S1_01】书A").mkdir()
+            (root / "【S1_01】书[A]").mkdir()
+            matched = [p.name for p in check_epub_health.iter_books(root, "*[A]*")]
+            self.assertEqual(matched, ["【S1_01】书[A]"])
 
 
 if __name__ == "__main__":

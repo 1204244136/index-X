@@ -24,6 +24,7 @@ if __package__:
     from .cli_output import configure_output
 else:
     from cli_output import configure_output
+from epub_ids import compile_book_pattern
 from notes_core import (
     NOTEFILE_RE,
     gather_refs,
@@ -100,10 +101,12 @@ def _run():
         return 2
     problems = []
     per_book = {}
+    entries: list[tuple[str, str, dict]] = []
+    entry_by_key: dict[tuple[str, str], dict] = {}
     books = sorted(d for d in os.listdir(root) if os.path.isdir(os.path.join(root, d)))
     if args.pattern:
-        pat = args.pattern.replace("*", ".*")
-        books = [b for b in books if re.search(pat, b)]
+        pat = compile_book_pattern(args.pattern)
+        books = [b for b in books if pat.search(b)]
 
     selected_books = []
     without_notes = []
@@ -112,13 +115,16 @@ def _run():
         if not os.path.isdir(text_dir) or not any(f.endswith(".xhtml") for f in os.listdir(text_dir)):
             continue
         selected_books.append(book)
-        note_files = [f for f in os.listdir(text_dir) if NOTEFILE_RE.match(f)]
+        note_files = sorted(f for f in os.listdir(text_dir) if NOTEFILE_RE.match(f))
         if not note_files:
             without_notes.append(book)
             continue
         for nf in note_files:
             entry, issues = check_book(book, text_dir, nf)
-            per_book[book] = entry
+            entries.append((book, nf, entry))
+            entry_by_key[(book, nf)] = entry
+            json_key = book if len(note_files) == 1 else f"{book}::{nf}"
+            per_book[json_key] = entry
             if issues:
                 problems.append((book, nf, issues))
 
@@ -128,23 +134,24 @@ def _run():
 
     # 终端输出
     if problems:
-        print("发现 %d 本存在 Note 顺序/ID 问题：\n" % len(problems))
+        print("发现 %d 个 Note 文件存在顺序/ID 问题：\n" % len(problems))
         for book, nf, issues in problems:
             print("=" * 70)
             print("书: %s  文件: %s" % (book, nf))
             for it in issues:
                 print("  - " + it)
-            data = per_book[book]
+            data = entry_by_key[(book, nf)]
             print("  Note 文件定义顺序: %s" % ", ".join(data["defined_order"]))
             print("  正文首次出现顺序: %s" % ", ".join(data["appearance_order"]))
             print("  首次出现位置:")
             for k, v in data["first_appearance"].items():
                 print("    %s -> %s:%s" % (k, v["file"], v["line"]))
-    elif per_book:
+    elif entries:
         print("所有 Note 条目均按正文首次引用顺序排列，ID 引用完整且无重复定义。")
     else:
         print("所选书籍无 Note 页，未执行 Note 条目检查。")
-    print("\n共检查 %d 本书。" % len(per_book))
+    checked_books_count = len({book for book, _, _ in entries})
+    print("\n共检查 %d 本书。" % checked_books_count)
     if without_notes:
         print("无 Note 页（不适用）：%d 本；%s" % (len(without_notes), "、".join(without_notes)))
 
@@ -163,7 +170,7 @@ def _run():
                 fields = ["book", "note_file", "defined_order", "appearance_order", "first_appearance", "issues"]
                 writer = csv.DictWriter(f, fieldnames=fields, delimiter="\t")
                 writer.writeheader()
-                for book, entry in per_book.items():
+                for book, _nf, entry in entries:
                     writer.writerow({
                         "book": book,
                         "note_file": entry["note_file"],
@@ -175,25 +182,25 @@ def _run():
             md_path = os.path.join(args.output, "note-order-check.md")
             lines = ["# 中文 Note 注释顺序/ID 检查报告\n"]
             if problems:
-                lines.append("发现 **%d** 本存在 Note 顺序/ID 问题：\n" % len(problems))
+                lines.append("发现 **%d** 个 Note 文件存在顺序/ID 问题：\n" % len(problems))
                 for book, nf, issues in problems:
                     lines.append("## %s（%s）\n" % (book, nf))
                     for it in issues:
                         lines.append("- " + it)
-                    data = per_book[book]
+                    data = entry_by_key[(book, nf)]
                     lines.append("\n- Note 文件定义顺序：`%s`" % ", ".join(data["defined_order"]))
                     lines.append("- 正文首次出现顺序：`%s`" % ", ".join(data["appearance_order"]))
                     lines.append("\n首次出现位置：")
                     for k, v in data["first_appearance"].items():
                         lines.append("- %s → `%s:%s`" % (k, v["file"], v["line"]))
                     lines.append("")
-            elif per_book:
+            elif entries:
                 lines.append("所有 Note 条目均按正文首次引用顺序排列，ID 引用完整且无重复定义。\n")
             else:
                 lines.append("所选书籍无 Note 页，未执行 Note 条目检查。\n")
             if without_notes:
                 lines.append("无 Note 页（不适用）：%s。\n" % "、".join(without_notes))
-            lines.append("\n共检查 %d 本书。\n" % len(per_book))
+            lines.append("\n共检查 %d 本书。\n" % checked_books_count)
             with open(md_path, "w", encoding="utf-8") as f:
                 f.write("\n".join(lines))
             print("文本报告已写入: %s" % md_path)

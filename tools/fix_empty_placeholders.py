@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import re
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 if __package__:
@@ -11,9 +12,10 @@ if __package__:
 else:
     from cli_output import configure_output
 from epub_ids import NUMBERED_BOOK, S6_DATE
-from epub_structure import METADATA_SUFFIXES
+from epub_structure import METADATA_SUFFIXES, replace_reference_names
 from edit_safety import (EditSafetyError, add_content_roots, add_edit_mode,
                          content_roots, require_edit_target)
+from file_transaction import atomic_write_bytes, rollback_paths
 
 NAME_RE = re.compile(
     rf"^({S6_DATE}|{NUMBERED_BOOK})-(\d+)(_p-(\d+)|_p-[^.]+)(\.xhtml)$",
@@ -65,20 +67,77 @@ def find_book_root(path: Path) -> Path:
     return path.parent
 
 
+def _remove_innermost_blocks(
+    raw: bytes, tag_name: str, anchor_pattern: re.Pattern[bytes]
+) -> bytes:
+    """删除包含 anchor_pattern 的最小完整闭合 `<tag_name>...</tag_name>` 块，兼容嵌套标签。"""
+    tag_re = re.compile(
+        rb"<\s*(/?)\s*" + tag_name.encode("ascii") + rb"(?:\s[^>]*)?>",
+        re.I,
+    )
+    stack: list[int] = []
+    spans: list[tuple[int, int]] = []
+    for match in tag_re.finditer(raw):
+        token = match.group(0)
+        if match.group(1):
+            if stack:
+                spans.append((stack.pop(), match.end()))
+        elif not token.rstrip().endswith(b"/>"):
+            stack.append(match.start())
+
+    to_delete: list[tuple[int, int]] = []
+    for anchor in anchor_pattern.finditer(raw):
+        pos = anchor.start()
+        enclosing = [(s, e) for s, e in spans if s <= pos < e]
+        if enclosing:
+            best = min(enclosing, key=lambda pair: pair[1] - pair[0])
+            to_delete.append(best)
+
+    if not to_delete:
+        return raw
+
+    # 按起始位置升序合并，去掉各自独立的最外层被选中区间
+    to_delete.sort()
+    merged: list[tuple[int, int]] = []
+    for s, e in to_delete:
+        if merged and s < merged[-1][1]:
+            merged[-1] = (merged[-1][0], max(merged[-1][1], e))
+        else:
+            merged.append((s, e))
+
+    chunks: list[bytes] = []
+    cursor = 0
+    for s, e in merged:
+        # 一并清理同一行上紧跟块后的单个换行与行首缩进（仅当整行只含该块时）
+        line_start = raw.rfind(b"\n", cursor, s)
+        prefix_start = line_start + 1 if line_start != -1 else cursor
+        if prefix_start >= cursor and not raw[prefix_start:s].strip(b" \t"):
+            trim_s = prefix_start
+        else:
+            trim_s = s
+        trim_e = e
+        if raw[trim_e:trim_e + 2] == b"\r\n":
+            trim_e += 2
+        elif raw[trim_e:trim_e + 1] in (b"\n", b"\r"):
+            trim_e += 1
+        chunks.append(raw[cursor:trim_s])
+        cursor = trim_e
+    chunks.append(raw[cursor:])
+    return b"".join(chunks)
+
+
 def rewrite_references(book_root: Path, renamed: list[tuple[Path, Path]]) -> set[Path]:
     """Update OPF/NCX/nav/XHTML references without changing encoding or newlines."""
-    replacements = [(source.name.encode("ascii"), target.name.encode("ascii"))
-                    for source, target in renamed]
+    name_map = {source.name: target.name for source, target in renamed}
     changed: set[Path] = set()
     for candidate in book_root.rglob("*"):
         if not candidate.is_file() or candidate.suffix.casefold() not in METADATA_SUFFIXES:
             continue
         raw = candidate.read_bytes()
-        updated = raw
-        for old, new in replacements:
-            updated = updated.replace(old, new)
+        updated = replace_reference_names(raw, name_map)
         if updated != raw:
-            candidate.write_bytes(updated)
+            ET.fromstring(updated)
+            atomic_write_bytes(candidate, updated)
             changed.add(candidate)
     return changed
 
@@ -89,7 +148,7 @@ def remove_deleted_metadata_references(book_root: Path, deleted_name: str) -> se
     This runs before later files are renamed into the vacated filename, so the
     old empty-page entry cannot become a duplicate reference to its successor.
     """
-    old = re.escape(deleted_name.encode("ascii"))
+    old = re.escape(deleted_name.encode("utf-8"))
     changed: set[Path] = set()
     for candidate in book_root.rglob("*"):
         if not candidate.is_file() or candidate.suffix.casefold() not in METADATA_SUFFIXES:
@@ -98,8 +157,8 @@ def remove_deleted_metadata_references(book_root: Path, deleted_name: str) -> se
         updated = raw
         if candidate.suffix.casefold() == ".opf":
             item_pattern = re.compile(
-                rb"<item\b(?=[^>]*\bhref\s*=\s*['\"][^'\"]*" + old
-                + rb"(?:#[^'\"]*)?['\"])[^>]*/?>",
+                rb"<item\b(?=[^>]*\bhref\s*=\s*['\"](?:[^'\"]*/)?(" + old
+                + rb")(?:#[^'\"]*)?['\"])[^>]*/?>",
                 re.I,
             )
             item_ids: list[bytes] = []
@@ -117,23 +176,22 @@ def remove_deleted_metadata_references(book_root: Path, deleted_name: str) -> se
                     flags=re.I,
                 )
         elif candidate.suffix.casefold() == ".ncx":
-            updated = re.sub(
-                rb"<navPoint\b[^>]*>(?:(?!<navPoint\b).)*?<content\b[^>]*\bsrc\s*=\s*['\"][^'\"]*"
-                + old + rb"(?:#[^'\"]*)?['\"][^>]*/?>(?:(?!<navPoint\b).)*?</navPoint>",
-                b"",
-                updated,
-                flags=re.I | re.S,
+            content_re = re.compile(
+                rb"<content\b[^>]*\bsrc\s*=\s*['\"](?:[^'\"]*/)?" + old
+                + rb"(?:#[^'\"]*)?['\"][^>]*/?>",
+                re.I,
             )
+            updated = _remove_innermost_blocks(updated, "navPoint", content_re)
         elif candidate.name.casefold() == "nav.xhtml":
-            updated = re.sub(
-                rb"<li\b[^>]*>(?:(?!<li\b).)*?<a\b[^>]*\bhref\s*=\s*['\"][^'\"]*"
-                + old + rb"(?:#[^'\"]*)?['\"][^>]*>.*?</a>\s*</li>",
-                b"",
-                updated,
-                flags=re.I | re.S,
+            href_re = re.compile(
+                rb"<a\b[^>]*\bhref\s*=\s*['\"](?:[^'\"]*/)?" + old
+                + rb"(?:#[^'\"]*)?['\"][^>]*>",
+                re.I,
             )
+            updated = _remove_innermost_blocks(updated, "li", href_re)
         if updated != raw:
-            candidate.write_bytes(updated)
+            ET.fromstring(updated)
+            atomic_write_bytes(candidate, updated)
             changed.add(candidate)
     return changed
 
@@ -147,16 +205,26 @@ def apply_candidate(path: Path) -> tuple[list[tuple[Path, Path]], int]:
         sibling_match = NAME_RE.match(sibling.name)
         if sibling_match and int(sibling_match.group(2)) > deleted:
             later.append(sibling)
+    ordered_later = sorted(later, key=lambda p: int(NAME_RE.match(p.name).group(2)))
+    rename_plan = [(sibling, sibling.with_name(shifted_name(sibling))) for sibling in ordered_later]
     book_root = find_book_root(path)
-    referenced_files = remove_deleted_metadata_references(book_root, path.name)
-    path.unlink()
-    renamed = []
-    for sibling in sorted(later, key=lambda p: int(NAME_RE.match(p.name).group(2))):
-        target = sibling.with_name(shifted_name(sibling))
-        sibling.rename(target)
-        renamed.append((sibling, target))
-    referenced_files.update(rewrite_references(book_root, renamed))
-    return renamed, len(referenced_files)
+    metadata_paths = [
+        p for p in book_root.rglob("*")
+        if p.is_file() and p.suffix.casefold() in METADATA_SUFFIXES
+    ]
+    managed_paths = [
+        path,
+        *[src for src, _ in rename_plan],
+        *[dst for _, dst in rename_plan],
+        *metadata_paths,
+    ]
+    with rollback_paths(managed_paths):
+        referenced_files = remove_deleted_metadata_references(book_root, path.name)
+        path.unlink()
+        for sibling, target in rename_plan:
+            sibling.rename(target)
+        referenced_files.update(rewrite_references(book_root, rename_plan))
+    return rename_plan, len(referenced_files)
 
 
 def main() -> int:

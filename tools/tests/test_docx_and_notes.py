@@ -3,12 +3,20 @@ from __future__ import annotations
 import sys
 import tempfile
 import unittest
+import xml.etree.ElementTree as ET
+import zipfile
 from pathlib import Path
 
 TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 
-from docx2epub import build_chapters, render_content  # noqa: E402
+from docx2epub import (  # noqa: E402
+    build_chapters,
+    extract_source_images,
+    render_content,
+    render_cover,
+    render_opf,
+)
 from notes_core import book_order_key, gather_refs  # noqa: E402
 
 
@@ -49,6 +57,48 @@ class NoteOrderTests(unittest.TestCase):
             appearance, refs = gather_refs(root, "S1_01-Note.xhtml")
             self.assertEqual(list(appearance), ["note1"])
             self.assertEqual(refs["note1"], [("S1_01-01_Chapter1.xhtml", 1)])
+
+
+class DocxPackagingRegressionTests(unittest.TestCase):
+    def test_cover_no_head_br_and_opf_includes_file_as_and_image_mime(self):
+        cover = render_cover("S1_01-Cover.webp")
+        head = cover.split("</head>", 1)[0]
+        self.assertNotIn("<br", head)
+        ET.fromstring(cover.encode("utf-8"))
+
+        opf = render_opf(
+            {"title": "【S1_01】测试书", "creator": "作者", "language": "zh-CN"},
+            ["S1_01-01.xhtml"],
+            ["S1_01-Cover.webp", "S1_01-i-001.svg"],
+            "S1_01-Cover.webp",
+            "1234",
+        )
+        self.assertIn('<meta refines="#id" property="file-as">【S1_01】测试书</meta>', opf)
+        self.assertIn('media-type="image/webp"', opf)
+        self.assertIn('media-type="image/svg+xml"', opf)
+        ET.fromstring(opf.encode("utf-8"))
+
+    def test_extract_source_images_resolves_relative_to_xhtml_dir(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            epub_path = Path(tmp) / "src.epub"
+            with zipfile.ZipFile(epub_path, "w") as zf:
+                zf.writestr("META-INF/container.xml",
+                            '<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">'
+                            '<rootfiles><rootfile full-path="OEBPS/content.opf" '
+                            'media-type="application/oebps-package+xml"/></rootfiles></container>')
+                zf.writestr("OEBPS/content.opf",
+                            '<package xmlns="http://www.idpf.org/2007/opf" version="3.0">'
+                            '<manifest>'
+                            '<item id="ch" href="Text/sub/ch01.xhtml" media-type="application/xhtml+xml"/>'
+                            '<item id="img" href="Images/p1.png" media-type="image/png"/>'
+                            '</manifest><spine><itemref idref="ch"/></spine></package>')
+                zf.writestr("OEBPS/Text/sub/ch01.xhtml",
+                            '<html xmlns="http://www.w3.org/1999/xhtml"><head><title>x</title></head>'
+                            '<body><p>正文段落</p><p><img src="../../Images/p1.png"/></p></body></html>')
+                zf.writestr("OEBPS/Images/p1.png", b"PNGDATA")
+            src = extract_source_images(epub_path, "S1_01")
+            self.assertIn("S1_01-p1.png", src["images"])
+            self.assertEqual(src["images"]["S1_01-p1.png"], b"PNGDATA")
 
 
 if __name__ == "__main__":

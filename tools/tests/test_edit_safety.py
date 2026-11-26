@@ -509,6 +509,25 @@ class MutatorCliTests(unittest.TestCase):
                 self.assertEqual(self.call(normalize_paired, '--root', root, '--jp-root', jp_root, '--apply'), 1)
             self.assertEqual([path.read_bytes() for path in cn_paths], originals)
 
+    def test_staging_rejects_any_path_inside_repo_root(self):
+        repo_tools = edit_safety.REPO_ROOT / "tools"
+        repo_ghost = edit_safety.REPO_ROOT / ".tmp-staging-test"
+        for bad in (repo_tools, repo_ghost, edit_safety.REPO_ROOT):
+            with self.subTest(bad=bad):
+                with self.assertRaises(edit_safety.EditSafetyError):
+                    edit_safety.require_edit_target(bad, staging=True)
+        with tempfile.TemporaryDirectory() as tmp:
+            edit_safety.require_edit_target(Path(tmp) / "book", staging=True)
+
+    def test_normalize_single_dir_skips_matching_subdirectories(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "sub.xhtml").mkdir()
+            (root / "real.xhtml").write_text(xhtml("<p>正文</p>"), encoding="utf-8")
+            with patch.object(sys, "argv", ["normalize_single.py", "--dir", str(root), "--pattern", "*"]), \
+                    contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(normalize_single.main(), 0)
+
 
 if __name__ == "__main__":
     unittest.main()

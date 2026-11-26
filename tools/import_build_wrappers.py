@@ -36,6 +36,7 @@ else:
     from cli_output import configure_output
 from docx_source import esc
 from edit_safety import EditSafetyError, add_edit_mode, require_edit_target
+from epub_structure import image_media_type
 from file_transaction import atomic_write_bytes, rollback_paths
 from import_plan import PlanError, load_plan
 from path_safety import require_report_target
@@ -56,7 +57,7 @@ def page_document(body_lines: list[str]) -> str:
 def render_cover(cover: str) -> str:
     return ("<?xml version='1.0' encoding='utf-8'?>\n<!DOCTYPE html>\n"
             '<html xmlns="http://www.w3.org/1999/xhtml" '
-            'xmlns:epub="http://www.idpf.org/2007/ops">\n<br/>\n<head>\n'
+            'xmlns:epub="http://www.idpf.org/2007/ops">\n<head>\n'
             '<link href="../Styles/style.css" rel="stylesheet" type="text/css"/>\n'
             "<title></title>\n</head>\n<body epub:type=\"cover\">\n"
             f'<div class="center"><img alt="图像" class="fit" src="../Images/{cover}"/></div>'
@@ -74,20 +75,21 @@ def render_nav(entries: list[tuple[str, str, int]]) -> str:
     lines = ["<?xml version='1.0' encoding='utf-8'?>", "<!DOCTYPE html>",
              '<html xmlns="http://www.w3.org/1999/xhtml" '
              'xmlns:epub="http://www.idpf.org/2007/ops" lang="zh" xml:lang="zh">',
-             "<br/>", "    <head>", "        <title>Navigation</title>", "    </head>",
+             "    <head>", "        <title>Navigation</title>", "    </head>",
              "    <body>", '    <nav epub:type="toc">', "  <ol>"]
     for name, title, sections in entries:
         href = f"OEBPS/Text/{name}"
+        safe_title = esc(title)
         if sections:
             lines.append("    <li>")
-            lines.append(f'      <a href="{href}">{title}</a>')
+            lines.append(f'      <a href="{href}">{safe_title}</a>')
             lines.append("      <ol>")
             for number in range(1, sections + 1):
                 lines.append(f'        <li><a href="{href}#toc_{number}">{number}</a></li>')
             lines.append("      </ol>")
             lines.append("    </li>")
         else:
-            lines.append(f'    <li><a href="{href}">{title}</a></li>')
+            lines.append(f'    <li><a href="{href}">{safe_title}</a></li>')
     lines += ["  </ol>", "</nav>", "</body></html>"]
     return "\n".join(lines) + "\n"
 
@@ -148,12 +150,13 @@ def render_opf(plan: dict, text_order: list[str], uid: str, author: str, descrip
     items.append('    <item href="../toc.ncx" id="ncx" media-type="application/x-dtbncx+xml"/>')
     items.append('    <item id="id-css" href="Styles/style.css" media-type="text/css"/>')
     for number, name in enumerate(image_names, 1):
+        media_type = image_media_type(name)
         if name == cover:
-            items.append(f'    <item id="cover" href="Images/{name}" media-type="image/jpeg" '
+            items.append(f'    <item id="cover" href="Images/{name}" media-type="{media_type}" '
                          'properties="cover-image"/>')
         else:
             items.append(f'    <item id="id-img-{number}" href="Images/{name}" '
-                         'media-type="image/jpeg"/>')
+                         f'media-type="{media_type}"/>')
     spine = "\n".join(f'    <itemref idref="id-t{number}"/>'
                       for number in range(1, len(text_order) + 1))
     user_metadata = re.search(r'<meta property="calibre:user_metadata">.*?</meta>',

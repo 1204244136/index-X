@@ -58,14 +58,18 @@ def suggest(args) -> int:
             lines.append(f"{path.name}\t未知\t指纹不可用")
             continue
         distance, match = best
-        confidence = "高" if 0 <= distance <= 6 else ("中" if distance <= 16 else "低")
+        confidence = "低" if distance < 0 else ("高" if distance <= 6 else ("中" if distance <= 16 else "低"))
         archive_name = f"{args.work}-{match.name}" if args.work and not match.name.startswith(f"{args.work}-") else match.name
         lines.append(f"{path.name}\t{size}\t->\t{archive_name}\t距离 {distance}（{confidence}）")
     text = "\n".join(lines) + "\n"
     if args.out:
-        args.out.parent.mkdir(parents=True, exist_ok=True)
-        args.out.write_text(text, encoding="utf-8", newline="\n")
-        print(f"建议映射：{args.out}")
+        try:
+            out_path = require_report_target(args.out, protected_dirs=[args.src, args.jp_dir])
+            atomic_write_bytes(out_path, text.encode("utf-8"))
+        except (ValueError, OSError) as exc:
+            print(f"[阻断] 建议映射写入失败：{exc}", file=sys.stderr)
+            return 2
+        print(f"建议映射：{out_path}")
     print(text, end="")
     print("低置信项必须打开图看过再落位；同一张原图只允许对应一个归档名。")
     return 0

@@ -8,8 +8,15 @@ import json
 from pathlib import Path
 import sys
 
-from cli_output import configure_output
-from proofread_packets import (
+TOOLS_DIR = Path(__file__).resolve().parent
+if str(TOOLS_DIR) not in sys.path:
+    sys.path.insert(0, str(TOOLS_DIR))
+
+if __package__:
+    from .cli_output import configure_output
+else:
+    from cli_output import configure_output
+from proofread_packets import (  # noqa: E402
     initialize_manifest,
     prepare_session,
     read_packet,

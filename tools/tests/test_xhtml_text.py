@@ -69,6 +69,10 @@ class XhtmlTextTests(unittest.TestCase):
         self.assertIsNone(RT_ELEMENT.search("<ruby>水</ruby>"))
         self.assertEqual(RT_ELEMENT.sub("", "<rt>x</rt>水<rp>(</rp>"), "水<rp>(</rp>")
 
+    def test_self_closing_ruby_tags_and_utf8_bom_stripped(self):
+        bom_html = "\ufeff<p><ruby>魔術<rp/><rt/></ruby></p>".encode("utf-8")
+        self.assertEqual(text_of_without_ruby_compact(bom_html), "魔術")
+
 
 if __name__ == "__main__":
     unittest.main()

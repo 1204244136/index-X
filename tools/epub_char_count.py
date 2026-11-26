@@ -23,7 +23,7 @@
     - 位置规则：第一个「序章」之前的成分 → 引子；第一个「后记」之后的成分 → 尾声。
 
 字数口径：
-    - 去 HTML 标签、去注音假名（<rt>/<rb>/<rp>，注音不重复计数）、解实体、去全部空白；
+    - 去 HTML 标签、去注音假名（<rt>/<rp>，保留 <rb> 底字内容，注音不重复计数）、解实体、去全部空白；
     - 「全字符」= 剩余全部字符（含标点、数字、字母）；「占比」= 其中汉字与假名占全字符的比例（0.xx 两位小数）。
 
 页数换算：
@@ -44,6 +44,7 @@ import sys
 import unicodedata
 import zipfile
 from pathlib import Path
+from urllib.parse import unquote
 from xml.etree import ElementTree as ET
 
 if __package__:
@@ -85,7 +86,7 @@ def pct_str(all_chars: int, cjk_chars: int) -> str:
 
 
 # 成分名规范化用：章节头（序章/第N章/终章）与常用日文词
-CHAPTER_RE = re.compile(r"^(序|終|第[一二三四五六七八九十百\d]+)\s*章")
+CHAPTER_RE = re.compile(r"^(序|[終终]|第[〇零一二三四五六七八九十百千0-9０-９]+)\s*章")
 JP_LABEL_TRANS = (("行間", "行间"), ("終", "终"), ("あとがき", "后记"))
 
 
@@ -138,11 +139,9 @@ def tag_local(tag: str) -> str:
 
 
 def strip_ruby(text: str) -> str:
-    """删除注音假名 <rt>/<rb>/<rp>，避免重复计数。"""
-    text = re.sub(r"<rt[^>]*>.*?</rt>", "", text, flags=re.S)
-    text = re.sub(r"<rt[^>]*/>", "", text)
-    text = re.sub(r"<rb[^>]*>.*?</rb>", "", text, flags=re.S)
-    text = re.sub(r"<rp[^>]*>.*?</rp>", "", text, flags=re.S)
+    """删除注音假名 <rt>/<rp>（保留 <rb> 底字内容），避免重复计数或漏记底字。"""
+    text = re.sub(r"<rt\b[^>]*>.*?</rt\s*>|<rt\b[^>]*/>", "", text, flags=re.I | re.S)
+    text = re.sub(r"<rp\b[^>]*>.*?</rp\s*>|<rp\b[^>]*/>", "", text, flags=re.I | re.S)
     return text
 
 
@@ -277,18 +276,27 @@ def spine_xhtml_items(source: "EpubSource") -> list[dict]:
         cont = ET.fromstring(source.read("META-INF/container.xml"))
     except KeyError as exc:
         raise SystemExit("缺少 META-INF/container.xml，不是合法 EPUB") from exc
+    except ET.ParseError as exc:
+        raise SystemExit(f"container.xml XML 解析失败：{exc}") from exc
     rootfile = next((e for e in cont.iter() if tag_local(e.tag) == "rootfile"), None)
     if rootfile is None:
         raise SystemExit("container.xml 中找不到 rootfile")
-    opf_path = rootfile.get("full-path")
-    root = ET.fromstring(source.read(opf_path))
+    opf_path = (rootfile.get("full-path") or "").strip()
+    if not opf_path:
+        raise SystemExit("container.xml 的 rootfile 缺少 full-path")
+    try:
+        root = ET.fromstring(source.read(opf_path))
+    except KeyError as exc:
+        raise SystemExit(f"缺少 OPF 包文档：{opf_path}") from exc
+    except ET.ParseError as exc:
+        raise SystemExit(f"OPF XML 解析失败：{exc}") from exc
     opf_dir = posixpath.dirname(opf_path)
 
     manifest: dict[str, dict] = {}
     for it in root.iter():
         if tag_local(it.tag) == "item":
             manifest[it.get("id")] = {
-                "href": it.get("href", ""),
+                "href": unquote(it.get("href", "")),
                 "media_type": it.get("media-type", ""),
                 "props": it.get("properties", "") or "",
             }
@@ -318,28 +326,31 @@ def is_fixed_layout(item: dict) -> bool:
 
 
 def analyze(source: "EpubSource", item: dict, pages_per: int) -> dict:
+    if pages_per <= 0:
+        raise ValueError("pages_per 必须大于 0")
     raw = source.read(item["path"]).decode("utf-8", errors="replace")
     stem = Path(item["path"]).stem
     h1 = h1_of(raw)
     txt = text_of(raw)
     sub_components = []
     for slabel, seg in split_sections(raw):
-        n = len(text_of(seg))
+        seg_txt = text_of(seg)
+        n = len(seg_txt)
         sub_components.append({
             "label": slabel,
             "all_chars": n,
-            "cjk_chars": len(CJK_RE.findall(text_of(seg))),
+            "cjk_chars": len(CJK_RE.findall(seg_txt)),
             "pages": max(1, math.ceil(n / pages_per)),
         })
     all_chars = len(txt)
     pages = (sum(s["pages"] for s in sub_components)
              if sub_components else max(1, math.ceil(all_chars / pages_per)))
+    h1_m = re.search(r"(<h1[^>]*>.*?</h1>)", raw, flags=re.S | re.I)
     return {
         "path": item["path"],
         "stem": stem,
         "label": h1 or stem,
-        "h1_chars": len(text_of(re.search(r"(<h1[^>]*>.*?</h1>)", raw, flags=re.S).group(1)))
-                    if "<h1" in raw else 0,
+        "h1_chars": len(text_of(h1_m.group(1))) if h1_m else 0,
         "all_chars": all_chars,
         "cjk_chars": len(CJK_RE.findall(txt)),
         "pages": pages,
@@ -515,6 +526,8 @@ def main() -> int:
     p.add_argument("--label-map", type=Path, metavar="MAP.JSON",
                    help="可选的成分名映射 JSON，如 {\"S4_03-01-p-001\": \"引子\"}")
     args = p.parse_args()
+    if args.pages_per <= 0:
+        p.error("--pages-per 必须为正整数")
 
 
     label_map: dict = {}

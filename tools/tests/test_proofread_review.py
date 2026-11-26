@@ -474,6 +474,23 @@ class IllustrationTextAlertTests(unittest.TestCase):
             self.assertIn("[插图文本联动提醒]", out)
             self.assertIn("S1_02-Illustrations3.jpg", out)
 
+    def test_parse_diff_rows_flushes_at_context_lines_and_ignores_no_newline_marker(self):
+        from proofread_review import parse_diff_rows
+        diff = "\n".join([
+            "diff --git a/EPUB/【S1_01】书/OEBPS/Text/S1_01-01.xhtml b/EPUB/【S1_01】书/OEBPS/Text/S1_01-01.xhtml",
+            "--- a/EPUB/【S1_01】书/OEBPS/Text/S1_01-01.xhtml",
+            "+++ b/EPUB/【S1_01】书/OEBPS/Text/S1_01-01.xhtml",
+            "@@ -1,5 +1,5 @@",
+            "-<p>第一句旧</p>",
+            " <p>中间上下文行</p>",
+            "+<p>第三句新</p>",
+            "\\ No newline at end of file",
+        ])
+        rows = parse_diff_rows(diff, "HEAD")
+        self.assertEqual(len(rows), 2)
+        self.assertEqual((rows[0]["old"], rows[0]["new"], rows[0]["line"]), ("第一句旧", "", "1"))
+        self.assertEqual((rows[1]["old"], rows[1]["new"], rows[1]["line"]), ("", "第三句新", "2"))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -86,7 +86,7 @@ def main() -> int:
         if not args.dir.exists():
             print(f"[错误] 目录不存在：{args.dir}", file=sys.stderr)
             return 1
-        files = sorted(args.dir.rglob(args.pattern))
+        files = sorted(path for path in args.dir.rglob(args.pattern) if path.is_file())
     else:
         files = args.paths
     files = [path for path in files if path.name.casefold() != "nav.xhtml"]

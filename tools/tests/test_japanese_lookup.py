@@ -113,6 +113,21 @@ class JapaneseLookupTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(result.stdout.strip(), "日文本文。")
 
+    def test_work_dir_exact_match_and_bom_stripped(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            wrong = root / "【S1_010】十" / "item" / "xhtml"
+            right = root / "【S1_01】一" / "item" / "xhtml"
+            wrong.mkdir(parents=True)
+            right.mkdir(parents=True)
+            (wrong / "S1_010-01.xhtml").write_text("<p>十卷</p>\n", encoding="utf-8")
+            (right / "S1_01-01.xhtml").write_bytes("\ufeff<p>一卷</p>\n".encode("utf-8"))
+            lookup = JapaneseSourceLookup(jp_base_dir=str(root))
+            self.assertEqual(lookup.find_work_dir("S1_01"), right)
+            line = lookup.get_line("S1_01", "01", 1)
+            self.assertEqual(line, "一卷")
+            self.assertFalse(line.startswith("\ufeff"))
+
 
 if __name__ == "__main__":
     unittest.main()

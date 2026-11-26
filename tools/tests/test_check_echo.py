@@ -1262,6 +1262,10 @@ class ConventionStatsTests(unittest.TestCase):
             stats = convention_stats([r"呆れたように息を吐"], [r"叹[气了息]"], cn_root, jp_root)
             self.assertEqual(1, stats["groups"][0]["hits"])
 
+    def test_frag_groups_skips_single_line_after_dedup(self):
+        rows = [{"file": "a.xhtml", "line": 1, "jp": "「これは同じ長いセリフです」『これは同じ長いセリフです』", "cn": "同一行不同片段？"}]
+        self.assertEqual(frag_groups(rows, 5), [])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -141,6 +141,40 @@ class NoteOrderTests(unittest.TestCase):
         self.assertIn("无 Note", output.getvalue())
         self.assertNotIn("所有 Note 条目均", output.getvalue())
 
+    def test_pattern_treats_brackets_as_literal(self):
+        self.write(["note1"], ["note1"])
+        bracket_text = self.root / "【S1_01】[测试]" / "OEBPS" / "Text"
+        bracket_text.mkdir(parents=True)
+        (bracket_text / "S1_01-Note.xhtml").write_text('<html><body><ol><li id="note1">注</li></ol></body></html>', encoding="utf-8")
+        (bracket_text / "S1_01-01_Chapter.xhtml").write_text(
+            '<html xmlns:epub="http://www.idpf.org/2007/ops"><body>'
+            '<p><a epub:type="noteref" href="S1_01-Note.xhtml#note1">注</a></p></body></html>',
+            encoding="utf-8",
+        )
+        with patch.object(sys, "argv", ["check_note_order.py", "--root", str(self.root),
+                                       "--pattern", "*[测试]*", "--output", str(self.root / "report")]):
+            with redirect_stdout(io.StringIO()):
+                self.assertEqual(check_note_order.main(), 0)
+        payload = json.loads((self.root / "report" / "note-order-check.json").read_text(encoding="utf-8"))
+        self.assertEqual(list(payload), ["【S1_01】[测试]"])
+
+    def test_multiple_note_files_per_book_are_all_recorded(self):
+        self.notes.unlink(missing_ok=True)
+        (self.text / "S1_01-Note.xhtml").write_text('<html><body><ol><li id="note1">甲</li></ol></body></html>', encoding="utf-8")
+        (self.text / "S1_01_Extra-Note.xhtml").write_text('<html><body><ol><li id="note2">乙</li></ol></body></html>', encoding="utf-8")
+        (self.text / "S1_01-01_Chapter.xhtml").write_text(
+            '<html xmlns:epub="http://www.idpf.org/2007/ops"><body>'
+            '<p><a epub:type="noteref" href="S1_01-Note.xhtml#note1">1</a></p>'
+            '<p><a epub:type="noteref" href="S1_01_Extra-Note.xhtml#note2">2</a></p></body></html>',
+            encoding="utf-8",
+        )
+        report = self.root / "multi_report"
+        with patch.object(sys, "argv", ["check_note_order.py", "--root", str(self.root), "--output", str(report)]), \
+                redirect_stdout(io.StringIO()):
+            self.assertEqual(check_note_order.main(), 0)
+        payload = json.loads((report / "note-order-check.json").read_text(encoding="utf-8"))
+        self.assertEqual(sorted(payload), ["【S1_01】书::S1_01-Note.xhtml", "【S1_01】书::S1_01_Extra-Note.xhtml"])
+
 
 if __name__ == "__main__":
     unittest.main()

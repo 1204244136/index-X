@@ -578,6 +578,48 @@ class PlaceholderTests(unittest.TestCase):
             self.assertNotIn('id="empty"', ncx.read_text(encoding="utf-8"))
             self.assertIn(target.name, ncx.read_text(encoding="utf-8"))
 
+    def test_nested_nav_li_and_write_failure_rollback(self):
+        import xml.etree.ElementTree as ET
+        with tempfile.TemporaryDirectory() as tmp:
+            book = Path(tmp)
+            (book / "META-INF").mkdir()
+            (book / "META-INF" / "container.xml").write_text("container", encoding="utf-8")
+            (book / "mimetype").write_text("application/epub+zip", encoding="ascii")
+            text = book / "OEBPS" / "Text"
+            text.mkdir(parents=True)
+            one = text / "S5_01_03-01_p-001.xhtml"
+            empty = text / "S5_01_03-02_p-002.xhtml"
+            three = text / "S5_01_03-03_p-003.xhtml"
+            one.write_text("<body><p>one</p></body>", encoding="utf-8")
+            empty.write_text("<body></body>", encoding="utf-8")
+            three.write_text("<body><p>three</p></body>", encoding="utf-8")
+            nav = text / "nav.xhtml"
+            nav.write_text(
+                f'<ol><li><a href="{empty.name}">outer</a>'
+                f'<ol><li><a href="{one.name}">child</a></li></ol></li>'
+                f'<li><a href="{three.name}">three</a></li></ol>',
+                encoding="utf-8",
+            )
+            snapshot = {p: p.read_bytes() for p in (one, empty, three, nav)}
+            with patch("fix_empty_placeholders.rewrite_references", side_effect=OSError("fail")):
+                with self.assertRaises(OSError):
+                    apply_candidate(empty)
+            self.assertEqual({p: p.read_bytes() for p in (one, empty, three, nav)}, snapshot)
+
+            apply_candidate(empty)
+            ET.fromstring(nav.read_bytes())
+            nav_after = nav.read_text(encoding="utf-8")
+            self.assertNotIn("outer", nav_after)
+            self.assertNotIn("child", nav_after)
+            self.assertIn(f'<a href="{empty.name}">three</a>', nav_after)
+
+    def test_update_manifest_books_rejects_traversal_and_invalid_side(self):
+        from manifest import update_manifest_books
+        with tempfile.TemporaryDirectory() as tmp:
+            for bad in ("chinese-text/..", "other-side/book", "chinese-text/a/b"):
+                with self.assertRaises(ValueError):
+                    update_manifest_books(Path(tmp), [bad], {})
+
 
 if __name__ == "__main__":
     unittest.main()

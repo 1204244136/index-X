@@ -23,6 +23,7 @@ else:
     from cli_output import configure_output
 from edit_safety import (EditSafetyError, add_content_roots, add_edit_mode,
                          content_roots, require_edit_target)
+from file_transaction import atomic_write_bytes, rollback_paths
 from xhtml_structure import body_start, iter_content_pairs, line_kind
 
 def read_lines(path: Path) -> list[str]:
@@ -93,6 +94,7 @@ def main() -> int:
 
     done = skipped = 0
     added = 0
+    pending_writes: list[tuple[Path, bytes]] = []
     for cn_id, header, jp_path, cn_path in pairs:
         jl, cl = read_lines(jp_path), read_lines(cn_path)
         if len(jl) == len(cl):
@@ -117,7 +119,11 @@ def main() -> int:
             bom = raw.startswith(b"\xef\xbb\xbf")
             sep = "\r\n" if b"\r\n" in raw else "\n"
             text = sep.join(out) + (sep if raw.endswith(b"\n") else "")
-            cn_path.write_bytes((b"\xef\xbb\xbf" if bom else b"") + text.encode("utf-8"))
+            pending_writes.append((cn_path, (b"\xef\xbb\xbf" if bom else b"") + text.encode("utf-8")))
+    if args.apply and pending_writes:
+        with rollback_paths([path for path, _ in pending_writes]):
+            for path, payload in pending_writes:
+                atomic_write_bytes(path, payload)
     print(f"\n{'已写盘' if args.apply else '预览'}：{done} 个中文文件，补回 {added} 行 <br/>；"
           f"因不满足前提跳过 {skipped} 个")
     return 1 if skipped and args.apply else 0

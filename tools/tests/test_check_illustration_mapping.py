@@ -346,6 +346,20 @@ class IllustrationMappingTests(unittest.TestCase):
         self.assertEqual(rc, 0)
         self.assertNotIn("未涉及已映射", out_diff.getvalue())
 
+    def test_scan_unified_diff_tracks_context_line_numbers(self):
+        diff = "\n".join([
+            "diff --git a/EPUB/【S1_01】书/OEBPS/Text/S1_01-01.xhtml b/EPUB/【S1_01】书/OEBPS/Text/S1_01-01.xhtml",
+            "--- a/EPUB/【S1_01】书/OEBPS/Text/S1_01-01.xhtml",
+            "+++ b/EPUB/【S1_01】书/OEBPS/Text/S1_01-01.xhtml",
+            "@@ -10,4 +10,4 @@",
+            " <p>ctx1</p>",
+            " <p>ctx2</p>",
+            "-<p>old</p>",
+            "+<p>new</p>",
+        ])
+        touched, _hd, _ast = cim._parse_git_diff_changes(diff, "EPUB")
+        self.assertEqual(touched[("S1_01", "S1_01-01.xhtml")], {12})
+
 
 if __name__ == "__main__":
     unittest.main()

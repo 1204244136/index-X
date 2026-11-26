@@ -46,6 +46,7 @@ if __package__:
     from .cli_output import configure_output
 else:
     from cli_output import configure_output
+from file_transaction import atomic_write_bytes
 from epub_char_count import (  # noqa: E402
     CJK_RE,
     EpubSource,
@@ -119,6 +120,8 @@ def classify_component(item: dict, raw: str, txt: str) -> str:
 
 def scan_book(source: EpubSource, pages_per: int, include_all: bool) -> dict:
     """扫描单本书：成分文字量 + 实际页区间 + 页数。"""
+    if pages_per <= 0:
+        raise ValueError("pages_per 必须大于 0")
     items = spine_xhtml_items(source)
     comps: list[dict] = []
     skipped: list[str] = []
@@ -434,9 +437,7 @@ def render_skipped(rep: dict) -> str:
 def collect_sources(paths: list[Path]) -> list[EpubSource]:
     out: list[EpubSource] = []
     for p in paths:
-        if p.is_dir():
-            out.append(EpubSource.from_path(p))
-        elif p.is_file():
+        if p.is_dir() or p.is_file():
             out.append(EpubSource.from_path(p))
         else:
             raise SystemExit(f"路径不存在：{p}")
@@ -458,7 +459,8 @@ def main() -> int:
     ap.add_argument("--chars-only", action="store_true",
                     help="CSV 只按成分输出（正文不展开子成分），用于总览")
     args = ap.parse_args()
-
+    if args.pages_per <= 0:
+        ap.error("--pages-per 必须为正整数")
 
     reports = [scan_book(s, args.pages_per, args.all) for s in collect_sources(args.paths)]
 
@@ -474,9 +476,8 @@ def main() -> int:
 
     if not args.no_csv:
         out = args.csv or default_csv_path(reports)
-        out.parent.mkdir(parents=True, exist_ok=True)
-        data = "\ufeff" + render_csv(reports, granular=not args.chars_only)
-        out.write_text(data, encoding="utf-8", newline="\r\n")
+        data = ("\ufeff" + render_csv(reports, granular=not args.chars_only)).replace("\n", "\r\n")
+        atomic_write_bytes(out, data.encode("utf-8"))
         print(f"CSV 已写入：{out}", file=sys.stderr)
     return 0
 

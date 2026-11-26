@@ -156,6 +156,54 @@ class BoldRulesTests(unittest.TestCase):
         self.assertEqual(line, "<p><b>&amp;</b><b>【S1_01】</b><b>Mr.</b></p>")
         self.assertEqual(hits, [])
 
+    def test_bold_split_never_crosses_nested_inline_tags(self):
+        import xml.etree.ElementTree as ET
+        line, _hits = split_bold_punct('<p><b><span class="x">词，词</span></b></p>')
+        ET.fromstring(line.encode("utf-8"))
+        self.assertEqual(line, '<p><b><span class="x">词，词</span></b></p>')
+
+    def test_tortoise_bracket_aside_id_is_unique_and_pattern_escapes_brackets(self):
+        ids = [rid for rid, *_rest in text_norm.RULES]
+        self.assertEqual(ids.count("tortoise-bracket-aside"), 1)
+        line, _hits, _ = transform_line("<p>〔注〕</p>", None)
+        self.assertEqual(line, "<p>（注）</p>")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            target = root / "【S1_01】书[测试]"
+            target.mkdir()
+            (target / "a.xhtml").write_text("<p/>", encoding="utf-8")
+            matched = list(text_norm.collect_targets(root, "*[测试]*"))
+            self.assertEqual(len(matched), 1)
+
+    def test_main_rolls_back_all_files_on_mid_batch_write_failure(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            files = []
+            for idx in (1, 2):
+                book = root / f"【S1_0{idx}】书"
+                book.mkdir()
+                page = book / f"S1_0{idx}-01.xhtml"
+                page.write_text("<html><body><p>甲！？</p></body></html>\n", encoding="utf-8")
+                files.append((page, page.read_bytes()))
+            calls = 0
+            real_write = text_norm.atomic_write_bytes
+
+            def fail_second(p, payload):
+                nonlocal calls
+                calls += 1
+                if calls == 2:
+                    raise OSError("磁盘写入失败")
+                return real_write(p, payload)
+
+            with patch.object(text_norm, "atomic_write_bytes", side_effect=fail_second), \
+                    patch.object(sys, "argv", ["text_norm.py", "--root", str(root), "--apply", "--staging"]), \
+                    contextlib.redirect_stdout(io.StringIO()):
+                with self.assertRaises(OSError):
+                    text_norm.main()
+            for page, original in files:
+                self.assertEqual(page.read_bytes(), original)
+
 
 class ReorderNotesTests(unittest.TestCase):
     def make_book(self, definitions, refs, *, container="ul"):

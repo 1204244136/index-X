@@ -38,6 +38,7 @@ import argparse
 import fnmatch
 import hashlib
 import os
+import posixpath
 import re
 import shutil
 import sys
@@ -56,7 +57,7 @@ from check_alignment import check_file
 from docx_source import (RUBY_RE, esc, esc_ruby, extract_notes, is_body_style,
                          is_heading_style, is_number, read_docx)
 from edit_safety import add_edit_mode, require_edit_target
-from epub_structure import artifact_contract_issues, container_contract_issues
+from epub_structure import artifact_contract_issues, container_contract_issues, image_media_type
 from package_cache_epubs import package_book, validate_book
 from path_safety import archive_member_destination
 from xhtml_slots import NOTE_H1
@@ -487,12 +488,12 @@ def extract_source_images(epub: Path, header: str) -> dict:
                     break
         if not opf_path:
             raise ValueError(f"源 EPUB 缺少 OPF：{epub}")
-        opf_dir = str(Path(opf_path).parent).replace("\\", "/")
+        opf_dir = posixpath.dirname(opf_path)
 
-        def resolve(href: str) -> str:
+        def resolve(href: str, base_dir: str = opf_dir) -> str:
             if href.startswith("/"):
-                return href.lstrip("/")
-            return f"{opf_dir}/{href}" if opf_dir else href
+                return posixpath.normpath(href.lstrip("/"))
+            return posixpath.normpath(posixpath.join(base_dir, href)) if base_dir else posixpath.normpath(href)
 
         try:
             opf = ET.fromstring(z.read(opf_path))
@@ -541,10 +542,11 @@ def extract_source_images(epub: Path, header: str) -> dict:
                 continue  # 其他包装页 / 纯图片标题页
             else:
                 kind = "body"
+            page_dir = posixpath.dirname(zp)
             for r in refs:
                 if not r.lower().endswith(image_exts):
                     continue
-                data = _image(resolve(r))
+                data = _image(resolve(r, page_dir))
                 if data is None:
                     continue
                 sha = hashlib.sha256(data).hexdigest()
@@ -623,7 +625,6 @@ def render_cover(name: str) -> str:
         "<!DOCTYPE html>",
         '<html xmlns="http://www.w3.org/1999/xhtml" '
         'xmlns:epub="http://www.idpf.org/2007/ops"><head>',
-        "<br/>",
         '<link href="../Styles/style.css" rel="stylesheet" type="text/css"/>',
         "<title></title>",
         "</head>",
@@ -754,9 +755,7 @@ def render_opf(meta: dict, text_files: list[str], image_names: list[str],
     for fname in text_files:
         add_item(f"Text/{fname}", "application/xhtml+xml", in_spine=True)
     for name in image_names:
-        ext = Path(name).suffix.lower()
-        mtype = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png",
-                 ".gif": "image/gif", ".webp": "image/webp"}.get(ext, "application/octet-stream")
+        mtype = image_media_type(name)
         props = "cover-image" if name == cover_name else None
         add_item(f"Images/{name}", mtype, props)
     add_item("Styles/style.css", "text/css")
@@ -779,6 +778,7 @@ def render_opf(meta: dict, text_files: list[str], image_names: list[str],
         f'    <dc:identifier id="BookId">uuid:{uid}</dc:identifier>',
         f"    <dc:language>{language}</dc:language>",
         '    <meta refines="#id" property="title-type">main</meta>',
+        f'    <meta refines="#id" property="file-as">{esc(title)}</meta>',
     ]
     if cover_img_id:
         lines.append(f'    <meta name="cover" content="{cover_img_id}"/>')
@@ -1047,7 +1047,7 @@ def _process_one(docx_path: Path, args: argparse.Namespace) -> int:
     book_name = title or stem
     out_stem = f"【{header}】{book_name}"
     uid = str(uuid.uuid4())
-    meta = {"title": book_name, "creator": creator or core.get("creator", ""),
+    meta = {"title": out_stem, "creator": creator or core.get("creator", ""),
             "language": language, "uuid": uid}
 
     css = _CSS
@@ -1057,13 +1057,13 @@ def _process_one(docx_path: Path, args: argparse.Namespace) -> int:
     book = {
         "header": header,
         "stem": out_stem,
-        "title": book_name,
+        "title": out_stem,
         "text_files": text_files,
         "images": image_bytes,
         "cover_name": cover_name,
         "css": css,
         "nav": render_nav(nav_entries),
-        "ncx": render_ncx(nav_entries, book_name, uid),
+        "ncx": render_ncx(nav_entries, out_stem, uid),
         "opf": render_opf(meta, text_file_order, sorted(image_bytes), cover_name, uid),
     }
     book["files"] = build_book_files(book)

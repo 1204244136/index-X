@@ -487,6 +487,19 @@ class MainEntryTests(unittest.TestCase):
             if saved_tools_cli_output is not None:
                 sys.modules["tools.cli_output"] = saved_tools_cli_output
 
+    def test_print_summary_handles_failed_entry_with_empty_issues(self) -> None:
+        from check_epub_validity import print_summary
+        out = io.StringIO()
+        with redirect_stdout(out):
+            print_summary(
+                [{"path": "a.epub", "kind": "epub", "failed": True,
+                  "issue_count": 0, "issues": [], "error": "子进程异常退出"}],
+                [Target(Path("a.epub"), "epub")],
+                "测试",
+                "无",
+            )
+        self.assertIn("子进程异常退出", out.getvalue())
+
 
 if __name__ == "__main__":
     unittest.main()

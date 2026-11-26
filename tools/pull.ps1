@@ -9,6 +9,7 @@ param(
     [string]$Pattern = '*',
     [string]$OnlyBooks = '',
     [switch]$Force,
+    [switch]$OverwriteCache,
     [switch]$SyncToEpub,
     [switch]$WhatIf
 )
@@ -105,6 +106,7 @@ function Assert-LocalChangesPreserved(
     [string]$Directory, [string]$BookKey, [hashtable]$Incoming,
     [hashtable]$Baseline, [string]$Label
 ) {
+    if ($OverwriteCache -and $Label -eq '缓存') { return }
     # A missing directory is an uninitialized copy, not an intentional deletion.
     if (-not (Test-Path -LiteralPath $Directory -PathType Container)) { return }
     $local = Get-BookHashes $Directory
@@ -194,10 +196,23 @@ function Extract-Epub([System.IO.FileInfo]$EpubFile, [string]$Destination, [stri
             $bookName = $BookKey.Substring('chinese-text/'.Length)
             Assert-LocalChangesPreserved (Join-Path (Get-FullPath $EpubDirectory) $bookName) $BookKey $incoming $baseline '归档'
         }
-        if (Test-Path -LiteralPath $destinationFullPath) {
-            Remove-Item -LiteralPath $destinationFullPath -Recurse -Force
+        $backup = Join-Path $parent ('.extract-backup-' + [guid]::NewGuid().ToString('N'))
+        $hadExisting = Test-Path -LiteralPath $destinationFullPath
+        if ($hadExisting) {
+            Move-Item -LiteralPath $destinationFullPath -Destination $backup
         }
-        Move-Item -LiteralPath $temporary -Destination $destinationFullPath
+        try {
+            Move-Item -LiteralPath $temporary -Destination $destinationFullPath
+        }
+        catch {
+            if ($hadExisting -and (Test-Path -LiteralPath $backup) -and -not (Test-Path -LiteralPath $destinationFullPath)) {
+                Move-Item -LiteralPath $backup -Destination $destinationFullPath
+            }
+            throw
+        }
+        if ($hadExisting -and (Test-Path -LiteralPath $backup)) {
+            Remove-Item -LiteralPath $backup -Recurse -Force -ErrorAction SilentlyContinue
+        }
         Write-Host "已解压: $destinationFullPath"
     }
     finally {

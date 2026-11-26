@@ -181,6 +181,15 @@ class PlanValidationTests(unittest.TestCase):
         with self.assertRaises(import_plan.PlanError):
             import_plan.apply_ops(rows, {"ops": []}, where="序章")
 
+    def test_validate_ops_rejects_bool_para_and_empty_image_dst_not_deduped(self):
+        problems = import_plan.validate_ops([{"op": "drop", "para": True}], "章")
+        self.assertTrue(any("非负整数" in p for p in problems))
+        img_problems = import_plan.validate_images([
+            {"dst": "", "src": "a.jpg", "role": "body"},
+            {"dst": "", "src": "b.jpg", "role": "body"},
+        ])
+        self.assertFalse(any("重复" in p for p in img_problems))
+
 
 class AlignPlanTests(unittest.TestCase):
     def _fixture(self, root: Path) -> Path:
@@ -636,6 +645,113 @@ class MaterialsTests(unittest.TestCase):
                             "<p>校对：乙</p>\n<p>美工：丙</p>\n", encoding="utf-8")
             ok, _ = import_materials.check_info(path)
             self.assertTrue(ok)
+
+
+class BuildWrappersRegressionTests(unittest.TestCase):
+    def test_render_cover_nav_and_opf_contract(self):
+        import xml.etree.ElementTree as ET
+        cover_html = import_build_wrappers.render_cover("S4_04-Cover.webp")
+        self.assertNotIn("<br", cover_html.split("<head>", 1)[0])
+        ET.fromstring(cover_html.encode("utf-8"))
+
+        nav_html = import_build_wrappers.render_nav([
+            ("S4_04-01.xhtml", "第1章 <A&B>", 1),
+        ])
+        self.assertNotIn("<br", nav_html.split("<head>", 1)[0])
+        self.assertIn("第1章 &lt;A&amp;B&gt;", nav_html)
+        ET.fromstring(nav_html.encode("utf-8"))
+
+        opf_xml = import_build_wrappers.render_opf(
+            {"book_dir": "【S4_04】测试"},
+            ["S4_04-01.xhtml"],
+            "uuid:1",
+            "作者",
+            "<p>desc</p>",
+            "<package/>",
+            "S4_04-Cover.webp",
+            ["S4_04-Cover.webp", "S4_04-vec.svg"],
+        )
+        self.assertIn('media-type="image/webp"', opf_xml)
+        self.assertIn('media-type="image/svg+xml"', opf_xml)
+        ET.fromstring(opf_xml.encode("utf-8"))
+
+
+class AlignAndImageEdgeTests(unittest.TestCase):
+    def test_suggest_chapter_interlude_unparsed_and_propose_relations(self):
+        inter = import_align_plan.suggest_chapter("行间一", 2, 1)
+        self.assertEqual(inter["suffix"], "Between_the_Lines1")
+        self.assertEqual(inter["h1_main"], "行间　一")
+        bad_ch = import_align_plan.suggest_chapter("第？章", 3, 0)
+        self.assertIsNone(bad_ch["suffix"])
+        self.assertEqual(import_align_plan.propose({"relation": "2:1", "jp": [], "cn": []})[0], "split")
+        self.assertEqual(import_align_plan.propose({"relation": "2:2", "jp": [], "cn": []})[0], "（人工）")
+
+    def test_align_plan_check_blocks_failed_apply_ops(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            jp = jp_dir_for(root)
+            write_jp_page(jp / "item/xhtml/S4_04-01.xhtml", h1="序章",
+                          items=[("p", "第一段。")])
+            docx = write_docx(root / "稿.docx", [
+                {"style": "Heading1", "runs": ["序章"]},
+                {"runs": ["第一段。"]},
+            ])
+            plan_path = import_plan.write_plan(root / "plan.json", {
+                "work_id": "S4_04", "book_dir": "【S4_04】测试",
+                "chapters": [{"cn_title": "序章", "jp_file": "item/xhtml/S4_04-01.xhtml",
+                              "fname": "S4_04-01_Prologue.xhtml",
+                              "ops": [{"op": "drop", "para": 99}]}],
+                "images": [],
+            })
+            code = import_align_plan.main([
+                str(docx), "--work", "S4_04", "--book-dir", "【S4_04】测试",
+                "--jp-root", str(root),
+                "--plan", str(plan_path), "--check",
+            ])
+            self.assertEqual(code, 1)
+
+    def test_import_images_suggest_negative_distance_is_low_and_protected_out_blocks(self):
+        import argparse
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            src, jp = root / "src", root / "jp"
+            src.mkdir()
+            jp.mkdir()
+            (src / "a.png").write_bytes(PNG_1PX)
+            (jp / "001.png").write_bytes(PNG_1PX)
+            out = root / "map.txt"
+            with patch.object(import_images, "dhash", return_value=-1), \
+                    patch.object(import_images, "hamming", return_value=-1), \
+                    contextlib.redirect_stdout(io.StringIO()):
+                rc = import_images.suggest(argparse.Namespace(
+                    src=src, jp_dir=jp, work="S4_04", out=out,
+                ))
+            self.assertEqual(rc, 0)
+            self.assertIn("（低）", out.read_text(encoding="utf-8"))
+            with contextlib.redirect_stderr(io.StringIO()):
+                rc_bad = import_images.suggest(argparse.Namespace(
+                    src=src, jp_dir=jp, work="S4_04", out=src / "map.txt",
+                ))
+            self.assertEqual(rc_bad, 2)
+
+    def test_import_build_text_empty_cn_title_rejects_nonempty_docx_heading(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            jp = jp_dir_for(root)
+            write_jp_page(jp / "item/xhtml/S4_04-01.xhtml", h1=None, items=[("p", "一段。")])
+            docx = write_docx(root / "稿.docx", [
+                {"style": "Heading1", "runs": ["不该有的标题"]},
+                {"runs": ["一段。"]},
+            ])
+            plan = {
+                "work_id": "S4_04", "book_dir": "【S4_04】测试",
+                "jp_root": str(root), "jp_dir": jp.name,
+                "chapters": [{"cn_title": "", "jp_file": "item/xhtml/S4_04-01.xhtml",
+                              "fname": "S4_04-01.xhtml", "ops": []}],
+                "images": [],
+            }
+            with self.assertRaises(import_plan.PlanError):
+                import_build_text.build(plan, docx)
 
 
 if __name__ == "__main__":

@@ -110,6 +110,15 @@ class AuditRiskTests(unittest.TestCase):
         add_flags = audit_risk_flags("文字", "这是一段新增加的非常非常长的解释性说明文字")
         self.assertIn("add_large", add_flags)
 
+    def test_bold_attributes_entity_protection_and_plain_term_matching(self):
+        # 带属性 bold 含标点应命中，XML 实体内部 ; 不误报
+        self.assertIn("bold_punct", audit_risk_flags("<b>词</b>", '<b class="em">重点，词</b>'))
+        self.assertNotIn("bold_punct", audit_risk_flags("<b>&amp;</b>", "<b>&amp;</b>"))
+        # 属性里的旧词不触发 controlled_term
+        self.assertNotIn("controlled_term", audit_risk_flags(
+            "正文", '<p><span data-old="和服裤裙">袴之少女</span></p>',
+        ))
+
 
 if __name__ == "__main__":
     unittest.main()

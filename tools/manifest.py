@@ -14,22 +14,28 @@ import argparse
 import fnmatch
 import hashlib
 import json
+import re
 import sys
 from datetime import datetime
 from pathlib import Path
+
+TOOLS_DIR = Path(__file__).resolve().parent
+if str(TOOLS_DIR) not in sys.path:
+    sys.path.insert(0, str(TOOLS_DIR))
 
 if __package__:
     from .cli_output import configure_output
 else:
     from cli_output import configure_output
-from path_safety import is_extract_artifact
-from file_transaction import atomic_write_bytes
-from sync_lock import SyncLockBusy, cache_lock
+from path_safety import is_extract_artifact  # noqa: E402
+from file_transaction import atomic_write_bytes  # noqa: E402
+from sync_lock import SyncLockBusy, cache_lock  # noqa: E402
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
+REPO_ROOT = TOOLS_DIR.parent
 DEFAULT_CACHE = REPO_ROOT / ".cache" / "epub-work"
 MANIFEST_FILENAME = "manifest.json"
 SIDE_DIRECTORIES = ("chinese-text", "japanese-text")
+_BOOK_KEY_RE = re.compile(r"^(chinese-text|japanese-text)/[^/\\]+$")
 
 
 def compute_hash(path: Path) -> str:
@@ -160,6 +166,8 @@ def update_manifest_books(
     left untouched so that unpublished cache edits keep their old baseline.
     """
     for key in book_keys:
+        if not _BOOK_KEY_RE.fullmatch(key) or key.endswith(("/.", "/..")):
+            raise ValueError(f"非法书籍键：{key}")
         prefix = key.rstrip("/") + "/"
         for path in list(files):
             if path.startswith(prefix):

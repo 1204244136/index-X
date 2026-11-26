@@ -208,5 +208,11 @@ class ReadXlsxTests(unittest.TestCase):
         self.assertEqual(json.loads(output.read_text(encoding="utf-8"))[0]["JP_Name"], "上条当麻")
 
 
+class ColSelectionPriorityTests(unittest.TestCase):
+    def test_case_insensitive_header_beats_excel_column_letters(self):
+        headers = ["ID", "Type", "Note"]
+        self.assertEqual(_parse_col_selection("id,type", headers, 3), [0, 1])
+
+
 if __name__ == "__main__":
     unittest.main()

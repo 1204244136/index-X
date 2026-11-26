@@ -31,14 +31,14 @@ import fnmatch
 import shutil
 import sys
 from pathlib import Path
+TOOLS_DIR = Path(__file__).resolve().parent
+if str(TOOLS_DIR) not in sys.path:
+    sys.path.insert(0, str(TOOLS_DIR))
 if __package__:
     from .cli_output import configure_output
 else:
     from cli_output import configure_output
-from publish_preflight import validate_publication
-
-TOOLS_DIR = Path(__file__).resolve().parent
-sys.path.insert(0, str(TOOLS_DIR))
+from publish_preflight import validate_publication  # noqa: E402
 from file_transaction import rollback_paths  # noqa: E402
 from manifest import scan_cache, load_manifest, save_manifest  # noqa: E402
 from package_cache_epubs import package_book, PackageError  # noqa: E402
@@ -318,8 +318,9 @@ def _publish(args: argparse.Namespace) -> int:
         baseline = {}
 
     # Pre-flight: 某一侧基线整侧缺失时，该侧所有文件都会被判成 added，发布会把
-    # 整侧重新打包并重传。先报错，避免这种静默的全量重发。
-    if baseline:
+    # 整侧重新打包并重传。先报错，避免这种静默的全量重发；
+    # 首次向已有归档引入单侧选书的 --sync-only 不受整侧基线限制。
+    if baseline and not (args.sync_only and args.only_books):
         scope = SIDE_DIRECTORIES if args.side == "all" else (SIDE_MAP[args.side],)
         missing = missing_baseline_sides(cache, baseline, scope)
         if missing:

@@ -605,8 +605,8 @@ def run_batch(cache: Path, only_diff: bool, progress: bool, tsv_path: Path | Non
             # 实时进度：\r 原地刷新，避免长时间静默
             print(f"\r  [{i}/{total}] {i/total:5.1%}  {cn_id} {header:<24}",
                   end="", flush=True)
-        jp_raw = jp_p.read_text(encoding="utf-8", errors="ignore").splitlines()
-        cn_raw = cn_p.read_text(encoding="utf-8", errors="ignore").splitlines()
+        jp_raw = jp_p.read_text(encoding="utf-8-sig").splitlines()
+        cn_raw = cn_p.read_text(encoding="utf-8-sig").splitlines()
         if not any(line.strip() for line in jp_raw) or not any(line.strip() for line in cn_raw):
             bad += 1
             problem = "输入含空文件，未核对"
@@ -623,7 +623,7 @@ def run_batch(cache: Path, only_diff: bool, progress: bool, tsv_path: Path | Non
             pairs = align_lines(jl, cl)
             rows.append([
                 cn_id, header, relative(jp_p), relative(cn_p),
-                str(len(jl)), str(len(cl)), "", "0",
+                str(len(jl)), str(len(cl)), "", "0", "",
             ])
             continue
         # 已确认的文本化图片例外（S2_14 / S5 扉页）：中文侧把整页图片重排为文本行，
@@ -632,7 +632,7 @@ def run_batch(cache: Path, only_diff: bool, progress: bool, tsv_path: Path | Non
             rows.append([
                 cn_id, header, relative(jp_p), relative(cn_p),
                 str(len(jl)), str(len(cl)), "",
-                str(sum(1 for p in align_lines(jl, cl) if p.status == "DRIFT")),
+                str(sum(1 for p in align_lines(jl, cl) if p.status == "DRIFT")), "",
             ])
             continue
         if len(jl) != len(cl):
@@ -645,7 +645,7 @@ def run_batch(cache: Path, only_diff: bool, progress: bool, tsv_path: Path | Non
         pairs = align_lines(jl, cl)
         conflicts = structural_conflicts(pairs)
         # section-order 例外：中日仅「图片行 ↔ h2 行」一处互换，属已确认的合法差异。
-        if conflicts and header in PAIR_RULES and section_order_swap(pairs):
+        if conflicts and PAIR_RULES.get(header) == "section-order" and section_order_swap(pairs):
             notes.append(f"已确认例外：{PAIR_RULES[header]}")
             conflicts = []
         if conflicts:
@@ -746,7 +746,7 @@ def main():
         try:
             return run_batch(cache, args.only_diff, not args.no_progress, tsv,
                              args.work, cn_root=cn_root, jp_root=jp_root, strict=args.strict)
-        except (OSError, ValueError) as exc:
+        except (OSError, UnicodeError, ValueError) as exc:
             print(f"[错误] 无法读取配对输入：{exc}", file=sys.stderr)
             return 2
 
@@ -763,14 +763,14 @@ def main():
             jp_file, cn_file = locate_pair_by_header(args.target, cache, cn_root=cn_root, jp_root=jp_root)
             title = args.target
 
-        jp_raw = jp_file.read_text(encoding="utf-8", errors="ignore").splitlines()
-        cn_raw = cn_file.read_text(encoding="utf-8", errors="ignore").splitlines()
+        jp_raw = jp_file.read_text(encoding="utf-8-sig").splitlines()
+        cn_raw = cn_file.read_text(encoding="utf-8-sig").splitlines()
         if not any(line.strip() for line in jp_raw) or not any(line.strip() for line in cn_raw):
             print("[错误] 配对输入含空文件，未完成对齐诊断。", file=sys.stderr)
             return 2
         jp_lines = [parse_line(line) for line in jp_raw]
         cn_lines = [parse_line(line) for line in cn_raw]
-    except (OSError, ValueError) as exc:
+    except (OSError, UnicodeError, ValueError) as exc:
         print(f"[错误] 无法读取配对输入：{exc}", file=sys.stderr)
         return 2
 

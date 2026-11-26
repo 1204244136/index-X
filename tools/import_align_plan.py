@@ -124,14 +124,16 @@ def suggest_chapter(title: str, sequence: int, interlude: int) -> dict:
         # 外典书库的「深度N」章：作品原有的专用语义后缀（S5_04_02），
         # 不套 ChapterN，按命名规范「与正文标题对应的专用语义后缀」保留作品命名。
         value = cn_to_int(depth.group(1))
+        if value is None:
+            return base
         main = f"{head}　{sub}" if sub else head
         return {**base, "suffix": f"Depth{value}", "h1_main": main,
                 "h1_sub": None, "nav": main}
     elif re.match(r"^行[间間]", head):
         # `行間　一` 用序号；`行間　副标题`（S5_04_02、S6_24.06.07 一类）保留副标题，
         # 不把副标题当序号丢掉。
-        tail = head[1:]
-        numeral_text = tail if cn_to_int(tail) is not None else (sub or "")
+        tail = head[2:].strip()
+        numeral_text = tail if (tail and cn_to_int(tail) is not None) else (sub or "")
         value = cn_to_int(numeral_text)
         if value is None and sub:
             main = f"行间　{sub}"
@@ -147,9 +149,15 @@ def suggest_chapter(title: str, sequence: int, interlude: int) -> dict:
         return {**base, "suffix": "Special", "h1_main": head, "h1_sub": None, "nav": title.strip()}
     else:
         return base
-    suffix = ("Prologue" if main.startswith("序") else
-              "Epilogue" if main.startswith("终") else
-              f"Chapter{cn_to_int(head[1:-1])}")
+    if main.startswith("序"):
+        suffix = "Prologue"
+    elif main.startswith("终"):
+        suffix = "Epilogue"
+    else:
+        chap_num = cn_to_int(head[1:-1])
+        if chap_num is None:
+            return base
+        suffix = f"Chapter{chap_num}"
     nav = f"{main} {sub}" if sub else main
     return {**base, "suffix": suffix, "h1_main": main, "nav": nav}
 
@@ -426,8 +434,10 @@ def propose(group: dict) -> tuple[str, str]:
         return "merge_prev", "中文侧多出一行：并入上一段"
     if relation == "1:2":
         return "merge_prev", "中文侧多出一行：并入上一段"
-    if relation == "2:2":
+    if relation == "2:1":
         return "split", "日文两段对应中文一段：拆成两段"
+    if relation == "2:2":
+        return "（人工）", "日文两段与中文两段交叉对应：人工核对边界"
     return "（人工）", "关系未覆盖"
 
 
@@ -658,7 +668,10 @@ def main(argv: list[str] | None = None) -> int:
             print(f"[提示] 以下章节未能自动命名，需人工在计划里补 fname：{missing}")
 
     if args.check:
-        aligned = all(delta == 0 for delta in deltas)
+        aligned = (
+            all(delta == 0 for delta in deltas)
+            and not any(line.startswith("  [计划改动不成立]") for line in report)
+        )
         print(f"章节数 {len(plan['chapters'])}；非 1:1 关系 {odd} 处；"
               f"行数{'全部对齐' if aligned else '尚未对齐'}")
         return 0 if aligned and all(chapter.get("fname") for chapter in plan["chapters"]) else 1

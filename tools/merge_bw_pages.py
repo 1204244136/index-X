@@ -74,7 +74,7 @@ AFTERWORD_RE = re.compile(
 # 不能用 (?:^|[-_]) —— 那种写法在 match 下永远只在串首生效。
 NAV_FILE_RE = re.compile(r"^(?:[\w.-]*[-_])?navigation[^/]*\.xhtml$", re.IGNORECASE)
 NAV_ANCHOR_RE = re.compile(
-    r'<a\b[^>]*href="(?P<href>[^"#]+)#(?P<anchor>[^"]+)"[^>]*>(?P<label>.*?)</a>',
+    r'<a\b[^>]*\bhref\s*=\s*(["\'])(?P<href>[^"\'#]+)#(?P<anchor>[^"\']+)\1[^>]*>(?P<label>.*?)</a>',
     re.IGNORECASE | re.S,
 )
 
@@ -82,13 +82,13 @@ NAV_ANCHOR_RE = re.compile(
 def nav_page_titles(text: str) -> dict[str, str]:
     """解析 EPUB 导航文档，返回「目标分页文件名 → 目录条目文本」。
 
-    只收 `p-NNN.xhtml#…` 形式的条目（包装页与纯锚点不计），用于确定性地补回
-    图片扉页单元的 h1；不做任何模糊匹配，映射不上就留空槽。
+    只收 `p-NNN.xhtml#…` 形式的条目（无 `#…` 锚点的续页、包装页与纯锚点不计），
+    用于确定性地补回图片扉页单元的 h1；不做任何模糊匹配，映射不上就留空槽。
     """
     out: dict[str, str] = {}
     for m in NAV_ANCHOR_RE.finditer(text):
         base = html.unescape(m.group("href")).rsplit("/", 1)[-1]
-        label = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", m.group("label"))).strip()
+        label = html.unescape(re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", m.group("label")))).strip()
         if not label or not PAGE_RE.match(base) or base in out:
             continue
         out[base] = label

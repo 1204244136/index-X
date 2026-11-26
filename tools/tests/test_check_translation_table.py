@@ -1196,5 +1196,42 @@ class SettledScopeTests(unittest.TestCase):
         self.assertEqual(recs[0]["status"], "pending_ruling")
 
 
+class RulingAxisAndAnchorTests(unittest.TestCase):
+    def test_per_anchor_rts_and_same_row_axis_conflict_detection(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "rulings.md"
+            path.write_text(
+                "| 日文锚点 | 裁定 | 判定 |\n"
+                "| --- | --- | --- |\n"
+                "| <ruby>魔術<rt>まじゅつ</rt></ruby>／`科学` | 魔法 | 匹配基文／严格全文 |\n",
+                encoding="utf-8",
+            )
+            rd = load_rulings(path)
+            self.assertEqual(rd["魔術"]["anchor_rts"], ["まじゅつ"])
+            self.assertEqual(rd["科学"]["anchor_rts"], [])
+            self.assertTrue(rd["魔術"]["axis_mixed"])
+
+    def test_match_full_anchors_context_at_annotated_occurrence(self):
+        entries = [{"ori": "兵器", "trans": "兵器", "type": "", "debuts": ""}]
+        rd = {
+            "兵器": {
+                "forms": ["兵器"], "ruby_forms": [], "raw": [], "alt_raw": [],
+                "labels": [""], "ori_raw": ["<ruby>兵器<rt>ウェポン</rt></ruby>"],
+                "human_only": False, "machine": True,
+                "anchor_rts": ["ウェポン"], "match_axis": MATCH_FULL,
+                "axis_mixed": False,
+            }
+        }
+        recs, _s, _sh = compare(
+            entries,
+            {"S1_01": "普通の兵器と特別な兵器"},
+            {"S1_01": "兵器"},
+            rd,
+            jp_ruby={"S1_01": "普通の兵器と特別な兵器(ウェポン)"},
+            cn_ruby={"S1_01": "兵器"},
+        )
+        self.assertIn("兵器(ウエポン)", recs[0]["jp_context"])
+
+
 if __name__ == "__main__":
     unittest.main()

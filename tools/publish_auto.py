@@ -342,6 +342,8 @@ def build_pull_command(
         cmd += ["-OnlyBooks", ",".join(sorted(args.only_books_scope))]
     if args.force:
         cmd.append("-Force")
+    if args.overwrite_cache:
+        cmd.append("-OverwriteCache")
     if dry_run:
         cmd.append("-WhatIf")
     if args.chinese_onedrive.resolve() != ONEDRIVE_DEFAULTS["chinese-text"].resolve():
@@ -606,7 +608,8 @@ def prepare_plan(args: argparse.Namespace) -> PublicationPlan:
     touched = set(drifted) & (set(cache_changes) | set(epub_changes))
     completed_pull = sorted(
         book_key for book_key in touched
-        if onedrive_book_matches_cache(
+        if book_key not in epub_changes
+        and onedrive_book_matches_cache(
             onedrive_epub_path(source_dirs, book_key), cache / book_key) is True
     )
     diverged = sorted(touched - set(completed_pull))
