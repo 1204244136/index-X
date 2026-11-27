@@ -437,8 +437,18 @@ class SemanticCliEnvironmentTests(unittest.TestCase):
             self.assertEqual(semantic.ensure_vector_environment(args, ["--vector"]), 0)
             self.assertEqual(run.call_args.args[0][0], str(executables[0]))
 
-    def test_vector_window_uses_cn_para_index_and_same_executable_case_insensitive(self):
-        self.assertTrue(semantic._same_executable(Path(sys.executable), Path(str(sys.executable).upper())))
+    def test_same_executable_follows_platform_case_sensitivity(self):
+        executable = Path(sys.executable)
+        upper = Path(str(executable).upper())
+        self.assertTrue(semantic._same_executable(executable, executable))
+        if os.name == "nt":
+            # Windows 文件系统不区分大小写：大小写变体指向同一解释器。
+            self.assertTrue(semantic._same_executable(executable, upper))
+        elif not upper.exists():
+            # 区分大小写的文件系统（如 CI 的 Linux）上，大小写变体是另一个不存在的路径。
+            self.assertFalse(semantic._same_executable(executable, upper))
+
+    def test_vector_window_uses_cn_para_index(self):
         try:
             import numpy as np
         except ImportError:
