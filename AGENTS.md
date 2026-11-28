@@ -100,7 +100,7 @@
 - 读写目标与暂存、CI 例外按「数据流与编辑边界」执行；工具不得通过默认缓存路径绕过该边界。
 - 缓存区内相对应的中文与日文 XHTML 应保持行数对齐，以便按行定位内容；检查发现不对齐时，必须明确报告涉及文件及其行数差异。可用 `python tools/check_alignment.py` 检查，判定细则与固定行模板见 [EPUB 结构规范](docs/epub-structure-spec.md)。
 - 译名／术语统一执行 `.agents/skills/translation-term-unification/SKILL.md`；成品语言与证据边界以 `docs/translation-spec.md` 为准，已决取舍以 `docs/translation-name-rulings.md` 为准。
-- **插图文本联动门禁与额外提醒**：凡涉及 `EPUB/` 正文、章节标题或插图页／图片资源的修改，写盘后必须运行 `python tools/check_illustration_mapping.py`（默认阻断中文 `EPUB/` 行号漂移、原句变更与清单结构自洽，日文缓存存在时同步双侧校验）及 `python tools/check_illustration_mapping.py --diff HEAD`；若命中彩图对应正文行、带目录彩图卷的章节标题（`<h1>`/`<h2>`）或彩图资源本身，须同步更新 `docs/illustration-text-mapping.md` 对应正文行号与正文原句，并在最终回复末尾向用户额外突出提醒受影响的中文插图文件名与图上现行文本（重嵌执行与完成状态不设于本仓库）。**未命中清单任何内容时保持静默，不得额外声明“无需改图”或“未涉及插图”。**
+- **插图文本联动门禁与额外提醒**：凡涉及 `EPUB/` 正文、章节标题或插图页／图片资源的修改，写盘后必须运行 `python tools/check_illustration_mapping.py`（默认阻断中文 `EPUB/` 行号漂移、原句变更与清单结构自洽，日文缓存存在时同步双侧校验）及 `python tools/check_illustration_mapping.py --diff HEAD`；若命中彩图对应正文行、带目录彩图卷的章节标题（`<h1>`/`<h2>`）或彩图资源本身，须同步更新 `docs/illustration-text-mapping.md` 对应正文行号与正文原句，并在最终回复末尾向用户额外突出提醒受影响的中文插图文件名与图上现行文本（重嵌执行与完成状态不设于本仓库）。**未命中清单任何内容时，最终回复中不得以任何措辞提及插图检查的结论或理由**，包括但不限于“无需改图”“未涉及插图”“该文件不在映射表中”“未命中联动清单”；检查命令照常运行，通过与否只在验证摘要里与其他门禁一并简记，不解释命中判断。
 - 代码结构问题取用 CodeGraph：符号在哪定义、谁调用它、改动会波及什么、相关测试在哪。MCP 面当前可用 `codegraph_explore`，另挂了 `codegraph_impact`、`codegraph_status`；CLI 等价入口为 `codegraph explore|impact|status|query|callers|callees`。索引覆盖 `tools/*.py` 的符号与 `EPUB/` 的 XHTML 文件节点。
 - 正文文本检索一律用 `rg` 或直读，不用 CodeGraph：日语原文、中文译法、术语出现位置、中日对照都属于字面文本，XHTML 正文不构成符号；分析源按「数据流与编辑边界」优先读 `.cache/`。
 - CodeGraph 的使用说明不在本仓库维护：`codegraph` 1.6 起 `install` 不再生成 `.cursor/rules/codegraph.mdc`，口径以 MCP server 的 initialize instructions 与 `~/.codex/AGENTS.md` 中上游维护的标记块为准，不要在仓库内重建第二份说明文件。
